@@ -1,31 +1,427 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --font-geist-sans: 'Geist', sans-serif;
-  --font-geist-mono: 'Geist Mono', monospace;
+  /* Enhanced Comic Book Color Palette */
+  --comic-primary: #ff4757;
+  --comic-secondary: #00d2d3;
+  --comic-accent: #3742fa;
+  --comic-warning: #ffa502;
+  --comic-success: #2ed573;
+  --comic-danger: #ff3838;
+  --comic-dark: #2f3542;
+  --comic-light: #f1f2f6;
+  --comic-white: #ffffff;
+  --comic-black: #000000;
+  --comic-yellow: #ffdd59;
+  --comic-pink: #ff6b9d;
+  --comic-purple: #a55eea;
+  
+  /* Enhanced Comic Book Shadows */
+  --comic-shadow-sm: 3px 3px 0px var(--comic-black);
+  --comic-shadow-md: 5px 5px 0px var(--comic-black);
+  --comic-shadow-lg: 8px 8px 0px var(--comic-black);
+  --comic-shadow-xl: 12px 12px 0px var(--comic-black);
+  --comic-shadow-2xl: 16px 16px 0px var(--comic-black);
+  
+  /* Enhanced Comic Book Borders */
+  --comic-border: 4px solid var(--comic-black);
+  --comic-border-thick: 6px solid var(--comic-black);
+  --comic-border-xl: 8px solid var(--comic-black);
+  
+  /* Font Variables */
+  --font-fredoka: 'Fredoka', cursive;
+  --font-bungee: 'Bungee', cursive;
+  --font-comic-neue: 'Comic Neue', cursive;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-comic-primary: var(--comic-primary);
+  --color-comic-secondary: var(--comic-secondary);
+  --color-comic-accent: var(--comic-accent);
+  --color-comic-warning: var(--comic-warning);
+  --color-comic-success: var(--comic-success);
+  --color-comic-danger: var(--comic-danger);
+  --color-comic-dark: var(--comic-dark);
+  --color-comic-light: var(--comic-light);
+  --color-comic-white: var(--comic-white);
+  --color-comic-black: var(--comic-black);
+  --color-comic-yellow: var(--comic-yellow);
+  --color-comic-pink: var(--comic-pink);
+  --color-comic-purple: var(--comic-purple);
+  
+  --font-fredoka: var(--font-fredoka);
+  --font-bungee: var(--font-bungee);
+  --font-comic-neue: var(--font-comic-neue);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Comic Book Base Styles */
+body {
+  background: linear-gradient(135deg, var(--comic-light) 0%, #e9ecef 50%, var(--comic-light) 100%);
+  background-attachment: fixed;
+  color: var(--comic-dark);
+  font-family: var(--font-fredoka);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+  position: relative;
+}
+
+/* Comic Book Background Pattern */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(255, 71, 87, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 210, 211, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(255, 165, 2, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Comic Book Utility Classes */
+.comic-border {
+  border: var(--comic-border);
+}
+
+.comic-border-thick {
+  border: var(--comic-border-thick);
+}
+
+.comic-shadow-sm {
+  box-shadow: var(--comic-shadow-sm);
+}
+
+.comic-shadow-md {
+  box-shadow: var(--comic-shadow-md);
+}
+
+.comic-shadow-lg {
+  box-shadow: var(--comic-shadow-lg);
+}
+
+.comic-shadow-xl {
+  box-shadow: var(--comic-shadow-xl);
+}
+
+.comic-button {
+  @apply font-bungee font-bold text-lg px-6 py-3 rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95;
+  border: var(--comic-border);
+  box-shadow: var(--comic-shadow-md);
+}
+
+.comic-button:hover {
+  box-shadow: var(--comic-shadow-lg);
+}
+
+.comic-button:active {
+  box-shadow: var(--comic-shadow-sm);
+  transform: translate(2px, 2px) scale(0.95);
+}
+
+.comic-card {
+  @apply p-6 rounded-xl;
+  border: var(--comic-border);
+  box-shadow: var(--comic-shadow-md);
+  background: var(--comic-white);
+}
+
+.comic-title {
+  @apply font-bungee font-bold;
+  text-shadow: 3px 3px 0px var(--comic-black), 6px 6px 0px rgba(0,0,0,0.3);
+  letter-spacing: 0.05em;
+}
+
+.comic-text {
+  @apply font-comic-neue;
+  /* Removed text-shadow for better readability on paragraphs */
+}
+
+.comic-text-bold {
+  @apply font-comic-neue font-bold;
+  /* Removed text-shadow for better readability on paragraphs */
+}
+
+.comic-text-white {
+  @apply font-comic-neue;
+  color: var(--comic-white);
+  /* Removed text-shadow for better readability - high contrast color ensures visibility */
+}
+
+/* List Item Styling - Matches ComicText but slightly smaller */
+ul li,
+ol li {
+  @apply font-comic-neue;
+  font-size: 1rem; /* text-base */
+  line-height: 1.6;
+  /* No text-shadow for better readability */
+}
+
+@media (min-width: 768px) {
+  ul li,
+  ol li {
+    font-size: 1.125rem; /* text-lg */
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-  font-family: var(--font-geist-sans);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@media (min-width: 1024px) {
+  ul li,
+  ol li {
+    font-size: 1.25rem; /* text-xl */
+  }
+}
+
+/* Ensure proper spacing between list items */
+ul,
+ol {
+  @apply space-y-2;
+}
+
+/* Comic Book Animations */
+@keyframes comic-bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+.comic-bounce {
+  animation: comic-bounce 2s infinite;
+}
+
+@keyframes comic-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(1deg); }
+  75% { transform: rotate(-1deg); }
+}
+
+.comic-wiggle {
+  animation: comic-wiggle 0.5s ease-in-out;
+}
+
+.comic-wiggle:hover {
+  animation: comic-wiggle 0.5s ease-in-out infinite;
+}
+
+/* Enhanced Comic Book Patterns */
+.comic-pattern-dots {
+  background-image: radial-gradient(circle, var(--comic-black) 2px, transparent 2px);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+}
+
+.comic-pattern-stripes {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(0,0,0,0.1) 10px,
+    rgba(0,0,0,0.1) 20px
+  );
+}
+
+.comic-pattern-zigzag {
+  background-image: 
+    linear-gradient(45deg, var(--comic-black) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--comic-black) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--comic-black) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--comic-black) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  opacity: 1;
+}
+
+/* Enhanced Comic Book Backgrounds */
+.comic-bg-primary {
+  background: linear-gradient(135deg, var(--comic-primary) 0%, #ff3742 100%);
+}
+
+.comic-bg-secondary {
+  background: linear-gradient(135deg, var(--comic-secondary) 0%, #00b8b9 100%);
+}
+
+.comic-bg-accent {
+  background: linear-gradient(135deg, var(--comic-accent) 0%, #2f3542 100%);
+}
+
+.comic-bg-warning {
+  background: linear-gradient(135deg, var(--comic-warning) 0%, #ff9500 100%);
+}
+
+.comic-bg-success {
+  background: linear-gradient(135deg, var(--comic-success) 0%, #26d0ce 100%);
+}
+
+.comic-bg-danger {
+  background: linear-gradient(135deg, var(--comic-danger) 0%, #ff2d2d 100%);
+}
+
+.comic-bg-purple {
+  background: linear-gradient(135deg, var(--comic-purple) 0%, #8e44ad 100%);
+}
+
+.comic-bg-pink {
+  background: linear-gradient(135deg, var(--comic-pink) 0%, #e91e63 100%);
+}
+
+.comic-bg-yellow {
+  background: linear-gradient(135deg, var(--comic-yellow) 0%, #f39c12 100%);
+}
+
+/* Responsive Navigation Styles */
+.comic-border-b-4 {
+  border-bottom: 4px solid var(--comic-black);
+}
+
+.comic-border-b-2 {
+  border-bottom: 2px solid var(--comic-black);
+}
+
+/* Mobile Menu Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+}
+
+.mobile-menu-enter {
+  animation: slideDown 0.3s ease-out;
+}
+
+.mobile-menu-exit {
+  animation: slideUp 0.3s ease-in;
+}
+
+/* Hamburger Menu Animation */
+.hamburger-line {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mobile-specific responsive adjustments */
+@media (max-width: 768px) {
+  .comic-shadow-xl {
+    box-shadow: 8px 8px 0px var(--comic-black);
+  }
+  
+  .comic-shadow-lg {
+    box-shadow: 6px 6px 0px var(--comic-black);
+  }
+  
+  .comic-shadow-md {
+    box-shadow: 4px 4px 0px var(--comic-black);
+  }
+}
+
+/* Z-index management for mobile navigation */
+header {
+  position: relative;
+  z-index: 10;
+}
+
+/* Ensure mobile menu appears above all content */
+.mobile-menu {
+  z-index: 9999;
+}
+
+/* Hero section should stay below navigation */
+.hero-content {
+  z-index: 0;
+}
+
+/* Additional utility classes for the comprehensive website */
+.comic-input {
+  @apply p-3 rounded-lg transition-all duration-200;
+  border: var(--comic-border);
+  box-shadow: var(--comic-shadow-sm);
+  background: var(--comic-white);
+}
+
+.comic-input:focus {
+  outline: none;
+  box-shadow: var(--comic-shadow-md);
+  border-color: var(--comic-primary);
+}
+
+.comic-textarea {
+  @apply p-3 rounded-lg transition-all duration-200 resize-none;
+  border: var(--comic-border);
+  box-shadow: var(--comic-shadow-sm);
+  background: var(--comic-white);
+}
+
+.comic-textarea:focus {
+  outline: none;
+  box-shadow: var(--comic-shadow-md);
+  border-color: var(--comic-primary);
+}
+
+/* Smooth scrolling for navigation */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Enhanced hover effects for cards */
+.comic-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--comic-shadow-lg);
+}
+
+/* Animation for section reveals */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.comic-fade-in {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Enhanced button hover effects */
+.comic-button:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.comic-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Responsive text sizing */
+@media (max-width: 768px) {
+  .comic-title {
+    font-size: 1.5rem;
+  }
+  
+  .comic-text {
+    font-size: 0.9rem;
+  }
 }
