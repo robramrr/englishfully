@@ -38,7 +38,9 @@ function HomeSection() {
           {t.home.heroTitle}
         </ComicTitle>
         <ComicText size="xl" className="comic-text-white mb-12 font-bold max-w-3xl mx-auto">
-          {t.home.heroDescription}
+          <span className="block bg-red-500/70 px-4 py-3 rounded-md">
+            {t.home.heroDescription}
+          </span>
         </ComicText>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link href="/in-person-learning#booking-form">
