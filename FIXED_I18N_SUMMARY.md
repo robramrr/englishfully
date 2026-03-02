@@ -32,13 +32,12 @@
 ### ✅ Tech Innovations Section  
 - Title: "🚀 Tech Innovations" / "🚀 นวัตกรรมทางเทคโนโลยี"
 - Description: Full paragraph
-- **6 AI Feature Cards (ALL TRANSLATED):**
+- **5 AI Feature Cards (ALL TRANSLATED):**
   1. 🎤 AI Voice Coach / โค้ชเสียง AI
   2. 👁️ Visual Phonics / เครื่องมือสอนเสียง
   3. 💬 AI Conversation / การสนทนา AI
   4. 🎯 Smart AI Learning / การเรียนรู้ AI อัจฉริยะ
-  5. 📚 Narrative AI Learning / การเรียนรู้ผ่านเรื่องราว AI
-  6. 🎥 AI Video Learning / การเรียนรู้ผ่านวิดีโอ AI
+  5. 🎥 AI Video Learning / การเรียนรู้ผ่านวิดีโอ AI
 
 ### ✅ Courses Section (NOW ADDED & TRANSLATED)
 - Title: "📚 Our Courses" / "📚 หลักสูตรของเรา"

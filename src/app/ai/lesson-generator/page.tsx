@@ -65,6 +65,7 @@ function FeaturesSection() {
             <li>• {t.aiLessonGenerator.personalizedItem2}</li>
             <li>• {t.aiLessonGenerator.personalizedItem3}</li>
             <li>• {t.aiLessonGenerator.personalizedItem4}</li>
+            <li>• {t.aiLessonGenerator.personalizedItem5}</li>
           </ul>
         </ComicCard>
         
@@ -91,10 +92,12 @@ function FeaturesSection() {
             {t.aiLessonGenerator.completeDesc}
           </ComicText>
           <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6">
+            <li>• {t.aiLessonGenerator.completeItem0}</li>
             <li>• {t.aiLessonGenerator.completeItem1}</li>
             <li>• {t.aiLessonGenerator.completeItem2}</li>
             <li>• {t.aiLessonGenerator.completeItem3}</li>
-            <li>• {t.aiLessonGenerator.completeItem4}</li>
+            <li>• {t.aiLessonGenerator.completeItem5}</li>
+            <li>• {t.aiLessonGenerator.completeItem6}</li>
           </ul>
         </ComicCard>
       </div>

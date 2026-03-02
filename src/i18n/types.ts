@@ -21,7 +21,6 @@ export interface Translations {
     visualPhonics: string;
     chatSimulator: string;
     lessonGenerator: string;
-    storyLearning: string;
     videoLearning: string;
   };
   home: {
@@ -42,8 +41,6 @@ export interface Translations {
     aiConversationDesc: string;
     smartAITitle: string;
     smartAIDesc: string;
-    narrativeAITitle: string;
-    narrativeAIDesc: string;
     aiVideoTitle: string;
     aiVideoDesc: string;
   };
@@ -130,7 +127,6 @@ export interface Translations {
   aiVoiceCoach: Record<string, string>;
   aiConversationSimulator: Record<string, string>;
   aiLessonGenerator: Record<string, string>;
-  aiStoryLearning: Record<string, string>;
   aiVideoLearning: Record<string, string>;
   aiVisualPhonics: Record<string, string>;
 }

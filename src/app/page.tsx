@@ -159,15 +159,6 @@ function TechInnovationsSection() {
           </ComicCard>
           
           <ComicCard className="comic-shadow-xl text-center">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-purple)]">
-              {t.home.narrativeAITitle}
-            </ComicTitle>
-            <ComicText className="text-[var(--comic-dark)] font-bold">
-              {t.home.narrativeAIDesc}
-            </ComicText>
-          </ComicCard>
-          
-          <ComicCard className="comic-shadow-xl text-center">
             <ComicTitle level={3} className="mb-4 text-[var(--comic-danger)]">
               {t.home.aiVideoTitle}
             </ComicTitle>

@@ -67,7 +67,6 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
     { href: '/ai/visual-phonics', label: t.ai.visualPhonics },
     { href: '/ai/conversation-simulator', label: t.ai.chatSimulator },
     { href: '/ai/lesson-generator', label: t.ai.lessonGenerator },
-    { href: '/ai/story-learning', label: t.ai.storyLearning },
     { href: '/ai/video-learning', label: t.ai.videoLearning },
   ];
 

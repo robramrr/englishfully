@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import ComicButton from "../../../components/ComicButton";
 import ComicCard from "../../../components/ComicCard";
 import ComicTitle from "../../../components/ComicTitle";
@@ -27,11 +26,6 @@ function HeroSection() {
           <ComicButton variant="warning" size="lg" className="comic-wiggle">
             {t.aiVideoLearning.watchVideos}
           </ComicButton>
-          <Link href="/ai/story-learning">
-            <ComicButton variant="accent" size="lg" className="comic-wiggle">
-              {t.aiVideoLearning.storyLearning}
-            </ComicButton>
-          </Link>
         </div>
       </div>
     </section>

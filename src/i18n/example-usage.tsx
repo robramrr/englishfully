@@ -111,7 +111,6 @@ export function DynamicListExample() {
     { id: 'visual', title: t.ai.visualPhonics, icon: '👀' },
     { id: 'chat', title: t.ai.chatSimulator, icon: '💬' },
     { id: 'lesson', title: t.ai.lessonGenerator, icon: '📚' },
-    { id: 'story', title: t.ai.storyLearning, icon: '📖' },
     { id: 'video', title: t.ai.videoLearning, icon: '🎥' },
   ];
 
