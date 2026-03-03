@@ -108,10 +108,8 @@ export function DynamicListExample() {
 
   const features = [
     { id: 'voice', title: t.ai.voiceCoach, icon: '🎤' },
-    { id: 'visual', title: t.ai.visualPhonics, icon: '👀' },
-    { id: 'chat', title: t.ai.chatSimulator, icon: '💬' },
     { id: 'lesson', title: t.ai.lessonGenerator, icon: '📚' },
-    { id: 'video', title: t.ai.videoLearning, icon: '🎥' },
+    { id: 'video', title: t.ai.videoLab, icon: '🎥' },
   ];
 
   return (
@@ -293,8 +291,7 @@ export function ComplexPageExample() {
 
       {/* Navigation */}
       <nav>
-        <a href="/ai/voice-coach">{t.ai.voiceCoach}</a>
-        <a href="/ai/visual-phonics">{t.ai.visualPhonics}</a>
+        <a href="/ai/language-tutor">{t.ai.voiceCoach}</a>
         <a href="/contact">{t.nav.contact}</a>
       </nav>
 

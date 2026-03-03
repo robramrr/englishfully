@@ -27,7 +27,7 @@ function HeroSection() {
           <ComicButton variant="primary" size="lg" className="comic-wiggle">
             {t.aiLessonGenerator.generateLesson}
           </ComicButton>
-          <Link href="/ai/conversation-simulator">
+          <Link href="/ai/language-tutor">
             <ComicButton variant="accent" size="lg" className="comic-wiggle">
               {t.aiLessonGenerator.conversationSimulator}
             </ComicButton>
@@ -123,19 +123,26 @@ function LessonTypesSection() {
         <div className="grid md:grid-cols-2 gap-8 mb-16">
           <ComicCard className="comic-shadow-xl">
             <ComicTitle level={3} className="mb-6 text-[var(--comic-primary)]">
-              {t.aiLessonGenerator.grammarTitle}
+              {t.aiLessonGenerator.listeningTitle}
             </ComicTitle>
             <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-              {t.aiLessonGenerator.grammarDesc}
+              {t.aiLessonGenerator.listeningDesc}
             </ComicText>
             <ul className="text-[var(--comic-dark)] space-y-2 mb-6">
-              <li>• {t.aiLessonGenerator.grammarItem1}</li>
-              <li>• {t.aiLessonGenerator.grammarItem2}</li>
-              <li>• {t.aiLessonGenerator.grammarItem3}</li>
+              <li>• {t.aiLessonGenerator.listeningItem1}</li>
+              <li>• {t.aiLessonGenerator.listeningItem2}</li>
+              <li>• {t.aiLessonGenerator.listeningItem3}</li>
             </ul>
-            <ComicButton variant="primary" size="sm">
-              {t.aiLessonGenerator.generateGrammarLesson}
-            </ComicButton>
+            <div className="flex flex-wrap gap-2">
+              <ComicButton variant="primary" size="sm">
+                {t.aiLessonGenerator.generateListeningLesson}
+              </ComicButton>
+              <Link href="/ai/video-lab">
+                <ComicButton variant="accent" size="sm">
+                  {t.aiLessonGenerator.listeningVideoLearningButton}
+                </ComicButton>
+              </Link>
+            </div>
           </ComicCard>
           
           <ComicCard className="comic-shadow-xl">
@@ -150,7 +157,7 @@ function LessonTypesSection() {
               <li>• {t.aiLessonGenerator.speakingItem2}</li>
               <li>• {t.aiLessonGenerator.speakingItem3}</li>
             </ul>
-            <ComicButton variant="secondary" size="sm">
+            <ComicButton variant="primary" size="sm">
               {t.aiLessonGenerator.generateSpeakingLesson}
             </ComicButton>
           </ComicCard>
@@ -167,9 +174,16 @@ function LessonTypesSection() {
               <li>• {t.aiLessonGenerator.readingItem2}</li>
               <li>• {t.aiLessonGenerator.readingItem3}</li>
             </ul>
-            <ComicButton variant="success" size="sm">
-              {t.aiLessonGenerator.generateReadingLesson}
-            </ComicButton>
+            <div className="flex flex-wrap gap-2">
+              <ComicButton variant="success" size="sm">
+                {t.aiLessonGenerator.generateReadingLesson}
+              </ComicButton>
+              <Link href="/ai/video-lab">
+                <ComicButton variant="accent" size="sm">
+                  {t.aiLessonGenerator.readingVideoLabButton}
+                </ComicButton>
+              </Link>
+            </div>
           </ComicCard>
           
           <ComicCard className="comic-shadow-xl">
@@ -188,65 +202,68 @@ function LessonTypesSection() {
               {t.aiLessonGenerator.generateWritingLesson}
             </ComicButton>
           </ComicCard>
+          
+          <ComicCard className="comic-shadow-xl">
+            <ComicTitle level={3} className="mb-6 text-[var(--comic-primary)]">
+              {t.aiLessonGenerator.grammarTitle}
+            </ComicTitle>
+            <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
+              {t.aiLessonGenerator.grammarDesc}
+            </ComicText>
+            <ul className="text-[var(--comic-dark)] space-y-2 mb-6">
+              <li>• {t.aiLessonGenerator.grammarItem1}</li>
+              <li>• {t.aiLessonGenerator.grammarItem2}</li>
+              <li>• {t.aiLessonGenerator.grammarItem3}</li>
+            </ul>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/ai/language-tutor">
+                <ComicButton variant="primary" size="sm">
+                  {t.aiLessonGenerator.generateGrammarLesson}
+                </ComicButton>
+              </Link>
+              <ComicButton variant="secondary" size="sm">
+                {t.aiLessonGenerator.grammarGrammarButton}
+              </ComicButton>
+            </div>
+          </ComicCard>
+          
+          <ComicCard className="comic-shadow-xl">
+            <ComicTitle level={3} className="mb-6 text-[var(--comic-accent)]">
+              {t.aiLessonGenerator.vocabularyTitle}
+            </ComicTitle>
+            <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
+              {t.aiLessonGenerator.vocabularyDesc}
+            </ComicText>
+            <ul className="text-[var(--comic-dark)] space-y-2 mb-6">
+              <li>• {t.aiLessonGenerator.vocabularyItem1}</li>
+              <li>• {t.aiLessonGenerator.vocabularyItem2}</li>
+              <li>• {t.aiLessonGenerator.vocabularyItem3}</li>
+            </ul>
+            <div className="flex flex-wrap gap-2">
+              <ComicButton variant="warning" size="sm">
+                {t.aiLessonGenerator.vocabularyFlashcardsButton}
+              </ComicButton>
+              <Link href="/ai/video-lab">
+                <ComicButton variant="accent" size="sm">
+                  {t.aiLessonGenerator.vocabularyVideoLabButton}
+                </ComicButton>
+              </Link>
+            </div>
+          </ComicCard>
         </div>
       </div>
     </section>
   );
 }
 
-// AI Technology Section
-function AITechnologySection() {
-  const { t } = useI18n();
-  return (
-    <section className="max-w-6xl mx-auto py-24 px-4">
-      <div className="text-center mb-16">
-        <ComicTitle level={2} className="mb-8 text-[var(--comic-warning)]">
-          {t.aiLessonGenerator.techTitle}
-        </ComicTitle>
-        <ComicText size="lg" className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto">
-          {t.aiLessonGenerator.techDesc}
-        </ComicText>
-      </div>
-      
-      <div className="grid md:grid-cols-2 gap-12">
-        <ComicCard className="comic-shadow-xl">
-          <ComicTitle level={3} className="mb-6 text-[var(--comic-warning)]">
-            {t.aiLessonGenerator.realtimeTitle}
-          </ComicTitle>
-          <ul className="text-[var(--comic-dark)] space-y-2">
-            <li>• {t.aiLessonGenerator.realtimeItem1}</li>
-            <li>• {t.aiLessonGenerator.realtimeItem2}</li>
-            <li>• {t.aiLessonGenerator.realtimeItem3}</li>
-            <li>• {t.aiLessonGenerator.realtimeItem4}</li>
-          </ul>
-        </ComicCard>
-        
-        <ComicCard className="comic-shadow-xl">
-          <ComicTitle level={3} className="mb-6 text-[var(--comic-primary)]">
-            {t.aiLessonGenerator.qualityTitle}
-          </ComicTitle>
-          <ul className="text-[var(--comic-dark)] space-y-2">
-            <li>• {t.aiLessonGenerator.qualityItem1}</li>
-            <li>• {t.aiLessonGenerator.qualityItem2}</li>
-            <li>• {t.aiLessonGenerator.qualityItem3}</li>
-            <li>• {t.aiLessonGenerator.qualityItem4}</li>
-          </ul>
-        </ComicCard>
-      </div>
-    </section>
-  );
-}
-
-export default function SmartLessonGenerator() {
+export default function AILessonHub() {
   return (
     <div className="flex flex-col min-h-screen bg-[var(--comic-light)]">
       <HeroSection />
       <FeaturesSection />
       <LessonTypesSection />
-      <AITechnologySection />
       <div className="flex-grow" />
       <Footer />
     </div>
   );
 }
-

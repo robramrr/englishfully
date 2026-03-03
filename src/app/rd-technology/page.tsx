@@ -25,7 +25,7 @@ function HeroSection() {
           {t.rdTechnology.heroDesc}
         </ComicText>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/ai/voice-coach">
+          <Link href="/ai/language-tutor">
             <ComicButton variant="warning" size="lg" className="comic-wiggle">
               {t.rdTechnology.aiLearning}
             </ComicButton>

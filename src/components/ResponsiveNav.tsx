@@ -63,11 +63,9 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
   ];
 
   const aiDropdown = [
-    { href: '/ai/voice-coach', label: t.ai.voiceCoach },
-    { href: '/ai/visual-phonics', label: t.ai.visualPhonics },
-    { href: '/ai/conversation-simulator', label: t.ai.chatSimulator },
-    { href: '/ai/lesson-generator', label: t.ai.lessonGenerator },
-    { href: '/ai/video-learning', label: t.ai.videoLearning },
+    { href: '/ai/language-tutor', label: t.ai.voiceCoach },
+    { href: '/ai/lesson-hub', label: t.ai.lessonGenerator },
+    { href: '/ai/video-lab', label: t.ai.videoLab },
   ];
 
   const aboutDropdown = [

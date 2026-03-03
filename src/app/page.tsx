@@ -132,24 +132,6 @@ function TechInnovationsSection() {
           </ComicCard>
           
           <ComicCard className="comic-shadow-xl text-center">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-secondary)]">
-              {t.home.visualPhonicsTitle}
-            </ComicTitle>
-            <ComicText className="text-[var(--comic-dark)] font-bold">
-              {t.home.visualPhonicsDesc}
-            </ComicText>
-          </ComicCard>
-          
-          <ComicCard className="comic-shadow-xl text-center">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-accent)]">
-              {t.home.aiConversationTitle}
-            </ComicTitle>
-            <ComicText className="text-[var(--comic-dark)] font-bold">
-              {t.home.aiConversationDesc}
-            </ComicText>
-          </ComicCard>
-          
-          <ComicCard className="comic-shadow-xl text-center">
             <ComicTitle level={3} className="mb-4 text-[var(--comic-warning)]">
               {t.home.smartAITitle}
             </ComicTitle>

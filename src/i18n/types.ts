@@ -18,10 +18,9 @@ export interface Translations {
   };
   ai: {
     voiceCoach: string;
-    visualPhonics: string;
-    chatSimulator: string;
     lessonGenerator: string;
     videoLearning: string;
+    videoLab: string;
   };
   home: {
     heroTitle: string;
