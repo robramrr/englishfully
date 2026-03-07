@@ -384,6 +384,13 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Mobile: larger base font for readability */
+@media (max-width: 768px) {
+  html {
+    font-size: 1.125rem; /* 18px base - easier to read on small screens */
+  }
+}
+
 /* Enhanced hover effects for cards */
 .comic-card:hover {
   transform: translateY(-2px);
@@ -415,13 +422,18 @@ html {
   transform: translateY(0) scale(0.98);
 }
 
-/* Responsive text sizing */
+/* Responsive text sizing - mobile: larger body text for readability */
 @media (max-width: 768px) {
   .comic-title {
     font-size: 1.5rem;
   }
   
   .comic-text {
-    font-size: 0.9rem;
+    font-size: 1.125rem; /* ~20px - comfortable body text on mobile */
+  }
+
+  ul li,
+  ol li {
+    font-size: 1.125rem;
   }
 }
