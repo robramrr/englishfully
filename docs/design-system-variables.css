@@ -1,0 +1,67 @@
+/**
+ * Englishfully Design System — CSS variables (standalone)
+ * Copy into your app's global CSS or :root. Fonts must be loaded separately (e.g. Google Fonts: Fredoka, Bungee, Comic Neue).
+ */
+
+:root {
+  /* ========== Primary colors ========== */
+  --comic-primary: #ff4757;
+  --comic-secondary: #00d2d3;
+  --comic-accent: #3742fa;
+
+  /* ========== Semantic colors ========== */
+  --comic-warning: #ffa502;
+  --comic-success: #2ed573;
+  --comic-danger: #ff3838;
+
+  /* ========== Neutrals & backgrounds ========== */
+  --comic-dark: #2f3542;
+  --comic-light: #f1f2f6;
+  --comic-white: #ffffff;
+  --comic-black: #000000;
+
+  /* ========== Extended palette ========== */
+  --comic-yellow: #ffdd59;
+  --comic-pink: #ff6b9d;
+  --comic-purple: #a55eea;
+
+  /* ========== Shadows (hard, no blur — comic "ink" style) ========== */
+  --comic-shadow-sm: 3px 3px 0px var(--comic-black);
+  --comic-shadow-md: 5px 5px 0px var(--comic-black);
+  --comic-shadow-lg: 8px 8px 0px var(--comic-black);
+  --comic-shadow-xl: 12px 12px 0px var(--comic-black);
+  --comic-shadow-2xl: 16px 16px 0px var(--comic-black);
+
+  /* ========== Borders (thick black outlines) ========== */
+  --comic-border: 4px solid var(--comic-black);
+  --comic-border-thick: 6px solid var(--comic-black);
+  --comic-border-xl: 8px solid var(--comic-black);
+
+  /* ========== Typography ========== */
+  --font-fredoka: "Fredoka", cursive;
+  --font-bungee: "Bungee", cursive;
+  --font-comic-neue: "Comic Neue", cursive;
+
+  /* ========== Optional: gradient endpoints (for reference) ========== */
+  --comic-primary-end: #ff3742;
+  --comic-secondary-end: #00b8b9;
+  --comic-accent-end: #2f3542;
+  --comic-warning-end: #ff9500;
+  --comic-success-end: #26d0ce;
+  --comic-danger-end: #ff2d2d;
+  --comic-purple-end: #8e44ad;
+  --comic-pink-end: #e91e63;
+  --comic-yellow-end: #f39c12;
+
+  /* ========== Layout ========== */
+  --comic-container-max: 72rem;
+  --comic-prose-max: 56rem;
+  --comic-narrow-max: 48rem;
+}
+
+/* Optional: mobile base font size for readability */
+@media (max-width: 768px) {
+  :root {
+    --comic-mobile-base: 1.125rem;
+  }
+}

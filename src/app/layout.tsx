@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Fredoka, Bungee, Comic_Neue } from "next/font/google";
-import Image from "next/image";
 import Link from "next/link";
 import "./globals.css";
 import ResponsiveNav from "../components/ResponsiveNav";
+import { LOGO_URL } from "../constants/images";
 import { I18nProvider } from "../i18n/I18nProvider";
 
 const fredoka = Fredoka({
@@ -32,12 +32,15 @@ export const metadata: Metadata = {
 function Logo() {
   return (
     <Link href="/" className="flex items-center space-x-3 hover:scale-105 transition-transform duration-200">
-      <Image
-        src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1758400384/englishfully/logo/logo.png"
+      {/* Plain <img>: avoids Vercel Image Optimization; Cloudinary URL is fixed + transformed */}
+      <img
+        src={LOGO_URL}
         alt="Englishfully Logo"
         width={320}
         height={240}
         className="object-contain"
+        decoding="async"
+        fetchPriority="high"
       />
     </Link>
   );

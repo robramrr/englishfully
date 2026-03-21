@@ -6,11 +6,8 @@ import ComicCard from "../components/ComicCard";
 import ComicTitle from "../components/ComicTitle";
 import ComicText from "../components/ComicText";
 import Footer from "../components/Footer";
+import { HERO_BACKGROUND_URL } from "../constants/images";
 import { useI18n } from "../i18n/I18nProvider";
-
-
-
-const HERO_IMAGE_URL = "https://res.cloudinary.com/dkbf7tvcx/image/upload/v1770485941/englishfully/hero/hero-image.jpg";
 
 // Home Section
 function HomeSection() {
@@ -21,7 +18,7 @@ function HomeSection() {
       {/* Hero background image */}
       <div
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${HERO_IMAGE_URL})` }}
+        style={{ backgroundImage: `url(${HERO_BACKGROUND_URL})` }}
         aria-hidden
       />
       {/* Enhanced comic book style background elements */}
