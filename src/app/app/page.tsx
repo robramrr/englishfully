@@ -35,6 +35,34 @@ function HeroSection() {
           {t.englishFeed.heroDesc}
         </ComicText>
 
+        <div className="mb-12 max-w-4xl mx-auto">
+          <div className="rounded-2xl overflow-hidden comic-border-thick comic-shadow-xl bg-[var(--comic-black)]">
+            <div className="relative w-full aspect-video min-h-[220px]">
+              <iframe
+                src="https://player.vimeo.com/video/1187793109?badge=0&autopause=0&player_id=0&app_id=58479"
+                className="absolute top-0 left-0 w-full h-full"
+                frameBorder="0"
+                allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                title="EnglishFeed promo video"
+                allowFullScreen
+              />
+            </div>
+          </div>
+          <ComicText className="comic-text-white mt-4 text-sm md:text-base">
+            If the video does not load here, open it on{" "}
+            <a
+              href="https://vimeo.com/1187793109"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-bold"
+            >
+              Vimeo
+            </a>
+            .
+          </ComicText>
+        </div>
+
         <div className="grid sm:grid-cols-2 gap-4 mb-12 text-left">
           {heroHighlights.map((item) => (
             <ComicCard key={item.text} className={`${item.className} comic-shadow-lg`}>
