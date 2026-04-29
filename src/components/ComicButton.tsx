@@ -4,6 +4,8 @@ interface ComicButtonProps {
   children: React.ReactNode;
   onClick?: () => void;
   href?: string;
+  target?: string;
+  rel?: string;
   variant?: 'primary' | 'secondary' | 'accent' | 'warning' | 'success' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -14,6 +16,8 @@ const ComicButton: React.FC<ComicButtonProps> = ({
   children,
   onClick,
   href,
+  target,
+  rel,
   variant = 'primary',
   size = 'md',
   className = '',
@@ -44,7 +48,7 @@ const ComicButton: React.FC<ComicButtonProps> = ({
   
   if (href) {
     return (
-      <a href={href} className={classes}>
+      <a href={href} className={classes} target={target} rel={rel}>
         {children}
       </a>
     );

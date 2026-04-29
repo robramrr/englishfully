@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { ENGLISHFEED_DEMO_URL } from '../constants/englishfeed';
 import { useI18n } from '../i18n/I18nProvider';
 import LanguageToggle from './LanguageToggle';
 
@@ -176,7 +177,9 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
         {/* Download App CTA */}
         <div className="flex items-center space-x-2 ml-4">
           <Link
-            href="#download"
+            href={ENGLISHFEED_DEMO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             className="comic-text font-bold text-lg px-3 py-2 rounded-lg comic-border comic-shadow-sm hover:comic-shadow-md transition-all duration-200 hover:scale-105 text-black"
             style={{ backgroundColor: 'var(--comic-yellow)' }}
           >
@@ -326,7 +329,9 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
           {/* Download App CTA */}
           <div className="px-6 py-4 text-center">
             <Link
-              href="#download"
+              href={ENGLISHFEED_DEMO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               onClick={closeMenu}
               className="inline-block px-4 py-2 comic-text font-bold text-lg text-black rounded-lg comic-border comic-shadow-sm hover:comic-shadow-md transition-all duration-200"
               style={{ backgroundColor: 'var(--comic-yellow)' }}

@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import ComicButton from "../../components/ComicButton";
 import ComicCard from "../../components/ComicCard";
 import ComicTitle from "../../components/ComicTitle";
 import ComicText from "../../components/ComicText";
+import { ENGLISHFEED_DEMO_URL } from "../../constants/englishfeed";
 import Footer from "../../components/Footer";
 import LessonTypesSection from "../../components/LessonTypesSection";
 import { useI18n } from "../../i18n/I18nProvider";
@@ -72,11 +72,16 @@ function HeroSection() {
         </div>
 
         <div className="flex justify-center">
-          <Link href="/contact">
-            <ComicButton variant="warning" size="lg" className="comic-wiggle">
-              {t.nav.downloadApp}
-            </ComicButton>
-          </Link>
+          <ComicButton
+            variant="warning"
+            size="lg"
+            className="comic-wiggle"
+            href={ENGLISHFEED_DEMO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {t.nav.downloadApp}
+          </ComicButton>
         </div>
       </div>
     </section>
