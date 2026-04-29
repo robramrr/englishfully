@@ -118,7 +118,7 @@ function TechInnovationsSection() {
           </ComicText>
         </div>
         
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
           <ComicCard className="comic-shadow-xl text-center">
             <ComicTitle level={3} className="mb-4 text-[var(--comic-primary)]">
               {t.home.aiVoiceCoachTitle}
@@ -144,6 +144,18 @@ function TechInnovationsSection() {
             <ComicText className="text-[var(--comic-dark)] font-bold">
               {t.home.aiVideoDesc}
             </ComicText>
+          </ComicCard>
+
+          <ComicCard className="comic-shadow-xl text-center flex flex-col">
+            <ComicTitle level={3} className="mb-4 text-[var(--comic-purple)]">
+              {t.home.englishFeedTitle}
+            </ComicTitle>
+            <ComicText className="text-[var(--comic-dark)] font-bold flex-grow mb-4">
+              {t.home.englishFeedDesc}
+            </ComicText>
+            <ComicButton variant="secondary" size="sm" href="/app">
+              {t.home.englishFeedButton}
+            </ComicButton>
           </ComicCard>
         </div>
       </div>

@@ -62,12 +62,6 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
     { href: '/in-person-learning', label: t.nav.inPersonLearning },
   ];
 
-  const aiDropdown = [
-    { href: '/ai/language-tutor', label: t.ai.voiceCoach },
-    { href: '/ai/lesson-hub', label: t.ai.lessonGenerator },
-    { href: '/ai/video-lab', label: t.ai.videoLab },
-  ];
-
   const aboutDropdown = [
     { href: '/about', label: t.nav.companyOverview },
     { href: '/rd-technology', label: t.nav.rdTechnology },
@@ -83,36 +77,13 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
         {/* Row 1: Main menu */}
         <div className="flex items-center space-x-4">
 
-        {/* AI Features Dropdown - First Item */}
-        <div className="relative">
-          <button
-            onClick={() => toggleDropdown('ai')}
-            onMouseEnter={() => setActiveDropdown('ai')}
-            className="comic-text font-bold text-lg px-3 py-2 rounded-lg comic-border comic-shadow-sm hover:comic-shadow-md transition-all duration-200 hover:scale-105 text-white"
-            style={{ backgroundColor: 'var(--comic-success)' }}
-          >
-            {t.nav.aiFeatures} ▼
-          </button>
-          {activeDropdown === 'ai' && (
-            <div 
-              className="absolute top-full left-0 pt-2 w-64 z-50"
-              onMouseEnter={() => setActiveDropdown('ai')}
-              onMouseLeave={() => setActiveDropdown(null)}
-            >
-              <div className="bg-white comic-border-thick comic-shadow-xl rounded-lg overflow-hidden">
-              {aiDropdown.map((link, index) => (
-                <Link
-                  key={index}
-                  href={link.href}
-                  className="block px-4 py-3 text-[var(--comic-dark)] font-bold text-lg hover:bg-[var(--comic-light)] transition-colors duration-200"
-                >
-                  {link.label}
-                </Link>
-              ))}
-              </div>
-            </div>
-          )}
-        </div>
+        <Link
+          href="/app"
+          className="comic-text font-bold text-lg px-3 py-2 rounded-lg comic-border comic-shadow-sm hover:comic-shadow-md transition-all duration-200 hover:scale-105 text-white"
+          style={{ backgroundColor: 'var(--comic-success)' }}
+        >
+          {t.ai.englishFeed}
+        </Link>
 
         {/* Students Dropdown */}
         <div className="relative">
@@ -224,7 +195,7 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
       {/* Mobile Hamburger Button */}
       <button
         onClick={toggleMenu}
-        className="md:hidden w-12 h-12 bg-[var(--comic-primary)] rounded-lg comic-border-thick comic-shadow-md flex flex-col items-center justify-center space-y-1 hover:comic-shadow-lg transition-all duration-200 hover:scale-105"
+        className="lg:hidden w-12 h-12 bg-[var(--comic-primary)] rounded-lg comic-border-thick comic-shadow-md flex flex-col items-center justify-center space-y-1 hover:comic-shadow-lg transition-all duration-200 hover:scale-105"
         aria-label="Toggle navigation menu"
       >
         <span 
@@ -254,35 +225,14 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
       >
         <div className="p-0">
 
-          {/* AI Features Section - First Item */}
-          <div className="comic-border-b-2 border-b-4 border-[var(--comic-black)]">
-            <button
-              type="button"
-              onClick={() => toggleMobileSection('ai')}
-              className="w-full text-left px-6 py-3 comic-text font-bold text-xl text-white flex items-center justify-between"
-              style={{ backgroundColor: 'var(--comic-success)' }}
-              aria-expanded={activeMobileSection === 'ai'}
-              aria-controls="mobile-section-ai"
-            >
-              <span>🤖 {t.nav.aiFeatures}</span>
-              <span className="font-bold">{activeMobileSection === 'ai' ? '−' : '+'}</span>
-            </button>
-            {activeMobileSection === 'ai' && (
-              <div id="mobile-section-ai">
-                {aiDropdown.map((link, index) => (
-                  <Link
-                    key={index}
-                    href={link.href}
-                    onClick={closeMenu}
-                    className="block px-8 py-3 comic-text font-bold text-lg hover:brightness-110 transition-all duration-200 text-white"
-                    style={{ backgroundColor: 'var(--comic-success)', opacity: 0.8 }}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
+          <Link
+            href="/app"
+            onClick={closeMenu}
+            className="block px-6 py-4 comic-text font-bold text-xl hover:brightness-110 transition-all duration-200 text-white comic-border-b-2 border-b-4 border-[var(--comic-black)]"
+            style={{ backgroundColor: 'var(--comic-success)' }}
+          >
+            🤖 {t.ai.englishFeed}
+          </Link>
 
           {/* Students Section */}
           <div className="comic-border-b-2 border-b-4 border-[var(--comic-black)]">

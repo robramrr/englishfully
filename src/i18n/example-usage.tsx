@@ -291,7 +291,7 @@ export function ComplexPageExample() {
 
       {/* Navigation */}
       <nav>
-        <a href="/ai/language-tutor">{t.ai.voiceCoach}</a>
+        <a href="/app">{t.ai.englishFeed}</a>
         <a href="/contact">{t.nav.contact}</a>
       </nav>
 

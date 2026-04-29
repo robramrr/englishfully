@@ -21,6 +21,7 @@ export interface Translations {
     lessonGenerator: string;
     videoLearning: string;
     videoLab: string;
+    englishFeed: string;
   };
   home: {
     heroTitle: string;
@@ -42,6 +43,9 @@ export interface Translations {
     smartAIDesc: string;
     aiVideoTitle: string;
     aiVideoDesc: string;
+    englishFeedTitle: string;
+    englishFeedDesc: string;
+    englishFeedButton: string;
   };
   mission: {
     title: string;
@@ -127,6 +131,7 @@ export interface Translations {
   aiConversationSimulator: Record<string, string>;
   aiLessonGenerator: Record<string, string>;
   aiVideoLearning: Record<string, string>;
+  englishFeed: Record<string, string>;
   aiVisualPhonics: Record<string, string>;
 }
 
