@@ -12,12 +12,6 @@ import { useI18n } from "../../i18n/I18nProvider";
 
 function HeroSection() {
   const { t } = useI18n();
-  const heroHighlights = [
-    { text: t.englishFeed.heroHighlight1, className: "comic-bg-warning" },
-    { text: t.englishFeed.heroHighlight2, className: "comic-bg-secondary" },
-    { text: t.englishFeed.heroHighlight3, className: "comic-bg-primary" },
-    { text: t.englishFeed.heroHighlight4, className: "comic-bg-accent" },
-  ];
 
   return (
     <section className="flex flex-col items-center justify-center text-center py-24 px-4 comic-bg-purple relative overflow-hidden comic-pattern-zigzag">
@@ -49,26 +43,6 @@ function HeroSection() {
               />
             </div>
           </div>
-          <ComicText className="comic-text-white mt-4 text-sm md:text-base">
-            If the video does not load here, open it on{" "}
-            <a
-              href="https://vimeo.com/1187793109"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline font-bold"
-            >
-              Vimeo
-            </a>
-            .
-          </ComicText>
-        </div>
-
-        <div className="grid sm:grid-cols-2 gap-4 mb-12 text-left">
-          {heroHighlights.map((item) => (
-            <ComicCard key={item.text} className={`${item.className} comic-shadow-lg`}>
-              <ComicText className="comic-text-white font-bold">• {item.text}</ComicText>
-            </ComicCard>
-          ))}
         </div>
 
         <div className="flex justify-center">
@@ -128,6 +102,7 @@ function HowSection() {
             <li>• {t.englishFeed.howStep2Item2}</li>
             <li>• {t.englishFeed.howStep2Item3}</li>
             <li>• {t.englishFeed.howStep2Item4}</li>
+            <li>• {t.englishFeed.howStep2Item5}</li>
           </ul>
         </ComicCard>
         <ComicCard className="comic-shadow-xl text-left">
@@ -142,6 +117,7 @@ function HowSection() {
             <li>• {t.englishFeed.howStep3Item2}</li>
             <li>• {t.englishFeed.howStep3Item3}</li>
             <li>• {t.englishFeed.howStep3Item4}</li>
+            <li>• {t.englishFeed.howStep3Item5}</li>
           </ul>
         </ComicCard>
       </div>
