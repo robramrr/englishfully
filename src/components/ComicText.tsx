@@ -24,7 +24,7 @@ const ComicText: React.FC<ComicTextProps> = ({
   
   const weightClasses = {
     light: 'font-light',
-    normal: 'font-normal',
+    normal: 'font-medium',
     bold: 'font-bold',
   };
   

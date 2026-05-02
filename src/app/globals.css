@@ -136,28 +136,30 @@ body::before {
 }
 
 .comic-text {
-  @apply font-comic-neue;
-  /* Removed text-shadow for better readability on paragraphs */
+  @apply font-fredoka;
+  letter-spacing: 0.012em;
+  line-height: 1.62;
 }
 
 .comic-text-bold {
-  @apply font-comic-neue font-bold;
-  /* Removed text-shadow for better readability on paragraphs */
+  @apply font-fredoka font-bold;
+  letter-spacing: 0.012em;
+  line-height: 1.62;
 }
 
+/* Only sets color — body font comes from `.comic-text` / headings from `.comic-title` */
 .comic-text-white {
-  @apply font-comic-neue;
   color: var(--comic-white);
-  /* Removed text-shadow for better readability - high contrast color ensures visibility */
 }
 
-/* List Item Styling - Matches ComicText but slightly smaller */
+/* List Item Styling - matches ComicText body typography */
 ul li,
 ol li {
-  @apply font-comic-neue;
+  @apply font-fredoka;
+  font-weight: 500;
   font-size: 1rem; /* text-base */
-  line-height: 1.6;
-  /* No text-shadow for better readability */
+  letter-spacing: 0.012em;
+  line-height: 1.65;
 }
 
 @media (min-width: 768px) {
@@ -358,6 +360,12 @@ header {
   border: var(--comic-border);
   box-shadow: var(--comic-shadow-sm);
   background: var(--comic-white);
+  font-family: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500;
+}
+
+.comic-input::placeholder {
+  font-family: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif;
 }
 
 .comic-input:focus {
@@ -371,6 +379,12 @@ header {
   border: var(--comic-border);
   box-shadow: var(--comic-shadow-sm);
   background: var(--comic-white);
+  font-family: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500;
+}
+
+.comic-textarea::placeholder {
+  font-family: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif;
 }
 
 .comic-textarea:focus {
@@ -437,3 +451,4 @@ html {
     font-size: 1.125rem;
   }
 }
+

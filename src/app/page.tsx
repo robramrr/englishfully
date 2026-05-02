@@ -237,6 +237,72 @@ function SubscriptionPlansSection() {
   );
 }
 
+// AI Features Section (same layout as Online Learning — uses onlineLearning strings)
+function AIFeaturesSection() {
+  const { t } = useI18n();
+
+  return (
+    <section className="comic-bg-primary py-24 px-4 comic-pattern-dots">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-16">
+          <ComicTitle level={2} className="comic-text-white mb-8">
+            {t.onlineLearning.aiFeaturesTitle}
+          </ComicTitle>
+          <ComicText size="lg" className="comic-text-white font-bold max-w-4xl mx-auto">
+            {t.onlineLearning.aiFeaturesDesc}
+          </ComicText>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          <ComicCard className="comic-shadow-xl text-center">
+            <ComicTitle level={3} className="mb-4 text-[var(--comic-primary)]">
+              {t.onlineLearning.aiVoiceTitle}
+            </ComicTitle>
+            <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
+              {t.onlineLearning.aiVoiceDesc}
+            </ComicText>
+            <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6">
+              <li>{t.onlineLearning.aiVoiceItem1}</li>
+              <li>{t.onlineLearning.aiVoiceItem2}</li>
+              <li>{t.onlineLearning.aiVoiceItem3}</li>
+              <li>{t.onlineLearning.aiVoiceItem5}</li>
+            </ul>
+          </ComicCard>
+
+          <ComicCard className="comic-shadow-xl text-center">
+            <ComicTitle level={3} className="mb-4 text-[var(--comic-secondary)]">
+              {t.onlineLearning.visualPhonicsTitle}
+            </ComicTitle>
+            <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
+              {t.onlineLearning.visualPhonicsDesc}
+            </ComicText>
+            <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6">
+              <li>{t.onlineLearning.visualPhonicsItem1}</li>
+              <li>{t.onlineLearning.visualPhonicsItem2}</li>
+              <li>{t.onlineLearning.visualPhonicsItem3}</li>
+              <li>{t.onlineLearning.visualPhonicsItem4}</li>
+            </ul>
+          </ComicCard>
+
+          <ComicCard className="comic-shadow-xl text-center">
+            <ComicTitle level={3} className="mb-4 text-[var(--comic-success)]">
+              {t.onlineLearning.speakingPracticeTitle}
+            </ComicTitle>
+            <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
+              {t.onlineLearning.speakingPracticeDesc}
+            </ComicText>
+            <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6">
+              <li>{t.onlineLearning.speakingPracticeItem1}</li>
+              <li>{t.onlineLearning.speakingPracticeItem2}</li>
+              <li>{t.onlineLearning.speakingPracticeItem3}</li>
+              <li>{t.onlineLearning.speakingPracticeItem4}</li>
+            </ul>
+          </ComicCard>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 // Situational English Game Section
 function _SituationalGameSection() {
@@ -1125,6 +1191,7 @@ export default function Home() {
       <MissionSection />
       <TechInnovationsSection />
       <SubscriptionPlansSection />
+      <AIFeaturesSection />
       <div className="flex-grow" />
       <Footer />
     </div>

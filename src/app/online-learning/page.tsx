@@ -2,6 +2,7 @@
 
 import ComicButton from "../../components/ComicButton";
 import ComicCard from "../../components/ComicCard";
+import ComicFeatureChecklist from "../../components/ComicFeatureChecklist";
 import ComicTitle from "../../components/ComicTitle";
 import ComicText from "../../components/ComicText";
 import Footer from "../../components/Footer";
@@ -24,7 +25,7 @@ function HeroSection() {
         <ComicTitle level={1} className="comic-text-white mb-8 comic-wiggle">
           {t.onlineLearning.heroTitle}
         </ComicTitle>
-        <ComicText size="xl" className="comic-text-white mb-12 font-bold max-w-3xl mx-auto">
+        <ComicText size="xl" className="comic-text-white mb-12 font-bold max-w-3xl mx-auto whitespace-pre-line">
           {t.onlineLearning.heroDesc}
         </ComicText>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -43,140 +44,121 @@ function HeroSection() {
   );
 }
 
-// Courses Section
-function CoursesSection() {
-  const { t } = useI18n();
-  
-  return (
-    <section className="max-w-6xl mx-auto py-24 px-4">
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-        <ComicCard className="comic-shadow-xl text-center flex flex-col">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-success)]">
-            {t.onlineLearning.beginnerTitle}
-          </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-            {t.onlineLearning.beginnerDesc}
-          </ComicText>
-          <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6 flex-grow">
-            <li>{t.onlineLearning.beginnerItem1}</li>
-            <li>{t.onlineLearning.beginnerItem2}</li>
-            <li>{t.onlineLearning.beginnerItem3}</li>
-            <li>{t.onlineLearning.beginnerItem4}</li>
-          </ul>
-          <a href="#subscription-plans">
-            <ComicButton variant="success" size="sm">
-              {t.onlineLearning.learnMore}
-            </ComicButton>
-          </a>
-        </ComicCard>
-        
-        <ComicCard className="comic-shadow-xl text-center flex flex-col">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-warning)]">
-            {t.onlineLearning.intermediateTitle}
-          </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-            {t.onlineLearning.intermediateDesc}
-          </ComicText>
-          <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6 flex-grow">
-            <li>{t.onlineLearning.intermediateItem1}</li>
-            <li>{t.onlineLearning.intermediateItem2}</li>
-            <li>{t.onlineLearning.intermediateItem3}</li>
-            <li>{t.onlineLearning.intermediateItem4}</li>
-          </ul>
-          <a href="#subscription-plans">
-            <ComicButton variant="warning" size="sm">
-              {t.onlineLearning.learnMore}
-            </ComicButton>
-          </a>
-        </ComicCard>
-        
-        <ComicCard className="comic-shadow-xl text-center flex flex-col">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-danger)]">
-            {t.onlineLearning.advancedTitle}
-          </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-            {t.onlineLearning.advancedDesc}
-          </ComicText>
-          <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6 flex-grow">
-            <li>{t.onlineLearning.advancedItem1}</li>
-            <li>{t.onlineLearning.advancedItem2}</li>
-            <li>{t.onlineLearning.advancedItem3}</li>
-          </ul>
-          <a href="#subscription-plans">
-            <ComicButton variant="danger" size="sm">
-              {t.onlineLearning.learnMore}
-            </ComicButton>
-          </a>
-        </ComicCard>
-      </div>
-    </section>
-  );
-}
+const SESSION_TYPE_ENTRIES = [
+  {
+    titleKey: "sessionType1Title",
+    focusKey: "sessionType1Focus",
+    bodyKey: "sessionType1Body",
+    accentClass: "text-[var(--comic-primary)]",
+  },
+  {
+    titleKey: "sessionType2Title",
+    focusKey: "sessionType2Focus",
+    bodyKey: "sessionType2Body",
+    accentClass: "text-[var(--comic-secondary)]",
+  },
+  {
+    titleKey: "sessionType3Title",
+    focusKey: "sessionType3Focus",
+    bodyKey: "sessionType3Body",
+    accentClass: "text-[var(--comic-warning)]",
+  },
+  {
+    titleKey: "sessionType4Title",
+    focusKey: "sessionType4Focus",
+    bodyKey: "sessionType4Body",
+    accentClass: "text-[var(--comic-success)]",
+  },
+  {
+    titleKey: "sessionType5Title",
+    focusKey: "sessionType5Focus",
+    bodyKey: "sessionType5Body",
+    accentClass: "text-[var(--comic-danger)]",
+  },
+  {
+    titleKey: "sessionType6Title",
+    focusKey: "sessionType6Focus",
+    bodyKey: "sessionType6Body",
+    accentClass: "text-[var(--comic-purple)]",
+  },
+] as const;
 
-// AI Features Section
-function AIFeaturesSection() {
+// Session Types (formerly AI Features on this route)
+function SessionTypesSection() {
   const { t } = useI18n();
-  
+  const ol = t.onlineLearning;
+
   return (
     <section className="comic-bg-primary py-24 px-4 comic-pattern-dots">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
           <ComicTitle level={2} className="comic-text-white mb-8">
-            {t.onlineLearning.aiFeaturesTitle}
+            {ol.sessionTypesTitle}
           </ComicTitle>
           <ComicText size="lg" className="comic-text-white font-bold max-w-4xl mx-auto">
-            {t.onlineLearning.aiFeaturesDesc}
+            {ol.sessionTypesDesc}
           </ComicText>
         </div>
-      
+
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          <ComicCard className="comic-shadow-xl text-center">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-primary)]">
-              {t.onlineLearning.aiVoiceTitle}
-            </ComicTitle>
-            <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-              {t.onlineLearning.aiVoiceDesc}
-            </ComicText>
-            <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6">
-              <li>{t.onlineLearning.aiVoiceItem1}</li>
-              <li>{t.onlineLearning.aiVoiceItem2}</li>
-              <li>{t.onlineLearning.aiVoiceItem3}</li>
-              <li>{t.onlineLearning.aiVoiceItem5}</li>
-            </ul>
-          </ComicCard>
-          
-          <ComicCard className="comic-shadow-xl text-center">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-secondary)]">
-              {t.onlineLearning.visualPhonicsTitle}
-            </ComicTitle>
-            <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-              {t.onlineLearning.visualPhonicsDesc}
-            </ComicText>
-            <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6">
-              <li>{t.onlineLearning.visualPhonicsItem1}</li>
-              <li>{t.onlineLearning.visualPhonicsItem2}</li>
-              <li>{t.onlineLearning.visualPhonicsItem3}</li>
-              <li>{t.onlineLearning.visualPhonicsItem4}</li>
-            </ul>
-          </ComicCard>
-          
-          <ComicCard className="comic-shadow-xl text-center">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-success)]">
-              {t.onlineLearning.speakingPracticeTitle}
-            </ComicTitle>
-            <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-              {t.onlineLearning.speakingPracticeDesc}
-            </ComicText>
-            <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6">
-              <li>{t.onlineLearning.speakingPracticeItem1}</li>
-              <li>{t.onlineLearning.speakingPracticeItem2}</li>
-              <li>{t.onlineLearning.speakingPracticeItem3}</li>
-              <li>{t.onlineLearning.speakingPracticeItem4}</li>
-            </ul>
-          </ComicCard>
+          {SESSION_TYPE_ENTRIES.map(({ titleKey, focusKey, bodyKey, accentClass }) => (
+            <ComicCard
+              key={titleKey}
+              className="comic-shadow-xl text-center flex flex-col h-full min-h-0 overflow-hidden min-w-0"
+            >
+              <ComicTitle
+                level={4}
+                className={`mb-3 w-full min-w-0 max-w-full px-1 leading-tight tracking-tight break-words [overflow-wrap:anywhere] hyphens-auto ${accentClass}`}
+              >
+                {ol[titleKey]}
+              </ComicTitle>
+              <ComicText
+                weight="bold"
+                size="sm"
+                className={`mb-4 w-full min-w-0 max-w-full px-1 break-words [overflow-wrap:anywhere] leading-snug hyphens-auto ${accentClass}`}
+              >
+                {ol[focusKey]}
+              </ComicText>
+              <ComicText
+                weight="normal"
+                size="sm"
+                className="text-[var(--comic-dark)] text-left leading-relaxed flex-grow min-w-0 px-1 break-words [overflow-wrap:anywhere]"
+              >
+                {ol[bodyKey]}
+              </ComicText>
+            </ComicCard>
+          ))}
         </div>
       </div>
     </section>
+  );
+}
+
+function SubscriptionPlanPriceFooter({
+  text,
+  className,
+}: {
+  text: string;
+  /** Text color utilities (tier accent). */
+  className: string;
+}) {
+  const idx = text.indexOf(":");
+  if (idx === -1) {
+    return (
+      <div className={`text-center comic-text font-bold text-2xl ${className}`}>
+        {text}
+      </div>
+    );
+  }
+  const headline = text.slice(0, idx + 1).trim();
+  const body = text.slice(idx + 1).trim();
+  return (
+    <div className={`text-center comic-text ${className}`}>
+      <div className="font-bold text-2xl leading-tight">{headline}</div>
+      {body ? (
+        <div className="font-normal text-xl leading-snug mt-1">{body}</div>
+      ) : null}
+    </div>
   );
 }
 
@@ -190,64 +172,82 @@ function SubscriptionPlansSection() {
         <ComicTitle level={2} className="mb-8 text-[var(--comic-primary)]">
           {t.onlineLearning.subscriptionTitle}
         </ComicTitle>
-        <ComicText size="lg" className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto">
+        <ComicText
+          size="lg"
+          className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto whitespace-pre-line"
+        >
           {t.onlineLearning.subscriptionDesc}
         </ComicText>
       </div>
       
       <div className="grid md:grid-cols-3 gap-8 mb-16">
         <ComicCard className="comic-shadow-lg text-center flex flex-col">
-          <ComicTitle level={4} className="mb-4 text-[var(--comic-primary)]">
+          <ComicTitle level={4} className="mb-7 pb-1 text-[var(--comic-primary)]">
             {t.onlineLearning.freeTitle}
           </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-            {t.onlineLearning.freeDesc}
-          </ComicText>
-          <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6 flex-grow">
-            <li>{t.onlineLearning.freeItem1}</li>
-            <li>{t.onlineLearning.freeItem2}</li>
-            <li>{t.onlineLearning.freeItem4}</li>
-          </ul>
-          <ComicButton variant="secondary" size="sm">
-            {t.onlineLearning.comingSoon}
-          </ComicButton>
+          <ComicFeatureChecklist
+            splitLabelAfterColon
+            items={[
+              t.onlineLearning.freeItem1,
+              t.onlineLearning.freeItem2,
+              t.onlineLearning.freeItem3,
+            ]}
+          />
+          <div className="mt-auto flex w-full flex-col items-center gap-3">
+            <SubscriptionPlanPriceFooter
+              text={t.onlineLearning.freeItem4}
+              className="text-[var(--comic-dark)]"
+            />
+            <ComicButton variant="secondary" size="sm">
+              {t.onlineLearning.freeButton}
+            </ComicButton>
+          </div>
         </ComicCard>
-        
+
         <ComicCard className="comic-shadow-lg text-center border-4 border-[var(--comic-warning)] flex flex-col">
-          <ComicTitle level={4} className="mb-4 text-[var(--comic-warning)]">
+          <ComicTitle level={4} className="mb-7 pb-1 text-[var(--comic-warning)]">
             {t.onlineLearning.premiumTitle}
           </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-            {t.onlineLearning.premiumDesc}
-          </ComicText>
-          <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6 flex-grow">
-            <li>{t.onlineLearning.premiumItem1}</li>
-            <li>{t.onlineLearning.premiumItem2}</li>
-            <li>{t.onlineLearning.premiumItem3}</li>
-            <li>{t.onlineLearning.premiumItem4}</li>
-            <li>{t.onlineLearning.premiumItem5}</li>
-          </ul>
-          <ComicButton variant="warning" size="sm">
-            {t.onlineLearning.comingSoon}
-          </ComicButton>
+          <ComicFeatureChecklist
+            splitLabelAfterColon
+            items={[
+              t.onlineLearning.premiumItem1,
+              t.onlineLearning.premiumItem2,
+              t.onlineLearning.premiumItem3,
+            ]}
+          />
+          <div className="mt-auto flex w-full flex-col items-center gap-3">
+            <SubscriptionPlanPriceFooter
+              text={t.onlineLearning.premiumItem4}
+              className="text-[var(--comic-warning)]"
+            />
+            <ComicButton variant="warning" size="sm">
+              {t.onlineLearning.premiumButton}
+            </ComicButton>
+          </div>
         </ComicCard>
-        
+
         <ComicCard className="comic-shadow-lg text-center flex flex-col">
-          <ComicTitle level={4} className="mb-4 text-[var(--comic-danger)]">
+          <ComicTitle level={4} className="mb-7 pb-1 text-[var(--comic-danger)]">
             {t.onlineLearning.proTitle}
           </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-            {t.onlineLearning.proDesc}
-          </ComicText>
-          <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6 flex-grow">
-            <li>{t.onlineLearning.proItem1}</li>
-            <li>{t.onlineLearning.proItem2}</li>
-            <li>{t.onlineLearning.proItem3}</li>
-            <li>{t.onlineLearning.proItem4}</li>
-          </ul>
-          <ComicButton variant="danger" size="sm">
-            {t.onlineLearning.comingSoon}
-          </ComicButton>
+          <ComicFeatureChecklist
+            splitLabelAfterColon
+            items={[
+              t.onlineLearning.proItem1,
+              t.onlineLearning.proItem2,
+              t.onlineLearning.proItem3,
+            ]}
+          />
+          <div className="mt-auto flex w-full flex-col items-center gap-3">
+            <SubscriptionPlanPriceFooter
+              text={t.onlineLearning.proItem4}
+              className="text-[var(--comic-danger)]"
+            />
+            <ComicButton variant="danger" size="sm">
+              {t.onlineLearning.proButton}
+            </ComicButton>
+          </div>
         </ComicCard>
       </div>
     </section>
@@ -258,9 +258,8 @@ export default function OnlineLearning() {
   return (
     <div className="flex flex-col min-h-screen bg-[var(--comic-light)]">
       <HeroSection />
-      <CoursesSection />
-      <AIFeaturesSection />
       <SubscriptionPlansSection />
+      <SessionTypesSection />
       <div className="flex-grow" />
       <Footer />
     </div>
