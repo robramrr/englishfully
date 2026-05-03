@@ -37,8 +37,12 @@ export const HOW_IT_WORKS_SLIDE_URLS = [
 export const ONLINE_SUBSCRIPTION_APP_MEMBER_URL =
   "https://res.cloudinary.com/dkbf7tvcx/image/upload/c_crop,g_north,h_0.92/v1777821289/englishfully/service/app-member-2.png";
 
-/** Lite Member subscription card. */
+/** Lite Member subscription card & online-learning hero slide (pricing / carousel). */
 export const ONLINE_SUBSCRIPTION_ONE_ON_ONE_URL =
+  "https://res.cloudinary.com/dkbf7tvcx/image/upload/c_crop,g_north,h_0.92/v1777821288/englishfully/service/1-on-1-online.png";
+
+/** Homepage-only visual for the 1-on-1 online coaching promo block (not used on /online-learning). */
+export const HOME_ONLINE_ONE_ON_ONE_COACHING_URL =
   "https://res.cloudinary.com/dkbf7tvcx/image/upload/v1777851566/englishfully/service/english-learning-1-on-1.png";
 
 /** Pro Member subscription card. */

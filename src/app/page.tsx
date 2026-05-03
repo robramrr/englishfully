@@ -12,7 +12,7 @@ import { ENGLISHFEED_DEMO_URL, ENGLISHFEED_PROMO_VIMEO_EMBED_SRC } from "../cons
 import ComicFeatureChecklist from "../components/ComicFeatureChecklist";
 import {
   HERO_BACKGROUND_URL,
-  ONLINE_SUBSCRIPTION_ONE_ON_ONE_URL,
+  HOME_ONLINE_ONE_ON_ONE_COACHING_URL,
   ONSITE_ONE_ON_ONE_PRACTICE_URL,
 } from "../constants/images";
 import { getHomepageAiPoweredFeatureBlocks } from "../data/englishFeedInnovativeFeatures";
@@ -256,7 +256,7 @@ function OneOnOneSupportSection() {
         {ol.heroDesc}
       </ComicText>
       <OnsitePracticePhotoFrameHome
-        src={ONLINE_SUBSCRIPTION_ONE_ON_ONE_URL}
+        src={HOME_ONLINE_ONE_ON_ONE_COACHING_URL}
         alt={String(ol.subscriptionLitePhotoAlt)}
       />
       <ComicFeatureChecklist
