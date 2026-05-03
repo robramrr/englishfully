@@ -322,7 +322,7 @@ function PricingPracticePhotoFrame({ src, alt }: { src: string; alt: string }) {
 function PricingPackagesSection() {
   const { t } = useI18n();
   return (
-    <section className="w-full comic-bg-secondary py-24 px-4 comic-pattern-dots">
+    <section id="in-person-practice-options" className="w-full comic-bg-secondary py-24 px-4 comic-pattern-dots">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
           <ComicTitle level={2} className="mb-8 text-[var(--comic-primary)]">

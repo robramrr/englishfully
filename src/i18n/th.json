@@ -57,7 +57,15 @@
     "aiPoweredInteractItem2": "คำจำกัดความและตัวอย่าง",
     "aiPoweredInteractItem3": "บันทึกคำ สร้างคลังศัพท์",
     "aiPoweredInteractItem4": "คำแปลไทย",
-    "aiPoweredInteractItem5": "แฟลชการ์ด AI แบบจับคู่"
+    "aiPoweredInteractItem5": "แฟลชการ์ด AI แบบจับคู่",
+    "oneOnOneSupportTitle": "การสนับสนุนแบบหนึ่งต่อหนึ่ง",
+    "oneOnOneSupportTagline": "โค้ชออนไลน์หรือฝึกที่สตูดิโอ—เลือกให้เหมาะกับคุณ",
+    "oneOnOneSupportOnlineCoachingTitle": "โค้ชออนไลน์",
+    "oneOnOneSupportOnsiteCoachingTitle": "โค้ชในสถานที่",
+    "oneOnOneSupportLitePlanLabel": "แผนสมัครสมาชิก: ไลต์เมมเบอร์",
+    "oneOnOneSupportOnsiteIntro": "นำการเรียนรู้ไปใช้จริง พัฒนาการสนทนา การออกเสียง และความมั่นใจ",
+    "oneOnOneSupportSessionsTypeLabel": "ประเภทเซสชัน: ฝึก 1 ต่อ 1",
+    "oneOnOneSupportExploreSessionsButton": "ดูตัวเลือกเซสชัน"
   },
   "mission": {
     "title": "พันธกิจของเรา",

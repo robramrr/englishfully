@@ -60,6 +60,14 @@ export interface Translations {
     aiPoweredInteractItem3: string;
     aiPoweredInteractItem4: string;
     aiPoweredInteractItem5: string;
+    oneOnOneSupportTitle: string;
+    oneOnOneSupportTagline: string;
+    oneOnOneSupportOnlineCoachingTitle: string;
+    oneOnOneSupportOnsiteCoachingTitle: string;
+    oneOnOneSupportLitePlanLabel: string;
+    oneOnOneSupportOnsiteIntro: string;
+    oneOnOneSupportSessionsTypeLabel: string;
+    oneOnOneSupportExploreSessionsButton: string;
   };
   mission: {
     title: string;

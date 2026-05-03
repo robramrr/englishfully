@@ -57,7 +57,15 @@
     "aiPoweredInteractItem2": "Definitions & examples",
     "aiPoweredInteractItem3": "Save words, build vocab",
     "aiPoweredInteractItem4": "Thai translations",
-    "aiPoweredInteractItem5": "AI matching flashcards"
+    "aiPoweredInteractItem5": "AI matching flashcards",
+    "oneOnOneSupportTitle": "1-on-1 Support",
+    "oneOnOneSupportTagline": "Online coaching or onsite practice—pick what fits you.",
+    "oneOnOneSupportOnlineCoachingTitle": "Online Coaching",
+    "oneOnOneSupportOnsiteCoachingTitle": "Onsite Coaching",
+    "oneOnOneSupportLitePlanLabel": "Subscription Plan: Lite Member",
+    "oneOnOneSupportOnsiteIntro": "Put your learning into practice. Build conversation, pronunciation, and confidence.",
+    "oneOnOneSupportSessionsTypeLabel": "Sessions Type: 1-on-1 Practice",
+    "oneOnOneSupportExploreSessionsButton": "Explore Sessions"
   },
   "mission": {
     "title": "Our Mission",

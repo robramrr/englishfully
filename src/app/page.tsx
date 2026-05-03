@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import ComicButton from "../components/ComicButton";
 import ComicCard from "../components/ComicCard";
@@ -8,7 +9,12 @@ import ComicText from "../components/ComicText";
 import Footer from "../components/Footer";
 import BlogNewsletterSection from "../components/BlogNewsletterSection";
 import { ENGLISHFEED_DEMO_URL, ENGLISHFEED_PROMO_VIMEO_EMBED_SRC } from "../constants/englishfeed";
-import { HERO_BACKGROUND_URL } from "../constants/images";
+import ComicFeatureChecklist from "../components/ComicFeatureChecklist";
+import {
+  HERO_BACKGROUND_URL,
+  ONLINE_SUBSCRIPTION_ONE_ON_ONE_URL,
+  ONSITE_ONE_ON_ONE_PRACTICE_URL,
+} from "../constants/images";
 import { getHomepageAiPoweredFeatureBlocks } from "../data/englishFeedInnovativeFeatures";
 import { useI18n } from "../i18n/I18nProvider";
 
@@ -181,6 +187,163 @@ function AIFeaturesSection() {
               </ul>
             </ComicCard>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Same framing as in-person-learning pricing practice photos. */
+function OnsitePracticePhotoFrameHome({ src, alt }: { src: string; alt: string }) {
+  return (
+    <figure className="mx-auto mb-6 w-full rounded-xl bg-[#e8c9a8] p-3 sm:p-3.5 comic-border-thick comic-shadow-xl">
+      <div className="overflow-hidden rounded-lg border-4 border-[var(--comic-black)] shadow-[inset_0_2px_0_rgba(255,255,255,0.5),inset_0_-3px_0_rgba(0,0,0,0.18)]">
+        <img
+          src={src}
+          alt={alt}
+          width={1200}
+          height={800}
+          className="block aspect-[3/2] w-full object-cover"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    </figure>
+  );
+}
+
+function OneOnOneSupportSection() {
+  const { t } = useI18n();
+  const ol = t.onlineLearning;
+  const ip = t.inPersonLearning;
+  const [slide, setSlide] = useState(0);
+
+  const onsiteChecklistItems = [
+    ip.privateItem1,
+    ip.privateItem2,
+    ip.privateItem3,
+    ip.privateItem4,
+    ip.privateItem5,
+    ip.privateItem6,
+  ] as const;
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let id: ReturnType<typeof setInterval> | undefined;
+    const arm = () => {
+      if (id) clearInterval(id);
+      if (!mq.matches && !reduce.matches) {
+        id = setInterval(() => setSlide((s) => (s + 1) % 2), 5000);
+      }
+    };
+    arm();
+    mq.addEventListener("change", arm);
+    reduce.addEventListener("change", arm);
+    return () => {
+      mq.removeEventListener("change", arm);
+      reduce.removeEventListener("change", arm);
+      if (id) clearInterval(id);
+    };
+  }, []);
+
+  const liteCard = (
+    <ComicCard className="comic-shadow-lg flex h-full min-h-0 flex-col text-center !bg-[linear-gradient(135deg,var(--comic-yellow)_0%,#f39c12_100%)]">
+      <ComicTitle level={4} className="mb-2 pb-1 text-[var(--comic-primary)]">
+        {t.home.oneOnOneSupportOnlineCoachingTitle}
+      </ComicTitle>
+      <ComicText size="md" weight="bold" className="mb-4 text-[var(--comic-dark)]">
+        {ol.heroDesc}
+      </ComicText>
+      <OnsitePracticePhotoFrameHome
+        src={ONLINE_SUBSCRIPTION_ONE_ON_ONE_URL}
+        alt={String(ol.subscriptionLitePhotoAlt)}
+      />
+      <ComicFeatureChecklist
+        splitLabelAfterColon
+        items={[ol.premiumItem1, ol.premiumItem2, ol.premiumItem3]}
+      />
+      <div className="mt-auto flex w-full flex-col items-center gap-3">
+        <div className="comic-text text-center text-xl font-bold leading-tight text-[var(--comic-dark)]">
+          {t.home.oneOnOneSupportLitePlanLabel}
+        </div>
+        <ComicButton variant="warning" size="sm" className="w-full sm:w-auto" href="/online-learning#subscription-plans">
+          {ol.explorePlans}
+        </ComicButton>
+      </div>
+    </ComicCard>
+  );
+
+  const onsiteCard = (
+    <ComicCard className="comic-shadow-lg flex h-full min-h-0 flex-col text-center !bg-[linear-gradient(135deg,var(--comic-yellow)_0%,#f39c12_100%)]">
+      <ComicTitle level={4} className="mb-2 pb-1 text-[var(--comic-primary)]">
+        {t.home.oneOnOneSupportOnsiteCoachingTitle}
+      </ComicTitle>
+      <ComicText size="md" weight="bold" className="mb-4 text-[var(--comic-dark)]">
+        {t.home.oneOnOneSupportOnsiteIntro}
+      </ComicText>
+      <OnsitePracticePhotoFrameHome src={ONSITE_ONE_ON_ONE_PRACTICE_URL} alt={String(ip.privatePhotoAlt)} />
+      <ComicFeatureChecklist items={[...onsiteChecklistItems]} />
+      <div className="mt-auto flex w-full flex-col items-center gap-3">
+        <div className="comic-text text-center text-xl font-bold leading-tight text-[var(--comic-dark)]">
+          {t.home.oneOnOneSupportSessionsTypeLabel}
+        </div>
+        <ComicButton
+          variant="warning"
+          size="sm"
+          className="w-full sm:w-auto"
+          href="/in-person-learning#in-person-practice-options"
+        >
+          {t.home.oneOnOneSupportExploreSessionsButton}
+        </ComicButton>
+      </div>
+    </ComicCard>
+  );
+
+  return (
+    <section id="one-on-one-support" className="comic-bg-purple py-24 px-4 comic-pattern-zigzag">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-12 text-center">
+          <ComicTitle level={2} className="comic-text-white mb-8">
+            <span className="mx-auto flex w-max max-w-full flex-col items-center px-3 text-center">
+              <span className="block">{t.home.oneOnOneSupportTitle}</span>
+              <span
+                className="mt-3 block max-w-full bg-[linear-gradient(135deg,var(--comic-warning)_0%,#ff9500_100%)] bg-clip-text text-center text-base leading-snug tracking-normal text-transparent [-webkit-text-fill-color:transparent] [text-shadow:none] sm:mt-3 sm:text-lg md:mt-4 md:text-xl lg:text-2xl lg:leading-tight"
+                style={{ WebkitBackgroundClip: "text", backgroundClip: "text" }}
+              >
+                {t.home.oneOnOneSupportTagline}
+              </span>
+            </span>
+          </ComicTitle>
+        </div>
+
+        <div className="hidden gap-8 md:grid md:grid-cols-2">{liteCard}{onsiteCard}</div>
+
+        <div className="md:hidden">
+          <div className="relative overflow-hidden rounded-2xl border-4 border-[var(--comic-black)] bg-[var(--comic-light)] comic-shadow-xl">
+            <div
+              className="flex w-[200%] transition-transform duration-700 ease-in-out motion-reduce:transition-none"
+              style={{ transform: `translateX(-${slide * 50}%)` }}
+            >
+              <div className="w-1/2 shrink-0 p-4">{liteCard}</div>
+              <div className="w-1/2 shrink-0 p-4">{onsiteCard}</div>
+            </div>
+          </div>
+          <div className="mt-4 flex justify-center gap-3" role="tablist" aria-label="Compare support options">
+            {[0, 1].map((i) => (
+              <button
+                key={i}
+                type="button"
+                role="tab"
+                aria-selected={slide === i}
+                className={`h-3.5 w-3.5 rounded-full border-2 border-[var(--comic-black)] transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--comic-yellow)] ${
+                  slide === i ? "scale-110 bg-[var(--comic-yellow)] comic-shadow-sm" : "bg-[var(--comic-white)]"
+                }`}
+                onClick={() => setSlide(i)}
+                aria-label={i === 0 ? "Online Lite member" : "Onsite 1-on-1 practice"}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -1073,6 +1236,7 @@ export default function Home() {
       <HomeSection />
       <MissionSection />
       <AIFeaturesSection />
+      <OneOnOneSupportSection />
       <BlogNewsletterSection />
       <div className="flex-grow" />
       <Footer />
