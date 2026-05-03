@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import ComicButton from "../../components/ComicButton";
 import ComicCard from "../../components/ComicCard";
@@ -158,8 +157,16 @@ function HeroSection({
       <div className="absolute bottom-1/3 right-1/3 w-14 h-14 bg-[var(--comic-yellow)] rounded-full comic-border-thick comic-shadow-lg comic-bounce" style={{animationDelay: '2s'}}></div>
       
       <div className="relative z-0">
-        <ComicTitle level={1} className="comic-text-white mb-8 comic-wiggle whitespace-pre-line">
-          {t.inPersonLearning.heroTitle}
+        <ComicTitle level={1} className="comic-text-white mb-8 comic-wiggle">
+          <span className="mx-auto flex w-max max-w-full flex-col items-center px-3 text-center">
+            <span className="block">{t.inPersonLearning.heroTitle}</span>
+            <span
+              className="mt-3 block max-w-full bg-[linear-gradient(135deg,var(--comic-warning)_0%,#ff9500_100%)] bg-clip-text text-base leading-snug tracking-normal text-transparent [-webkit-text-fill-color:transparent] [text-shadow:none] sm:mt-3 sm:text-lg md:mt-4 md:text-xl lg:text-2xl lg:leading-tight lg:whitespace-nowrap"
+              style={{ WebkitBackgroundClip: "text", backgroundClip: "text" }}
+            >
+              {t.inPersonLearning.heroTitleTagline}
+            </span>
+          </span>
         </ComicTitle>
         <ComicText size="xl" className="comic-text-white mb-10 font-bold max-w-3xl mx-auto">
           {t.inPersonLearning.heroDesc}
@@ -194,6 +201,12 @@ function HowWeAreDifferentSection({
   setSlideIndex: Dispatch<SetStateAction<number>>;
 }) {
   const { t } = useI18n();
+
+  const howDifferentCardAlts = [
+    t.inPersonLearning.howItWorksSlideAlt1,
+    t.inPersonLearning.howItWorksSlideAlt2,
+    t.inPersonLearning.howItWorksSlideAlt3,
+  ] as const;
 
   const cardConfig = (
     [
@@ -243,7 +256,13 @@ function HowWeAreDifferentSection({
                 : "hover:[&_.comic-card]:-translate-y-0.5"
             }`}
           >
-            <ComicCard className="flex h-full min-h-[12rem] flex-col comic-shadow-xl transition-shadow">
+            <ComicCard
+              className={`flex h-full min-h-[12rem] flex-col comic-shadow-xl transition-shadow ${
+                slideIdx === 1
+                  ? "!bg-[linear-gradient(135deg,var(--comic-yellow)_0%,#f39c12_100%)]"
+                  : ""
+              }`}
+            >
               <ComicTitle
                 level={3}
                 className={`text-[var(--comic-primary)] text-center leading-tight ${subtitleKey ? "mb-2" : "mb-4"}`}
@@ -259,7 +278,18 @@ function HowWeAreDifferentSection({
                   {t.inPersonLearning[subtitleKey]}
                 </ComicText>
               ) : null}
-              <p className="comic-text text-[var(--comic-dark)] flex-grow text-center text-base font-semibold leading-relaxed sm:text-lg">
+              <figure className="mb-4 w-full shrink-0 overflow-hidden rounded-xl border-4 border-[var(--comic-black)] bg-[var(--comic-white)] shadow-[inset_0_2px_0_rgba(255,255,255,0.4),inset_0_-2px_0_rgba(0,0,0,0.12)]">
+                <img
+                  src={HOW_IT_WORKS_SLIDE_URLS[slideIdx]}
+                  alt={String(howDifferentCardAlts[slideIdx])}
+                  width={900}
+                  height={900}
+                  className="aspect-[4/3] w-full object-cover object-center"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+              <p className="comic-text text-[var(--comic-dark)] flex-grow text-center text-base font-semibold leading-relaxed sm:text-lg pb-3 sm:pb-4">
                 {t.inPersonLearning[bodyKey]}
               </p>
             </ComicCard>
@@ -410,53 +440,23 @@ function BookingSystemSection() {
           <ComicText size="lg" className="comic-text-white font-bold max-w-4xl mx-auto">
             {t.inPersonLearning.bookDesc}
           </ComicText>
+          <div className="mt-8 flex justify-center px-4">
+            <ComicButton
+              variant="warning"
+              size="lg"
+              className="w-full max-w-md"
+              href="https://calendly.com/hello-englishfully/1-hour-in-person-meeting"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t.inPersonLearning.viewInPersonAvailability}
+            </ComicButton>
+          </div>
         </div>
         
-        <div className="grid md:grid-cols-2 gap-12">
+        <div className="mx-auto max-w-xl">
           <ComicCard className="comic-shadow-xl">
             <ComicTitle level={3} className="mb-6 text-[var(--comic-primary)]">
-              {t.inPersonLearning.timeSlotsTitle}
-            </ComicTitle>
-            <div className="space-y-4 mb-8">
-              <div className="flex justify-between items-center p-4 comic-bg-light rounded-lg comic-border">
-                <div>
-                  <ComicText className="text-[var(--comic-dark)] font-bold">{t.inPersonLearning.mondayFriday}</ComicText>
-                  <ComicText className="text-[var(--comic-dark)]">{t.inPersonLearning.morningEvening}</ComicText>
-                </div>
-                <ComicText className="text-[var(--comic-primary)] font-bold">{t.inPersonLearning.time1}</ComicText>
-              </div>
-              <div className="flex justify-between items-center p-4 comic-bg-light rounded-lg comic-border">
-                <div>
-                  <ComicText className="text-[var(--comic-dark)] font-bold">{t.inPersonLearning.saturday}</ComicText>
-                  <ComicText className="text-[var(--comic-dark)]">{t.inPersonLearning.weekendSessions}</ComicText>
-                </div>
-                <ComicText className="text-[var(--comic-primary)] font-bold">{t.inPersonLearning.time2}</ComicText>
-              </div>
-              <div className="flex justify-between items-center p-4 comic-bg-light rounded-lg comic-border">
-                <div>
-                  <ComicText className="text-[var(--comic-dark)] font-bold">{t.inPersonLearning.sunday}</ComicText>
-                  <ComicText className="text-[var(--comic-dark)]">{t.inPersonLearning.limitedSessions}</ComicText>
-                </div>
-                <ComicText className="text-[var(--comic-primary)] font-bold">{t.inPersonLearning.time3}</ComicText>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <Link href="https://calendly.com/hello-englishfully/1-hour-in-person-meeting" target="_blank" rel="noopener noreferrer">
-                <ComicButton variant="warning" size="lg" className="w-full mb-6">
-                  {t.inPersonLearning.viewOnlineAvailability}
-                </ComicButton>
-              </Link>
-              <Link href="https://calendly.com/hello-englishfully/1-hour-in-person-meeting" target="_blank" rel="noopener noreferrer">
-                <ComicButton variant="secondary" size="lg" className="w-full">
-                  {t.inPersonLearning.viewInPersonAvailability}
-                </ComicButton>
-              </Link>
-            </div>
-          </ComicCard>
-          
-          <ComicCard className="comic-shadow-xl">
-            <ComicTitle level={3} className="mb-6 text-[var(--comic-secondary)]">
               {t.inPersonLearning.bookingFormTitle}
             </ComicTitle>
             <form onSubmit={handleSubmit} className="space-y-4">

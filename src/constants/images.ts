@@ -22,7 +22,7 @@ export const HOW_IT_WORKS_SLIDE_APP_URL =
   "https://res.cloudinary.com/dkbf7tvcx/image/upload/c_crop,g_north,h_0.92/v1777756763/englishfully/service/english-learning-app.png";
 
 export const HOW_IT_WORKS_SLIDE_ONE_ON_ONE_URL =
-  "https://res.cloudinary.com/dkbf7tvcx/image/upload/c_crop,g_north,h_0.92/v1777756763/englishfully/service/1-and-1-practice.png";
+  "https://res.cloudinary.com/dkbf7tvcx/image/upload/c_crop,g_north,h_0.92/v1777823232/englishfully/service/1-on-1-english-learning.png";
 
 export const HOW_IT_WORKS_SLIDE_GOAL_URL =
   "https://res.cloudinary.com/dkbf7tvcx/image/upload/c_crop,g_north,h_0.92/v1777756763/englishfully/service/english-learning-goal.png";
@@ -31,4 +31,23 @@ export const HOW_IT_WORKS_SLIDE_URLS = [
   HOW_IT_WORKS_SLIDE_APP_URL,
   HOW_IT_WORKS_SLIDE_ONE_ON_ONE_URL,
   HOW_IT_WORKS_SLIDE_GOAL_URL,
+] as const;
+
+/** Online-learning subscription tiers (pricing cards). */
+export const ONLINE_SUBSCRIPTION_APP_MEMBER_URL =
+  "https://res.cloudinary.com/dkbf7tvcx/image/upload/c_crop,g_north,h_0.92/v1777821289/englishfully/service/app-member-2.png";
+
+/** Lite Member subscription card. */
+export const ONLINE_SUBSCRIPTION_ONE_ON_ONE_URL =
+  "https://res.cloudinary.com/dkbf7tvcx/image/upload/c_crop,g_north,h_0.92/v1777821288/englishfully/service/1-on-1-online.png";
+
+/** Pro Member subscription card. */
+export const ONLINE_SUBSCRIPTION_PRO_URL =
+  "https://res.cloudinary.com/dkbf7tvcx/image/upload/c_crop,g_north,h_0.92/v1777822990/englishfully/service/1-on-1-english-online-success.png";
+
+/** Online-learning hero carousel (subscription tier imagery). */
+export const ONLINE_LEARNING_HERO_SLIDE_URLS = [
+  ONLINE_SUBSCRIPTION_APP_MEMBER_URL,
+  ONLINE_SUBSCRIPTION_ONE_ON_ONE_URL,
+  ONLINE_SUBSCRIPTION_PRO_URL,
 ] as const;

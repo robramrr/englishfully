@@ -129,6 +129,23 @@ body::before {
   background: var(--comic-white);
 }
 
+/* Home “Our mission” cards: grid min-width + wrap long Bungee titles (shadow was clipping past edges) */
+#mission .comic-card {
+  min-width: 0;
+}
+#mission .home-mission-card-title {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding-inline: 0.25rem;
+  line-height: 1.12;
+  letter-spacing: 0.02em;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: none;
+  font-size: clamp(1.2rem, 1.85vw + 0.62rem, 1.82rem);
+}
+
 .comic-title {
   @apply font-bungee font-bold;
   text-shadow: 3px 3px 0px var(--comic-black), 6px 6px 0px rgba(0,0,0,0.3);

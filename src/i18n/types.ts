@@ -46,6 +46,20 @@ export interface Translations {
     englishFeedTitle: string;
     englishFeedDesc: string;
     englishFeedButton: string;
+    aiPoweredSpeakTitle: string;
+    aiPoweredSpeakDesc: string;
+    aiPoweredSpeakItem1: string;
+    aiPoweredSpeakItem2: string;
+    aiPoweredSpeakItem3: string;
+    aiPoweredSpeakItem4: string;
+    aiPoweredSpeakItem5: string;
+    aiPoweredInteractTitle: string;
+    aiPoweredInteractDesc: string;
+    aiPoweredInteractItem1: string;
+    aiPoweredInteractItem2: string;
+    aiPoweredInteractItem3: string;
+    aiPoweredInteractItem4: string;
+    aiPoweredInteractItem5: string;
   };
   mission: {
     title: string;

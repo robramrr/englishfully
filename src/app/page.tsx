@@ -6,7 +6,10 @@ import ComicCard from "../components/ComicCard";
 import ComicTitle from "../components/ComicTitle";
 import ComicText from "../components/ComicText";
 import Footer from "../components/Footer";
+import BlogNewsletterSection from "../components/BlogNewsletterSection";
+import { ENGLISHFEED_DEMO_URL, ENGLISHFEED_PROMO_VIMEO_EMBED_SRC } from "../constants/englishfeed";
 import { HERO_BACKGROUND_URL } from "../constants/images";
+import { getHomepageAiPoweredFeatureBlocks } from "../data/englishFeedInnovativeFeatures";
 import { useI18n } from "../i18n/I18nProvider";
 
 // Home Section
@@ -70,30 +73,30 @@ function MissionSection() {
         </ComicText>
       </div>
       
-      <div className="grid md:grid-cols-3 gap-8">
-        <ComicCard variant="primary" animated className="comic-shadow-xl text-center">
-          <ComicTitle level={3} className="comic-text-white mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <ComicCard variant="primary" animated className="comic-shadow-xl text-center flex min-w-0 flex-col">
+          <ComicTitle level={3} className="comic-text-white mb-4 home-mission-card-title">
             {t.home.personalizedTitle}
           </ComicTitle>
-          <ComicText className="comic-text-white font-bold">
+          <ComicText className="comic-text-white min-w-0 font-bold break-words">
             {t.home.personalizedDesc}
           </ComicText>
         </ComicCard>
         
-        <ComicCard variant="secondary" animated className="comic-shadow-xl text-center">
-          <ComicTitle level={3} className="comic-text-white mb-4">
+        <ComicCard variant="secondary" animated className="comic-shadow-xl text-center flex min-w-0 flex-col">
+          <ComicTitle level={3} className="comic-text-white mb-4 home-mission-card-title">
             {t.home.gamifiedTitle}
           </ComicTitle>
-          <ComicText className="comic-text-white font-bold">
+          <ComicText className="comic-text-white min-w-0 font-bold break-words">
             {t.home.gamifiedDesc}
           </ComicText>
         </ComicCard>
         
-        <ComicCard variant="accent" animated className="comic-shadow-xl text-center">
-          <ComicTitle level={3} className="comic-text-white mb-4">
+        <ComicCard variant="accent" animated className="comic-shadow-xl text-center flex min-w-0 flex-col">
+          <ComicTitle level={3} className="comic-text-white mb-4 home-mission-card-title">
             {t.home.careerTitle}
           </ComicTitle>
-          <ComicText className="comic-text-white font-bold">
+          <ComicText className="comic-text-white min-w-0 font-bold break-words">
             {t.home.careerDesc}
           </ComicText>
         </ComicCard>
@@ -102,202 +105,82 @@ function MissionSection() {
   );
 }
 
-// Tech Innovations Section
-function TechInnovationsSection() {
-  const { t } = useI18n();
-  
-  return (
-    <section id="tech-innovations" className="comic-bg-accent py-24 px-4 comic-pattern-dots">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-16">
-          <ComicTitle level={2} className="comic-text-white mb-8">
-            {t.techInnovations.title}
-          </ComicTitle>
-          <ComicText size="lg" className="comic-text-white font-bold max-w-4xl mx-auto">
-            {t.techInnovations.description}
-          </ComicText>
-        </div>
-        
-        <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
-          <ComicCard className="comic-shadow-xl text-center">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-primary)]">
-              {t.home.aiVoiceCoachTitle}
-            </ComicTitle>
-            <ComicText className="text-[var(--comic-dark)] font-bold">
-              {t.home.aiVoiceCoachDesc}
-            </ComicText>
-          </ComicCard>
-          
-          <ComicCard className="comic-shadow-xl text-center">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-warning)]">
-              {t.home.smartAITitle}
-            </ComicTitle>
-            <ComicText className="text-[var(--comic-dark)] font-bold">
-              {t.home.smartAIDesc}
-            </ComicText>
-          </ComicCard>
-          
-          <ComicCard className="comic-shadow-xl text-center">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-danger)]">
-              {t.home.aiVideoTitle}
-            </ComicTitle>
-            <ComicText className="text-[var(--comic-dark)] font-bold">
-              {t.home.aiVideoDesc}
-            </ComicText>
-          </ComicCard>
+/** Homepage AI-Powered trio: video, merged voice/speaking (onlineLearning), merged subtitles/tap (englishFeed). */
+const HOME_AI_POWERED_FEATURE_CARD_TITLE_COLORS = [
+  "text-[var(--comic-primary)]",
+  "text-[var(--comic-secondary)]",
+  "text-[var(--comic-success)]",
+] as const;
 
-          <ComicCard className="comic-shadow-xl text-center flex flex-col">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-purple)]">
-              {t.home.englishFeedTitle}
-            </ComicTitle>
-            <ComicText className="text-[var(--comic-dark)] font-bold flex-grow mb-4">
-              {t.home.englishFeedDesc}
-            </ComicText>
-            <ComicButton variant="secondary" size="sm" href="/app">
-              {t.home.englishFeedButton}
-            </ComicButton>
-          </ComicCard>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Subscription Plans Section
-function SubscriptionPlansSection() {
-  const { t } = useI18n();
-  
-  return (
-    <section id="subscription-plans" className="max-w-6xl mx-auto py-24 px-4">
-      <div className="text-center mb-16">
-        <ComicTitle level={2} className="mb-8 text-[var(--comic-primary)]">
-          {t.subscriptions.title}
-        </ComicTitle>
-        <ComicText size="lg" className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto">
-          {t.subscriptions.subscriptionsDesc}
-        </ComicText>
-      </div>
-      
-      <div className="grid md:grid-cols-3 gap-8 mb-16">
-        <ComicCard className="comic-shadow-lg text-center flex flex-col">
-          <ComicTitle level={4} className="mb-4 text-[var(--comic-primary)]">
-            {t.subscriptions.freeTitle}
-          </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-            {t.subscriptions.freeDesc}
-          </ComicText>
-          <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6 flex-grow">
-            <li>{t.subscriptions.freeItem1}</li>
-            <li>{t.subscriptions.freeItem2}</li>
-            <li>{t.subscriptions.freeItem4}</li>
-          </ul>
-          <ComicButton variant="secondary" size="sm">
-            {t.subscriptions.comingSoon}
-          </ComicButton>
-        </ComicCard>
-        
-        <ComicCard className="comic-shadow-lg text-center border-4 border-[var(--comic-warning)] flex flex-col">
-          <ComicTitle level={4} className="mb-4 text-[var(--comic-warning)]">
-            {t.subscriptions.premiumTitle}
-          </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-            {t.subscriptions.premiumDesc}
-          </ComicText>
-          <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6 flex-grow">
-            <li>{t.subscriptions.premiumItem1}</li>
-            <li>{t.subscriptions.premiumItem2}</li>
-            <li>{t.subscriptions.premiumItem3}</li>
-            <li>{t.subscriptions.premiumItem4}</li>
-            <li>{t.subscriptions.premiumItem5}</li>
-          </ul>
-          <ComicButton variant="warning" size="sm">
-            {t.subscriptions.comingSoon}
-          </ComicButton>
-        </ComicCard>
-        
-        <ComicCard className="comic-shadow-lg text-center flex flex-col">
-          <ComicTitle level={4} className="mb-4 text-[var(--comic-danger)]">
-            {t.subscriptions.proTitle}
-          </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-            {t.subscriptions.proDesc}
-          </ComicText>
-          <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6 flex-grow">
-            <li>{t.subscriptions.proItem1}</li>
-            <li>{t.subscriptions.proItem2}</li>
-            <li>{t.subscriptions.proItem3}</li>
-            <li>{t.subscriptions.proItem4}</li>
-          </ul>
-          <ComicButton variant="danger" size="sm">
-            {t.subscriptions.comingSoon}
-          </ComicButton>
-        </ComicCard>
-      </div>
-    </section>
-  );
-}
-
-// AI Features Section (same layout as Online Learning — uses onlineLearning strings)
 function AIFeaturesSection() {
   const { t } = useI18n();
+  const highlightBlocks = getHomepageAiPoweredFeatureBlocks(t.englishFeed, t.home);
 
   return (
-    <section className="comic-bg-primary py-24 px-4 comic-pattern-dots">
+    <section id="edtech-innovations" className="comic-bg-accent py-24 px-4 comic-pattern-dots">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-16">
+        <div className="mb-12 text-center">
           <ComicTitle level={2} className="comic-text-white mb-8">
-            {t.onlineLearning.aiFeaturesTitle}
+            <span className="mx-auto flex w-max max-w-full flex-col items-center px-3 text-center">
+              <span className="block">{t.onlineLearning.aiFeaturesTitle}</span>
+              <span
+                className="mt-3 block max-w-full bg-[linear-gradient(135deg,var(--comic-warning)_0%,#ff9500_100%)] bg-clip-text text-center text-base leading-snug tracking-normal text-transparent [-webkit-text-fill-color:transparent] [text-shadow:none] sm:mt-3 sm:text-lg md:mt-4 md:text-xl lg:text-2xl lg:leading-tight"
+                style={{ WebkitBackgroundClip: "text", backgroundClip: "text" }}
+              >
+                {t.onlineLearning.aiFeaturesDesc}
+              </span>
+            </span>
           </ComicTitle>
-          <ComicText size="lg" className="comic-text-white font-bold max-w-4xl mx-auto">
-            {t.onlineLearning.aiFeaturesDesc}
+        </div>
+
+        <div className="mx-auto mb-16 max-w-4xl">
+          <ComicText className="comic-text-white mb-6 text-center font-bold max-w-3xl mx-auto">
+            {t.onlineLearning.aiFeaturesPromoCaption}
           </ComicText>
+          <div className="rounded-2xl overflow-hidden comic-border-thick comic-shadow-xl bg-[var(--comic-black)]">
+            <div className="relative w-full aspect-video min-h-[220px]">
+              <iframe
+                src={ENGLISHFEED_PROMO_VIMEO_EMBED_SRC}
+                className="absolute inset-0 h-full w-full"
+                frameBorder={0}
+                allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                title="EnglishFeed promo video"
+                allowFullScreen
+              />
+            </div>
+          </div>
+          <div className="mt-8 flex justify-center">
+            <ComicButton
+              variant="warning"
+              size="lg"
+              className="comic-wiggle"
+              href={ENGLISHFEED_DEMO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t.nav.downloadApp}
+            </ComicButton>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          <ComicCard className="comic-shadow-xl text-center">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-primary)]">
-              {t.onlineLearning.aiVoiceTitle}
-            </ComicTitle>
-            <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-              {t.onlineLearning.aiVoiceDesc}
-            </ComicText>
-            <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6">
-              <li>{t.onlineLearning.aiVoiceItem1}</li>
-              <li>{t.onlineLearning.aiVoiceItem2}</li>
-              <li>{t.onlineLearning.aiVoiceItem3}</li>
-              <li>{t.onlineLearning.aiVoiceItem5}</li>
-            </ul>
-          </ComicCard>
-
-          <ComicCard className="comic-shadow-xl text-center">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-secondary)]">
-              {t.onlineLearning.visualPhonicsTitle}
-            </ComicTitle>
-            <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-              {t.onlineLearning.visualPhonicsDesc}
-            </ComicText>
-            <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6">
-              <li>{t.onlineLearning.visualPhonicsItem1}</li>
-              <li>{t.onlineLearning.visualPhonicsItem2}</li>
-              <li>{t.onlineLearning.visualPhonicsItem3}</li>
-              <li>{t.onlineLearning.visualPhonicsItem4}</li>
-            </ul>
-          </ComicCard>
-
-          <ComicCard className="comic-shadow-xl text-center">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-success)]">
-              {t.onlineLearning.speakingPracticeTitle}
-            </ComicTitle>
-            <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-              {t.onlineLearning.speakingPracticeDesc}
-            </ComicText>
-            <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6">
-              <li>{t.onlineLearning.speakingPracticeItem1}</li>
-              <li>{t.onlineLearning.speakingPracticeItem2}</li>
-              <li>{t.onlineLearning.speakingPracticeItem3}</li>
-              <li>{t.onlineLearning.speakingPracticeItem4}</li>
-            </ul>
-          </ComicCard>
+          {highlightBlocks.map((block, index) => (
+            <ComicCard key={block.id} className="comic-shadow-xl text-center">
+              <ComicTitle
+                level={3}
+                className={`mb-4 min-w-0 break-words ${HOME_AI_POWERED_FEATURE_CARD_TITLE_COLORS[index]}`}
+              >
+                {block.title}
+              </ComicTitle>
+              <ComicText className="text-[var(--comic-dark)] font-bold mb-4">{block.desc}</ComicText>
+              <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6">
+                {block.items.map((item, itemIndex) => (
+                  <li key={`${block.id}-${itemIndex}`}>• {item}</li>
+                ))}
+              </ul>
+            </ComicCard>
+          ))}
         </div>
       </div>
     </section>
@@ -1189,9 +1072,8 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-[var(--comic-light)]">
       <HomeSection />
       <MissionSection />
-      <TechInnovationsSection />
-      <SubscriptionPlansSection />
       <AIFeaturesSection />
+      <BlogNewsletterSection />
       <div className="flex-grow" />
       <Footer />
     </div>

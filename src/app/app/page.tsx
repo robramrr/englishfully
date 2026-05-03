@@ -5,9 +5,10 @@ import ComicButton from "../../components/ComicButton";
 import ComicCard from "../../components/ComicCard";
 import ComicTitle from "../../components/ComicTitle";
 import ComicText from "../../components/ComicText";
-import { ENGLISHFEED_DEMO_URL } from "../../constants/englishfeed";
+import { ENGLISHFEED_DEMO_URL, ENGLISHFEED_PROMO_VIMEO_EMBED_SRC } from "../../constants/englishfeed";
 import Footer from "../../components/Footer";
 import LessonTypesSection from "../../components/LessonTypesSection";
+import { buildEnglishFeedInnovativeFeatureBlocks } from "../../data/englishFeedInnovativeFeatures";
 import { useI18n } from "../../i18n/I18nProvider";
 
 function HeroSection() {
@@ -33,7 +34,7 @@ function HeroSection() {
           <div className="rounded-2xl overflow-hidden comic-border-thick comic-shadow-xl bg-[var(--comic-black)]">
             <div className="relative w-full aspect-video min-h-[220px]">
               <iframe
-                src="https://player.vimeo.com/video/1187793109?badge=0&autopause=0&player_id=0&app_id=58479"
+                src={ENGLISHFEED_PROMO_VIMEO_EMBED_SRC}
                 className="absolute top-0 left-0 w-full h-full"
                 frameBorder="0"
                 allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
@@ -128,161 +129,8 @@ function HowSection() {
 function VideoSection() {
   const { t } = useI18n();
   const [openFeatureId, setOpenFeatureId] = useState<string>("feature-video-lessons");
-  const featureBlocks = [
-    {
-      id: "feature-ai-quiz",
-      title: t.englishFeed.featureQuizTitle,
-      desc: t.englishFeed.featureQuizDesc,
-      items: [
-        t.englishFeed.featureQuizItem1,
-        t.englishFeed.featureQuizItem2,
-        t.englishFeed.featureQuizItem3,
-        t.englishFeed.featureQuizItem4,
-      ],
-    },
-    {
-      id: "feature-pronunciation",
-      title: t.englishFeed.featurePronTitle,
-      desc: t.englishFeed.featurePronDesc,
-      items: [
-        t.englishFeed.featurePronItem1,
-        t.englishFeed.featurePronItem2,
-        t.englishFeed.featurePronItem3,
-        t.englishFeed.featurePronItem4,
-      ],
-    },
-    {
-      id: "feature-ai-vocabulary",
-      title: t.englishFeed.featureVocabTitle,
-      desc: t.englishFeed.featureVocabDesc,
-      items: [
-        t.englishFeed.featureVocabItem1,
-        t.englishFeed.featureVocabItem2,
-        t.englishFeed.featureVocabItem3,
-        t.englishFeed.featureVocabItem4,
-      ],
-    },
-    {
-      id: "feature-ai-tutor",
-      title: t.englishFeed.featureTutorTitle,
-      desc: t.englishFeed.featureTutorDesc,
-      items: [
-        t.englishFeed.featureTutorItem1,
-        t.englishFeed.featureTutorItem2,
-        t.englishFeed.featureTutorItem3,
-        t.englishFeed.featureTutorItem4,
-      ],
-    },
-    {
-      id: "feature-ai-flashcards",
-      title: t.englishFeed.featureFlashTitle,
-      desc: t.englishFeed.featureFlashDesc,
-      items: [
-        t.englishFeed.featureFlashItem1,
-        t.englishFeed.featureFlashItem2,
-        t.englishFeed.featureFlashItem3,
-        t.englishFeed.featureFlashItem4,
-      ],
-    },
-    {
-      id: "feature-like-save",
-      title: t.englishFeed.featureSaveTitle,
-      desc: t.englishFeed.featureSaveDesc,
-      items: [
-        t.englishFeed.featureSaveItem1,
-        t.englishFeed.featureSaveItem2,
-        t.englishFeed.featureSaveItem3,
-        t.englishFeed.featureSaveItem4,
-      ],
-    },
-    {
-      id: "feature-tags",
-      title: t.englishFeed.featureTagsTitle,
-      desc: t.englishFeed.featureTagsDesc,
-      items: [
-        t.englishFeed.featureTagsItem1,
-        t.englishFeed.featureTagsItem2,
-        t.englishFeed.featureTagsItem3,
-        t.englishFeed.featureTagsItem4,
-      ],
-    },
-    {
-      id: "feature-ai-grammar",
-      title: t.englishFeed.featureGrammarTitle,
-      desc: t.englishFeed.featureGrammarDesc,
-      items: [
-        t.englishFeed.featureGrammarItem1,
-        t.englishFeed.featureGrammarItem2,
-        t.englishFeed.featureGrammarItem3,
-        t.englishFeed.featureGrammarItem4,
-      ],
-    },
-    {
-      id: "feature-thai-support",
-      title: t.englishFeed.featureThaiTitle,
-      desc: t.englishFeed.featureThaiDesc,
-      items: [
-        t.englishFeed.featureThaiItem1,
-        t.englishFeed.featureThaiItem2,
-        t.englishFeed.featureThaiItem3,
-        t.englishFeed.featureThaiItem4,
-      ],
-    },
-    {
-      id: "feature-personalization",
-      title: t.englishFeed.featurePersonalTitle,
-      desc: t.englishFeed.featurePersonalDesc,
-      items: [
-        t.englishFeed.featurePersonalItem1,
-        t.englishFeed.featurePersonalItem2,
-        t.englishFeed.featurePersonalItem3,
-        t.englishFeed.featurePersonalItem4,
-      ],
-    },
-    {
-      id: "feature-analytics",
-      title: t.englishFeed.featureAnalyticsTitle,
-      desc: t.englishFeed.featureAnalyticsDesc,
-      items: [
-        t.englishFeed.featureAnalyticsItem1,
-        t.englishFeed.featureAnalyticsItem2,
-        t.englishFeed.featureAnalyticsItem3,
-        t.englishFeed.featureAnalyticsItem4,
-      ],
-    },
-  ];
+  const accordionFeatures = buildEnglishFeedInnovativeFeatureBlocks(t.englishFeed);
 
-  const accordionFeatures = [
-    {
-      id: "feature-video-lessons",
-      title: t.englishFeed.videoLessonTitle,
-      desc: t.englishFeed.videoLessonDesc,
-      items: [
-        t.englishFeed.videoLessonItem1,
-        t.englishFeed.videoLessonItem2,
-        t.englishFeed.videoLessonItem3,
-        t.englishFeed.videoLessonItem4,
-      ],
-    },
-    {
-      id: "feature-interactive-subtitles",
-      title: t.englishFeed.featuresInteractiveSubtitlesTitle,
-      desc: t.englishFeed.featuresInteractiveSubtitlesDesc,
-      items: [
-        t.englishFeed.featuresInteractiveSubtitlesItem1,
-        t.englishFeed.featuresInteractiveSubtitlesItem2,
-        t.englishFeed.featuresInteractiveSubtitlesItem3,
-        t.englishFeed.featuresInteractiveSubtitlesItem4,
-      ],
-    },
-    {
-      id: "feature-tap-word",
-      title: t.englishFeed.tapTitle,
-      desc: t.englishFeed.tapDesc,
-      items: [t.englishFeed.tapItem1, t.englishFeed.tapItem2, t.englishFeed.tapItem3, t.englishFeed.tapItem4],
-    },
-    ...featureBlocks,
-  ];
   return (
     <section className="comic-bg-accent py-24 px-4 comic-pattern-stripes">
       <div className="max-w-6xl mx-auto">
