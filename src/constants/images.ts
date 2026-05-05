@@ -51,7 +51,7 @@ export const HOME_VIDEO_LESSON_PROMO_URL =
 
 /** Homepage AI speech practice card: EnglishFeed voice recording and feedback on a phone. */
 export const HOME_AI_SPEECH_PRACTICE_URL =
-  "https://res.cloudinary.com/dkbf7tvcx/image/upload/c_crop,x_300,w_1000/v1777929406/englishfully/service/english-learning-voice-recording-feedback.png";
+  "https://res.cloudinary.com/dkbf7tvcx/image/upload/c_crop,x_0.2,y_0.05,w_0.7,h_0.73/v1777929406/englishfully/service/english-learning-voice-recording-feedback.png";
 
 /** Homepage AI Vocabulary card: tap subtitles / word meanings in context. */
 export const HOME_AI_VOCABULARY_SUBTITLE_IMAGE_URL =
