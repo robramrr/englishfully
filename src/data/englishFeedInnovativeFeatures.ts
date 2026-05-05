@@ -1,4 +1,8 @@
-import { HOME_AI_SPEECH_PRACTICE_URL, HOME_AI_VOCABULARY_SUBTITLE_IMAGE_URL } from "../constants/images";
+import {
+  HOME_AI_SPEECH_PRACTICE_URL,
+  HOME_AI_VOCABULARY_SUBTITLE_IMAGE_URL,
+  HOME_VIDEO_LESSON_PROMO_URL,
+} from "../constants/images";
 import type { Translations } from "../i18n/types";
 
 export type EnglishFeedInnovativeFeatureBlock = {
@@ -130,10 +134,18 @@ type Home = Translations["home"];
  */
 export function getHomepageAiPoweredFeatureBlocks(fe: Feed, home: Home): EnglishFeedInnovativeFeatureBlock[] {
   const all = buildEnglishFeedInnovativeFeatureBlocks(fe);
-  const video = all.find((b) => b.id === "feature-video-lessons");
-  if (!video) {
+  const videoBase = all.find((b) => b.id === "feature-video-lessons");
+  if (!videoBase) {
     throw new Error("englishFeedInnovativeFeatures: missing video lesson block");
   }
+
+  const video: EnglishFeedInnovativeFeatureBlock = {
+    ...videoBase,
+    imageAfterDesc: {
+      src: HOME_VIDEO_LESSON_PROMO_URL,
+      alt: home.aiPoweredVideoLessonPhotoAlt,
+    },
+  };
 
   const speak: EnglishFeedInnovativeFeatureBlock = {
     id: "home-ai-powered-speak",
