@@ -118,6 +118,25 @@ const HOME_AI_POWERED_FEATURE_CARD_TITLE_COLORS = [
   "text-[var(--comic-success)]",
 ] as const;
 
+/** Portrait phone screenshot under AI feature card copy (matches onsite photo frame styling). */
+function HomeAiPoweredCardImageAfterDesc({ src, alt }: { src: string; alt: string }) {
+  return (
+    <figure className="mx-auto mb-4 w-full max-w-[min(100%,260px)] rounded-xl bg-[#e8c9a8] p-2.5 sm:p-3 comic-border-thick comic-shadow-lg">
+      <div className="overflow-hidden rounded-lg border-4 border-[var(--comic-black)] shadow-[inset_0_2px_0_rgba(255,255,255,0.5),inset_0_-3px_0_rgba(0,0,0,0.18)]">
+        <img
+          src={src}
+          alt={alt}
+          width={780}
+          height={1200}
+          className="mx-auto block max-h-[min(52vh,340px)] w-auto max-w-full object-contain"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    </figure>
+  );
+}
+
 function AIFeaturesSection() {
   const { t } = useI18n();
   const highlightBlocks = getHomepageAiPoweredFeatureBlocks(t.englishFeed, t.home);
@@ -180,6 +199,9 @@ function AIFeaturesSection() {
                 {block.title}
               </ComicTitle>
               <ComicText className="text-[var(--comic-dark)] font-bold mb-4">{block.desc}</ComicText>
+              {block.imageAfterDesc ? (
+                <HomeAiPoweredCardImageAfterDesc src={block.imageAfterDesc.src} alt={block.imageAfterDesc.alt} />
+              ) : null}
               <ul className="text-left text-[var(--comic-dark)] space-y-2 mb-6">
                 {block.items.map((item, itemIndex) => (
                   <li key={`${block.id}-${itemIndex}`}>• {item}</li>

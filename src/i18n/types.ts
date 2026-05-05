@@ -53,6 +53,7 @@ export interface Translations {
     aiPoweredSpeakItem3: string;
     aiPoweredSpeakItem4: string;
     aiPoweredSpeakItem5: string;
+    aiPoweredSpeakPhotoAlt: string;
     aiPoweredInteractTitle: string;
     aiPoweredInteractDesc: string;
     aiPoweredInteractItem1: string;

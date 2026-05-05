@@ -1,9 +1,12 @@
+import { HOME_AI_SPEECH_PRACTICE_URL } from "../constants/images";
 import type { Translations } from "../i18n/types";
 
 export type EnglishFeedInnovativeFeatureBlock = {
   id: string;
   title: string;
   desc: string;
+  /** Optional hero image shown after the description and before bullet items (homepage cards). */
+  imageAfterDesc?: { src: string; alt: string };
   items: string[];
 };
 
@@ -136,6 +139,7 @@ export function getHomepageAiPoweredFeatureBlocks(fe: Feed, home: Home): English
     id: "home-ai-powered-speak",
     title: home.aiPoweredSpeakTitle,
     desc: home.aiPoweredSpeakDesc,
+    imageAfterDesc: { src: HOME_AI_SPEECH_PRACTICE_URL, alt: home.aiPoweredSpeakPhotoAlt },
     items: [
       home.aiPoweredSpeakItem1,
       home.aiPoweredSpeakItem2,
