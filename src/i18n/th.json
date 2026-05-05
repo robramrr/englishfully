@@ -54,6 +54,7 @@
     "aiPoweredSpeakPhotoAlt": "EnglishFeed บนมือถือ: ฝึกพูดพร้อมคำว่า How are you? คลื่นเสียงขณะบันทึก ตัวจับเวลา และปุ่มหยุด",
     "aiPoweredInteractTitle": "📝 คำศัพท์ AI",
     "aiPoweredInteractDesc": "แตะคำบรรยายและคำเพื่อเรียนในบริบท",
+    "aiPoweredInteractPhotoAlt": "EnglishFeed: บรรทัดคำบรรยายพร้อมแตะดูความหมายคำและคำจำกัดความในบริบทบนมือถือ",
     "aiPoweredInteractItem1": "ความหมายและเสียง",
     "aiPoweredInteractItem2": "คำจำกัดความและตัวอย่าง",
     "aiPoweredInteractItem3": "บันทึกคำ สร้างคลังศัพท์",

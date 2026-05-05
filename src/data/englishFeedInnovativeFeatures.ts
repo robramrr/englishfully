@@ -1,4 +1,4 @@
-import { HOME_AI_SPEECH_PRACTICE_URL } from "../constants/images";
+import { HOME_AI_SPEECH_PRACTICE_URL, HOME_AI_VOCABULARY_SUBTITLE_IMAGE_URL } from "../constants/images";
 import type { Translations } from "../i18n/types";
 
 export type EnglishFeedInnovativeFeatureBlock = {
@@ -153,6 +153,10 @@ export function getHomepageAiPoweredFeatureBlocks(fe: Feed, home: Home): English
     id: "home-ai-powered-interact",
     title: home.aiPoweredInteractTitle,
     desc: home.aiPoweredInteractDesc,
+    imageAfterDesc: {
+      src: HOME_AI_VOCABULARY_SUBTITLE_IMAGE_URL,
+      alt: home.aiPoweredInteractPhotoAlt,
+    },
     items: [
       home.aiPoweredInteractItem1,
       home.aiPoweredInteractItem2,

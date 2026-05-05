@@ -61,6 +61,7 @@ export interface Translations {
     aiPoweredInteractItem3: string;
     aiPoweredInteractItem4: string;
     aiPoweredInteractItem5: string;
+    aiPoweredInteractPhotoAlt: string;
     oneOnOneSupportTitle: string;
     oneOnOneSupportTagline: string;
     oneOnOneSupportOnlineCoachingTitle: string;

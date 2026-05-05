@@ -49,6 +49,10 @@ export const HOME_ONLINE_ONE_ON_ONE_COACHING_URL =
 export const HOME_AI_SPEECH_PRACTICE_URL =
   "https://res.cloudinary.com/dkbf7tvcx/image/upload/c_crop,x_300,w_1000/v1777929406/englishfully/service/english-learning-voice-recording-feedback.png";
 
+/** Homepage AI Vocabulary card: tap subtitles / word meanings in context. */
+export const HOME_AI_VOCABULARY_SUBTITLE_IMAGE_URL =
+  "https://res.cloudinary.com/dkbf7tvcx/image/upload/c_crop,x_0.15,y_0.15,w_0.7,h_0.7/v1777956190/englishfully/service/English-Learning-Subtitle-Meaning.png";
+
 /** Pro Member subscription card. */
 export const ONLINE_SUBSCRIPTION_PRO_URL =
   "https://res.cloudinary.com/dkbf7tvcx/image/upload/c_crop,g_north,h_0.92/v1777822990/englishfully/service/1-on-1-english-online-success.png";
