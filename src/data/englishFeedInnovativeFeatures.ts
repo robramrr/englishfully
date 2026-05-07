@@ -130,7 +130,7 @@ type Home = Translations["home"];
 
 /**
  * Homepage “AI-Powered Features” trio: Video Lesson from the feed, plus two compact cards
- * whose copy lives in `home` (unified headers + max four bullets each).
+ * whose copy lives in `home` (unified headers; speech trims to 4 bullets).
  */
 export function getHomepageAiPoweredFeatureBlocks(fe: Feed, home: Home): EnglishFeedInnovativeFeatureBlock[] {
   const all = buildEnglishFeedInnovativeFeatureBlocks(fe);
@@ -141,6 +141,7 @@ export function getHomepageAiPoweredFeatureBlocks(fe: Feed, home: Home): English
 
   const video: EnglishFeedInnovativeFeatureBlock = {
     ...videoBase,
+    items: videoBase.items.slice(0, 4),
     imageAfterDesc: {
       src: HOME_VIDEO_LESSON_PROMO_URL,
       alt: home.aiPoweredVideoLessonPhotoAlt,
@@ -157,7 +158,6 @@ export function getHomepageAiPoweredFeatureBlocks(fe: Feed, home: Home): English
       home.aiPoweredSpeakItem2,
       home.aiPoweredSpeakItem3,
       home.aiPoweredSpeakItem4,
-      home.aiPoweredSpeakItem5,
     ],
   };
 
@@ -174,7 +174,6 @@ export function getHomepageAiPoweredFeatureBlocks(fe: Feed, home: Home): English
       home.aiPoweredInteractItem2,
       home.aiPoweredInteractItem3,
       home.aiPoweredInteractItem4,
-      home.aiPoweredInteractItem5,
     ],
   };
 
