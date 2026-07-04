@@ -29,7 +29,7 @@ const ComicButton: React.FC<ComicButtonProps> = ({
     primary: 'comic-bg-primary text-white hover:brightness-110',
     secondary: 'comic-bg-secondary text-white hover:brightness-110',
     accent: 'comic-bg-accent text-white hover:brightness-110',
-    warning: 'comic-bg-warning text-black hover:brightness-110',
+    warning: 'comic-bg-warning text-[var(--brand-navy)] hover:brightness-110',
     success: 'comic-bg-success text-white hover:brightness-110',
     danger: 'comic-bg-danger text-white hover:brightness-110',
   };

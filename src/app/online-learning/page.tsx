@@ -61,7 +61,7 @@ function OnlineLearningHeroCarousel({
         className="relative"
       >
         <figure className="relative mx-auto aspect-square w-full max-h-[min(330px,60vw)] overflow-hidden rounded-2xl border-4 border-[var(--comic-black)] bg-[var(--comic-white)] comic-shadow-xl sm:max-h-[345px]">
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(repeating-linear-gradient(135deg,#00000006_0_10px,#00000006_10px_20px))]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(repeating-linear-gradient(135deg,#001a4808_0_10px,#001a4808_10px_20px))]" />
           {ONLINE_LEARNING_HERO_SLIDE_URLS.map((src, i) => (
             <img
               key={src}
@@ -82,7 +82,7 @@ function OnlineLearningHeroCarousel({
           />
           <p
             aria-live="polite"
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] comic-title px-4 pb-4 pt-12 text-center text-2xl leading-tight tracking-tight text-[var(--comic-yellow)] sm:text-3xl md:pb-5 md:text-4xl"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] comic-title px-4 pb-4 pt-12 text-center text-2xl leading-tight tracking-tight text-[var(--brand-white)] sm:text-3xl md:pb-5 md:text-4xl"
           >
             {slideHeads[slideIndex]}
           </p>
@@ -119,54 +119,61 @@ function HeroSection() {
   const [heroSlideIndex, setHeroSlideIndex] = useState(0);
 
   return (
-    <section className="flex flex-col items-center justify-center text-center py-24 px-4 comic-bg-primary relative overflow-hidden comic-pattern-zigzag">
+    <section className="comic-bg-online-hero relative overflow-hidden comic-pattern-zigzag py-20 px-4 max-md:py-12">
       {/* Enhanced comic book style background elements */}
-      <div className="absolute top-10 left-10 w-24 h-24 comic-bg-warning rounded-full comic-border-thick comic-shadow-xl comic-bounce"></div>
-      <div className="absolute top-20 right-20 w-20 h-20 comic-bg-success rounded-full comic-border-thick comic-shadow-xl comic-bounce" style={{animationDelay: '0.5s'}}></div>
-      <div className="absolute bottom-20 left-20 w-16 h-16 comic-bg-danger rounded-full comic-border-thick comic-shadow-xl comic-bounce" style={{animationDelay: '1s'}}></div>
-      <div className="absolute top-1/2 right-10 w-12 h-12 comic-bg-secondary rounded-full comic-border-thick comic-shadow-lg comic-bounce" style={{animationDelay: '1.5s'}}></div>
-      <div className="absolute bottom-1/3 right-1/3 w-14 h-14 bg-[var(--comic-yellow)] rounded-full comic-border-thick comic-shadow-lg comic-bounce" style={{animationDelay: '2s'}}></div>
+      <div className="absolute top-20 right-20 w-20 h-20 comic-bg-success rounded-full comic-border-thick comic-shadow-xl comic-bounce max-md:hidden" style={{animationDelay: '0.5s'}}></div>
+      <div className="absolute bottom-20 left-20 w-16 h-16 comic-bg-danger rounded-full comic-border-thick comic-shadow-xl comic-bounce max-md:hidden" style={{animationDelay: '1s'}}></div>
+      <div className="absolute top-1/2 right-10 w-12 h-12 comic-bg-secondary rounded-full comic-border-thick comic-shadow-lg comic-bounce max-md:hidden" style={{animationDelay: '1.5s'}}></div>
+      <div className="absolute bottom-1/3 right-1/3 w-14 h-14 bg-[var(--comic-yellow)] rounded-full comic-border-thick comic-shadow-lg comic-bounce max-md:hidden" style={{animationDelay: '2s'}}></div>
       
-      <div className="relative z-0">
-        <ComicTitle level={1} className="comic-text-white mb-8 comic-wiggle">
-          <span className="mx-auto flex w-max max-w-full flex-col items-center px-3 text-center">
-            <span className="block">{t.onlineLearning.heroTitle}</span>
-            <span
-              className="mt-3 block max-w-full bg-[linear-gradient(135deg,var(--comic-warning)_0%,#ff9500_100%)] bg-clip-text text-center text-base leading-snug tracking-normal text-transparent [-webkit-text-fill-color:transparent] [text-shadow:none] sm:mt-3 sm:text-lg md:mt-4 md:text-xl lg:text-2xl lg:leading-tight"
-              style={{ WebkitBackgroundClip: "text", backgroundClip: "text" }}
-            >
-              {t.onlineLearning.heroTitleTagline}
+      <div className="relative z-0 mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,520px)] md:gap-10">
+        <div className="text-center md:text-left">
+          <ComicTitle
+            level={1}
+            className="comic-text-white mb-4 comic-wiggle max-md:text-2xl max-md:leading-tight sm:max-md:text-3xl md:mb-5"
+          >
+            <span className="mx-auto flex w-max max-w-full flex-col items-center px-2 text-center md:items-start md:px-0 md:text-left">
+              <span className="block">{t.onlineLearning.heroTitle}</span>
+              <span className="mt-2 block max-w-full text-center text-base leading-snug tracking-normal text-[var(--brand-navy)] [text-shadow:none] sm:text-lg md:mt-3 md:text-left md:text-xl lg:text-2xl lg:leading-tight">
+                {t.onlineLearning.heroTitleTagline}
+              </span>
             </span>
-          </span>
-        </ComicTitle>
-        <ComicText size="xl" className="comic-text-white mb-10 font-bold max-w-3xl mx-auto">
-          {t.onlineLearning.heroDesc}
-        </ComicText>
+          </ComicTitle>
+
+          <ComicText
+            size="xl"
+            className="comic-text-white mb-5 font-bold max-w-2xl mx-auto max-md:text-base md:mx-0 md:mb-6"
+          >
+            {t.onlineLearning.heroDesc}
+          </ComicText>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center md:justify-start">
+            <ComicButton
+              variant="secondary"
+              size="lg"
+              className="comic-wiggle w-full sm:w-auto"
+              href="#subscription-plans"
+            >
+              {t.onlineLearning.explorePlans}
+            </ComicButton>
+            <ComicButton
+              variant="warning"
+              size="lg"
+              className="comic-wiggle w-full sm:w-auto"
+              href="https://calendly.com/hello-englishfully/1-hour-in-person-meeting"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t.inPersonLearning.viewOnlineAvailability}
+            </ComicButton>
+          </div>
+        </div>
+
         <OnlineLearningHeroCarousel
           slideIndex={heroSlideIndex}
           setSlideIndex={setHeroSlideIndex}
-          wrapperClassName="mb-10"
+          wrapperClassName="max-md:max-w-[420px] max-md:[&_figure]:max-h-[min(260px,64vw)]"
         />
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <ComicButton
-            variant="secondary"
-            size="lg"
-            className="comic-wiggle"
-            href="#subscription-plans"
-          >
-            {t.onlineLearning.explorePlans}
-          </ComicButton>
-          <ComicButton
-            variant="warning"
-            size="lg"
-            className="comic-wiggle"
-            href="https://calendly.com/hello-englishfully/1-hour-in-person-meeting"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {t.inPersonLearning.viewOnlineAvailability}
-          </ComicButton>
-        </div>
       </div>
     </section>
   );
@@ -211,7 +218,7 @@ function LearningModulesSearchSection() {
   return (
     <section
       id="learning-modules"
-      className="comic-bg-secondary py-24 px-4 comic-pattern-dots"
+      className="comic-bg-secondary py-24 px-4 max-md:py-16 comic-pattern-dots"
       aria-label={t.onlineLearning.modulesSearchTitle}
     >
       <div className="mx-auto max-w-3xl">
@@ -378,10 +385,10 @@ function SessionTypesSection() {
   const ol = t.onlineLearning;
 
   return (
-    <section className="comic-bg-primary py-24 px-4 comic-pattern-dots">
+    <section className="comic-bg-primary py-24 px-4 max-md:py-16 comic-pattern-dots">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
-          <ComicTitle level={2} className="comic-text-white mb-8">
+          <ComicTitle level={2} className="comic-text-white comic-title-no-shadow mb-8">
             {ol.sessionTypesTitle}
           </ComicTitle>
           <ComicText size="lg" className="comic-text-white font-bold max-w-4xl mx-auto">
@@ -397,14 +404,14 @@ function SessionTypesSection() {
             >
               <ComicTitle
                 level={4}
-                className={`mb-3 w-full min-w-0 max-w-full px-1 leading-tight tracking-tight break-words [overflow-wrap:anywhere] hyphens-auto ${accentClass}`}
+                className="comic-title-no-shadow mb-3 w-full min-w-0 max-w-full px-1 leading-tight tracking-tight break-words text-[var(--brand-navy)] [overflow-wrap:anywhere] hyphens-auto"
               >
                 {ol[titleKey]}
               </ComicTitle>
               <ComicText
                 weight="bold"
                 size="sm"
-                className={`mb-4 w-full min-w-0 max-w-full px-1 break-words [overflow-wrap:anywhere] leading-snug hyphens-auto ${accentClass}`}
+                className="mb-4 w-full min-w-0 max-w-full px-1 break-words text-[var(--brand-navy)] [overflow-wrap:anywhere] leading-snug hyphens-auto"
               >
                 {ol[focusKey]}
               </ComicText>
@@ -423,11 +430,7 @@ function SessionTypesSection() {
   );
 }
 
-const PLAN_CHECKLIST_COLORS = [
-  "var(--comic-primary)",
-  "var(--comic-secondary)",
-  "var(--comic-warning)",
-] as const;
+const PLAN_CHECKLIST_COLORS = ["var(--brand-red)", "var(--brand-navy)"] as const;
 
 function splitPlanLineAfterColon(text: string): {
   headline: string;
@@ -549,7 +552,7 @@ function SubscriptionPlanPriceFooter({
 /** Same framing as in-person-learning “How it works” cards. */
 function SubscriptionTierPhoto({ src, alt }: { src: string; alt: string }) {
   return (
-    <figure className="mb-6 w-full shrink-0 overflow-hidden rounded-xl border-4 border-[var(--comic-black)] bg-[var(--comic-white)] shadow-[inset_0_2px_0_rgba(255,255,255,0.4),inset_0_-2px_0_rgba(0,0,0,0.12)]">
+    <figure className="mb-6 w-full shrink-0 overflow-hidden rounded-xl border-4 border-[var(--comic-black)] bg-[var(--comic-white)] shadow-[inset_0_2px_0_rgba(255,255,255,0.4),inset_0_-2px_0_rgba(0,26,72,0.12)]">
       <img
         src={src}
         alt={alt}
@@ -568,22 +571,26 @@ function SubscriptionPlansSection() {
   const { t } = useI18n();
   
   return (
-    <section id="subscription-plans" className="max-w-6xl mx-auto py-24 px-4">
-      <div className="text-center mb-16">
-        <ComicTitle level={2} className="mb-8 text-[var(--comic-primary)]">
-          {t.onlineLearning.subscriptionTitle}
-        </ComicTitle>
-        <ComicText
-          size="lg"
-          className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto whitespace-pre-line"
-        >
-          {t.onlineLearning.subscriptionDesc}
-        </ComicText>
-      </div>
-      
-      <div className="grid md:grid-cols-3 gap-8 mb-16">
-        <ComicCard className="comic-shadow-lg text-center flex flex-col">
-          <ComicTitle level={4} className="mb-3 pb-1 text-[var(--comic-primary)]">
+    <section
+      id="subscription-plans"
+      className="comic-bg-edtech-light relative w-full overflow-hidden py-24 px-4 max-md:py-16"
+    >
+      <div className="relative z-10 mx-auto max-w-6xl">
+        <div className="text-center mb-16">
+          <ComicTitle level={2} className="mb-8 text-[var(--comic-primary)]">
+            {t.onlineLearning.subscriptionTitle}
+          </ComicTitle>
+          <ComicText
+            size="lg"
+            className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto whitespace-pre-line"
+          >
+            {t.onlineLearning.subscriptionDesc}
+          </ComicText>
+        </div>
+        
+        <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <ComicCard className="comic-shadow-lg text-center flex flex-col">
+          <ComicTitle level={4} className="comic-title-no-shadow mb-3 pb-1 text-[var(--comic-primary)]">
             {t.onlineLearning.freeTitle}
           </ComicTitle>
           <SubscriptionTierPhoto
@@ -609,10 +616,10 @@ function SubscriptionPlansSection() {
           </div>
         </ComicCard>
 
-        <ComicCard className="comic-shadow-lg flex flex-col text-center !bg-[linear-gradient(135deg,var(--comic-yellow)_0%,#f39c12_100%)]">
+          <ComicCard className="comic-shadow-lg flex flex-col text-center !comic-bg-yellow">
           <ComicTitle
             level={4}
-            className="mb-3 pb-1 text-[var(--comic-primary)]"
+            className="comic-title-no-shadow mb-3 pb-1 text-[var(--comic-primary)]"
           >
             {t.onlineLearning.premiumTitle}
           </ComicTitle>
@@ -639,8 +646,8 @@ function SubscriptionPlansSection() {
           </div>
         </ComicCard>
 
-        <ComicCard className="comic-shadow-lg text-center flex flex-col">
-          <ComicTitle level={4} className="mb-3 pb-1 text-[var(--comic-danger)]">
+          <ComicCard className="comic-shadow-lg text-center flex flex-col">
+          <ComicTitle level={4} className="comic-title-no-shadow mb-3 pb-1 text-[var(--comic-danger)]">
             {t.onlineLearning.proTitle}
           </ComicTitle>
           <SubscriptionTierPhoto
@@ -657,7 +664,8 @@ function SubscriptionPlansSection() {
               {t.onlineLearning.proButton}
             </ComicButton>
           </div>
-        </ComicCard>
+          </ComicCard>
+        </div>
       </div>
     </section>
   );

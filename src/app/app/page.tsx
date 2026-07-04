@@ -1,42 +1,94 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import ComicButton from "../../components/ComicButton";
 import ComicCard from "../../components/ComicCard";
 import ComicTitle from "../../components/ComicTitle";
 import ComicText from "../../components/ComicText";
-import { ENGLISHFEED_DEMO_URL, ENGLISHFEED_PROMO_VIMEO_EMBED_SRC } from "../../constants/englishfeed";
+import {
+  ENGLISHFEED_APP_HERO_CIRCLE_URLS,
+  ENGLISHFEED_DEMO_URL,
+  ENGLISHFEED_HOMEPAGE_VIMEO_EMBED_SRC,
+} from "../../constants/englishfeed";
 import Footer from "../../components/Footer";
 import LessonTypesSection from "../../components/LessonTypesSection";
 import { buildEnglishFeedInnovativeFeatureBlocks } from "../../data/englishFeedInnovativeFeatures";
 import { useI18n } from "../../i18n/I18nProvider";
 
+const APP_HERO_CIRCLE_DELAYS = ["0s", "0.5s", "1s", "1.5s"] as const;
+
+function AppHeroPhotoCircle({
+  src,
+  className = "",
+  style,
+}: {
+  src: string;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <div
+      className={`h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-full comic-border-thick comic-shadow-xl comic-bounce sm:h-24 sm:w-24 md:h-32 md:w-32 ${className}`}
+      style={style}
+      aria-hidden
+    >
+      <img src={src} alt="" className="h-full w-full object-cover object-center" />
+    </div>
+  );
+}
+
 function HeroSection() {
   const { t } = useI18n();
 
   return (
-    <section className="flex flex-col items-center justify-center text-center py-24 px-4 comic-bg-purple relative overflow-hidden comic-pattern-zigzag">
-      <div className="absolute top-10 left-10 w-24 h-24 comic-bg-warning rounded-full comic-border-thick comic-shadow-xl comic-bounce" />
-      <div className="absolute top-20 right-20 w-20 h-20 comic-bg-secondary rounded-full comic-border-thick comic-shadow-xl comic-bounce" style={{ animationDelay: "0.5s" }} />
+    <section
+      id="app-englishfeed-hero"
+      className="relative overflow-hidden comic-bg-purple comic-pattern-zigzag py-10 max-md:py-12 md:min-h-[560px] md:py-16"
+    >
+      <div className="relative z-10 mx-auto grid w-full min-w-0 max-w-7xl grid-cols-1 gap-7 px-2 max-md:gap-5 max-md:px-3 md:grid-cols-[minmax(0,1fr)_minmax(360px,520px)] md:gap-x-10 md:gap-y-6 md:items-start md:px-4">
+        <div className="min-w-0 text-center md:col-start-1 md:row-start-1 md:max-w-3xl md:text-left">
+          <ComicTitle
+            level={1}
+            className="comic-text-white comic-wiggle mb-0 max-md:text-2xl max-md:leading-tight sm:max-md:text-3xl"
+          >
+            {t.englishFeed.heroTitle}
+          </ComicTitle>
+        </div>
 
-      <div className="relative z-0 w-full max-w-5xl">
-        <ComicTitle level={1} className="comic-text-white mb-8 comic-wiggle">
-          {t.englishFeed.heroTitle}
-        </ComicTitle>
-        <ComicText size="xl" className="comic-text-white mb-4 font-bold max-w-3xl mx-auto">
-          {t.englishFeed.heroPunch}
-        </ComicText>
-        <ComicText className="comic-text-white mb-10 max-w-2xl mx-auto">
-          {t.englishFeed.heroDesc}
-        </ComicText>
+        <div className="flex min-w-0 flex-col items-center gap-2 text-center sm:gap-2.5 md:col-start-1 md:row-start-2 md:items-stretch md:text-left">
+          <div className="inline-block max-w-full rounded-md bg-red-500/70 px-3 py-2 max-md:px-3 md:px-4 md:py-3 [&_.comic-text]:inline [&_.comic-text]:align-middle">
+            <ComicText size="xl" weight="normal" className="comic-text-white mb-0 max-md:!text-base">
+              {t.englishFeed.heroPunch}{" "}
+            </ComicText>
+            <ComicButton
+              variant="warning"
+              size="sm"
+              className="comic-wiggle ml-2 inline-block align-middle !px-4 !py-1.5 max-md:!text-base"
+              href={ENGLISHFEED_DEMO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t.nav.downloadApp}
+            </ComicButton>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:justify-start">
+            {ENGLISHFEED_APP_HERO_CIRCLE_URLS.map((src, index) => (
+              <AppHeroPhotoCircle
+                key={src}
+                src={src}
+                style={{ animationDelay: APP_HERO_CIRCLE_DELAYS[index] }}
+              />
+            ))}
+          </div>
+        </div>
 
-        <div className="mb-12 max-w-4xl mx-auto">
-          <div className="rounded-2xl overflow-hidden comic-border-thick comic-shadow-xl bg-[var(--comic-black)]">
-            <div className="relative w-full aspect-video min-h-[220px]">
+        <div className="w-full min-w-0 md:col-start-2 md:row-start-2 md:self-start">
+          <div className="overflow-hidden rounded-2xl comic-border-thick comic-shadow-xl bg-[var(--comic-black)]">
+            <div className="relative aspect-video w-full min-h-[220px]">
               <iframe
-                src={ENGLISHFEED_PROMO_VIMEO_EMBED_SRC}
-                className="absolute top-0 left-0 w-full h-full"
-                frameBorder="0"
+                src={ENGLISHFEED_HOMEPAGE_VIMEO_EMBED_SRC}
+                className="absolute inset-0 h-full w-full"
+                frameBorder={0}
                 allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
                 referrerPolicy="strict-origin-when-cross-origin"
                 title="EnglishFeed promo video"
@@ -44,19 +96,6 @@ function HeroSection() {
               />
             </div>
           </div>
-        </div>
-
-        <div className="flex justify-center">
-          <ComicButton
-            variant="warning"
-            size="lg"
-            className="comic-wiggle"
-            href={ENGLISHFEED_DEMO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {t.nav.downloadApp}
-          </ComicButton>
         </div>
       </div>
     </section>
@@ -66,61 +105,72 @@ function HeroSection() {
 function HowSection() {
   const { t } = useI18n();
   return (
-    <section className="max-w-6xl mx-auto py-24 px-4">
-      <div className="text-center mb-16">
-        <ComicTitle level={2} className="mb-8 text-[var(--comic-purple)]">
-          {t.englishFeed.howTitle}
-        </ComicTitle>
-        <ComicText size="lg" className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto">
-          {t.englishFeed.howDesc}
-        </ComicText>
-      </div>
+    <section className="comic-bg-edtech relative w-full overflow-hidden py-24">
+      <div className="relative z-10 mx-auto max-w-6xl px-4">
+        <div className="text-center mb-16">
+          <ComicTitle level={2} className="comic-title-no-shadow mb-8 text-[var(--comic-primary)]">
+            {t.englishFeed.howTitle}
+          </ComicTitle>
+          <ComicText size="lg" className="text-[var(--brand-navy)] font-bold max-w-4xl mx-auto">
+            {t.englishFeed.howDesc}
+          </ComicText>
+        </div>
 
-      <div className="grid md:grid-cols-3 gap-8">
-        <ComicCard className="comic-shadow-xl text-left">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-pink)] text-center md:text-left">
-            {t.englishFeed.howStep1Title}
-          </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-4 text-center">
-            {t.englishFeed.howStep1Desc}
-          </ComicText>
-          <ul className="text-[var(--comic-dark)] space-y-2 font-bold">
-            <li>• {t.englishFeed.howStep1Item1}</li>
-            <li>• {t.englishFeed.howStep1Item2}</li>
-            <li>• {t.englishFeed.howStep1Item3}</li>
-            <li>• {t.englishFeed.howStep1Item4}</li>
-          </ul>
-        </ComicCard>
-        <ComicCard className="comic-shadow-xl text-left">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-secondary)] text-center md:text-left">
-            {t.englishFeed.howStep2Title}
-          </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-4 text-center">
-            {t.englishFeed.howStep2Desc}
-          </ComicText>
-          <ul className="text-[var(--comic-dark)] space-y-2 font-bold">
-            <li>• {t.englishFeed.howStep2Item1}</li>
-            <li>• {t.englishFeed.howStep2Item2}</li>
-            <li>• {t.englishFeed.howStep2Item3}</li>
-            <li>• {t.englishFeed.howStep2Item4}</li>
-            <li>• {t.englishFeed.howStep2Item5}</li>
-          </ul>
-        </ComicCard>
-        <ComicCard className="comic-shadow-xl text-left">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-success)] text-center md:text-left">
-            {t.englishFeed.howStep3Title}
-          </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-4 text-center">
-            {t.englishFeed.howStep3Desc}
-          </ComicText>
-          <ul className="text-[var(--comic-dark)] space-y-2 font-bold">
-            <li>• {t.englishFeed.howStep3Item1}</li>
-            <li>• {t.englishFeed.howStep3Item2}</li>
-            <li>• {t.englishFeed.howStep3Item3}</li>
-            <li>• {t.englishFeed.howStep3Item4}</li>
-            <li>• {t.englishFeed.howStep3Item5}</li>
-          </ul>
-        </ComicCard>
+        <div className="grid md:grid-cols-3 gap-8">
+          <ComicCard className="comic-shadow-xl text-left">
+            <ComicTitle
+              level={3}
+              className="comic-title-no-shadow mb-4 text-center text-[var(--comic-pink)] md:text-left"
+            >
+              {t.englishFeed.howStep1Title}
+            </ComicTitle>
+            <ComicText className="text-[var(--comic-dark)] font-bold mb-4 text-center">
+              {t.englishFeed.howStep1Desc}
+            </ComicText>
+            <ul className="text-[var(--comic-dark)] space-y-2 font-bold">
+              <li>• {t.englishFeed.howStep1Item1}</li>
+              <li>• {t.englishFeed.howStep1Item2}</li>
+              <li>• {t.englishFeed.howStep1Item3}</li>
+              <li>• {t.englishFeed.howStep1Item4}</li>
+            </ul>
+          </ComicCard>
+          <ComicCard className="comic-shadow-xl text-left">
+            <ComicTitle
+              level={3}
+              className="comic-title-no-shadow mb-4 text-center text-[var(--comic-secondary)] md:text-left"
+            >
+              {t.englishFeed.howStep2Title}
+            </ComicTitle>
+            <ComicText className="text-[var(--comic-dark)] font-bold mb-4 text-center">
+              {t.englishFeed.howStep2Desc}
+            </ComicText>
+            <ul className="text-[var(--comic-dark)] space-y-2 font-bold">
+              <li>• {t.englishFeed.howStep2Item1}</li>
+              <li>• {t.englishFeed.howStep2Item2}</li>
+              <li>• {t.englishFeed.howStep2Item3}</li>
+              <li>• {t.englishFeed.howStep2Item4}</li>
+              <li>• {t.englishFeed.howStep2Item5}</li>
+            </ul>
+          </ComicCard>
+          <ComicCard className="comic-shadow-xl text-left">
+            <ComicTitle
+              level={3}
+              className="comic-title-no-shadow mb-4 text-center text-[var(--comic-success)] md:text-left"
+            >
+              {t.englishFeed.howStep3Title}
+            </ComicTitle>
+            <ComicText className="text-[var(--comic-dark)] font-bold mb-4 text-center">
+              {t.englishFeed.howStep3Desc}
+            </ComicText>
+            <ul className="text-[var(--comic-dark)] space-y-2 font-bold">
+              <li>• {t.englishFeed.howStep3Item1}</li>
+              <li>• {t.englishFeed.howStep3Item2}</li>
+              <li>• {t.englishFeed.howStep3Item3}</li>
+              <li>• {t.englishFeed.howStep3Item4}</li>
+              <li>• {t.englishFeed.howStep3Item5}</li>
+            </ul>
+          </ComicCard>
+        </div>
       </div>
     </section>
   );
@@ -132,10 +182,10 @@ function VideoSection() {
   const accordionFeatures = buildEnglishFeedInnovativeFeatureBlocks(t.englishFeed);
 
   return (
-    <section className="comic-bg-accent py-24 px-4 comic-pattern-stripes">
+    <section id="englishfeed-innovative-features" className="comic-bg-accent py-24 px-4 comic-pattern-stripes">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
-          <ComicTitle level={2} className="comic-text-white mb-8 text-5xl md:text-6xl">
+          <ComicTitle level={2} className="comic-text-white comic-title-no-shadow mb-8 text-5xl md:text-6xl">
             {t.englishFeed.videoTitle}
           </ComicTitle>
           <ComicText size="lg" className="comic-text-white font-bold max-w-4xl mx-auto">
@@ -158,7 +208,7 @@ function VideoSection() {
                     <div className="flex items-center justify-between gap-4">
                       <ComicTitle
                         level={3}
-                        className="text-[var(--comic-warning)] leading-tight break-words [overflow-wrap:anywhere]"
+                        className="comic-title-no-shadow leading-tight break-words text-[var(--comic-primary)] [overflow-wrap:anywhere]"
                       >
                         {block.title}
                       </ComicTitle>

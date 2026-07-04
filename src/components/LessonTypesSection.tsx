@@ -30,11 +30,16 @@ export default function LessonTypesSection({
   variant = "lessonHub",
 }: LessonTypesSectionProps) {
   const { t } = useI18n();
+  const skillTitleClass =
+    variant === "englishFeed"
+      ? "comic-title-no-shadow mb-6 text-[var(--comic-primary)]"
+      : undefined;
+
   return (
     <section className="comic-bg-primary py-24 px-4 comic-pattern-dots">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
-          <ComicTitle level={2} className="comic-text-white mb-8">
+          <ComicTitle level={2} className="comic-text-white mb-8 comic-title-no-shadow">
             {variant === "englishFeed"
               ? t.englishFeed.lessonTypesTitle
               : t.aiLessonGenerator.lessonTypesTitle}
@@ -48,7 +53,10 @@ export default function LessonTypesSection({
 
         <div className="grid md:grid-cols-2 gap-8 mb-16">
           <ComicCard className="comic-shadow-xl">
-            <ComicTitle level={3} className="mb-6 text-[var(--comic-primary)]">
+            <ComicTitle
+              level={3}
+              className={skillTitleClass ?? "mb-6 text-[var(--comic-primary)]"}
+            >
               {t.aiLessonGenerator.listeningTitle}
             </ComicTitle>
             <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
@@ -95,7 +103,10 @@ export default function LessonTypesSection({
           </ComicCard>
 
           <ComicCard className="comic-shadow-xl">
-            <ComicTitle level={3} className="mb-6 text-[var(--comic-secondary)]">
+            <ComicTitle
+              level={3}
+              className={skillTitleClass ?? "mb-6 text-[var(--comic-secondary)]"}
+            >
               {variant === "englishFeed"
                 ? t.englishFeed.speakingTitle
                 : t.aiLessonGenerator.speakingTitle}
@@ -148,7 +159,10 @@ export default function LessonTypesSection({
           </ComicCard>
 
           <ComicCard className="comic-shadow-xl">
-            <ComicTitle level={3} className="mb-6 text-[var(--comic-success)]">
+            <ComicTitle
+              level={3}
+              className={skillTitleClass ?? "mb-6 text-[var(--comic-success)]"}
+            >
               {variant === "englishFeed"
                 ? t.englishFeed.readingTitle
                 : t.aiLessonGenerator.readingTitle}
@@ -216,7 +230,10 @@ export default function LessonTypesSection({
           </ComicCard>
 
           <ComicCard className="comic-shadow-xl">
-            <ComicTitle level={3} className="mb-6 text-[var(--comic-warning)]">
+            <ComicTitle
+              level={3}
+              className={skillTitleClass ?? "mb-6 text-[var(--comic-warning)]"}
+            >
               {variant === "englishFeed"
                 ? t.englishFeed.writingTitle
                 : t.aiLessonGenerator.writingTitle}
@@ -268,7 +285,10 @@ export default function LessonTypesSection({
           </ComicCard>
 
           <ComicCard className="comic-shadow-xl">
-            <ComicTitle level={3} className="mb-6 text-[var(--comic-primary)]">
+            <ComicTitle
+              level={3}
+              className={skillTitleClass ?? "mb-6 text-[var(--comic-primary)]"}
+            >
               {variant === "englishFeed"
                 ? t.englishFeed.grammarTitle
                 : t.aiLessonGenerator.grammarTitle}
@@ -342,7 +362,10 @@ export default function LessonTypesSection({
           </ComicCard>
 
           <ComicCard className="comic-shadow-xl">
-            <ComicTitle level={3} className="mb-6 text-[var(--comic-accent)]">
+            <ComicTitle
+              level={3}
+              className={skillTitleClass ?? "mb-6 text-[var(--comic-accent)]"}
+            >
               {variant === "englishFeed"
                 ? t.englishFeed.vocabularyTitle
                 : t.aiLessonGenerator.vocabularyTitle}

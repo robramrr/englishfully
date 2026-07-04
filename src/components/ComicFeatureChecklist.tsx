@@ -1,10 +1,20 @@
-const FEATURE_BADGE_COLORS = [
-  "var(--comic-primary)",
-  "var(--comic-secondary)",
-  "var(--comic-warning)",
-  "var(--comic-accent)",
-  "var(--comic-success)",
-  "var(--comic-purple)",
+/** Alternating red / navy — white checkmark must not sit on light backgrounds. */
+const FEATURE_BADGE_COLORS = ["var(--brand-red)", "var(--brand-navy)"] as const;
+
+/** Multi-hue badges for warm yellow cards (homepage 1-on-1 support, etc.). */
+export const COLORFUL_CHECKLIST_BADGE_COLORS = [
+  "#ea1225",
+  "#001a48",
+  "#ff9500",
+  "#00b8b9",
+  "#2ed573",
+  "#6b4ce6",
+] as const;
+
+/** Homepage 1-on-1 Support — navy first, then red, alternating. */
+export const ONE_ON_ONE_HOME_CHECKLIST_BADGE_COLORS = [
+  "#001a48",
+  "#ea1225",
 ] as const;
 
 /** First colon splits label (bold) from body (normal weight); label includes the ":". */
@@ -23,10 +33,13 @@ function splitAfterFirstColon(text: string): {
 export default function ComicFeatureChecklist({
   items,
   splitLabelAfterColon = false,
+  badgeColors = FEATURE_BADGE_COLORS,
 }: {
   items: readonly string[];
   /** Label before first ":" is bold; rest wraps on the next line with normal weight. */
   splitLabelAfterColon?: boolean;
+  /** Checkmark badge backgrounds; defaults to red / navy alternation. */
+  badgeColors?: readonly string[];
 }) {
   return (
     <ul className="list-none space-y-3.5 mb-6 flex-grow m-0 p-0 text-left">
@@ -56,8 +69,7 @@ export default function ComicFeatureChecklist({
             <span
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border-4 border-[var(--comic-black)] text-base font-black text-white comic-shadow-sm leading-none pt-px"
               style={{
-                backgroundColor:
-                  FEATURE_BADGE_COLORS[i % FEATURE_BADGE_COLORS.length],
+                backgroundColor: badgeColors[i % badgeColors.length],
               }}
               aria-hidden
             >

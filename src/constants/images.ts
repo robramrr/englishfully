@@ -3,11 +3,19 @@
  * Logo is served directly from Cloudinary (no next/image / Vercel optimization).
  */
 export const LOGO_URL =
-  "https://res.cloudinary.com/dkbf7tvcx/image/upload/englishfully/logo/logo-englishfully.png";
+  "https://res.cloudinary.com/dkbf7tvcx/image/upload/v1779780445/englishfully/logo/englishfully-01.png";
 
-/** Hero background (CSS url) — not passed through next/image; no Vercel optimization. */
+/** Homepage hero slide 1 background (CSS url) — not passed through next/image. */
 export const HERO_BACKGROUND_URL =
-  "https://res.cloudinary.com/dkbf7tvcx/image/upload/v1770485941/englishfully/hero/hero-image.jpg";
+  "https://res.cloudinary.com/dkbf7tvcx/image/upload/v1777748303/englishfully/service/english-speaking-practic-1-and-1-coaching.png";
+
+/** Homepage hero slide 1 — CTA row circle (group session) */
+export const HERO_CIRCLE_IMAGE_URL =
+  "https://res.cloudinary.com/dkbf7tvcx/image/upload/v1779865297/englishfully/hero/group-session.png";
+
+/** Homepage hero slide 2 — EnglishFeed background video */
+export const ENGLISHFEED_HERO_VIDEO_URL =
+  "https://res.cloudinary.com/dkbf7tvcx/video/upload/v1779796420/englishfully/hero/englishfeed-hero-video-1.mp4";
 
 /** Onsite 1-on-1 native practice photo (in-person learning pricing card). */
 export const ONSITE_ONE_ON_ONE_PRACTICE_URL =
@@ -67,3 +75,7 @@ export const ONLINE_LEARNING_HERO_SLIDE_URLS = [
   ONLINE_SUBSCRIPTION_ONE_ON_ONE_URL,
   ONLINE_SUBSCRIPTION_PRO_URL,
 ] as const;
+
+/** Contact page — Bangkok office neighborhood photo. */
+export const CONTACT_OFFICE_IMAGE_URL =
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS3fVVzcXdKkYUReyLRxW1ASWSTtbcR6xShhNiO4se2iFnYYCp4G6-7aLRo&s=10";

@@ -1,20 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  /* Enhanced Comic Book Color Palette */
-  --comic-primary: #ff4757;
-  --comic-secondary: #00d2d3;
-  --comic-accent: #3742fa;
-  --comic-warning: #ffa502;
-  --comic-success: #2ed573;
-  --comic-danger: #ff3838;
-  --comic-dark: #2f3542;
-  --comic-light: #f1f2f6;
-  --comic-white: #ffffff;
-  --comic-black: #000000;
-  --comic-yellow: #ffdd59;
-  --comic-pink: #ff6b9d;
-  --comic-purple: #a55eea;
+  /* Englishfully brand palette */
+  --brand-navy: #001a48;
+  --brand-red: #ea1225;
+  --brand-white: #ffffff;
+  --brand-gray: #e5e5e4;
+  --comic-accent-light-gradient: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--brand-navy) 40%, var(--brand-gray)) 0%,
+    color-mix(in srgb, var(--brand-gray) 38%, var(--brand-white)) 100%
+  );
+  --comic-accent-lighter-gradient: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--brand-navy) 10%, var(--brand-white)) 0%,
+    color-mix(in srgb, var(--brand-gray) 12%, var(--brand-white)) 100%
+  );
+  /* Semantic aliases (all map to brand colors) */
+  --comic-primary: var(--brand-red);
+  --comic-secondary: var(--brand-navy);
+  --comic-accent: var(--brand-navy);
+  --comic-warning: var(--brand-gray);
+  --comic-success: var(--brand-navy);
+  --comic-danger: var(--brand-red);
+  --comic-dark: var(--brand-navy);
+  --comic-light: var(--brand-gray);
+  --comic-white: var(--brand-white);
+  --comic-black: var(--brand-navy);
+  --comic-yellow: var(--brand-gray);
+  --comic-pink: var(--brand-red);
+  --comic-purple: var(--brand-navy);
   
   /* Enhanced Comic Book Shadows */
   --comic-shadow-sm: 3px 3px 0px var(--comic-black);
@@ -35,6 +50,11 @@
 }
 
 @theme inline {
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-red: var(--brand-red);
+  --color-brand-white: var(--brand-white);
+  --color-brand-gray: var(--brand-gray);
+
   --color-comic-primary: var(--comic-primary);
   --color-comic-secondary: var(--comic-secondary);
   --color-comic-accent: var(--comic-accent);
@@ -56,9 +76,14 @@
 
 /* Comic Book Base Styles */
 body {
-  background: linear-gradient(135deg, var(--comic-light) 0%, #e9ecef 50%, var(--comic-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--brand-gray) 0%,
+    var(--brand-white) 50%,
+    var(--brand-gray) 100%
+  );
   background-attachment: fixed;
-  color: var(--comic-dark);
+  color: var(--brand-navy);
   font-family: var(--font-fredoka);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -74,10 +99,10 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: 
-    radial-gradient(circle at 20% 80%, rgba(255, 71, 87, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(0, 210, 211, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(255, 165, 2, 0.1) 0%, transparent 50%);
+  background-image:
+    radial-gradient(circle at 20% 80%, rgba(234, 18, 37, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 26, 72, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(229, 229, 228, 0.35) 0%, transparent 50%);
   pointer-events: none;
   z-index: -1;
 }
@@ -129,6 +154,19 @@ body::before {
   background: var(--comic-white);
 }
 
+/* High-contrast framed cards — selected sections only */
+#mission .comic-card,
+#one-on-one-support .home-online-coaching-card.comic-card,
+#one-on-one-support .home-onsite-coaching-card.comic-card,
+#englishfeed-innovative-features .comic-card,
+footer .comic-card,
+footer .footer-block-card {
+  border: 5px solid var(--brand-white);
+  outline: 3px solid var(--brand-navy);
+  outline-offset: 0;
+  box-shadow: var(--comic-shadow-lg);
+}
+
 /* Home “Our mission” cards: grid min-width + wrap long Bungee titles (shadow was clipping past edges) */
 #mission .comic-card {
   min-width: 0;
@@ -148,8 +186,12 @@ body::before {
 
 .comic-title {
   @apply font-bungee font-bold;
-  text-shadow: 3px 3px 0px var(--comic-black), 6px 6px 0px rgba(0,0,0,0.3);
+  text-shadow: 3px 3px 0px var(--brand-navy), 6px 6px 0px rgba(0, 26, 72, 0.25);
   letter-spacing: 0.05em;
+}
+
+.comic-title-no-shadow {
+  text-shadow: none;
 }
 
 .comic-text {
@@ -242,8 +284,20 @@ ol {
     45deg,
     transparent,
     transparent 10px,
-    rgba(0,0,0,0.1) 10px,
-    rgba(0,0,0,0.1) 20px
+    rgba(0, 26, 72, 0.08) 10px,
+    rgba(0, 26, 72, 0.08) 20px
+  );
+}
+
+/* Header: slanted light stripes on white */
+.comic-bg-header-stripes {
+  background-color: var(--brand-white);
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(0, 0, 0, 0.1) 10px,
+    rgba(0, 0, 0, 0.1) 20px
   );
 }
 
@@ -258,41 +312,295 @@ ol {
   opacity: 1;
 }
 
-/* Enhanced Comic Book Backgrounds */
+/* Brand gradient backgrounds */
 .comic-bg-primary {
-  background: linear-gradient(135deg, var(--comic-primary) 0%, #ff3742 100%);
+  background: linear-gradient(135deg, var(--brand-red) 0%, var(--brand-navy) 100%);
 }
 
 .comic-bg-secondary {
-  background: linear-gradient(135deg, var(--comic-secondary) 0%, #00b8b9 100%);
+  background: linear-gradient(135deg, var(--brand-navy) 0%, var(--brand-red) 100%);
 }
 
 .comic-bg-accent {
-  background: linear-gradient(135deg, var(--comic-accent) 0%, #2f3542 100%);
+  background: linear-gradient(135deg, var(--brand-navy) 0%, var(--brand-gray) 100%);
+}
+
+/* Dynamic multi-color brand hero background (in-person learning hero) */
+.home-hero-dynamic-bg {
+  overflow: hidden;
+  background-color: var(--brand-navy);
+  background-image: linear-gradient(
+    -35deg,
+    var(--brand-navy) 0%,
+    var(--brand-red) 18%,
+    var(--brand-navy) 36%,
+    var(--brand-red) 54%,
+    color-mix(in srgb, var(--brand-navy) 88%, var(--brand-gray)) 72%,
+    var(--brand-red) 86%,
+    var(--brand-navy) 100%
+  );
+  background-size: 320% 320%;
+  animation: home-hero-gradient-flow 14s ease-in-out infinite;
+}
+
+.home-hero-dynamic-bg::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(circle at 22% 38%, rgba(234, 18, 37, 0.92) 0%, transparent 48%),
+    radial-gradient(circle at 78% 68%, rgba(234, 18, 37, 0.78) 0%, transparent 44%),
+    radial-gradient(circle at 62% 18%, rgba(255, 255, 255, 0.14) 0%, transparent 40%),
+    radial-gradient(circle at 12% 82%, rgba(229, 229, 228, 0.22) 0%, transparent 46%);
+  animation: home-hero-blob-shift 18s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.home-hero-dynamic-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 42%,
+    rgba(229, 229, 228, 0.1) 58%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  animation: home-hero-shimmer 10s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes home-hero-gradient-flow {
+  0% {
+    background-position: 0% 42%;
+  }
+  50% {
+    background-position: 100% 58%;
+  }
+  100% {
+    background-position: 0% 42%;
+  }
+}
+
+@keyframes home-hero-blob-shift {
+  0% {
+    transform: translate(0%, 0%) scale(1);
+  }
+  100% {
+    transform: translate(-4%, 3%) scale(1.07);
+  }
+}
+
+@keyframes home-hero-shimmer {
+  0% {
+    background-position: 0% 50%;
+    opacity: 0.55;
+  }
+  100% {
+    background-position: 100% 50%;
+    opacity: 0.95;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-dynamic-bg,
+  .home-hero-dynamic-bg::before,
+  .home-hero-dynamic-bg::after {
+    animation: none;
+  }
+
+  .home-hero-dynamic-bg {
+    background-position: 50% 50%;
+  }
+}
+
+/* Lighter than comic-bg-accent (EdTech image frames, 1-on-1 coaching cards) */
+.comic-bg-accent-light {
+  background: var(--comic-accent-light-gradient);
+}
+
+/* Homepage EdTech Innovations — readable comic panel (brand navy / red / white / gray) */
+.comic-bg-edtech {
+  background-color: #e5e5e4;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 14px,
+      rgba(0, 26, 72, 0.05) 14px,
+      rgba(0, 26, 72, 0.05) 28px
+    ),
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #e5e5e4 42%,
+      color-mix(in srgb, #001a48 14%, #e5e5e4) 100%
+    );
+  border-top: 8px solid #ea1225;
+}
+
+.comic-bg-edtech::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 0;
+  width: min(48%, 380px);
+  height: min(40%, 300px);
+  background: linear-gradient(225deg, #001a48 0%, transparent 68%);
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+/* Lighter grey version of the EdTech panel (for section reuse). */
+.comic-bg-edtech-light {
+  background-color: #f3f3f2;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 14px,
+      rgba(0, 26, 72, 0.035) 14px,
+      rgba(0, 26, 72, 0.035) 28px
+    ),
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #f3f3f2 55%,
+      color-mix(in srgb, #001a48 10%, #f3f3f2) 100%
+    );
+  border-top: 8px solid #ea1225;
+}
+
+.comic-bg-edtech-light::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 0;
+  width: min(48%, 380px);
+  height: min(40%, 300px);
+  background: linear-gradient(225deg, #001a48 0%, transparent 68%);
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+/* Light red panel (e.g. in-person 1-on-1 practice options) — same structure as comic-bg-edtech-light */
+.comic-bg-edtech-light-red {
+  background-color: #fde8ea;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 14px,
+      rgba(234, 18, 37, 0.06) 14px,
+      rgba(234, 18, 37, 0.06) 28px
+    ),
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #fde8ea 55%,
+      color-mix(in srgb, var(--brand-red) 12%, #fde8ea) 100%
+    );
+  border-top: 8px solid #ea1225;
+}
+
+.comic-bg-edtech-light-red::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 0;
+  width: min(48%, 380px);
+  height: min(40%, 300px);
+  background: linear-gradient(225deg, var(--brand-red) 0%, transparent 68%);
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+/* Homepage EdTech only — lighter-than-brand blues, deepening to #001a48 at the bottom */
+#edtech-innovations.comic-bg-edtech {
+  --edtech-blue-top: color-mix(in srgb, #001a48 58%, #ffffff);
+  --edtech-blue-mid: color-mix(in srgb, #001a48 78%, #ffffff);
+  --edtech-blue-base: #001a48;
+  background-color: var(--edtech-blue-mid);
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 14px,
+      rgba(255, 255, 255, 0.06) 14px,
+      rgba(255, 255, 255, 0.06) 28px
+    ),
+    linear-gradient(
+      180deg,
+      var(--edtech-blue-top) 0%,
+      var(--edtech-blue-mid) 38%,
+      var(--edtech-blue-base) 100%
+    );
+  border-top-color: var(--brand-red);
+}
+
+#edtech-innovations.comic-bg-edtech::after {
+  background: linear-gradient(225deg, var(--edtech-blue-mid) 0%, transparent 68%);
+  opacity: 0.2;
 }
 
 .comic-bg-warning {
-  background: linear-gradient(135deg, var(--comic-warning) 0%, #ff9500 100%);
+  background: linear-gradient(135deg, var(--brand-white) 0%, var(--brand-gray) 100%);
 }
 
 .comic-bg-success {
-  background: linear-gradient(135deg, var(--comic-success) 0%, #26d0ce 100%);
+  background: linear-gradient(135deg, var(--brand-navy) 0%, var(--brand-red) 100%);
 }
 
 .comic-bg-danger {
-  background: linear-gradient(135deg, var(--comic-danger) 0%, #ff2d2d 100%);
+  background: linear-gradient(135deg, var(--brand-red) 0%, var(--brand-navy) 100%);
 }
 
 .comic-bg-purple {
-  background: linear-gradient(135deg, var(--comic-purple) 0%, #8e44ad 100%);
+  background: linear-gradient(135deg, var(--brand-navy) 0%, var(--brand-red) 100%);
+}
+
+/* /online-learning hero: lighter, higher-contrast coaching gradient */
+.comic-bg-online-hero {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--brand-gray) 88%, var(--brand-white)) 0%,
+    color-mix(in srgb, var(--brand-gray) 70%, var(--brand-navy)) 45%,
+    color-mix(in srgb, var(--brand-navy) 72%, var(--brand-gray)) 100%
+  );
 }
 
 .comic-bg-pink {
-  background: linear-gradient(135deg, var(--comic-pink) 0%, #e91e63 100%);
+  background: linear-gradient(135deg, var(--brand-red) 0%, var(--brand-white) 100%);
 }
 
 .comic-bg-yellow {
-  background: linear-gradient(135deg, var(--comic-yellow) 0%, #f39c12 100%);
+  background: linear-gradient(135deg, var(--brand-gray) 0%, var(--brand-white) 100%);
+}
+
+/* Homepage 1-on-1 coaching cards — overrides .comic-card white bg */
+#one-on-one-support .home-online-coaching-card.comic-card,
+#one-on-one-support .home-onsite-coaching-card.comic-card {
+  background: var(--comic-accent-light-gradient) !important;
+}
+
+/* In-person practice cards — same style, lighter fill */
+#in-person-practice-options .home-online-coaching-card.comic-card,
+#in-person-practice-options .home-onsite-coaching-card.comic-card {
+  background: var(--comic-accent-lighter-gradient) !important;
+}
+
+.comic-bg-white {
+  background: var(--brand-white);
+}
+
+.comic-gradient-text {
+  background: linear-gradient(135deg, var(--brand-red) 0%, var(--brand-navy) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
 /* Responsive Navigation Styles */
@@ -388,7 +696,7 @@ header {
 .comic-input:focus {
   outline: none;
   box-shadow: var(--comic-shadow-md);
-  border-color: var(--comic-primary);
+  border-color: var(--brand-red);
 }
 
 .comic-textarea {
@@ -407,7 +715,7 @@ header {
 .comic-textarea:focus {
   outline: none;
   box-shadow: var(--comic-shadow-md);
-  border-color: var(--comic-primary);
+  border-color: var(--brand-red);
 }
 
 /* Smooth scrolling for navigation */

@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     console.log('Fillout submission successful:', filloutData);
 
     return NextResponse.json(
-      { message: 'Booking request submitted successfully! We\'ll contact you soon to confirm your session.' },
+      { message: "Success! We'll contact you soon to confirm your session." },
       { status: 200 }
     );
   } catch (error) {

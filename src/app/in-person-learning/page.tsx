@@ -86,7 +86,7 @@ function HowItWorksImageCarousel({
         className="relative"
       >
         <figure className="relative mx-auto aspect-square w-full max-h-[min(330px,60vw)] overflow-hidden rounded-2xl border-4 border-[var(--comic-black)] bg-[var(--comic-white)] comic-shadow-xl sm:max-h-[345px]">
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(repeating-linear-gradient(135deg,#00000006_0_10px,#00000006_10px_20px))]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(repeating-linear-gradient(135deg,#001a4808_0_10px,#001a4808_10px_20px))]" />
           {HOW_IT_WORKS_SLIDE_URLS.map((src, i) => (
             <img
               key={src}
@@ -107,7 +107,7 @@ function HowItWorksImageCarousel({
           />
           <p
             aria-live="polite"
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] comic-title px-4 pb-4 pt-12 text-center text-2xl leading-tight tracking-tight text-[var(--comic-yellow)] sm:text-3xl md:pb-5 md:text-4xl"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] comic-title px-4 pb-4 pt-12 text-center text-2xl leading-tight tracking-tight text-[var(--brand-white)] sm:text-3xl md:pb-5 md:text-4xl"
           >
             {slideHeads[slideIndex]}
           </p>
@@ -148,46 +148,60 @@ function HeroSection({
 }) {
   const { t } = useI18n();
   return (
-    <section className="flex flex-col items-center justify-center text-center py-24 px-4 comic-bg-purple relative overflow-hidden comic-pattern-zigzag">
+    <section className="relative overflow-hidden py-24 px-4 max-md:py-16">
+      <div className="absolute inset-0 z-0 home-hero-dynamic-bg" aria-hidden />
       {/* Enhanced comic book style background elements */}
-      <div className="absolute top-10 left-10 w-24 h-24 comic-bg-warning rounded-full comic-border-thick comic-shadow-xl comic-bounce"></div>
-      <div className="absolute top-20 right-20 w-20 h-20 comic-bg-success rounded-full comic-border-thick comic-shadow-xl comic-bounce" style={{animationDelay: '0.5s'}}></div>
-      <div className="absolute bottom-20 left-20 w-16 h-16 comic-bg-danger rounded-full comic-border-thick comic-shadow-xl comic-bounce" style={{animationDelay: '1s'}}></div>
-      <div className="absolute top-1/2 right-10 w-12 h-12 comic-bg-secondary rounded-full comic-border-thick comic-shadow-lg comic-bounce" style={{animationDelay: '1.5s'}}></div>
-      <div className="absolute bottom-1/3 right-1/3 w-14 h-14 bg-[var(--comic-yellow)] rounded-full comic-border-thick comic-shadow-lg comic-bounce" style={{animationDelay: '2s'}}></div>
-      
-      <div className="relative z-0">
-        <ComicTitle level={1} className="comic-text-white mb-8 comic-wiggle">
-          <span className="mx-auto flex w-max max-w-full flex-col items-center px-3 text-center">
-            <span className="block">{t.inPersonLearning.heroTitle}</span>
-            <span
-              className="mt-3 block max-w-full bg-[linear-gradient(135deg,var(--comic-warning)_0%,#ff9500_100%)] bg-clip-text text-base leading-snug tracking-normal text-transparent [-webkit-text-fill-color:transparent] [text-shadow:none] sm:mt-3 sm:text-lg md:mt-4 md:text-xl lg:text-2xl lg:leading-tight lg:whitespace-nowrap"
-              style={{ WebkitBackgroundClip: "text", backgroundClip: "text" }}
-            >
-              {t.inPersonLearning.heroTitleTagline}
+      <div
+        className="absolute bottom-20 left-20 w-16 h-16 comic-bg-danger rounded-full comic-border-thick comic-shadow-xl comic-bounce max-md:hidden"
+        style={{ animationDelay: "1s" }}
+      />
+      <div
+        className="absolute top-1/2 right-10 w-12 h-12 comic-bg-secondary rounded-full comic-border-thick comic-shadow-lg comic-bounce max-md:hidden"
+        style={{ animationDelay: "1.5s" }}
+      />
+      <div
+        className="absolute bottom-1/3 right-1/3 w-14 h-14 bg-[var(--comic-yellow)] rounded-full comic-border-thick comic-shadow-lg comic-bounce max-md:hidden"
+        style={{ animationDelay: "2s" }}
+      />
+
+      <div className="relative z-10 mx-auto w-full max-w-6xl grid grid-cols-1 items-center gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,520px)] md:gap-10">
+        {/* Left copy */}
+        <div className="text-center md:text-left">
+          <ComicTitle
+            level={1}
+            className="comic-text-white mb-6 comic-wiggle max-md:text-3xl"
+          >
+            <span className="mx-auto flex w-max max-w-full flex-col items-center px-3 text-center md:items-start md:px-0 md:text-left">
+              <span className="block">{t.inPersonLearning.heroTitle}</span>
+              <span className="mt-3 block max-w-full text-base leading-snug tracking-normal text-[#e5e5e4] [text-shadow:none] sm:mt-3 sm:text-lg md:mt-4 md:text-xl lg:text-2xl lg:leading-tight lg:whitespace-nowrap">
+                {t.inPersonLearning.heroTitleTagline}
+              </span>
             </span>
-          </span>
-        </ComicTitle>
-        <ComicText size="xl" className="comic-text-white mb-10 font-bold max-w-3xl mx-auto">
-          {t.inPersonLearning.heroDesc}
-        </ComicText>
+          </ComicTitle>
+
+          <ComicText
+            size="xl"
+            className="comic-text-white mb-6 font-bold max-w-3xl mx-auto md:mx-0 md:text-left max-md:text-base"
+          >
+            {t.inPersonLearning.heroDesc}
+          </ComicText>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+            <a href="#booking-form">
+              <ComicButton variant="warning" size="lg" className="comic-wiggle">
+                {t.inPersonLearning.bookASession}
+              </ComicButton>
+            </a>
+          </div>
+        </div>
+
+        {/* Right carousel */}
         <HowItWorksImageCarousel
           slideIndex={howItWorksSlideIndex}
           setSlideIndex={setHowItWorksSlideIndex}
           ariaLabel={t.inPersonLearning.howDifferentTitle}
-          wrapperClassName="mb-12"
+          wrapperClassName="max-md:mt-4 md:mb-0"
         />
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="#booking-form">
-            <ComicButton 
-              variant="warning" 
-              size="lg"
-              className="comic-wiggle"
-            >
-              {t.inPersonLearning.bookASession}
-            </ComicButton>
-          </a>
-        </div>
       </div>
     </section>
   );
@@ -231,7 +245,7 @@ function HowWeAreDifferentSection({
   return (
     <section className="max-w-6xl mx-auto py-24 px-4">
       <div className="text-center mb-10 lg:mb-12">
-        <ComicTitle level={2} className="mb-4 text-[var(--comic-primary)]">
+        <ComicTitle level={2} className="comic-title-no-shadow mb-4 text-[var(--comic-primary)]">
           {t.inPersonLearning.howDifferentTitle}
         </ComicTitle>
       </div>
@@ -252,20 +266,20 @@ function HowWeAreDifferentSection({
             }}
             className={`h-full min-h-0 cursor-pointer rounded-2xl outline-offset-4 transition-[box-shadow,transform] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--comic-accent)] ${
               slideIndex === slideIdx
-                ? "[&_.comic-card]:ring-4 [&_.comic-card]:ring-[var(--comic-yellow)] [&_.comic-card]:border-[var(--comic-black)]"
+                ? "[&_.comic-card]:ring-4 [&_.comic-card]:ring-[var(--brand-red)] [&_.comic-card]:border-[var(--comic-black)]"
                 : "hover:[&_.comic-card]:-translate-y-0.5"
             }`}
           >
             <ComicCard
               className={`flex h-full min-h-[12rem] flex-col comic-shadow-xl transition-shadow ${
                 slideIdx === 1
-                  ? "!bg-[linear-gradient(135deg,var(--comic-yellow)_0%,#f39c12_100%)]"
+                  ? "!comic-bg-yellow"
                   : ""
               }`}
             >
               <ComicTitle
                 level={3}
-                className={`text-[var(--comic-primary)] text-center leading-tight ${subtitleKey ? "mb-2" : "mb-4"}`}
+                className={`comic-title-no-shadow text-[var(--comic-primary)] text-center leading-tight ${subtitleKey ? "mb-2" : "mb-4"}`}
               >
                 {t.inPersonLearning[titleKey]}
               </ComicTitle>
@@ -278,7 +292,7 @@ function HowWeAreDifferentSection({
                   {t.inPersonLearning[subtitleKey]}
                 </ComicText>
               ) : null}
-              <figure className="mb-4 w-full shrink-0 overflow-hidden rounded-xl border-4 border-[var(--comic-black)] bg-[var(--comic-white)] shadow-[inset_0_2px_0_rgba(255,255,255,0.4),inset_0_-2px_0_rgba(0,0,0,0.12)]">
+              <figure className="mb-4 w-full shrink-0 overflow-hidden rounded-xl border-4 border-[var(--comic-black)] bg-[var(--comic-white)] shadow-[inset_0_2px_0_rgba(255,255,255,0.4),inset_0_-2px_0_rgba(0,26,72,0.12)]">
                 <img
                   src={HOW_IT_WORKS_SLIDE_URLS[slideIdx]}
                   alt={String(howDifferentCardAlts[slideIdx])}
@@ -302,8 +316,8 @@ function HowWeAreDifferentSection({
 
 function PricingPracticePhotoFrame({ src, alt }: { src: string; alt: string }) {
   return (
-    <figure className="mb-6 w-full mx-auto rounded-xl bg-[#e8c9a8] p-3 sm:p-3.5 comic-border-thick comic-shadow-xl">
-      <div className="rounded-lg overflow-hidden border-4 border-[var(--comic-black)] shadow-[inset_0_2px_0_rgba(255,255,255,0.5),inset_0_-3px_0_rgba(0,0,0,0.18)]">
+    <figure className="mb-6 w-full mx-auto rounded-xl bg-[var(--brand-gray)] p-3 sm:p-3.5 comic-border-thick comic-shadow-xl">
+      <div className="rounded-lg overflow-hidden border-4 border-[var(--comic-black)] shadow-[inset_0_2px_0_rgba(255,255,255,0.5),inset_0_-3px_0_rgba(0,26,72,0.18)]">
         <img
           src={src}
           alt={alt}
@@ -322,10 +336,13 @@ function PricingPracticePhotoFrame({ src, alt }: { src: string; alt: string }) {
 function PricingPackagesSection() {
   const { t } = useI18n();
   return (
-    <section id="in-person-practice-options" className="w-full comic-bg-secondary py-24 px-4 comic-pattern-dots">
-      <div className="max-w-6xl mx-auto">
+    <section
+      id="in-person-practice-options"
+      className="comic-bg-edtech-light-red relative w-full overflow-hidden py-24 px-4 max-md:py-16"
+    >
+      <div className="relative z-10 mx-auto max-w-6xl">
         <div className="text-center mb-16">
-          <ComicTitle level={2} className="mb-8 text-[var(--comic-primary)]">
+          <ComicTitle level={2} className="comic-title-no-shadow mb-8 text-[var(--comic-primary)]">
             {t.inPersonLearning.pricingTitle}
           </ComicTitle>
           <ComicText size="lg" className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto">
@@ -334,8 +351,8 @@ function PricingPackagesSection() {
         </div>
 
         <div className="flex flex-col md:flex-row gap-8 mb-0 max-w-5xl mx-auto md:items-stretch">
-        <ComicCard className="comic-shadow-xl text-center flex flex-col flex-1 min-w-0 overflow-hidden">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-primary)]">
+        <ComicCard className="home-onsite-coaching-card comic-shadow-lg flex h-full min-h-0 flex-col flex-1 min-w-0 overflow-hidden text-center">
+          <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-secondary)]">
             {t.inPersonLearning.privateTitle}
           </ComicTitle>
           <PricingPracticePhotoFrame
@@ -354,8 +371,8 @@ function PricingPackagesSection() {
           </ComicButton>
         </ComicCard>
         
-        <ComicCard className="comic-shadow-xl text-center flex flex-col flex-1 min-w-0 overflow-hidden">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-secondary)]">
+        <ComicCard className="home-online-coaching-card comic-shadow-lg flex h-full min-h-0 flex-col flex-1 min-w-0 overflow-hidden text-center">
+          <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-secondary)]">
             {t.inPersonLearning.groupTitle}
           </ComicTitle>
           <PricingPracticePhotoFrame
@@ -418,7 +435,7 @@ function BookingSystemSection() {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage('Booking request submitted successfully! We\'ll contact you soon to confirm your session.');
+        setMessage("Success! We'll contact you soon to confirm your session.");
         setBookingForm({ name: '', email: '', phone: '', learningTypeOption: 'learningType1', englishLevel: 'Beginner' });
       } else {
         setMessage(data.error || 'Failed to submit booking request. Please try again.');
@@ -460,74 +477,81 @@ function BookingSystemSection() {
               {t.inPersonLearning.bookingFormTitle}
             </ComicTitle>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Desktop layout: Name (single line) -> Email+Phone (row) -> Session Type+English Level (row) -> Request booking */} 
               <div>
                 <ComicText className="text-[var(--comic-dark)] font-bold mb-2">{t.inPersonLearning.nameLabel}</ComicText>
-                <input 
-                  type="text" 
-                  className="w-full comic-input" 
+                <input
+                  type="text"
+                  className="w-full comic-input"
                   placeholder={t.inPersonLearning.namePlaceholder}
                   value={bookingForm.name}
-                  onChange={(e) => setBookingForm({...bookingForm, name: e.target.value})}
+                  onChange={(e) => setBookingForm({ ...bookingForm, name: e.target.value })}
                   required
                 />
               </div>
-              <div>
-                <ComicText className="text-[var(--comic-dark)] font-bold mb-2">{t.inPersonLearning.emailLabel}</ComicText>
-                <input 
-                  type="email" 
-                  className="w-full comic-input" 
-                  placeholder={t.inPersonLearning.emailPlaceholder}
-                  value={bookingForm.email}
-                  onChange={(e) => setBookingForm({...bookingForm, email: e.target.value})}
-                  required
-                />
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <ComicText className="text-[var(--comic-dark)] font-bold mb-2">{t.inPersonLearning.emailLabel}</ComicText>
+                  <input
+                    type="email"
+                    className="w-full comic-input"
+                    placeholder={t.inPersonLearning.emailPlaceholder}
+                    value={bookingForm.email}
+                    onChange={(e) => setBookingForm({ ...bookingForm, email: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <ComicText className="text-[var(--comic-dark)] font-bold mb-2">{t.inPersonLearning.phoneLabel}</ComicText>
+                  <input
+                    type="tel"
+                    className="w-full comic-input"
+                    placeholder={t.inPersonLearning.phonePlaceholder}
+                    value={bookingForm.phone}
+                    onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })}
+                    required
+                  />
+                </div>
               </div>
-              <div>
-                <ComicText className="text-[var(--comic-dark)] font-bold mb-2">{t.inPersonLearning.phoneLabel}</ComicText>
-                <input 
-                  type="tel" 
-                  className="w-full comic-input" 
-                  placeholder={t.inPersonLearning.phonePlaceholder}
-                  value={bookingForm.phone}
-                  onChange={(e) => setBookingForm({...bookingForm, phone: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <ComicText className="text-[var(--comic-dark)] font-bold mb-2">{t.inPersonLearning.learningTypeLabel}</ComicText>
-                <select 
-                  className="w-full comic-input"
-                  value={bookingForm.learningTypeOption}
-                  onChange={(e) =>
-                    setBookingForm({
-                      ...bookingForm,
-                      learningTypeOption: e.target.value as SessionTypeKey,
-                    })
-                  }
-                >
-                  <option value="learningType1">{t.inPersonLearning.learningType1}</option>
-                  <option value="learningType2">{t.inPersonLearning.learningType2}</option>
-                  <option value="learningType3">{t.inPersonLearning.learningType3}</option>
-                </select>
-              </div>
-              <div>
-                <ComicText className="text-[var(--comic-dark)] font-bold mb-2">{t.inPersonLearning.englishLevelLabel}</ComicText>
-                <select 
-                  className="w-full comic-input"
-                  value={bookingForm.englishLevel}
-                  onChange={(e) => setBookingForm({...bookingForm, englishLevel: e.target.value})}
-                >
-                  <option>{t.inPersonLearning.levelBeginner}</option>
-                  <option>{t.inPersonLearning.levelIntermediate}</option>
-                  <option>{t.inPersonLearning.levelAdvanced}</option>
-                  <option>{t.inPersonLearning.levelNotSure}</option>
-                </select>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <ComicText className="text-[var(--comic-dark)] font-bold mb-2">{t.inPersonLearning.learningTypeLabel}</ComicText>
+                  <select
+                    className="w-full comic-input"
+                    value={bookingForm.learningTypeOption}
+                    onChange={(e) =>
+                      setBookingForm({
+                        ...bookingForm,
+                        learningTypeOption: e.target.value as SessionTypeKey,
+                      })
+                    }
+                  >
+                    <option value="learningType1">{t.inPersonLearning.learningType1}</option>
+                    <option value="learningType2">{t.inPersonLearning.learningType2}</option>
+                    <option value="learningType3">{t.inPersonLearning.learningType3}</option>
+                  </select>
+                </div>
+                <div>
+                  <ComicText className="text-[var(--comic-dark)] font-bold mb-2">{t.inPersonLearning.englishLevelLabel}</ComicText>
+                  <select
+                    className="w-full comic-input"
+                    value={bookingForm.englishLevel}
+                    onChange={(e) => setBookingForm({ ...bookingForm, englishLevel: e.target.value })}
+                  >
+                    <option>{t.inPersonLearning.levelBeginner}</option>
+                    <option>{t.inPersonLearning.levelIntermediate}</option>
+                    <option>{t.inPersonLearning.levelAdvanced}</option>
+                    <option>{t.inPersonLearning.levelNotSure}</option>
+                  </select>
+                </div>
               </div>
               {message && (
                 <p
                   role="status"
                   className={`comic-text p-3 rounded-lg text-sm font-bold leading-snug ${
-                    message.includes('successfully')
+                    message.toLowerCase().includes("success")
                       ? 'bg-green-100 text-green-800 border border-green-300'
                       : 'bg-red-100 text-red-800 border border-red-300'
                   }`}

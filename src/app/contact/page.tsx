@@ -7,6 +7,7 @@ import ComicCard from "../../components/ComicCard";
 import ComicTitle from "../../components/ComicTitle";
 import ComicText from "../../components/ComicText";
 import Footer from "../../components/Footer";
+import { CONTACT_OFFICE_IMAGE_URL } from "../../constants/images";
 import { useI18n } from "../../i18n/I18nProvider";
 
 
@@ -56,81 +57,109 @@ function HeroSection() {
 }
 
 // Contact Information Section
+function ContactOfficePhotoFrame({ src, alt }: { src: string; alt: string }) {
+  return (
+    <figure className="h-full w-full rounded-xl bg-[var(--brand-gray)] p-3 sm:p-3.5 comic-border-thick comic-shadow-xl">
+      <div className="h-full rounded-lg overflow-hidden border-4 border-[var(--comic-black)] shadow-[inset_0_2px_0_rgba(255,255,255,0.5),inset_0_-3px_0_rgba(0,26,72,0.18)]">
+        <img
+          src={src}
+          alt={alt}
+          width={1200}
+          height={800}
+          className="h-full min-h-[280px] w-full object-cover object-center block md:min-h-full"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    </figure>
+  );
+}
+
 function ContactInfoSection() {
   const { t } = useI18n();
-  
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.footer.businessAddress)}`;
+
+  const contactDetails = [
+    {
+      id: "website",
+      icon: "🌐",
+      label: t.contact.websiteLabel,
+      href: t.contact.websiteUrl,
+      value: t.contact.websiteDisplay,
+      external: false,
+    },
+    {
+      id: "email",
+      icon: "📧",
+      label: t.contact.email,
+      href: `mailto:${t.contact.emailAddress}`,
+      value: t.contact.emailAddress,
+      external: false,
+    },
+    {
+      id: "phone",
+      icon: "📞",
+      label: t.contact.phone,
+      href: `tel:${t.contact.phoneNumber.replace(/\s/g, "")}`,
+      value: t.contact.phoneNumber,
+      external: false,
+    },
+    {
+      id: "address",
+      icon: "📍",
+      label: t.contact.addressLabel,
+      href: mapsUrl,
+      value: t.footer.businessAddress,
+      external: true,
+    },
+  ];
+
   return (
     <section className="max-w-6xl mx-auto py-24 px-4">
       <div className="text-center mb-16">
-        <ComicTitle level={2} className="mb-8 text-[var(--comic-primary)]">
+        <ComicTitle level={2} className="comic-title-no-shadow mb-8 text-[var(--comic-primary)]">
           {t.contact.getInTouchTitle}
         </ComicTitle>
-        <ComicText size="lg" className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto">
+        <ComicText size="lg" className="text-[var(--comic-dark)] font-bold max-w-3xl mx-auto">
           {t.contact.getInTouchDesc}
         </ComicText>
       </div>
-      
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-        <ComicCard className="comic-shadow-xl text-center">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-primary)]">
-            {t.contact.emailSupportTitle}
+
+      <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-stretch">
+        <ComicCard className="comic-shadow-xl h-full">
+          <ComicTitle level={4} className="comic-title-no-shadow mb-6 text-[var(--comic-primary)]">
+            {t.footer.legalName}
           </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-            {t.contact.emailSupportDesc}
-          </ComicText>
-          <ComicText className="text-[var(--comic-dark)] mb-4">
-            {t.contact.emailAddress}
-          </ComicText>
-          <ComicText className="text-[var(--comic-dark)] text-sm">
-            {t.contact.responseTime}
-          </ComicText>
+          <div className="space-y-4">
+            {contactDetails.map((item) => (
+              <div
+                key={item.id}
+                className="rounded-lg comic-border bg-[var(--comic-light)] p-4 text-left"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl leading-none" aria-hidden="true">
+                    {item.icon}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <ComicText className="text-[var(--comic-dark)] font-bold text-sm mb-1">
+                      {item.label}
+                    </ComicText>
+                    <a
+                      href={item.href}
+                      target={item.external ? "_blank" : undefined}
+                      rel={item.external ? "noopener noreferrer" : undefined}
+                      className="comic-text text-[var(--comic-primary)] font-bold hover:underline underline-offset-2 break-words [overflow-wrap:anywhere]"
+                    >
+                      {item.value}
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </ComicCard>
-        
-        <ComicCard className="comic-shadow-xl text-center">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-secondary)]">
-            {t.contact.liveChatTitle}
-          </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-            {t.contact.liveChatDesc}
-          </ComicText>
-          <ComicText className="text-[var(--comic-dark)] mb-4">
-            {t.contact.chatAvailable}
-          </ComicText>
-          <ComicText className="text-[var(--comic-dark)] text-sm">
-            {t.contact.chatDays}
-          </ComicText>
-        </ComicCard>
-        
-        <ComicCard className="comic-shadow-xl text-center">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-success)]">
-            {t.contact.phoneSupportTitle}
-          </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-            {t.contact.phoneSupportDesc}
-          </ComicText>
-          <ComicText className="text-[var(--comic-dark)] mb-4">
-            {t.contact.phoneNumber}
-          </ComicText>
-          <ComicText className="text-[var(--comic-dark)] text-sm">
-            {t.contact.phoneAvailable}
-          </ComicText>
-        </ComicCard>
-        
-        <ComicCard className="comic-shadow-xl text-center">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-warning)]">
-            {t.contact.officeVisitTitle}
-          </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-            {t.contact.officeVisitDesc}
-          </ComicText>
-          <ComicText className="text-[var(--comic-dark)] mb-4">
-            {t.contact.officeAddress}<br />
-            {t.contact.officeCity}
-          </ComicText>
-          <ComicText className="text-[var(--comic-dark)] text-sm">
-            {t.contact.byAppointment}
-          </ComicText>
-        </ComicCard>
+
+        <ContactOfficePhotoFrame src={CONTACT_OFFICE_IMAGE_URL} alt={t.contact.officeImageAlt} />
       </div>
     </section>
   );
@@ -233,7 +262,7 @@ function ContactFormSection() {
         
         <div className="grid md:grid-cols-2 gap-12">
           <ComicCard className="comic-shadow-xl">
-            <ComicTitle level={3} className="mb-6 text-[var(--comic-primary)]">
+            <ComicTitle level={3} className="mb-6 text-[var(--comic-primary)] comic-title-no-shadow">
               {t.contact.generalInquiry}
             </ComicTitle>
             <form onSubmit={handleGeneralSubmit} className="space-y-4">
@@ -304,7 +333,7 @@ function ContactFormSection() {
           </ComicCard>
           
           <ComicCard className="comic-shadow-xl">
-            <ComicTitle level={3} className="mb-6 text-[var(--comic-secondary)]">
+            <ComicTitle level={3} className="mb-6 text-[var(--comic-secondary)] comic-title-no-shadow">
               {t.contact.becomeTeacher}
             </ComicTitle>
             <form onSubmit={handleTeacherSubmit} className="space-y-4">
@@ -407,7 +436,7 @@ function FAQSection() {
       
       <div className="grid md:grid-cols-2 gap-8">
         <ComicCard className="comic-shadow-xl">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-primary)]">
+          <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-primary)]">
             {t.contact.faq1Question}
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold">
@@ -416,16 +445,7 @@ function FAQSection() {
         </ComicCard>
         
         <ComicCard className="comic-shadow-xl">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-secondary)]">
-            {t.contact.faq2Question}
-          </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold">
-            {t.contact.faq2Answer}
-          </ComicText>
-        </ComicCard>
-        
-        <ComicCard className="comic-shadow-xl">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-success)]">
+          <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-success)]">
             {t.contact.faq3Question}
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold">
@@ -434,16 +454,7 @@ function FAQSection() {
         </ComicCard>
         
         <ComicCard className="comic-shadow-xl">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-warning)]">
-            {t.contact.faq4Question}
-          </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold">
-            {t.contact.faq4Answer}
-          </ComicText>
-        </ComicCard>
-        
-        <ComicCard className="comic-shadow-xl">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-danger)]">
+          <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-danger)]">
             {t.contact.faq5Question}
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold">
@@ -452,7 +463,7 @@ function FAQSection() {
         </ComicCard>
         
         <ComicCard className="comic-shadow-xl">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-accent)]">
+          <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-accent)]">
             {t.contact.faq6Question}
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold">

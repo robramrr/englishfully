@@ -26,6 +26,13 @@ export interface Translations {
   home: {
     heroTitle: string;
     heroDescription: string;
+    heroCarouselAriaLabel: string;
+    heroSlide2Title: string;
+    heroSlide2Description: string;
+    heroSlide2DescriptorsLine1: string;
+    heroSlide2DescriptorsLine2: string;
+    heroSlide2Cta: string;
+    heroSlide2ImageAlt: string;
     startLearning: string;
     personalizedTitle: string;
     personalizedDesc: string;
@@ -141,7 +148,9 @@ export interface Translations {
     downloadApp: string;
     appStore: string;
     googlePlay: string;
-    copyright: string;
+    legalName: string;
+    businessAddress: string;
+    addressLabel: string;
   };
   about: Record<string, string>;
   rdTechnology: Record<string, string>;

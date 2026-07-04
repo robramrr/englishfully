@@ -9,8 +9,14 @@ import { useI18n } from "../i18n/I18nProvider";
 /** “📧 Stay Updated” signup — shared by /blog and the homepage (same API + strings). */
 export default function BlogNewsletterSection({
   wrapperClassName = "",
+  showSectionHeader = true,
+  /** Homepage: full-viewport slanted grey stripes behind the newsletter block (matches header style). */
+  fullWidthSlantedStripes = false,
 }: {
   wrapperClassName?: string;
+  /** When false, hides “Stay Updated” title + intro (homepage). */
+  showSectionHeader?: boolean;
+  fullWidthSlantedStripes?: boolean;
 }) {
   const { t } = useI18n();
   const [email, setEmail] = useState("");
@@ -46,16 +52,18 @@ export default function BlogNewsletterSection({
     }
   };
 
-  return (
-    <section id="stay-updated" className={`max-w-6xl mx-auto py-24 px-4 ${wrapperClassName}`}>
-      <div className="text-center mb-16">
-        <ComicTitle level={2} className="mb-8 text-[var(--comic-primary)]">
-          {t.blog.newsletterTitle}
-        </ComicTitle>
-        <ComicText size="lg" className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto">
-          {t.blog.newsletterDesc}
-        </ComicText>
-      </div>
+  const content = (
+    <>
+      {showSectionHeader ? (
+        <div className="text-center mb-16">
+          <ComicTitle level={2} className="mb-8 text-[var(--comic-primary)]">
+            {t.blog.newsletterTitle}
+          </ComicTitle>
+          <ComicText size="lg" className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto">
+            {t.blog.newsletterDesc}
+          </ComicText>
+        </div>
+      ) : null}
 
       <div className="comic-bg-primary py-12 px-8 rounded-xl comic-border-thick comic-shadow-xl text-center">
         <ComicTitle level={3} className="comic-text-white mb-6">
@@ -67,7 +75,9 @@ export default function BlogNewsletterSection({
           <input
             type="email"
             placeholder={t.blog.emailPlaceholder}
-            className="w-full p-4 comic-border rounded-lg text-[var(--comic-dark)] font-bold"
+            className={`w-full p-4 comic-border rounded-lg text-[var(--comic-dark)] font-bold ${
+              fullWidthSlantedStripes ? "bg-[var(--brand-gray)]" : ""
+            }`}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -90,6 +100,20 @@ export default function BlogNewsletterSection({
 
         <ComicText className="comic-text-white text-sm mt-4">{t.blog.privacyText}</ComicText>
       </div>
+    </>
+  );
+
+  if (fullWidthSlantedStripes) {
+    return (
+      <section id="stay-updated" className="w-full py-24 px-4 comic-bg-header-stripes">
+        <div className={`mx-auto max-w-6xl ${wrapperClassName}`.trim()}>{content}</div>
+      </section>
+    );
+  }
+
+  return (
+    <section id="stay-updated" className={`max-w-6xl mx-auto py-24 px-4 ${wrapperClassName}`.trim()}>
+      {content}
     </section>
   );
 }

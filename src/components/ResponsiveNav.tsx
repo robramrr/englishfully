@@ -13,7 +13,6 @@ interface ResponsiveNavProps {
 const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
   const { t } = useI18n();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [activeMobileSection, setActiveMobileSection] = useState<string | null>(null);
 
   const toggleMenu = () => {
@@ -22,12 +21,7 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
 
   const closeMenu = () => {
     setIsMenuOpen(false);
-    setActiveDropdown(null);
     setActiveMobileSection(null);
-  };
-
-  const toggleDropdown = (dropdown: string) => {
-    setActiveDropdown(activeDropdown === dropdown ? null : dropdown);
   };
 
   const toggleMobileSection = (section: string) => {
@@ -52,12 +46,6 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
     };
   }, [isMenuOpen]);
 
-  // If you resize from desktop->mobile while a desktop dropdown is open, reset it.
-  useEffect(() => {
-    if (!isMenuOpen) return;
-    setActiveDropdown(null);
-  }, [isMenuOpen]);
-
   const studentDropdown = [
     { href: '/online-learning', label: t.nav.onlineLearning },
     { href: '/in-person-learning', label: t.nav.inPersonLearning },
@@ -71,38 +59,40 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
 
   const topLevelLinks: Array<{ href: string; label: string }> = [];
 
+  const navBg = {
+    englishFeed: 'var(--brand-navy)',
+    students: 'var(--brand-red)',
+    teachers: 'var(--brand-navy)',
+    about: 'var(--brand-red)',
+    tryDemo: 'var(--brand-white)',
+  } as const;
+
   return (
     <nav className={`relative ${className}`}>
       {/* Desktop Navigation */}
-      <div className="hidden lg:flex flex-col items-end">
-        {/* Row 1: Main menu */}
+      <div className="hidden lg:flex items-center">
         <div className="flex items-center space-x-4">
 
         <Link
           href="/app"
           className="comic-text font-bold text-lg px-3 py-2 rounded-lg comic-border comic-shadow-sm hover:comic-shadow-md transition-all duration-200 hover:scale-105 text-white"
-          style={{ backgroundColor: 'var(--comic-success)' }}
+          style={{ backgroundColor: navBg.englishFeed }}
         >
           {t.ai.englishFeed}
         </Link>
 
         {/* Students Dropdown */}
-        <div className="relative">
+        <div className="relative group">
           <button
-            onClick={() => toggleDropdown('students')}
-            onMouseEnter={() => setActiveDropdown('students')}
+            type="button"
+            aria-haspopup="true"
             className="comic-text font-bold text-lg px-3 py-2 rounded-lg comic-border comic-shadow-sm hover:comic-shadow-md transition-all duration-200 hover:scale-105 text-white"
-            style={{ backgroundColor: 'var(--comic-accent)' }}
+            style={{ backgroundColor: navBg.students }}
           >
             {t.nav.students} ▼
           </button>
-          {activeDropdown === 'students' && (
-            <div 
-              className="absolute top-full left-0 pt-2 w-48 z-50"
-              onMouseEnter={() => setActiveDropdown('students')}
-              onMouseLeave={() => setActiveDropdown(null)}
-            >
-              <div className="bg-white comic-border-thick comic-shadow-xl rounded-lg overflow-hidden">
+          <div className="absolute top-full left-0 pt-2 w-48 z-50 hidden group-hover:block group-focus-within:block">
+            <div className="bg-white comic-border-thick comic-shadow-xl rounded-lg overflow-hidden">
               {studentDropdown.map((link, index) => (
                 <Link
                   key={index}
@@ -112,37 +102,31 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
                   {link.label}
                 </Link>
               ))}
-              </div>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Teachers Link */}
         <Link
           href="/teacher-resources"
           className="comic-text font-bold text-lg px-3 py-2 rounded-lg comic-border comic-shadow-sm hover:comic-shadow-md transition-all duration-200 hover:scale-105 text-white"
-          style={{ backgroundColor: 'var(--comic-danger)' }}
+          style={{ backgroundColor: navBg.teachers }}
         >
           {t.nav.teachers}
         </Link>
 
         {/* About Dropdown */}
-        <div className="relative">
+        <div className="relative group">
           <button
-            onClick={() => toggleDropdown('about')}
-            onMouseEnter={() => setActiveDropdown('about')}
-            className="comic-text font-bold text-lg px-3 py-2 rounded-lg comic-border comic-shadow-sm hover:comic-shadow-md transition-all duration-200 hover:scale-105 text-black"
-            style={{ backgroundColor: 'var(--comic-warning)' }}
+            type="button"
+            aria-haspopup="true"
+            className="comic-text font-bold text-lg px-3 py-2 rounded-lg comic-border comic-shadow-sm hover:comic-shadow-md transition-all duration-200 hover:scale-105 text-white"
+            style={{ backgroundColor: navBg.about }}
           >
             {t.nav.about} ▼
           </button>
-          {activeDropdown === 'about' && (
-            <div 
-              className="absolute top-full left-0 pt-2 w-56 z-50"
-              onMouseEnter={() => setActiveDropdown('about')}
-              onMouseLeave={() => setActiveDropdown(null)}
-            >
-              <div className="bg-white comic-border-thick comic-shadow-xl rounded-lg overflow-hidden">
+          <div className="absolute top-full left-0 pt-2 w-56 z-50 hidden group-hover:block group-focus-within:block">
+            <div className="bg-white comic-border-thick comic-shadow-xl rounded-lg overflow-hidden">
               {aboutDropdown.map((link, index) => (
                 <Link
                   key={index}
@@ -152,9 +136,8 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
                   {link.label}
                 </Link>
               ))}
-              </div>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Top Level Links */}
@@ -174,31 +157,27 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
           );
         })}
 
-        {/* Download App CTA */}
-        <div className="flex items-center space-x-2 ml-4">
+        {/* Try Demo + language flags */}
+        <div className="flex items-center gap-2 ml-4">
           <Link
             href={ENGLISHFEED_DEMO_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="comic-text font-bold text-lg px-3 py-2 rounded-lg comic-border comic-shadow-sm hover:comic-shadow-md transition-all duration-200 hover:scale-105 text-black"
-            style={{ backgroundColor: 'var(--comic-yellow)' }}
+            className="comic-text font-bold text-lg px-3 py-2 rounded-lg comic-border comic-shadow-sm hover:comic-shadow-md transition-all duration-200 hover:scale-105 text-[var(--brand-navy)]"
+            style={{ backgroundColor: navBg.tryDemo }}
           >
             {t.nav.downloadApp}
           </Link>
-        </div>
-
-        </div>
-
-        {/* Row 2: Language toggle (own line, right-aligned) */}
-        <div className="w-full flex justify-end mt-2">
           <LanguageToggle variant="compact" />
+        </div>
+
         </div>
       </div>
 
       {/* Mobile Hamburger Button */}
       <button
         onClick={toggleMenu}
-        className="lg:hidden w-12 h-12 bg-[var(--comic-primary)] rounded-lg comic-border-thick comic-shadow-md flex flex-col items-center justify-center space-y-1 hover:comic-shadow-lg transition-all duration-200 hover:scale-105"
+        className="lg:hidden w-12 h-12 bg-[var(--brand-red)] rounded-lg comic-border-thick comic-shadow-md flex flex-col items-center justify-center space-y-1 hover:comic-shadow-lg transition-all duration-200 hover:scale-105"
         aria-label="Toggle navigation menu"
       >
         <span 
@@ -232,7 +211,7 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
             href="/app"
             onClick={closeMenu}
             className="block px-6 py-4 comic-text font-bold text-xl hover:brightness-110 transition-all duration-200 text-white comic-border-b-2 border-b-4 border-[var(--comic-black)]"
-            style={{ backgroundColor: 'var(--comic-success)' }}
+            style={{ backgroundColor: navBg.englishFeed }}
           >
             🤖 {t.ai.englishFeed}
           </Link>
@@ -243,7 +222,7 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
               type="button"
               onClick={() => toggleMobileSection('students')}
               className="w-full text-left px-6 py-3 comic-text font-bold text-xl text-white flex items-center justify-between"
-              style={{ backgroundColor: 'var(--comic-accent)' }}
+              style={{ backgroundColor: navBg.students }}
               aria-expanded={activeMobileSection === 'students'}
               aria-controls="mobile-section-students"
             >
@@ -258,7 +237,7 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
                     href={link.href}
                     onClick={closeMenu}
                     className="block px-8 py-3 comic-text font-bold text-lg hover:brightness-110 transition-all duration-200 text-white"
-                    style={{ backgroundColor: 'var(--comic-accent)', opacity: 0.8 }}
+                    style={{ backgroundColor: navBg.students, opacity: 0.88 }}
                   >
                     {link.label}
                   </Link>
@@ -272,7 +251,7 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
             href="/teacher-resources"
             onClick={closeMenu}
             className="block px-6 py-4 comic-text font-bold text-xl hover:brightness-110 transition-all duration-200 text-white comic-border-b-2 border-b-4 border-[var(--comic-black)]"
-            style={{ backgroundColor: 'var(--comic-danger)' }}
+            style={{ backgroundColor: navBg.teachers }}
           >
             👩‍🏫 {t.nav.teachers}
           </Link>
@@ -282,8 +261,8 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
             <button
               type="button"
               onClick={() => toggleMobileSection('about')}
-              className="w-full text-left px-6 py-3 comic-text font-bold text-xl text-black flex items-center justify-between"
-              style={{ backgroundColor: 'var(--comic-warning)' }}
+              className="w-full text-left px-6 py-3 comic-text font-bold text-xl text-white flex items-center justify-between"
+              style={{ backgroundColor: navBg.about }}
               aria-expanded={activeMobileSection === 'about'}
               aria-controls="mobile-section-about"
             >
@@ -297,8 +276,8 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
                     key={index}
                     href={link.href}
                     onClick={closeMenu}
-                    className="block px-8 py-3 comic-text font-bold text-lg hover:brightness-110 transition-all duration-200 text-black"
-                    style={{ backgroundColor: 'var(--comic-warning)', opacity: 0.8 }}
+                    className="block px-8 py-3 comic-text font-bold text-lg hover:brightness-110 transition-all duration-200 text-white"
+                    style={{ backgroundColor: navBg.about, opacity: 0.88 }}
                   >
                     {link.label}
                   </Link>
@@ -333,8 +312,8 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
               target="_blank"
               rel="noopener noreferrer"
               onClick={closeMenu}
-              className="inline-block px-4 py-2 comic-text font-bold text-lg text-black rounded-lg comic-border comic-shadow-sm hover:comic-shadow-md transition-all duration-200"
-              style={{ backgroundColor: 'var(--comic-yellow)' }}
+              className="inline-block px-4 py-2 comic-text font-bold text-lg text-[var(--brand-navy)] rounded-lg comic-border comic-shadow-sm hover:comic-shadow-md transition-all duration-200"
+              style={{ backgroundColor: navBg.tryDemo }}
             >
               {t.nav.downloadApp}
             </Link>

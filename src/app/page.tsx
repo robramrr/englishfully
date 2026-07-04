@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import ComicButton from "../components/ComicButton";
 import ComicCard from "../components/ComicCard";
@@ -8,57 +8,367 @@ import ComicTitle from "../components/ComicTitle";
 import ComicText from "../components/ComicText";
 import Footer from "../components/Footer";
 import BlogNewsletterSection from "../components/BlogNewsletterSection";
-import { ENGLISHFEED_DEMO_URL, ENGLISHFEED_PROMO_VIMEO_EMBED_SRC } from "../constants/englishfeed";
-import ComicFeatureChecklist from "../components/ComicFeatureChecklist";
+import { ENGLISHFEED_DEMO_URL, ENGLISHFEED_HOMEPAGE_VIMEO_EMBED_SRC } from "../constants/englishfeed";
+import ComicFeatureChecklist, {
+  ONE_ON_ONE_HOME_CHECKLIST_BADGE_COLORS,
+} from "../components/ComicFeatureChecklist";
 import {
   HERO_BACKGROUND_URL,
+  HERO_CIRCLE_IMAGE_URL,
   HOME_ONLINE_ONE_ON_ONE_COACHING_URL,
   ONSITE_ONE_ON_ONE_PRACTICE_URL,
 } from "../constants/images";
 import { getHomepageAiPoweredFeatureBlocks } from "../data/englishFeedInnovativeFeatures";
 import { useI18n } from "../i18n/I18nProvider";
 
+const HOME_HERO_SLIDE_COUNT = 2;
+
+function HomeHeroPhotoCircle({
+  src,
+  className = "",
+  style,
+}: {
+  src: string;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <div
+      className={`shrink-0 overflow-hidden rounded-full comic-border-thick comic-shadow-xl comic-bounce h-20 w-20 sm:h-28 sm:w-28 md:h-40 md:w-40 ${className}`}
+      style={style}
+      aria-hidden
+    >
+      <img src={src} alt="" className="h-full w-full object-cover object-center" />
+    </div>
+  );
+}
+
+function HeroBouncyCircles({
+  showWarningCircle = true,
+  className = "",
+}: {
+  showWarningCircle?: boolean;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`pointer-events-none absolute inset-0 z-[2] ${className}`}
+      aria-hidden
+    >
+      {showWarningCircle ? (
+        <div className="absolute top-10 left-10 h-24 w-24 comic-bg-warning rounded-full comic-border-thick comic-shadow-xl comic-bounce" />
+      ) : null}
+      <div
+        className="absolute top-20 right-20 h-20 w-20 comic-bg-success rounded-full comic-border-thick comic-shadow-xl comic-bounce"
+        style={{ animationDelay: "0.5s" }}
+      />
+      <div
+        className="absolute bottom-20 left-20 h-16 w-16 comic-bg-danger rounded-full comic-border-thick comic-shadow-xl comic-bounce"
+        style={{ animationDelay: "1s" }}
+      />
+      <div
+        className="absolute top-1/2 right-10 h-12 w-12 comic-bg-secondary rounded-full comic-border-thick comic-shadow-lg comic-bounce"
+        style={{ animationDelay: "1.5s" }}
+      />
+      <div
+        className="absolute bottom-1/3 right-1/3 h-14 w-14 rounded-full bg-[var(--comic-yellow)] comic-border-thick comic-shadow-lg comic-bounce"
+        style={{ animationDelay: "2s" }}
+      />
+    </div>
+  );
+}
+
+function HomeHeroSlidePanel({
+  active,
+  children,
+  className = "",
+}: {
+  active: boolean;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`relative flex w-full flex-col items-center justify-center px-4 py-24 text-center transition-opacity duration-700 ease-out motion-reduce:transition-none md:absolute md:inset-0 md:py-28 ${
+        active
+          ? "max-md:flex opacity-100 md:z-10"
+          : "max-md:hidden pointer-events-none opacity-0 md:z-0"
+      } ${className}`}
+      aria-hidden={!active}
+    >
+      {children}
+    </div>
+  );
+}
+
 // Home Section
 function HomeSection() {
   const { t } = useI18n();
+  const [slide, setSlide] = useState(0);
+  type SessionTypeKey = "learningType1" | "learningType2" | "learningType3";
+  const [bookingForm, setBookingForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    learningTypeOption: "learningType1" as SessionTypeKey,
+    englishLevel: "Beginner",
+  });
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingMessage, setBookingMessage] = useState("");
+
+  const handleHeroBookingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBookingLoading(true);
+    setBookingMessage("");
+
+    try {
+      const response = await fetch("/api/contact/in-person-learning", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: bookingForm.name,
+          email: bookingForm.email,
+          phone: bookingForm.phone,
+          learningType: t.inPersonLearning[bookingForm.learningTypeOption],
+          englishLevel: bookingForm.englishLevel,
+        }),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setBookingMessage("Success! We'll contact you soon to confirm your session.");
+        setBookingForm({
+          name: "",
+          email: "",
+          phone: "",
+          learningTypeOption: "learningType1",
+          englishLevel: "Beginner",
+        });
+      } else {
+        setBookingMessage(data.error || "Failed to submit booking request. Please try again.");
+      }
+    } catch {
+      setBookingMessage("Failed to submit booking request. Please try again.");
+    } finally {
+      setBookingLoading(false);
+    }
+  };
 
   return (
-    <section id="home" className="flex flex-col items-center justify-center text-center py-24 px-4 comic-bg-primary relative overflow-hidden min-h-[420px] md:min-h-[520px]">
-      {/* Hero background image */}
-      <div
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${HERO_BACKGROUND_URL})` }}
-        aria-hidden
-      />
-      {/* Enhanced comic book style background elements */}
-      <div className="absolute inset-0 z-10 pointer-events-none" aria-hidden>
-        <div className="absolute top-10 left-10 w-24 h-24 comic-bg-warning rounded-full comic-border-thick comic-shadow-xl comic-bounce"></div>
-        <div className="absolute top-20 right-20 w-20 h-20 comic-bg-success rounded-full comic-border-thick comic-shadow-xl comic-bounce" style={{animationDelay: '0.5s'}}></div>
-        <div className="absolute bottom-20 left-20 w-16 h-16 comic-bg-danger rounded-full comic-border-thick comic-shadow-xl comic-bounce" style={{animationDelay: '1s'}}></div>
-        <div className="absolute top-1/2 right-10 w-12 h-12 comic-bg-secondary rounded-full comic-border-thick comic-shadow-lg comic-bounce" style={{animationDelay: '1.5s'}}></div>
-        <div className="absolute bottom-1/3 right-1/3 w-14 h-14 bg-[var(--comic-yellow)] rounded-full comic-border-thick comic-shadow-lg comic-bounce" style={{animationDelay: '2s'}}></div>
-      </div>
-      
-      <div className="relative z-10">
-        <ComicTitle level={1} className="comic-text-white mb-8 comic-wiggle">
-          {t.home.heroTitle}
-        </ComicTitle>
-        <ComicText size="xl" className="comic-text-white mb-12 font-bold max-w-3xl mx-auto">
-          <span className="block bg-red-500/70 px-4 py-3 rounded-md">
-            {t.home.heroDescription}
-          </span>
-        </ComicText>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/in-person-learning#booking-form">
-            <ComicButton 
-              variant="warning" 
-              size="lg"
-              className="comic-wiggle"
+    <section
+      id="home"
+      className="relative overflow-x-hidden max-md:pb-20 md:min-h-[560px] md:overflow-hidden"
+      aria-roledescription="carousel"
+      aria-label={t.home.heroCarouselAriaLabel}
+    >
+      {/* Slide 1 — original hero */}
+      <HomeHeroSlidePanel
+        active={slide === 0}
+        className="max-md:items-stretch max-md:justify-start max-md:py-10 max-md:pt-12 max-md:pb-4"
+      >
+        <div
+          className="absolute inset-0 z-0 comic-bg-accent comic-pattern-zigzag"
+          aria-hidden
+        />
+        {slide === 0 ? (
+          <HeroBouncyCircles showWarningCircle={false} className="max-md:hidden" />
+        ) : null}
+
+        <div className="relative z-10 mx-auto grid w-full min-w-0 max-w-7xl grid-cols-1 items-start gap-7 px-2 max-md:gap-5 max-md:px-3 md:grid-cols-[minmax(0,1fr)_minmax(360px,460px)] md:items-center md:gap-10 md:px-4">
+          <div className="max-w-3xl min-w-0 text-center md:text-left">
+            <ComicTitle
+              level={1}
+              className="comic-text-white mb-8 comic-wiggle max-md:mb-4 max-md:text-2xl max-md:leading-tight sm:max-md:text-3xl md:mb-8"
             >
-              {t.home.startLearning}
-            </ComicButton>
-          </Link>
+              {t.home.heroTitle}
+            </ComicTitle>
+            <ComicText
+              size="xl"
+              className="comic-text-white mb-8 font-bold max-md:mb-4 max-md:text-base md:mb-8"
+            >
+              <span className="block rounded-md bg-red-500/70 px-3 py-2 max-md:px-3 md:px-4 md:py-3">
+                {t.home.heroDescription}
+              </span>
+            </ComicText>
+            <div className="relative z-10 flex flex-wrap items-center justify-center gap-2 pl-10 max-md:pl-12 sm:gap-3 md:justify-start md:pl-14 md:gap-4">
+              <HomeHeroPhotoCircle src={HERO_CIRCLE_IMAGE_URL} />
+              <HomeHeroPhotoCircle
+                src={HERO_BACKGROUND_URL}
+                style={{ animationDelay: "0.5s" }}
+              />
+              <HomeHeroPhotoCircle
+                src={HOME_ONLINE_ONE_ON_ONE_COACHING_URL}
+                style={{ animationDelay: "1s" }}
+              />
+            </div>
+          </div>
+          <ComicCard className="w-full min-w-0 max-w-[460px] justify-self-center bg-white/95 comic-shadow-xl max-md:p-4 md:justify-self-end">
+            <ComicTitle level={3} className="mb-4 text-left text-[var(--comic-primary)] max-md:text-xl md:mb-5">
+              {t.inPersonLearning.bookingFormTitle}
+            </ComicTitle>
+            <form onSubmit={handleHeroBookingSubmit} className="space-y-3">
+              <div>
+                <input
+                  type="text"
+                  className="w-full comic-input"
+                  placeholder={t.inPersonLearning.namePlaceholder}
+                  value={bookingForm.name}
+                  onChange={(e) => setBookingForm({ ...bookingForm, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div>
+                  <ComicText className="mb-1 text-[var(--comic-dark)] font-bold">{t.inPersonLearning.emailLabel}</ComicText>
+                  <input
+                    type="email"
+                    className="w-full comic-input"
+                    placeholder={t.inPersonLearning.emailPlaceholder}
+                    value={bookingForm.email}
+                    onChange={(e) => setBookingForm({ ...bookingForm, email: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <ComicText className="mb-1 text-[var(--comic-dark)] font-bold">{t.inPersonLearning.phoneLabel}</ComicText>
+                  <input
+                    type="tel"
+                    className="w-full comic-input"
+                    placeholder={t.inPersonLearning.phonePlaceholder}
+                    value={bookingForm.phone}
+                    onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div>
+                  <ComicText className="mb-1 text-[var(--comic-dark)] font-bold">Session Type</ComicText>
+                  <select
+                    className="w-full comic-input"
+                    value={bookingForm.learningTypeOption}
+                    onChange={(e) =>
+                      setBookingForm({
+                        ...bookingForm,
+                        learningTypeOption: e.target.value as SessionTypeKey,
+                      })
+                    }
+                  >
+                    <option value="learningType1">{t.inPersonLearning.learningType1}</option>
+                    <option value="learningType2">{t.inPersonLearning.learningType2}</option>
+                    <option value="learningType3">{t.inPersonLearning.learningType3}</option>
+                  </select>
+                </div>
+                <div>
+                  <ComicText className="mb-1 text-[var(--comic-dark)] font-bold">English Level</ComicText>
+                  <select
+                    className="w-full comic-input"
+                    value={bookingForm.englishLevel}
+                    onChange={(e) => setBookingForm({ ...bookingForm, englishLevel: e.target.value })}
+                  >
+                    <option>{t.inPersonLearning.levelBeginner}</option>
+                    <option>{t.inPersonLearning.levelIntermediate}</option>
+                    <option>{t.inPersonLearning.levelAdvanced}</option>
+                    <option>{t.inPersonLearning.levelNotSure}</option>
+                  </select>
+                </div>
+              </div>
+              {bookingMessage && (
+                <p
+                  role="status"
+                  className={`comic-text rounded-lg border p-3 text-sm font-bold leading-snug ${
+                    bookingMessage.toLowerCase().includes("success")
+                      ? "border-green-300 bg-green-100 text-green-800"
+                      : "border-red-300 bg-red-100 text-red-800"
+                  }`}
+                >
+                  {bookingMessage}
+                </p>
+              )}
+              <ComicButton variant="primary" size="lg" className="w-full" disabled={bookingLoading}>
+                {bookingLoading ? t.inPersonLearning.submitting : t.inPersonLearning.requestBooking}
+              </ComicButton>
+            </form>
+          </ComicCard>
         </div>
+      </HomeHeroSlidePanel>
+
+      {/* Slide 2 — EnglishFeed: copy left, framed video right */}
+      <HomeHeroSlidePanel
+        active={slide === 1}
+        className="max-md:items-stretch max-md:justify-start max-md:py-10 max-md:pt-12 max-md:pb-4 md:!items-stretch md:!py-16"
+      >
+        <div
+          className="absolute inset-0 z-0 comic-bg-accent comic-pattern-zigzag"
+          aria-hidden
+        />
+        <HeroBouncyCircles showWarningCircle={false} className="max-md:hidden" />
+        <div className="relative z-10 mx-auto grid w-full min-w-0 max-w-7xl flex-1 grid-cols-1 items-center gap-6 px-4 max-md:items-start max-md:gap-4 max-md:px-3 sm:max-md:gap-5 sm:max-md:px-4 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] md:gap-8 lg:gap-10">
+          <div className="flex flex-col items-center px-[26px] text-center max-md:w-full max-md:min-w-0 max-md:px-[14px] md:items-start md:pl-[42px] md:pr-[18px] md:text-left lg:pl-[58px]">
+            <ComicTitle
+              level={1}
+              className="comic-text-white mb-3 text-2xl leading-tight sm:text-3xl md:mb-4 md:text-4xl lg:text-5xl max-md:mb-2 max-md:w-full max-md:max-w-full max-md:break-words max-md:text-xl"
+            >
+              {t.home.heroSlide2Title}
+            </ComicTitle>
+            <ComicText
+              size="xl"
+              className="comic-text-white mb-6 font-bold max-md:mb-4 max-md:text-base md:mb-8"
+            >
+              <span className="block rounded-md bg-red-500/70 px-3 py-2 max-md:px-3 md:px-4 md:py-3">
+                <span className="mb-2 block italic leading-snug underline decoration-2 underline-offset-4 whitespace-nowrap !text-base font-bold sm:!text-lg max-md:!text-sm max-md:underline-offset-2 max-md:whitespace-normal sm:max-md:whitespace-nowrap">
+                  {t.home.heroSlide2Description}
+                </span>
+                <span className="block text-lg font-bold leading-snug tracking-wide md:text-xl lg:text-2xl max-md:break-words">
+                  {t.home.heroSlide2DescriptorsLine1}
+                </span>
+                <span className="block text-lg font-bold leading-snug tracking-wide md:text-xl lg:text-2xl">
+                  {t.home.heroSlide2DescriptorsLine2}
+                </span>
+              </span>
+            </ComicText>
+            <Link href="/app" className="w-full max-md:max-w-xs sm:w-auto">
+              <ComicButton variant="primary" size="lg" className="comic-wiggle w-full sm:w-auto">
+                {t.home.heroSlide2Cta}
+              </ComicButton>
+            </Link>
+          </div>
+          <div className="w-full min-w-0 px-[95px] max-md:px-0">
+            <figure className="flex min-h-[min(275px,45vh)] w-full items-center justify-center overflow-hidden rounded-2xl border-4 border-[var(--comic-black)] bg-[var(--brand-white)] comic-shadow-xl max-md:min-h-0 md:min-h-[min(400px,58vh)]">
+              <iframe
+                src={ENGLISHFEED_HOMEPAGE_VIMEO_EMBED_SRC}
+                className="block h-full min-h-[min(275px,45vh)] w-full max-md:min-h-[min(200px,32vh)] sm:max-md:min-h-[min(240px,36vh)] md:min-h-[min(400px,58vh)]"
+                frameBorder={0}
+                allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                title={t.home.heroSlide2ImageAlt}
+                allowFullScreen
+              />
+            </figure>
+          </div>
+        </div>
+      </HomeHeroSlidePanel>
+
+      <div
+        className="absolute bottom-6 left-0 right-0 z-30 flex justify-center gap-3"
+        role="tablist"
+        aria-label={t.home.heroCarouselAriaLabel}
+      >
+        {Array.from({ length: HOME_HERO_SLIDE_COUNT }, (_, i) => (
+          <button
+            key={i}
+            type="button"
+            role="tab"
+            aria-selected={slide === i}
+            aria-label={`Slide ${i + 1}`}
+            onClick={() => setSlide(i)}
+            className={`h-4 w-4 rounded-full border-2 border-[var(--comic-black)] transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand-red)] ${
+              slide === i
+                ? "comic-bg-primary scale-110 comic-shadow-sm"
+                : "bg-[var(--brand-white)]"
+            }`}
+          />
+        ))}
       </div>
     </section>
   );
@@ -71,14 +381,14 @@ function MissionSection() {
   return (
     <section id="mission" className="max-w-6xl mx-auto py-24 px-4">
       <div className="text-center mb-16">
-        <ComicTitle level={2} className="mb-8 text-[var(--comic-primary)]">
+        <ComicTitle level={2} className="comic-title-no-shadow mb-8 text-[var(--comic-primary)]">
           {t.mission.title}
         </ComicTitle>
         <ComicText size="lg" className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto">
           {t.mission.description}
         </ComicText>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <ComicCard variant="primary" animated className="comic-shadow-xl text-center flex min-w-0 flex-col">
           <ComicTitle level={3} className="comic-text-white mb-4 home-mission-card-title">
@@ -112,17 +422,11 @@ function MissionSection() {
 }
 
 /** Homepage AI-Powered trio: video, merged voice/speaking (onlineLearning), merged subtitles/tap (englishFeed). */
-const HOME_AI_POWERED_FEATURE_CARD_TITLE_COLORS = [
-  "text-[var(--comic-primary)]",
-  "text-[var(--comic-secondary)]",
-  "text-[var(--comic-success)]",
-] as const;
-
 /** Portrait phone screenshot under AI feature card copy (matches onsite photo frame styling). */
 function HomeAiPoweredCardImageAfterDesc({ src, alt }: { src: string; alt: string }) {
   return (
-    <figure className="mx-auto mb-4 w-full max-w-[min(100%,260px)] rounded-xl bg-[#e8c9a8] p-2.5 sm:p-3 comic-border-thick comic-shadow-lg">
-      <div className="overflow-hidden rounded-lg border-4 border-[var(--comic-black)] shadow-[inset_0_2px_0_rgba(255,255,255,0.5),inset_0_-3px_0_rgba(0,0,0,0.18)]">
+    <figure className="mx-auto mb-4 w-full max-w-[min(100%,260px)] rounded-xl p-2.5 sm:p-3 comic-bg-accent-light comic-border-thick comic-shadow-lg">
+      <div className="overflow-hidden rounded-lg border-4 border-[var(--comic-black)] shadow-[inset_0_2px_0_rgba(255,255,255,0.5),inset_0_-3px_0_rgba(0,26,72,0.18)]">
         <img
           src={src}
           alt={alt}
@@ -142,16 +446,16 @@ function AIFeaturesSection() {
   const highlightBlocks = getHomepageAiPoweredFeatureBlocks(t.englishFeed, t.home);
 
   return (
-    <section id="edtech-innovations" className="comic-bg-accent py-24 px-4 comic-pattern-dots">
-      <div className="max-w-6xl mx-auto">
+    <section
+      id="edtech-innovations"
+      className="comic-bg-edtech relative w-full overflow-hidden py-24"
+    >
+      <div className="relative z-10 mx-auto max-w-6xl px-4">
         <div className="mb-12 text-center">
-          <ComicTitle level={2} className="comic-text-white mb-8">
+          <ComicTitle level={2} className="mb-8 text-[var(--comic-primary)]">
             <span className="mx-auto flex w-max max-w-full flex-col items-center px-3 text-center">
               <span className="block">{t.onlineLearning.aiFeaturesTitle}</span>
-              <span
-                className="mt-3 block max-w-full bg-[linear-gradient(135deg,var(--comic-warning)_0%,#ff9500_100%)] bg-clip-text text-center text-base leading-snug tracking-normal text-transparent [-webkit-text-fill-color:transparent] [text-shadow:none] sm:mt-3 sm:text-lg md:mt-4 md:text-xl lg:text-2xl lg:leading-tight"
-                style={{ WebkitBackgroundClip: "text", backgroundClip: "text" }}
-              >
+              <span className="mt-3 block max-w-full text-center text-base leading-snug tracking-normal text-white/90 [text-shadow:none] sm:mt-3 sm:text-lg md:mt-4 md:text-xl lg:text-2xl lg:leading-tight">
                 {t.onlineLearning.aiFeaturesDesc}
               </span>
             </span>
@@ -165,7 +469,7 @@ function AIFeaturesSection() {
           <div className="rounded-2xl overflow-hidden comic-border-thick comic-shadow-xl bg-[var(--comic-black)]">
             <div className="relative w-full aspect-video min-h-[220px]">
               <iframe
-                src={ENGLISHFEED_PROMO_VIMEO_EMBED_SRC}
+                src={ENGLISHFEED_HOMEPAGE_VIMEO_EMBED_SRC}
                 className="absolute inset-0 h-full w-full"
                 frameBorder={0}
                 allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
@@ -194,7 +498,7 @@ function AIFeaturesSection() {
             <ComicCard key={block.id} className="comic-shadow-xl text-center">
               <ComicTitle
                 level={3}
-                className={`mb-4 min-w-0 break-words ${HOME_AI_POWERED_FEATURE_CARD_TITLE_COLORS[index]}`}
+                className="comic-title-no-shadow mb-4 min-w-0 break-words text-[var(--brand-red)]"
               >
                 {block.title}
               </ComicTitle>
@@ -218,8 +522,8 @@ function AIFeaturesSection() {
 /** Same framing as in-person-learning pricing practice photos. */
 function OnsitePracticePhotoFrameHome({ src, alt }: { src: string; alt: string }) {
   return (
-    <figure className="mx-auto mb-6 w-full rounded-xl bg-[#e8c9a8] p-3 sm:p-3.5 comic-border-thick comic-shadow-xl">
-      <div className="overflow-hidden rounded-lg border-4 border-[var(--comic-black)] shadow-[inset_0_2px_0_rgba(255,255,255,0.5),inset_0_-3px_0_rgba(0,0,0,0.18)]">
+    <figure className="mx-auto mb-6 w-full rounded-xl bg-[var(--brand-gray)] p-3 sm:p-3.5 comic-border-thick comic-shadow-xl">
+      <div className="overflow-hidden rounded-lg border-4 border-[var(--comic-black)] shadow-[inset_0_2px_0_rgba(255,255,255,0.5),inset_0_-3px_0_rgba(0,26,72,0.18)]">
         <img
           src={src}
           alt={alt}
@@ -270,8 +574,8 @@ function OneOnOneSupportSection() {
   }, []);
 
   const liteCard = (
-    <ComicCard className="comic-shadow-lg flex h-full min-h-0 flex-col text-center !bg-[linear-gradient(135deg,var(--comic-yellow)_0%,#f39c12_100%)]">
-      <ComicTitle level={4} className="mb-2 pb-1 text-[var(--comic-primary)]">
+    <ComicCard className="home-online-coaching-card comic-shadow-lg flex h-full min-h-0 flex-col text-center">
+      <ComicTitle level={4} className="comic-title-no-shadow mb-2 pb-1 text-[var(--comic-primary)]">
         {t.home.oneOnOneSupportOnlineCoachingTitle}
       </ComicTitle>
       <ComicText size="md" weight="bold" className="mb-4 text-[var(--comic-dark)]">
@@ -283,6 +587,7 @@ function OneOnOneSupportSection() {
       />
       <ComicFeatureChecklist
         splitLabelAfterColon
+        badgeColors={ONE_ON_ONE_HOME_CHECKLIST_BADGE_COLORS}
         items={[ol.premiumItem1, ol.premiumItem2, ol.premiumItem3]}
       />
       <div className="mt-auto flex w-full flex-col items-center gap-3">
@@ -297,15 +602,18 @@ function OneOnOneSupportSection() {
   );
 
   const onsiteCard = (
-    <ComicCard className="comic-shadow-lg flex h-full min-h-0 flex-col text-center !bg-[linear-gradient(135deg,var(--comic-yellow)_0%,#f39c12_100%)]">
-      <ComicTitle level={4} className="mb-2 pb-1 text-[var(--comic-primary)]">
+    <ComicCard className="home-onsite-coaching-card comic-shadow-lg flex h-full min-h-0 flex-col text-center">
+      <ComicTitle level={4} className="comic-title-no-shadow mb-2 pb-1 text-[var(--comic-primary)]">
         {t.home.oneOnOneSupportOnsiteCoachingTitle}
       </ComicTitle>
       <ComicText size="md" weight="bold" className="mb-4 text-[var(--comic-dark)]">
         {t.home.oneOnOneSupportOnsiteIntro}
       </ComicText>
       <OnsitePracticePhotoFrameHome src={ONSITE_ONE_ON_ONE_PRACTICE_URL} alt={String(ip.privatePhotoAlt)} />
-      <ComicFeatureChecklist items={[...onsiteChecklistItems]} />
+      <ComicFeatureChecklist
+        badgeColors={ONE_ON_ONE_HOME_CHECKLIST_BADGE_COLORS}
+        items={[...onsiteChecklistItems]}
+      />
       <div className="mt-auto flex w-full flex-col items-center gap-3">
         <div className="comic-text text-center text-xl font-bold leading-tight text-[var(--comic-dark)]">
           {t.home.oneOnOneSupportSessionsTypeLabel}
@@ -323,16 +631,16 @@ function OneOnOneSupportSection() {
   );
 
   return (
-    <section id="one-on-one-support" className="comic-bg-purple py-24 px-4 comic-pattern-zigzag">
+    <section
+      id="one-on-one-support"
+      className="bg-[var(--brand-red)] py-24 px-4 comic-pattern-dots"
+    >
       <div className="mx-auto max-w-6xl">
         <div className="mb-12 text-center">
-          <ComicTitle level={2} className="comic-text-white mb-8">
+          <ComicTitle level={2} className="comic-text-white comic-title-no-shadow mb-8">
             <span className="mx-auto flex w-max max-w-full flex-col items-center px-3 text-center">
               <span className="block">{t.home.oneOnOneSupportTitle}</span>
-              <span
-                className="mt-3 block max-w-full bg-[linear-gradient(135deg,var(--comic-warning)_0%,#ff9500_100%)] bg-clip-text text-center text-base leading-snug tracking-normal text-transparent [-webkit-text-fill-color:transparent] [text-shadow:none] sm:mt-3 sm:text-lg md:mt-4 md:text-xl lg:text-2xl lg:leading-tight"
-                style={{ WebkitBackgroundClip: "text", backgroundClip: "text" }}
-              >
+              <span className="mt-3 block max-w-full text-center text-base font-bold leading-snug tracking-normal text-[var(--brand-gray)] sm:mt-3 sm:text-lg md:mt-4 md:text-xl lg:text-2xl lg:leading-tight">
                 {t.home.oneOnOneSupportTagline}
               </span>
             </span>
@@ -358,8 +666,8 @@ function OneOnOneSupportSection() {
                 type="button"
                 role="tab"
                 aria-selected={slide === i}
-                className={`h-3.5 w-3.5 rounded-full border-2 border-[var(--comic-black)] transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--comic-yellow)] ${
-                  slide === i ? "scale-110 bg-[var(--comic-yellow)] comic-shadow-sm" : "bg-[var(--comic-white)]"
+                className={`h-3.5 w-3.5 rounded-full border-2 border-[var(--comic-black)] transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand-red)] ${
+                  slide === i ? "scale-110 bg-[var(--brand-red)] comic-shadow-sm" : "bg-[var(--brand-white)]"
                 }`}
                 onClick={() => setSlide(i)}
                 aria-label={i === 0 ? "Online Lite member" : "Onsite 1-on-1 practice"}
@@ -1259,7 +1567,7 @@ export default function Home() {
       <MissionSection />
       <AIFeaturesSection />
       <OneOnOneSupportSection />
-      <BlogNewsletterSection />
+      <BlogNewsletterSection fullWidthSlantedStripes />
       <div className="flex-grow" />
       <Footer />
     </div>
