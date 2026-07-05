@@ -26,8 +26,13 @@ export async function ensureSettingsSchema(): Promise<void> {
     CREATE TABLE IF NOT EXISTS speak_teacher_settings (
       teacher_id TEXT PRIMARY KEY DEFAULT 'default',
       name_mode TEXT NOT NULL DEFAULT 'nickname' CHECK (name_mode IN ('nickname', 'first_last')),
+      student_letter_enabled BOOLEAN NOT NULL DEFAULT false,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
+  `;
+  await sql`
+    ALTER TABLE speak_teacher_settings
+    ADD COLUMN IF NOT EXISTS student_letter_enabled BOOLEAN NOT NULL DEFAULT false
   `;
   await sql`
     CREATE TABLE IF NOT EXISTS speak_class_options (
@@ -50,11 +55,13 @@ export async function getEntryConfig(
   await ensureSettingsSchema();
 
   const { rows: settingsRows } = await sql`
-    SELECT name_mode FROM speak_teacher_settings WHERE teacher_id = ${teacherId}
+    SELECT name_mode, student_letter_enabled FROM speak_teacher_settings WHERE teacher_id = ${teacherId}
   `;
 
   const nameMode =
     settingsRows.length > 0 ? (settingsRows[0].name_mode as NameMode) : 'nickname';
+  const studentLetterEnabled =
+    settingsRows.length > 0 ? Boolean(settingsRows[0].student_letter_enabled) : false;
 
   const { rows: classRows } = await sql`
     SELECT * FROM speak_class_options
@@ -64,6 +71,7 @@ export async function getEntryConfig(
 
   return {
     name_mode: nameMode,
+    student_letter_enabled: studentLetterEnabled,
     classes: classRows.map(rowToClassOption),
   };
 }
@@ -98,10 +106,13 @@ export async function saveEntryConfig(
   }
 
   await sql`
-    INSERT INTO speak_teacher_settings (teacher_id, name_mode, updated_at)
-    VALUES (${teacherId}, ${payload.name_mode}, NOW())
+    INSERT INTO speak_teacher_settings (teacher_id, name_mode, student_letter_enabled, updated_at)
+    VALUES (${teacherId}, ${payload.name_mode}, ${Boolean(payload.student_letter_enabled)}, NOW())
     ON CONFLICT (teacher_id)
-    DO UPDATE SET name_mode = EXCLUDED.name_mode, updated_at = NOW()
+    DO UPDATE SET
+      name_mode = EXCLUDED.name_mode,
+      student_letter_enabled = EXCLUDED.student_letter_enabled,
+      updated_at = NOW()
   `;
 
   await sql`DELETE FROM speak_class_options WHERE teacher_id = ${teacherId}`;

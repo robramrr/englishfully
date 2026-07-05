@@ -10,11 +10,13 @@ export interface SpeakClassOption {
 
 export interface SpeakEntryConfig {
   name_mode: NameMode;
+  student_letter_enabled: boolean;
   classes: SpeakClassOption[];
 }
 
 export interface SaveEntryConfigPayload {
   name_mode: NameMode;
+  student_letter_enabled: boolean;
   classes: Array<{
     label: string;
     max_student_number: number;
@@ -24,9 +26,13 @@ export interface SaveEntryConfigPayload {
 export function getDefaultEntryConfig(): SpeakEntryConfig {
   return {
     name_mode: 'nickname',
+    student_letter_enabled: false,
     classes: [],
   };
 }
+
+export const STUDENT_LETTER_OPTIONS = ['A', 'B'] as const;
+export type StudentLetter = (typeof STUDENT_LETTER_OPTIONS)[number];
 
 export interface SpeakTask {
   id: string;

@@ -19,6 +19,7 @@ const NAME_MODE_OPTIONS: Array<{ value: NameMode; label: string; emoji: string }
 
 export default function StudentEntrySettings() {
   const [nameMode, setNameMode] = useState<NameMode>('nickname');
+  const [studentLetterEnabled, setStudentLetterEnabled] = useState(false);
   const [classes, setClasses] = useState<ClassDraft[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -31,6 +32,7 @@ export default function StudentEntrySettings() {
       .then((data) => {
         if (data.config) {
           setNameMode(data.config.name_mode);
+          setStudentLetterEnabled(Boolean(data.config.student_letter_enabled));
           setClasses(
             data.config.classes.map((item: ClassDraft) => ({
               label: item.label,
@@ -70,6 +72,7 @@ export default function StudentEntrySettings() {
 
     const payload: SaveEntryConfigPayload = {
       name_mode: nameMode,
+      student_letter_enabled: studentLetterEnabled,
       classes: classes.filter((item) => item.label.trim()),
     };
 
@@ -136,6 +139,43 @@ export default function StudentEntrySettings() {
                 {option.emoji} {option.label}
               </button>
             ))}
+          </div>
+        </div>
+
+        <div>
+          <ComicText className="text-[var(--comic-dark)] font-bold mb-3">Student number ID</ComicText>
+          <ComicText className="text-[var(--comic-dark)] mb-4 text-sm">
+            When enabled, students pick their number and an A or B ID (e.g. 15 + B → 15B).
+          </ComicText>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setStudentLetterEnabled(false);
+                setSaved(false);
+              }}
+              className={`comic-border rounded-lg px-4 py-3 text-left font-bold transition-transform hover:scale-[1.02] ${
+                !studentLetterEnabled
+                  ? 'comic-bg-secondary comic-text-white comic-shadow-md'
+                  : 'bg-white text-[var(--comic-dark)]'
+              }`}
+            >
+              🔢 Number only
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setStudentLetterEnabled(true);
+                setSaved(false);
+              }}
+              className={`comic-border rounded-lg px-4 py-3 text-left font-bold transition-transform hover:scale-[1.02] ${
+                studentLetterEnabled
+                  ? 'comic-bg-secondary comic-text-white comic-shadow-md'
+                  : 'bg-white text-[var(--comic-dark)]'
+              }`}
+            >
+              🔤 Number + A/B ID
+            </button>
           </div>
         </div>
 

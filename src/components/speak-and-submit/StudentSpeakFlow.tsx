@@ -7,7 +7,7 @@ import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import ComicAudioPlayer from '../ComicAudioPlayer';
 import type { PublicTask, TaskType } from '@/lib/speak-and-submit/types';
-import { getDefaultEntryConfig } from '@/lib/speak-and-submit/types';
+import { STUDENT_LETTER_OPTIONS, getDefaultEntryConfig } from '@/lib/speak-and-submit/types';
 
 type Step = 'loading' | 'identity' | 'record' | 'submitting' | 'done' | 'error';
 
@@ -99,6 +99,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
   const [lastName, setLastName] = useState('');
   const [studentName, setStudentName] = useState('');
   const [studentNumber, setStudentNumber] = useState('');
+  const [studentLetter, setStudentLetter] = useState('');
   const [classNumber, setClassNumber] = useState('');
   const [selectedClassId, setSelectedClassId] = useState('');
   const [manualClassNumber, setManualClassNumber] = useState('');
@@ -119,6 +120,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
   const totalItems = task?.items.length ?? 0;
   const entryConfig = task?.entry_config ?? getDefaultEntryConfig();
   const usesClassDropdown = entryConfig.classes.length > 0;
+  const usesStudentLetter = entryConfig.student_letter_enabled;
   const selectedClass = useMemo(
     () => entryConfig.classes.find((item) => item.id === selectedClassId) ?? null,
     [entryConfig.classes, selectedClassId]
@@ -173,6 +175,13 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
     }
   }, [maxStudentNumber, studentNumber]);
 
+  function formatStudentNumber(number: string, letter: string): string {
+    if (usesStudentLetter && letter) {
+      return `${number}${letter}`;
+    }
+    return number;
+  }
+
   function handleContinueIdentity() {
     const resolvedName =
       entryConfig.name_mode === 'first_last'
@@ -198,6 +207,11 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
       return;
     }
 
+    if (usesStudentLetter && !studentLetter) {
+      setError('Please select your student ID (A or B).');
+      return;
+    }
+
     if (!resolvedClass) {
       setError(usesClassDropdown ? 'Please select your class.' : 'Please enter your class.');
       return;
@@ -205,6 +219,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
     setStudentName(resolvedName);
     setClassNumber(resolvedClass);
+    setStudentNumber(formatStudentNumber(studentNumber, studentLetter));
     setError('');
     setStep('record');
   }
@@ -583,19 +598,37 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
                 />
               )}
 
-              <select
-                className="w-full comic-input text-lg py-4"
-                value={studentNumber}
-                onChange={(event) => setStudentNumber(event.target.value)}
-                required
-              >
-                <option value="">Student number</option>
-                {studentNumberOptions.map((number) => (
-                  <option key={number} value={number}>
-                    {number}
-                  </option>
-                ))}
-              </select>
+              <div className={`grid gap-3 ${usesStudentLetter ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                <select
+                  className="w-full comic-input text-lg py-4"
+                  value={studentNumber}
+                  onChange={(event) => setStudentNumber(event.target.value)}
+                  required
+                >
+                  <option value="">Number</option>
+                  {studentNumberOptions.map((number) => (
+                    <option key={number} value={number}>
+                      {number}
+                    </option>
+                  ))}
+                </select>
+
+                {usesStudentLetter ? (
+                  <select
+                    className="w-full comic-input text-lg py-4"
+                    value={studentLetter}
+                    onChange={(event) => setStudentLetter(event.target.value.toUpperCase())}
+                    required
+                  >
+                    <option value="">ID</option>
+                    {STUDENT_LETTER_OPTIONS.map((letter) => (
+                      <option key={letter} value={letter}>
+                        {letter}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+              </div>
 
               <ComicButton
                 variant="primary"
