@@ -37,6 +37,10 @@ export async function ensureSchema(): Promise<void> {
         ADD COLUMN IF NOT EXISTS max_recording_seconds INTEGER NOT NULL DEFAULT 25
       `;
       await sql`
+        ALTER TABLE speak_tasks
+        DROP CONSTRAINT IF EXISTS speak_tasks_task_type_check
+      `;
+      await sql`
         CREATE TABLE IF NOT EXISTS speak_task_items (
           id TEXT PRIMARY KEY,
           task_id TEXT NOT NULL REFERENCES speak_tasks(id) ON DELETE CASCADE,
