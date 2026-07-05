@@ -35,6 +35,10 @@ export async function ensureSettingsSchema(): Promise<void> {
     ADD COLUMN IF NOT EXISTS student_letter_enabled BOOLEAN NOT NULL DEFAULT false
   `;
   await sql`
+    ALTER TABLE speak_teacher_settings
+    ADD COLUMN IF NOT EXISTS teacher_name TEXT NOT NULL DEFAULT ''
+  `;
+  await sql`
     CREATE TABLE IF NOT EXISTS speak_class_options (
       id TEXT PRIMARY KEY,
       teacher_id TEXT NOT NULL DEFAULT 'default',
@@ -126,4 +130,37 @@ export async function saveEntryConfig(
   }
 
   return getEntryConfig(teacherId);
+}
+
+export async function getTeacherName(teacherId: string = DEFAULT_TEACHER_ID): Promise<string> {
+  await ensureSettingsSchema();
+
+  const { rows } = await sql`
+    SELECT teacher_name FROM speak_teacher_settings WHERE teacher_id = ${teacherId}
+  `;
+
+  return rows.length > 0 ? String(rows[0].teacher_name ?? '').trim() : '';
+}
+
+export async function saveTeacherName(
+  teacherName: string,
+  teacherId: string = DEFAULT_TEACHER_ID
+): Promise<string> {
+  await ensureSettingsSchema();
+
+  const normalizedName = teacherName.trim();
+  if (!normalizedName) {
+    throw new Error('Teacher name is required');
+  }
+
+  await sql`
+    INSERT INTO speak_teacher_settings (teacher_id, teacher_name, updated_at)
+    VALUES (${teacherId}, ${normalizedName}, NOW())
+    ON CONFLICT (teacher_id)
+    DO UPDATE SET
+      teacher_name = EXCLUDED.teacher_name,
+      updated_at = NOW()
+  `;
+
+  return normalizedName;
 }

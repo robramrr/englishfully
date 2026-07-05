@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isTeacherAuthenticated } from '@/lib/speak-and-submit/auth';
 import { jsonError } from '@/lib/speak-and-submit/api';
-import { getEntryConfig, saveEntryConfig } from '@/lib/speak-and-submit/settings';
+import { getEntryConfig, getTeacherName, saveEntryConfig } from '@/lib/speak-and-submit/settings';
 import type { SaveEntryConfigPayload } from '@/lib/speak-and-submit/types';
 
 export async function GET() {
@@ -11,7 +11,8 @@ export async function GET() {
 
   try {
     const config = await getEntryConfig();
-    return NextResponse.json({ config });
+    const teacher_name = await getTeacherName();
+    return NextResponse.json({ config, teacher_name });
   } catch (error) {
     console.error('Get entry config error:', error);
     return jsonError('Failed to load student entry settings', 500);
