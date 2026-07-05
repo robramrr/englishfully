@@ -575,7 +575,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
               👋 Who are you?
             </ComicTitle>
             <ComicText className="text-[var(--comic-dark)] font-bold mb-4 text-sm">
-              Your teacher will use this recording for class feedback only.
+              Recordings used for class feedback
             </ComicText>
             <div className="space-y-4">
               {entryConfig.name_mode === 'first_last' ? (
