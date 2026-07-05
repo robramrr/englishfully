@@ -107,9 +107,9 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
 
             <div className="overflow-hidden mb-4">
               <ComicText className="float-left w-[58%] text-left text-sm pr-4">
-                1. Scan the QR code with your phone camera
+                1. Scan QR code with phone
                 <br />
-                2. Enter student name, number, and class
+                2. Enter name, number, and class
                 <br />
                 3. Record each item and submit
               </ComicText>
@@ -125,7 +125,9 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
 
             <hr className="clear-both border-0 border-t-4 border-[var(--comic-black)] mb-4" />
 
-            <ComicText className="font-bold break-all text-sm text-center">{studentUrl}</ComicText>
+            <ComicText className="font-bold text-[10px] whitespace-nowrap text-center">
+              {studentUrl}
+            </ComicText>
           </section>
         </main>
       </div>
