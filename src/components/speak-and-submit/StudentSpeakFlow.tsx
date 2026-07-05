@@ -23,8 +23,28 @@ interface StudentSpeakFlowProps {
 }
 
 function getSupportedMimeType(): string | undefined {
-  const candidates = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/aac'];
+  const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/aac'];
   return candidates.find((type) => MediaRecorder.isTypeSupported(type));
+}
+
+function buildRecordingBlob(chunks: Blob[], mimeType: string): Blob {
+  return new Blob(chunks, { type: mimeType });
+}
+
+async function waitForRecordingBlob(
+  chunks: Blob[],
+  mimeType: string,
+  maxAttempts = 20,
+  delayMs = 100
+): Promise<Blob | null> {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const blob = buildRecordingBlob(chunks, mimeType);
+    if (blob.size > 0) {
+      return blob;
+    }
+    await new Promise((resolve) => window.setTimeout(resolve, delayMs));
+  }
+  return null;
 }
 
 async function uploadRecording(
@@ -84,7 +104,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recordingChunksRef = useRef<Blob[]>([]);
+  const recordingSessionRef = useRef(0);
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const currentIndexRef = useRef(0);
@@ -128,6 +148,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
   useEffect(() => {
     return () => {
+      mediaRecorderRef.current?.stop();
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
       if (timerRef.current) window.clearInterval(timerRef.current);
       recordings.forEach((recording) => {
@@ -137,10 +158,21 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const ensureMicStream = useCallback(async () => {
-    if (mediaStreamRef.current) return mediaStreamRef.current;
+  const releaseMicStream = useCallback(() => {
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
+  }, []);
+
+  const acquireFreshMicStream = useCallback(async () => {
+    releaseMicStream();
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
       mediaStreamRef.current = stream;
       setMicDenied(false);
       return stream;
@@ -148,85 +180,92 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
       setMicDenied(true);
       throw new Error('Microphone access is required to complete this homework.');
     }
+  }, [releaseMicStream]);
+
+  const clearRecordingTimer = useCallback(() => {
+    if (timerRef.current) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
   }, []);
 
   async function startRecording() {
     setError('');
+
+    if (mediaRecorderRef.current?.state === 'recording') {
+      return;
+    }
+
+    const sessionId = recordingSessionRef.current + 1;
+    recordingSessionRef.current = sessionId;
+    const recordingIndex = currentIndexRef.current;
+
     try {
-      if (mediaRecorderRef.current?.state === 'recording') {
-        return;
-      }
-
-      let stream = mediaStreamRef.current;
-      const tracksLive =
-        stream?.getAudioTracks().some((track) => track.readyState === 'live') ?? false;
-
-      if (!tracksLive) {
-        mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
-        mediaStreamRef.current = null;
-        stream = await ensureMicStream();
-      }
-
+      const stream = await acquireFreshMicStream();
       const mimeType = getSupportedMimeType();
       const recorder = mimeType
-        ? new MediaRecorder(stream as MediaStream, { mimeType })
-        : new MediaRecorder(stream as MediaStream);
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
 
-      const recordingIndex = currentIndexRef.current;
-      recordingChunksRef.current = [];
+      const chunks: Blob[] = [];
+      const resolvedMimeType = mimeType || recorder.mimeType || 'audio/webm';
 
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          recordingChunksRef.current.push(event.data);
+          chunks.push(event.data);
         }
-      };
-
-      const finalizeRecording = (attempt = 0) => {
-        const finalType = recorder.mimeType || mimeType || 'audio/webm';
-        const blob = new Blob(recordingChunksRef.current, { type: finalType });
-
-        if (blob.size === 0 && attempt < 8) {
-          window.setTimeout(() => finalizeRecording(attempt + 1), 100);
-          return;
-        }
-
-        if (blob.size === 0) {
-          setError('Recording failed — no audio was captured. Please try again.');
-          return;
-        }
-
-        const duration = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000));
-        const previewUrl = URL.createObjectURL(blob);
-
-        setRecordings((current) =>
-          current.map((recording, index) =>
-            index === recordingIndex
-              ? {
-                  ...recording,
-                  blob,
-                  audioUrl: previewUrl,
-                  duration_seconds: duration,
-                  uploadedUrl: null,
-                }
-              : recording
-          )
-        );
-        setElapsedSeconds(duration);
       };
 
       recorder.onstop = () => {
-        if (timerRef.current) window.clearInterval(timerRef.current);
-        setIsRecording(false);
-        mediaRecorderRef.current = null;
-        // WebKit can fire onstop before the final dataavailable chunk arrives.
-        finalizeRecording(0);
+        void (async () => {
+          clearRecordingTimer();
+          setIsRecording(false);
+          mediaRecorderRef.current = null;
+
+          if (sessionId !== recordingSessionRef.current) {
+            releaseMicStream();
+            return;
+          }
+
+          const blob = await waitForRecordingBlob(chunks, resolvedMimeType);
+
+          if (sessionId !== recordingSessionRef.current) {
+            releaseMicStream();
+            return;
+          }
+
+          releaseMicStream();
+
+          if (!blob) {
+            setError('Recording failed — no audio was captured. Please try again.');
+            return;
+          }
+
+          const duration = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000));
+          const previewUrl = URL.createObjectURL(blob);
+
+          setRecordings((current) =>
+            current.map((recording, index) =>
+              index === recordingIndex
+                ? {
+                    ...recording,
+                    blob,
+                    audioUrl: previewUrl,
+                    duration_seconds: duration,
+                    uploadedUrl: null,
+                  }
+                : recording
+            )
+          );
+          setElapsedSeconds(duration);
+        })();
       };
 
       mediaRecorderRef.current = recorder;
       startTimeRef.current = Date.now();
 
       try {
-        recorder.start(500);
+        recorder.start(250);
       } catch {
         recorder.start();
       }
@@ -237,6 +276,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
         setElapsedSeconds(Math.floor((Date.now() - startTimeRef.current) / 1000));
       }, 250);
     } catch (err) {
+      releaseMicStream();
       setError(err instanceof Error ? err.message : 'Could not start recording.');
     }
   }
@@ -244,10 +284,24 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
   function stopRecording() {
     const recorder = mediaRecorderRef.current;
     if (!recorder || recorder.state !== 'recording') return;
+
+    const elapsed = Date.now() - startTimeRef.current;
+    if (elapsed < 400) {
+      setError('Please record for at least half a second before stopping.');
+      return;
+    }
+
     recorder.stop();
   }
 
   function reRecord() {
+    recordingSessionRef.current += 1;
+    releaseMicStream();
+    mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current = null;
+    clearRecordingTimer();
+    setIsRecording(false);
+
     const existing = recordings[currentIndex];
     if (existing?.audioUrl) URL.revokeObjectURL(existing.audioUrl);
     setRecordings((current) =>
@@ -264,6 +318,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
       )
     );
     setElapsedSeconds(0);
+    setError('');
   }
 
   function goNext() {
@@ -272,7 +327,14 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
       setError('Please record this item before continuing.');
       return;
     }
+
+    recordingSessionRef.current += 1;
+    releaseMicStream();
+    mediaRecorderRef.current = null;
+    clearRecordingTimer();
+    setIsRecording(false);
     setError('');
+
     if (currentIndex < totalItems - 1) {
       setCurrentIndex((value) => value + 1);
       setElapsedSeconds(0);
@@ -325,6 +387,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
       }
 
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      releaseMicStream();
       setStep('done');
     } catch (err) {
       setStep('record');
