@@ -71,12 +71,9 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
               {sections.map((section) => (
                 <li key={`section-${section.sectionIndex}`} className="space-y-4">
                   {hasMultipleParts ? (
-                    <ComicTitle
-                      level={6}
-                      className="!text-xl text-[var(--comic-secondary)] mb-0"
-                    >
+                    <ComicText className="font-bold text-xl text-[var(--comic-secondary)]">
                       Part {section.sectionIndex + 1}: {TASK_TYPE_LABELS[section.itemType]}
-                    </ComicTitle>
+                    </ComicText>
                   ) : null}
                   <ol className="space-y-4">
                     {section.itemType === 'vocab_list' ? (
