@@ -190,7 +190,7 @@ function HomeSection() {
                 {t.home.heroDescription}
               </span>
             </ComicText>
-            <div className="relative z-10 flex flex-wrap items-center justify-center gap-2 pl-10 max-md:pl-12 sm:gap-3 md:justify-start md:pl-14 md:gap-4">
+            <div className="relative z-10 flex flex-nowrap items-center justify-center gap-1.5 max-md:gap-1 sm:gap-3 md:justify-start md:pl-14 md:gap-4">
               <HomeHeroPhotoCircle src={HERO_CIRCLE_IMAGE_URL} />
               <HomeHeroPhotoCircle
                 src={HERO_BACKGROUND_URL}
@@ -204,7 +204,10 @@ function HomeSection() {
           </div>
           <ComicCard className="w-full min-w-0 max-w-[460px] justify-self-center bg-white/95 comic-shadow-xl max-md:p-4 md:justify-self-end">
             <ComicTitle level={3} className="mb-4 text-left text-[var(--comic-primary)] max-md:text-xl md:mb-5">
-              {t.inPersonLearning.bookingFormTitle}
+              <span className="md:hidden">
+                {t.inPersonLearning.bookingFormTitle.replace(/^🕒\s*/, "")}
+              </span>
+              <span className="hidden md:inline">{t.inPersonLearning.bookingFormTitle}</span>
             </ComicTitle>
             <form onSubmit={handleHeroBookingSubmit} className="space-y-3">
               <div>
@@ -542,7 +545,6 @@ function OneOnOneSupportSection() {
   const { t } = useI18n();
   const ol = t.onlineLearning;
   const ip = t.inPersonLearning;
-  const [slide, setSlide] = useState(0);
 
   const onsiteChecklistItems = [
     ip.privateItem1,
@@ -552,26 +554,6 @@ function OneOnOneSupportSection() {
     ip.privateItem5,
     ip.privateItem6,
   ] as const;
-
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let id: ReturnType<typeof setInterval> | undefined;
-    const arm = () => {
-      if (id) clearInterval(id);
-      if (!mq.matches && !reduce.matches) {
-        id = setInterval(() => setSlide((s) => (s + 1) % 2), 5000);
-      }
-    };
-    arm();
-    mq.addEventListener("change", arm);
-    reduce.addEventListener("change", arm);
-    return () => {
-      mq.removeEventListener("change", arm);
-      reduce.removeEventListener("change", arm);
-      if (id) clearInterval(id);
-    };
-  }, []);
 
   const liteCard = (
     <ComicCard className="home-online-coaching-card comic-shadow-lg flex h-full min-h-0 flex-col text-center">
@@ -649,31 +631,9 @@ function OneOnOneSupportSection() {
 
         <div className="hidden gap-8 md:grid md:grid-cols-2">{liteCard}{onsiteCard}</div>
 
-        <div className="md:hidden">
-          <div className="relative overflow-hidden rounded-2xl border-4 border-[var(--comic-black)] bg-[var(--comic-light)] comic-shadow-xl">
-            <div
-              className="flex w-[200%] transition-transform duration-700 ease-in-out motion-reduce:transition-none"
-              style={{ transform: `translateX(-${slide * 50}%)` }}
-            >
-              <div className="w-1/2 shrink-0 p-4">{liteCard}</div>
-              <div className="w-1/2 shrink-0 p-4">{onsiteCard}</div>
-            </div>
-          </div>
-          <div className="mt-4 flex justify-center gap-3" role="tablist" aria-label="Compare support options">
-            {[0, 1].map((i) => (
-              <button
-                key={i}
-                type="button"
-                role="tab"
-                aria-selected={slide === i}
-                className={`h-3.5 w-3.5 rounded-full border-2 border-[var(--comic-black)] transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--brand-red)] ${
-                  slide === i ? "scale-110 bg-[var(--brand-red)] comic-shadow-sm" : "bg-[var(--brand-white)]"
-                }`}
-                onClick={() => setSlide(i)}
-                aria-label={i === 0 ? "Online Lite member" : "Onsite 1-on-1 practice"}
-              />
-            ))}
-          </div>
+        <div className="md:hidden space-y-6">
+          {onsiteCard}
+          {liteCard}
         </div>
       </div>
     </section>

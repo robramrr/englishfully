@@ -13,7 +13,7 @@ function Logo() {
         alt="Englishfully Logo"
         width={320}
         height={240}
-        className="object-contain"
+        className="object-contain max-md:max-w-[130px] max-md:-ml-1"
         decoding="async"
         fetchPriority="high"
       />
@@ -30,7 +30,7 @@ export default function HeaderWrapper() {
   if (hideHeader) return null;
 
   return (
-    <header className="w-full flex items-center justify-between py-6 px-8 comic-bg-header-stripes comic-border-b-4 border-b-6 border-[var(--comic-black)] comic-shadow-xl">
+    <header className="w-full flex items-center justify-between py-6 px-8 max-md:px-3 max-md:pl-2 max-md:pr-3 comic-bg-header-stripes comic-border-b-4 border-b-6 border-[var(--comic-black)] comic-shadow-xl">
       <Logo />
       <ResponsiveNav />
     </header>

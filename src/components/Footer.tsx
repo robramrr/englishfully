@@ -94,7 +94,7 @@ export default function Footer() {
               decoding="async"
             />
           </Link>
-          <div className="comic-text comic-text-white font-bold max-w-3xl mx-auto space-y-2">
+          <div className="comic-text font-bold max-w-3xl mx-auto space-y-2 text-[var(--brand-navy)]">
             <p>© {new Date().getFullYear()} {t.footer.legalName}</p>
             <p>
               {t.footer.addressLabel}{" "}
@@ -102,7 +102,7 @@ export default function Footer() {
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.footer.businessAddress)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:underline underline-offset-2"
+                className="text-[var(--brand-navy)] hover:underline underline-offset-2"
               >
                 {t.footer.businessAddress}
               </a>
