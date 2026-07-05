@@ -3,6 +3,7 @@ import JSZip from 'jszip';
 import { isTeacherAuthenticated } from '@/lib/speak-and-submit/auth';
 import { getSubmissionsForTask, getTaskById } from '@/lib/speak-and-submit/db';
 import { jsonError } from '@/lib/speak-and-submit/api';
+import { fetchAudioBuffer } from '@/lib/speak-and-submit/r2';
 
 interface RouteParams {
   params: { taskId: string };
@@ -30,14 +31,15 @@ export async function GET(_request: Request, { params }: RouteParams) {
 
     await Promise.all(
       submissions.map(async (submission, index) => {
-        const response = await fetch(submission.audio_url);
-        if (!response.ok) return;
-        const buffer = await response.arrayBuffer();
+        const buffer = await fetchAudioBuffer(submission.audio_url);
+        if (!buffer) return;
         const extension = submission.audio_url.includes('.mp4')
           ? 'mp4'
           : submission.audio_url.includes('.webm')
             ? 'webm'
-            : 'audio';
+            : submission.audio_url.includes('.mp3')
+              ? 'mp3'
+              : 'audio';
         const filename = sanitizeFilename(
           `${submission.student_number}_item${submission.item_order + 1}_${index + 1}.${extension}`
         );

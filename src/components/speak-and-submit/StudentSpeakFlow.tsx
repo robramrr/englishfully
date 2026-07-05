@@ -14,7 +14,7 @@ interface RecordingState {
   blob: Blob | null;
   audioUrl: string | null;
   duration_seconds: number;
-  cloudinaryUrl: string | null;
+  uploadedUrl: string | null;
 }
 
 interface StudentSpeakFlowProps {
@@ -27,40 +27,20 @@ function getSupportedMimeType(): string | undefined {
 }
 
 async function uploadRecording(taskId: string, blob: Blob): Promise<string> {
-  const paramsResponse = await fetch(`/api/speak/${taskId}/upload`);
-  const params = await paramsResponse.json();
-  if (!paramsResponse.ok) {
-    throw new Error(params.error || 'Upload setup failed');
-  }
-
   const formData = new FormData();
   formData.append('file', blob, `recording.${blob.type.includes('mp4') ? 'mp4' : 'webm'}`);
 
-  if (params.uploadPreset) {
-    formData.append('upload_preset', params.uploadPreset);
-  } else {
-    formData.append('api_key', params.apiKey);
-    formData.append('timestamp', String(params.timestamp));
-    formData.append('signature', params.signature);
+  const response = await fetch(`/api/speak/${taskId}/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Audio upload failed');
   }
 
-  formData.append('folder', params.folder);
-  formData.append('resource_type', params.resourceType);
-
-  const uploadResponse = await fetch(
-    `https://api.cloudinary.com/v1_1/${params.cloudName}/video/upload`,
-    {
-      method: 'POST',
-      body: formData,
-    }
-  );
-
-  const uploadData = await uploadResponse.json();
-  if (!uploadResponse.ok) {
-    throw new Error(uploadData.error?.message || 'Upload failed');
-  }
-
-  return uploadData.secure_url as string;
+  return data.url as string;
 }
 
 export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
@@ -104,7 +84,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
             blob: null,
             audioUrl: null,
             duration_seconds: 0,
-            cloudinaryUrl: null,
+            uploadedUrl: null,
           }))
         );
         setStep('identity');
@@ -168,7 +148,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
                   blob,
                   audioUrl: previewUrl,
                   duration_seconds: duration,
-                  cloudinaryUrl: null,
+                  uploadedUrl: null,
                 }
               : recording
           )
@@ -206,7 +186,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
               blob: null,
               audioUrl: null,
               duration_seconds: 0,
-              cloudinaryUrl: null,
+              uploadedUrl: null,
             }
           : recording
       )
@@ -238,11 +218,11 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
     try {
       const uploaded = await Promise.all(
         recordings.map(async (recording) => {
-          if (recording.cloudinaryUrl) {
+          if (recording.uploadedUrl) {
             return recording;
           }
-          const cloudinaryUrl = await uploadRecording(taskId, recording.blob as Blob);
-          return { ...recording, cloudinaryUrl };
+          const uploadedUrl = await uploadRecording(taskId, recording.blob as Blob);
+          return { ...recording, uploadedUrl };
         })
       );
 
@@ -255,7 +235,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
           class_number: classNumber.trim(),
           recordings: uploaded.map((recording) => ({
             task_item_id: recording.task_item_id,
-            audio_url: recording.cloudinaryUrl,
+            audio_url: recording.uploadedUrl,
             duration_seconds: recording.duration_seconds,
           })),
         }),
