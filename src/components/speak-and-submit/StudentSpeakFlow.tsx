@@ -108,6 +108,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [micDenied, setMicDenied] = useState(false);
+  const [checkingIdentity, setCheckingIdentity] = useState(false);
 
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -130,6 +131,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
     () => Array.from({ length: maxStudentNumber }, (_, index) => String(index + 1)),
     [maxStudentNumber]
   );
+  const maxRecordingSeconds = task?.max_recording_seconds ?? 25;
 
   useEffect(() => {
     currentIndexRef.current = currentIndex;
@@ -182,7 +184,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
     return number;
   }
 
-  function handleContinueIdentity() {
+  async function handleContinueIdentity() {
     const resolvedName =
       entryConfig.name_mode === 'first_last'
         ? `${firstName.trim()} ${lastName.trim()}`.trim()
@@ -217,10 +219,39 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
       return;
     }
 
+    const formattedNumber = formatStudentNumber(studentNumber, studentLetter);
+
+    setCheckingIdentity(true);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/speak/${taskId}/check-submission`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_number: formattedNumber,
+          class_number: resolvedClass,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || 'Unable to verify submission status.');
+        return;
+      }
+      if (data.alreadySubmitted) {
+        setError('You have already submitted for this task. Each student number can only submit once.');
+        return;
+      }
+    } catch {
+      setError('Unable to verify submission status. Please try again.');
+      return;
+    } finally {
+      setCheckingIdentity(false);
+    }
+
     setStudentName(resolvedName);
     setClassNumber(resolvedClass);
-    setStudentNumber(formatStudentNumber(studentNumber, studentLetter));
-    setError('');
+    setStudentNumber(formattedNumber);
     setStep('record');
   }
 
@@ -351,7 +382,11 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
       setIsRecording(true);
       setElapsedSeconds(0);
       timerRef.current = window.setInterval(() => {
-        setElapsedSeconds(Math.floor((Date.now() - startTimeRef.current) / 1000));
+        const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+        setElapsedSeconds(elapsed);
+        if (elapsed >= maxRecordingSeconds) {
+          stopRecording();
+        }
       }, 250);
     } catch (err) {
       releaseMicStream();
@@ -463,8 +498,6 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
       if (!response.ok) {
         throw new Error(data.error || 'Submission failed');
       }
-
-      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
       releaseMicStream();
       setStep('done');
     } catch (err) {
@@ -635,8 +668,9 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
                 size="lg"
                 className="w-full"
                 onClick={handleContinueIdentity}
+                disabled={checkingIdentity}
               >
-                Continue
+                {checkingIdentity ? 'Checking…' : 'Continue'}
               </ComicButton>
             </div>
           </ComicCard>
@@ -667,15 +701,20 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
             <div className="flex flex-col gap-4">
               {!isRecording && !recordings[currentIndex]?.audioUrl ? (
-                <ComicButton variant="danger" size="lg" className="w-full" onClick={startRecording}>
-                  ● Start recording
-                </ComicButton>
+                <>
+                  <ComicText className="text-center text-[var(--comic-secondary)] font-bold text-sm">
+                    Max {maxRecordingSeconds}s per recording
+                  </ComicText>
+                  <ComicButton variant="danger" size="lg" className="w-full" onClick={startRecording}>
+                    ● Start recording
+                  </ComicButton>
+                </>
               ) : null}
 
               {isRecording ? (
                 <>
                   <ComicText className="text-center text-[var(--comic-danger)] font-bold text-xl animate-pulse">
-                    Recording… {elapsedSeconds}s
+                    Recording… {elapsedSeconds}s / {maxRecordingSeconds}s
                   </ComicText>
                   <ComicButton variant="secondary" size="lg" className="w-full" onClick={stopRecording}>
                     ■ Stop recording

@@ -21,6 +21,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
         title: task.title,
         task_type: task.task_type,
         class_name: task.class_name,
+        max_recording_seconds: task.max_recording_seconds,
         entry_config: entryConfig,
       },
       items: items.map((item) => ({

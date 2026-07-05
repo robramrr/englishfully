@@ -4,6 +4,7 @@ import { createTask, listTasks } from '@/lib/speak-and-submit/db';
 import { getRequestOrigin, jsonError } from '@/lib/speak-and-submit/api';
 import { getStudentTaskUrl } from '@/lib/speak-and-submit/qr';
 import type { CreateTaskPayload, TaskType } from '@/lib/speak-and-submit/types';
+import { getDefaultMaxRecordingSeconds } from '@/lib/speak-and-submit/types';
 
 const VALID_TYPES: TaskType[] = ['single_sentence', 'sentence_set', 'vocab_list', 'prompt'];
 
@@ -16,6 +17,10 @@ function validatePayload(body: CreateTaskPayload): string | null {
   }
   if (body.task_type === 'single_sentence' && body.items.filter((item) => item.trim()).length !== 1) {
     return 'Single sentence tasks require exactly one sentence';
+  }
+  const maxSeconds = body.max_recording_seconds ?? getDefaultMaxRecordingSeconds(body.task_type);
+  if (maxSeconds < 5 || maxSeconds > 300) {
+    return 'Max recording time must be between 5 and 300 seconds';
   }
   return null;
 }

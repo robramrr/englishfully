@@ -1,6 +1,26 @@
 export type TaskType = 'single_sentence' | 'sentence_set' | 'vocab_list' | 'prompt';
 export type NameMode = 'nickname' | 'first_last';
 
+export const DEFAULT_MAX_RECORDING_SECONDS: Record<TaskType, number> = {
+  single_sentence: 25,
+  sentence_set: 25,
+  vocab_list: 25,
+  prompt: 60,
+};
+
+export function getDefaultMaxRecordingSeconds(taskType: TaskType): number {
+  return DEFAULT_MAX_RECORDING_SECONDS[taskType];
+}
+
+export function normalizeStudentNumber(value: string): string {
+  const trimmed = value.trim();
+  const match = trimmed.match(/^(\d+)\s*([aAbB])?$/);
+  if (match) {
+    return match[2] ? `${match[1]}${match[2].toUpperCase()}` : match[1];
+  }
+  return trimmed.toUpperCase();
+}
+
 export interface SpeakClassOption {
   id: string;
   label: string;
@@ -40,6 +60,7 @@ export interface SpeakTask {
   title: string;
   task_type: TaskType;
   class_name: string;
+  max_recording_seconds: number;
   qr_code_url: string | null;
   created_at: string;
 }
@@ -68,6 +89,7 @@ export interface PublicTask {
   title: string;
   task_type: TaskType;
   class_name: string;
+  max_recording_seconds: number;
   entry_config: SpeakEntryConfig;
   items: Array<{
     id: string;
@@ -80,6 +102,7 @@ export interface CreateTaskPayload {
   title: string;
   task_type: TaskType;
   class_name: string;
+  max_recording_seconds: number;
   items: string[];
 }
 

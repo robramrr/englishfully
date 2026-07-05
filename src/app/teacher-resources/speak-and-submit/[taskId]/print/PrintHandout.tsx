@@ -78,7 +78,7 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
           <ComicText className="mt-4 text-sm">
             1. Scan the QR code with your phone camera
             <br />
-            2. Enter your name, student number, and class number once
+            2. Enter your name, student number, and class number
             <br />
             3. Record each item and submit
           </ComicText>

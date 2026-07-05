@@ -37,6 +37,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ success: true, submittedCount: count });
   } catch (error) {
     console.error('Submit recordings error:', error);
-    return jsonError(error instanceof Error ? error.message : 'Failed to submit recordings', 500);
+    const message = error instanceof Error ? error.message : 'Failed to submit recordings';
+    if (message.includes('already submitted')) {
+      return jsonError(message, 409);
+    }
+    return jsonError(message, 500);
   }
 }

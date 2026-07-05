@@ -6,6 +6,7 @@ import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import type { TaskType } from '@/lib/speak-and-submit/types';
+import { getDefaultMaxRecordingSeconds } from '@/lib/speak-and-submit/types';
 
 const TASK_TYPE_OPTIONS: Array<{ value: TaskType; label: string; emoji: string }> = [
   { value: 'single_sentence', label: 'Single Sentence', emoji: '💬' },
@@ -22,6 +23,9 @@ export default function CreateTaskForm({ onCreated }: CreateTaskFormProps) {
   const [title, setTitle] = useState('');
   const [className, setClassName] = useState('');
   const [taskType, setTaskType] = useState<TaskType>('single_sentence');
+  const [maxRecordingSeconds, setMaxRecordingSeconds] = useState(
+    getDefaultMaxRecordingSeconds('single_sentence')
+  );
   const [items, setItems] = useState(['']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -36,6 +40,7 @@ export default function CreateTaskForm({ onCreated }: CreateTaskFormProps) {
 
   function handleTaskTypeChange(nextType: TaskType) {
     setTaskType(nextType);
+    setMaxRecordingSeconds(getDefaultMaxRecordingSeconds(nextType));
     if (nextType === 'single_sentence' || nextType === 'prompt') {
       setItems([items[0] ?? '']);
     } else if (items.length < 2) {
@@ -68,6 +73,7 @@ export default function CreateTaskForm({ onCreated }: CreateTaskFormProps) {
           title,
           class_name: className,
           task_type: taskType,
+          max_recording_seconds: maxRecordingSeconds,
           items: visibleItems,
         }),
       });
@@ -81,6 +87,7 @@ export default function CreateTaskForm({ onCreated }: CreateTaskFormProps) {
       setTitle('');
       setClassName('');
       setTaskType('single_sentence');
+      setMaxRecordingSeconds(getDefaultMaxRecordingSeconds('single_sentence'));
       setItems(['']);
       onCreated();
     } catch {
@@ -139,6 +146,23 @@ export default function CreateTaskForm({ onCreated }: CreateTaskFormProps) {
                 {option.emoji} {option.label}
               </button>
             ))}
+          </div>
+          <div className="mt-4">
+            <ComicText className="text-[var(--comic-dark)] font-bold mb-2">Max recording time (seconds)</ComicText>
+            <ComicText className="text-[var(--comic-dark)] mb-2 text-sm">
+              Recording stops automatically at this limit. Defaults: 25s for sentences, 60s for open prompts.
+            </ComicText>
+            <input
+              type="number"
+              min={5}
+              max={300}
+              className="w-full comic-input"
+              value={maxRecordingSeconds}
+              onChange={(event) =>
+                setMaxRecordingSeconds(Number.parseInt(event.target.value, 10) || 25)
+              }
+              required
+            />
           </div>
         </div>
 

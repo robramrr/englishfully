@@ -8,6 +8,7 @@ import type {
   SubmitPayload,
   TaskType,
 } from './types';
+import { getDefaultMaxRecordingSeconds, normalizeStudentNumber } from './types';
 
 let schemaReady: Promise<void> | null = null;
 
@@ -21,9 +22,14 @@ export async function ensureSchema(): Promise<void> {
           title TEXT NOT NULL,
           task_type TEXT NOT NULL CHECK (task_type IN ('single_sentence', 'sentence_set', 'vocab_list', 'prompt')),
           class_name TEXT NOT NULL,
+          max_recording_seconds INTEGER NOT NULL DEFAULT 25,
           qr_code_url TEXT,
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
+      `;
+      await sql`
+        ALTER TABLE speak_tasks
+        ADD COLUMN IF NOT EXISTS max_recording_seconds INTEGER NOT NULL DEFAULT 25
       `;
       await sql`
         CREATE TABLE IF NOT EXISTS speak_task_items (
@@ -60,6 +66,7 @@ function rowToTask(row: Record<string, unknown>): SpeakTask {
     title: row.title as string,
     task_type: row.task_type as TaskType,
     class_name: row.class_name as string,
+    max_recording_seconds: (row.max_recording_seconds as number) ?? 25,
     qr_code_url: (row.qr_code_url as string | null) ?? null,
     created_at: new Date(row.created_at as string).toISOString(),
   };
@@ -102,9 +109,14 @@ export async function createTask(
     throw new Error('At least one task item is required');
   }
 
+  const maxRecordingSeconds = Math.min(
+    300,
+    Math.max(5, payload.max_recording_seconds || getDefaultMaxRecordingSeconds(payload.task_type))
+  );
+
   await sql`
-    INSERT INTO speak_tasks (id, title, task_type, class_name, qr_code_url)
-    VALUES (${taskId}, ${payload.title.trim()}, ${payload.task_type}, ${payload.class_name.trim()}, ${studentUrl})
+    INSERT INTO speak_tasks (id, title, task_type, class_name, max_recording_seconds, qr_code_url)
+    VALUES (${taskId}, ${payload.title.trim()}, ${payload.task_type}, ${payload.class_name.trim()}, ${maxRecordingSeconds}, ${studentUrl})
   `;
 
   const createdItems: SpeakTaskItem[] = [];
@@ -173,6 +185,25 @@ export async function getSubmissionsForTask(taskId: string): Promise<
   }));
 }
 
+export async function submissionExists(
+  taskId: string,
+  studentNumber: string,
+  classNumber: string
+): Promise<boolean> {
+  await ensureSchema();
+  const normalizedNumber = normalizeStudentNumber(studentNumber);
+  const normalizedClass = classNumber.trim();
+
+  const { rows } = await sql`
+    SELECT 1 FROM speak_submissions
+    WHERE task_id = ${taskId}
+      AND student_number = ${normalizedNumber}
+      AND class_number = ${normalizedClass}
+    LIMIT 1
+  `;
+  return rows.length > 0;
+}
+
 export async function createSubmissions(
   taskId: string,
   payload: SubmitPayload
@@ -180,6 +211,14 @@ export async function createSubmissions(
   await ensureSchema();
   const task = await getTaskById(taskId);
   if (!task) throw new Error('Task not found');
+
+  const normalizedNumber = normalizeStudentNumber(payload.student_number);
+  const normalizedClass = payload.class_number.trim();
+
+  const alreadySubmitted = await submissionExists(taskId, normalizedNumber, normalizedClass);
+  if (alreadySubmitted) {
+    throw new Error('You have already submitted for this task.');
+  }
 
   const items = await getTaskItems(taskId);
   const itemIds = new Set(items.map((item) => item.id));
@@ -201,8 +240,8 @@ export async function createSubmissions(
         ${taskId},
         ${recording.task_item_id},
         ${payload.student_name.trim()},
-        ${payload.student_number.trim()},
-        ${payload.class_number.trim()},
+        ${normalizedNumber},
+        ${normalizedClass},
         ${recording.audio_url},
         ${recording.duration_seconds}
       )
