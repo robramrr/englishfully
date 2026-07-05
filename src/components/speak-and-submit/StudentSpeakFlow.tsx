@@ -22,7 +22,7 @@ interface StudentSpeakFlowProps {
 }
 
 function getSupportedMimeType(): string | undefined {
-  const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/aac'];
+  const candidates = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/aac'];
   return candidates.find((type) => MediaRecorder.isTypeSupported(type));
 }
 
@@ -70,6 +70,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const currentIndexRef = useRef(0);
@@ -158,21 +159,22 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
         : new MediaRecorder(stream as MediaStream);
 
       const recordingIndex = currentIndexRef.current;
-      const recordedChunks: Blob[] = [];
+      recordingChunksRef.current = [];
 
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          recordedChunks.push(event.data);
+          recordingChunksRef.current.push(event.data);
         }
       };
 
-      recorder.onstop = () => {
-        if (timerRef.current) window.clearInterval(timerRef.current);
-        setIsRecording(false);
-        mediaRecorderRef.current = null;
-
+      const finalizeRecording = (attempt = 0) => {
         const finalType = recorder.mimeType || mimeType || 'audio/webm';
-        const blob = new Blob(recordedChunks, { type: finalType });
+        const blob = new Blob(recordingChunksRef.current, { type: finalType });
+
+        if (blob.size === 0 && attempt < 8) {
+          window.setTimeout(() => finalizeRecording(attempt + 1), 100);
+          return;
+        }
 
         if (blob.size === 0) {
           setError('Recording failed — no audio was captured. Please try again.');
@@ -198,10 +200,23 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
         setElapsedSeconds(duration);
       };
 
+      recorder.onstop = () => {
+        if (timerRef.current) window.clearInterval(timerRef.current);
+        setIsRecording(false);
+        mediaRecorderRef.current = null;
+        // WebKit can fire onstop before the final dataavailable chunk arrives.
+        finalizeRecording(0);
+      };
+
       mediaRecorderRef.current = recorder;
       startTimeRef.current = Date.now();
-      // Timeslice ensures browsers emit chunks on every recording, not just the first.
-      recorder.start(250);
+
+      try {
+        recorder.start(500);
+      } catch {
+        recorder.start();
+      }
+
       setIsRecording(true);
       setElapsedSeconds(0);
       timerRef.current = window.setInterval(() => {
@@ -214,16 +229,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
   function stopRecording() {
     const recorder = mediaRecorderRef.current;
-    if (!recorder || recorder.state === 'inactive') return;
-
-    try {
-      if (recorder.state === 'recording') {
-        recorder.requestData();
-      }
-    } catch {
-      // requestData is not supported in every browser.
-    }
-
+    if (!recorder || recorder.state !== 'recording') return;
     recorder.stop();
   }
 
