@@ -49,9 +49,12 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
         <main className="print-page max-w-3xl mx-auto px-8 py-10 bg-white text-[var(--comic-dark)]">
           <div className="grid grid-cols-3 items-center gap-3 mb-8 border-b-4 border-[var(--comic-black)] pb-4">
             <ComicText className="font-bold text-xl text-left">{task.title}</ComicText>
-            <ComicText className="font-bold text-xl text-center text-[var(--comic-secondary)] whitespace-nowrap">
+            <ComicTitle
+              level={6}
+              className="!text-xl text-[var(--comic-secondary)] text-center mb-0 whitespace-nowrap"
+            >
               🎙️ Speak &amp; Submit
-            </ComicText>
+            </ComicTitle>
             <ComicText className="font-bold text-xl text-right">
               Class: {task.class_name}
             </ComicText>
@@ -99,7 +102,7 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
 
           <section className="border-4 border-[var(--comic-black)] p-6 text-center">
             <ComicTitle level={3} className="mb-4 text-[var(--comic-secondary)]">
-              Scan once to record &amp; submit
+              Scan to record &amp; submit
             </ComicTitle>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={qrCode} alt="QR code" className="mx-auto mb-4" width={240} height={240} />
@@ -107,7 +110,7 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
             <ComicText className="mt-4 text-sm">
               1. Scan the QR code with your phone camera
               <br />
-              2. Enter your name, student number, and class number
+              2. Enter student name, number, and class
               <br />
               3. Record each item and submit
             </ComicText>
