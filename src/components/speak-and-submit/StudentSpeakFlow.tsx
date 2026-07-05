@@ -459,7 +459,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
         {step === 'identity' ? (
           <ComicCard>
-            <ComicTitle level={5} className="mb-4 text-[var(--comic-primary)]">
+            <ComicTitle level={6} className="speak-identity-title mb-4 text-[var(--comic-primary)] text-center">
               👋 Who are you?
             </ComicTitle>
             <ComicText className="text-[var(--comic-dark)] font-bold mb-4 text-sm">
@@ -555,19 +555,18 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
                     src={recordings[currentIndex].audioUrl ?? ''}
                     className="mb-2"
                   />
-                  <div className="grid grid-cols-2 gap-3">
-                    <ComicButton variant="warning" size="sm" className="w-full text-sm" onClick={reRecord}>
+                  <div className="speak-action-row">
+                    <ComicButton variant="warning" size="sm" onClick={reRecord}>
                       Try again
                     </ComicButton>
                     {currentIndex < totalItems - 1 ? (
-                      <ComicButton variant="primary" size="md" onClick={goNext}>
+                      <ComicButton variant="primary" size="sm" onClick={goNext}>
                         Next item →
                       </ComicButton>
                     ) : (
                       <ComicButton
                         variant="success"
                         size="sm"
-                        className="w-full text-sm"
                         disabled={step === 'submitting'}
                         onClick={submitAll}
                       >
