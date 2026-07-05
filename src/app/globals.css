@@ -156,6 +156,24 @@ body::before {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand-navy) 20%, transparent);
 }
 
+/* Student /speak flow — flat UI for readability on mobile */
+.speak-page .comic-card,
+.speak-page .comic-button,
+.speak-page .comic-audio-player,
+.speak-page .comic-audio-player__play {
+  box-shadow: none !important;
+}
+
+.speak-page .comic-button:hover,
+.speak-page .comic-button:active,
+.speak-page .comic-audio-player__play:active {
+  box-shadow: none !important;
+}
+
+.speak-page .comic-title {
+  text-shadow: none;
+}
+
 .comic-card {
   @apply p-6 rounded-xl;
   border: var(--comic-border);

@@ -412,7 +412,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
   if (step === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="speak-page min-h-screen flex items-center justify-center px-4">
         <ComicText className="text-[var(--comic-dark)] font-bold text-xl">Loading task…</ComicText>
       </div>
     );
@@ -420,8 +420,8 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
   if (step === 'error' || !task) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <ComicCard className="comic-shadow-xl max-w-lg w-full text-center">
+      <div className="speak-page min-h-screen flex items-center justify-center px-4">
+        <ComicCard className="max-w-lg w-full text-center">
           <ComicTitle level={2} className="mb-4 text-[var(--comic-danger)]">
             Task unavailable
           </ComicTitle>
@@ -433,8 +433,8 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
   if (step === 'done') {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-10">
-        <ComicCard className="comic-shadow-xl max-w-lg w-full text-center">
+      <div className="speak-page min-h-screen flex items-center justify-center px-4 py-10">
+        <ComicCard className="max-w-lg w-full text-center">
           <ComicTitle level={2} className="mb-4 text-[var(--comic-success)]">
             ✅ All done — submitted!
           </ComicTitle>
@@ -447,7 +447,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--comic-light)] px-4 py-8">
+    <div className="speak-page min-h-screen bg-[var(--comic-light)] px-4 py-8">
       <div className="max-w-xl mx-auto space-y-6">
         <div className="text-center">
           <ComicTitle level={2} className="text-[var(--comic-secondary)] mb-2">
@@ -458,8 +458,8 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
         </div>
 
         {step === 'identity' ? (
-          <ComicCard className="comic-shadow-xl">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-primary)]">
+          <ComicCard>
+            <ComicTitle level={5} className="mb-4 text-[var(--comic-primary)]">
               👋 Who are you?
             </ComicTitle>
             <ComicText className="text-[var(--comic-dark)] font-bold mb-4 text-sm">
@@ -508,7 +508,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
         ) : null}
 
         {step === 'record' || step === 'submitting' ? (
-          <ComicCard className="comic-shadow-xl">
+          <ComicCard>
             <ComicText className="text-[var(--comic-dark)] font-bold mb-2">
               {taskTypeLabel(task.task_type)}
             </ComicText>
@@ -556,8 +556,8 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
                     className="mb-2"
                   />
                   <div className="grid grid-cols-2 gap-3">
-                    <ComicButton variant="warning" size="md" onClick={reRecord}>
-                      Re-record
+                    <ComicButton variant="warning" size="sm" className="w-full text-sm" onClick={reRecord}>
+                      Try again
                     </ComicButton>
                     {currentIndex < totalItems - 1 ? (
                       <ComicButton variant="primary" size="md" onClick={goNext}>
@@ -566,11 +566,12 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
                     ) : (
                       <ComicButton
                         variant="success"
-                        size="md"
+                        size="sm"
+                        className="w-full text-sm"
                         disabled={step === 'submitting'}
                         onClick={submitAll}
                       >
-                        {step === 'submitting' ? 'Submitting…' : 'Submit all'}
+                        {step === 'submitting' ? 'Submitting…' : 'Submit'}
                       </ComicButton>
                     )}
                   </div>
