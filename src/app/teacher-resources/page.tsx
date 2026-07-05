@@ -91,14 +91,19 @@ function ResourceCategoriesSection() {
             <li>• {t.teacherResources.worksheetsItem1}</li>
             <li>• {t.teacherResources.worksheetsItem2}</li>
             <li>• {t.teacherResources.worksheetsItem3}</li>
-            <li>• {t.teacherResources.worksheetsItem4}</li>
+            <li>
+              •{' '}
+              <Link href="/teacher-resources/speak-and-submit" className="underline font-bold text-[var(--comic-secondary)]">
+                {t.teacherResources.speakAndSubmitLink}
+              </Link>
+            </li>
             <li>• {t.teacherResources.worksheetsItem5}</li>
           </ul>
-          <ComicButton variant="secondary" size="sm">
-            {t.teacherResources.viewWorksheets}
-            <br />
-            {t.teacherResources.comingSoon}
-          </ComicButton>
+          <Link href="/teacher-resources/speak-and-submit">
+            <ComicButton variant="secondary" size="sm">
+              {t.teacherResources.openSpeakAndSubmit}
+            </ComicButton>
+          </Link>
         </ComicCard>
         
         <ComicCard className="comic-shadow-xl text-center flex flex-col">

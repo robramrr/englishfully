@@ -10,6 +10,7 @@ interface ComicButtonProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   disabled?: boolean;
+  type?: 'button' | 'submit' | 'reset';
 }
 
 const ComicButton: React.FC<ComicButtonProps> = ({
@@ -22,6 +23,7 @@ const ComicButton: React.FC<ComicButtonProps> = ({
   size = 'md',
   className = '',
   disabled = false,
+  type = 'button',
 }) => {
   const baseClasses = 'comic-button inline-block text-center no-underline cursor-pointer';
   
@@ -56,6 +58,7 @@ const ComicButton: React.FC<ComicButtonProps> = ({
   
   return (
     <button 
+      type={type}
       onClick={onClick} 
       className={classes}
       disabled={disabled}
