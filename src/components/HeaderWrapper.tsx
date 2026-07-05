@@ -13,7 +13,7 @@ function Logo() {
         alt="Englishfully Logo"
         width={320}
         height={240}
-        className="object-contain"
+        className="object-contain max-md:scale-110 max-md:origin-left"
         decoding="async"
         fetchPriority="high"
       />

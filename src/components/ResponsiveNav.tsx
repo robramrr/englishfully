@@ -28,21 +28,28 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
     setActiveMobileSection(activeMobileSection === section ? null : section);
   };
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      if (isMenuOpen && !target.closest('nav')) {
+      if (
+        isMenuOpen &&
+        !target.closest('[data-mobile-nav-panel]') &&
+        !target.closest('[data-mobile-nav-toggle]')
+      ) {
         closeMenu();
       }
     };
 
     if (isMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = '';
     };
   }, [isMenuOpen]);
 
@@ -176,9 +183,11 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
 
       {/* Mobile Hamburger Button */}
       <button
+        data-mobile-nav-toggle
         onClick={toggleMenu}
-        className="lg:hidden w-12 h-12 bg-[var(--brand-red)] rounded-lg comic-border-thick comic-shadow-md flex flex-col items-center justify-center space-y-1 hover:comic-shadow-lg transition-all duration-200 hover:scale-105"
+        className="lg:hidden shrink-0 w-12 h-12 bg-[var(--brand-red)] rounded-lg comic-border-thick comic-shadow-md flex flex-col items-center justify-center space-y-1 hover:comic-shadow-lg transition-all duration-200 hover:scale-105"
         aria-label="Toggle navigation menu"
+        aria-expanded={isMenuOpen}
       >
         <span 
           className={`w-6 h-1 bg-white rounded-full transition-all duration-300 ${
@@ -197,15 +206,27 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
         />
       </button>
 
-      {/* Mobile Dropdown Menu */}
-      <div 
-        className={`lg:hidden fixed top-20 right-4 w-80 bg-[var(--comic-white)] comic-border-thick comic-shadow-xl rounded-lg overflow-hidden transition-all duration-300 transform z-[9999] ${
-          isMenuOpen 
-            ? 'opacity-100 translate-y-0 scale-100' 
-            : 'opacity-0 -translate-y-4 scale-95 pointer-events-none'
+      {isMenuOpen ? (
+        <button
+          type="button"
+          className="lg:hidden fixed inset-0 z-[9998] bg-[var(--brand-navy)]/25"
+          aria-label="Close navigation menu"
+          onClick={closeMenu}
+        />
+      ) : null}
+
+      {/* Mobile menu — full width inset so it never clips; scrollable when expanded */}
+      <div
+        data-mobile-nav-panel
+        className={`lg:hidden fixed left-3 right-3 top-[5.25rem] z-[9999] flex max-h-[calc(100dvh-5.75rem)] flex-col transition-all duration-300 motion-reduce:transition-none ${
+          isMenuOpen
+            ? 'pointer-events-auto opacity-100 translate-y-0 scale-100'
+            : 'pointer-events-none opacity-0 -translate-y-2 scale-[0.98]'
         }`}
+        aria-hidden={!isMenuOpen}
       >
-        <div className="p-0">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-[var(--comic-white)] comic-border-thick comic-shadow-xl">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
 
           <Link
             href="/app"
@@ -323,13 +344,8 @@ const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ className = '' }) => {
           <div className="px-6 py-4 flex justify-center">
             <LanguageToggle variant="default" />
           </div>
+          </div>
         </div>
-        
-        {/* Comic book style decorative elements */}
-        <div className="absolute top-2 right-2 w-4 h-4 bg-[var(--comic-yellow)] rounded-full comic-border comic-shadow-sm"></div>
-        <div className="absolute bottom-2 left-2 w-3 h-3 bg-[var(--comic-pink)] rounded-full comic-border comic-shadow-sm"></div>
-        <div className="absolute top-1/2 left-2 w-2 h-2 bg-[var(--comic-success)] rounded-full comic-border comic-shadow-sm"></div>
-        <div className="absolute top-1/4 left-1/2 w-2.5 h-2.5 bg-[var(--comic-danger)] rounded-full comic-border comic-shadow-sm transform -translate-x-1/2"></div>
       </div>
 
     </nav>
