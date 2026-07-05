@@ -61,8 +61,11 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
           </div>
 
           <section className="mb-8">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-primary)]">
-              Your speaking task
+            <ComicTitle
+              level={6}
+              className="!text-xl text-[var(--comic-primary)] mb-4"
+            >
+              speaking task
             </ComicTitle>
             <ol className="space-y-4">
               {sections.map((section) => (
@@ -116,7 +119,7 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
                   <br />
                   3. Record each item and submit
                 </ComicText>
-                <ComicText className="font-bold text-[12px] break-all mt-2">{studentUrl}</ComicText>
+                <ComicText className="font-bold text-[10px] whitespace-nowrap mt-2">{studentUrl}</ComicText>
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
