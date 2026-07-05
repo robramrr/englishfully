@@ -7,7 +7,7 @@ import { LOGO_URL } from '../constants/images';
 
 function Logo() {
   return (
-    <Link href="/" className="flex items-center space-x-3 hover:scale-105 transition-transform duration-200 max-md:pr-4">
+    <Link href="/" className="flex items-center space-x-3 hover:scale-105 transition-transform duration-200 max-md:pr-8">
       <img
         src={LOGO_URL}
         alt="Englishfully Logo"
