@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
@@ -27,8 +27,87 @@ interface StudentGroup {
   submissions: SubmissionRow[];
 }
 
+interface ClassGroup {
+  class_number: string;
+  students: StudentGroup[];
+}
+
 interface SubmissionsDashboardProps {
   taskId: string;
+}
+
+function studentKey(student: Pick<StudentGroup, 'class_number' | 'student_number' | 'student_name'>) {
+  return `${student.class_number}::${student.student_number}::${student.student_name}`;
+}
+
+function parseStudentNumber(value: string): number {
+  const match = value.match(/^(\d+)/);
+  return match ? Number.parseInt(match[1], 10) : Number.NaN;
+}
+
+function groupStudentsByClass(students: StudentGroup[]): ClassGroup[] {
+  const map = new Map<string, StudentGroup[]>();
+  for (const student of students) {
+    const existing = map.get(student.class_number) ?? [];
+    existing.push(student);
+    map.set(student.class_number, existing);
+  }
+
+  return Array.from(map.entries())
+    .map(([class_number, classStudents]) => ({
+      class_number,
+      students: classStudents,
+    }))
+    .sort((a, b) =>
+      a.class_number.localeCompare(b.class_number, undefined, { numeric: true, sensitivity: 'base' })
+    );
+}
+
+function sortStudentsInClass(
+  students: StudentGroup[],
+  sort: 'student_number' | 'submitted_at'
+): StudentGroup[] {
+  return [...students].sort((a, b) => {
+    if (sort === 'submitted_at') {
+      const latestA = Math.max(...a.submissions.map((row) => new Date(row.submitted_at).getTime()));
+      const latestB = Math.max(...b.submissions.map((row) => new Date(row.submitted_at).getTime()));
+      return latestB - latestA;
+    }
+
+    const numA = parseStudentNumber(a.student_number);
+    const numB = parseStudentNumber(b.student_number);
+    if (!Number.isNaN(numA) && !Number.isNaN(numB) && numA !== numB) {
+      return numA - numB;
+    }
+    return a.student_number.localeCompare(b.student_number);
+  });
+}
+
+function sortClasses(classes: ClassGroup[], sort: 'student_number' | 'submitted_at'): ClassGroup[] {
+  return [...classes]
+    .map((classGroup) => ({
+      ...classGroup,
+      students: sortStudentsInClass(classGroup.students, sort),
+    }))
+    .sort((a, b) => {
+      if (sort === 'submitted_at') {
+        const latestA = Math.max(
+          ...a.students.flatMap((student) =>
+            student.submissions.map((row) => new Date(row.submitted_at).getTime())
+          )
+        );
+        const latestB = Math.max(
+          ...b.students.flatMap((student) =>
+            student.submissions.map((row) => new Date(row.submitted_at).getTime())
+          )
+        );
+        return latestB - latestA;
+      }
+      return a.class_number.localeCompare(b.class_number, undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      });
+    });
 }
 
 export default function SubmissionsDashboard({ taskId }: SubmissionsDashboardProps) {
@@ -36,6 +115,8 @@ export default function SubmissionsDashboard({ taskId }: SubmissionsDashboardPro
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<'student_number' | 'submitted_at'>('student_number');
   const [error, setError] = useState('');
+  const [expandedClasses, setExpandedClasses] = useState<Set<string>>(new Set());
+  const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
 
   async function loadSubmissions(nextSort = sort) {
     setLoading(true);
@@ -62,9 +143,39 @@ export default function SubmissionsDashboard({ taskId }: SubmissionsDashboardPro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId]);
 
+  const classGroups = useMemo(
+    () => sortClasses(groupStudentsByClass(students), sort),
+    [students, sort]
+  );
+
   function handleSortChange(nextSort: 'student_number' | 'submitted_at') {
     setSort(nextSort);
     loadSubmissions(nextSort);
+  }
+
+  function toggleClass(classNumber: string) {
+    setExpandedClasses((current) => {
+      const next = new Set(current);
+      if (next.has(classNumber)) {
+        next.delete(classNumber);
+      } else {
+        next.add(classNumber);
+      }
+      return next;
+    });
+  }
+
+  function toggleStudent(student: StudentGroup) {
+    const key = studentKey(student);
+    setExpandedStudents((current) => {
+      const next = new Set(current);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
   }
 
   if (loading) {
@@ -104,40 +215,101 @@ export default function SubmissionsDashboard({ taskId }: SubmissionsDashboardPro
 
       {error ? <ComicText className="text-[var(--comic-danger)] font-bold">{error}</ComicText> : null}
 
-      {students.length === 0 ? (
+      {classGroups.length === 0 ? (
         <ComicCard className="comic-shadow-lg text-center">
           <ComicText className="text-[var(--comic-dark)] font-bold">
             No student submissions yet. Share the QR code or printable handout to get started.
           </ComicText>
         </ComicCard>
       ) : (
-        students.map((student) => (
-          <ComicCard key={`${student.student_number}-${student.class_number}-${student.student_name}`} className="comic-shadow-lg">
-            <ComicTitle level={4} className="mb-2 text-[var(--comic-primary)]">
-              {student.student_name}
-            </ComicTitle>
-            <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
-              Student #{student.student_number} · Class {student.class_number}
-            </ComicText>
-            <div className="space-y-4">
-              {student.submissions.map((submission) => (
-                <div
-                  key={submission.id}
-                  className="border-t-4 border-[var(--comic-black)] pt-4"
+        <div className="space-y-4">
+          {classGroups.map((classGroup) => {
+            const classOpen = expandedClasses.has(classGroup.class_number);
+
+            return (
+              <ComicCard key={classGroup.class_number} className="comic-shadow-lg overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggleClass(classGroup.class_number)}
+                  className="w-full text-left flex items-center justify-between gap-4"
                 >
-                  <ComicText className="text-[var(--comic-dark)] font-bold mb-2">
-                    Item {submission.item_order + 1}: {submission.item_content}
-                  </ComicText>
-                  <ComicAudioPlayer src={submission.audio_url} className="mb-2" />
-                  <ComicText className="text-[var(--comic-dark)] text-sm">
-                    {submission.duration_seconds ? `${Math.round(submission.duration_seconds)}s · ` : ''}
-                    {new Date(submission.submitted_at).toLocaleString()}
-                  </ComicText>
-                </div>
-              ))}
-            </div>
-          </ComicCard>
-        ))
+                  <div>
+                    <ComicTitle level={4} className="text-[var(--comic-primary)]">
+                      Class {classGroup.class_number}
+                    </ComicTitle>
+                    <ComicText className="text-[var(--comic-dark)] font-bold">
+                      {classGroup.students.length} student
+                      {classGroup.students.length === 1 ? '' : 's'}
+                    </ComicText>
+                  </div>
+                  <span className="font-bungee text-xl text-[var(--comic-secondary)] shrink-0">
+                    {classOpen ? '▼' : '▶'}
+                  </span>
+                </button>
+
+                {classOpen ? (
+                  <div className="mt-4 space-y-3 border-t-4 border-[var(--comic-black)] pt-4">
+                    {classGroup.students.map((student) => {
+                      const key = studentKey(student);
+                      const studentOpen = expandedStudents.has(key);
+                      const sortedSubmissions = [...student.submissions].sort(
+                        (a, b) => a.item_order - b.item_order
+                      );
+
+                      return (
+                        <div
+                          key={key}
+                          className="comic-border bg-white rounded-lg overflow-hidden"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleStudent(student)}
+                            className="w-full text-left px-4 py-3 flex items-center justify-between gap-4 hover:bg-[var(--comic-light)]"
+                          >
+                            <div>
+                              <ComicText className="text-[var(--comic-dark)] font-bold text-lg">
+                                {student.student_name}
+                              </ComicText>
+                              <ComicText className="text-[var(--comic-secondary)] font-bold">
+                                Student #{student.student_number} · {sortedSubmissions.length} recording
+                                {sortedSubmissions.length === 1 ? '' : 's'}
+                              </ComicText>
+                            </div>
+                            <span className="font-bungee text-lg text-[var(--comic-secondary)] shrink-0">
+                              {studentOpen ? '▼' : '▶'}
+                            </span>
+                          </button>
+
+                          {studentOpen ? (
+                            <div className="border-t-4 border-[var(--comic-black)] px-4 py-4 space-y-4 bg-[var(--comic-light)]">
+                              {sortedSubmissions.map((submission) => (
+                                <div
+                                  key={submission.id}
+                                  className="comic-border bg-white rounded-lg p-4"
+                                >
+                                  <ComicText className="text-[var(--comic-dark)] font-bold mb-2">
+                                    Item {submission.item_order + 1}: {submission.item_content}
+                                  </ComicText>
+                                  <ComicAudioPlayer src={submission.audio_url} className="mb-2" />
+                                  <ComicText className="text-[var(--comic-dark)] text-sm">
+                                    {submission.duration_seconds
+                                      ? `${Math.round(submission.duration_seconds)}s · `
+                                      : ''}
+                                    {new Date(submission.submitted_at).toLocaleString()}
+                                  </ComicText>
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </ComicCard>
+            );
+          })}
+        </div>
       )}
     </div>
   );
