@@ -5,6 +5,7 @@ import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
+import ComicAudioPlayer from '../ComicAudioPlayer';
 
 interface SubmissionRow {
   id: string;
@@ -127,7 +128,7 @@ export default function SubmissionsDashboard({ taskId }: SubmissionsDashboardPro
                   <ComicText className="text-[var(--comic-dark)] font-bold mb-2">
                     Item {submission.item_order + 1}: {submission.item_content}
                   </ComicText>
-                  <audio controls src={submission.audio_url} className="w-full mb-2" />
+                  <ComicAudioPlayer src={submission.audio_url} className="mb-2" />
                   <ComicText className="text-[var(--comic-dark)] text-sm">
                     {submission.duration_seconds ? `${Math.round(submission.duration_seconds)}s · ` : ''}
                     {new Date(submission.submitted_at).toLocaleString()}

@@ -5,6 +5,7 @@ import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
+import ComicAudioPlayer from '../ComicAudioPlayer';
 import type { PublicTask, TaskType } from '@/lib/speak-and-submit/types';
 
 type Step = 'loading' | 'identity' | 'record' | 'submitting' | 'done' | 'error';
@@ -486,11 +487,10 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
               {recordings[currentIndex]?.audioUrl && recordings[currentIndex]?.blob?.size ? (
                 <>
-                  <audio
+                  <ComicAudioPlayer
                     key={recordings[currentIndex].audioUrl ?? undefined}
-                    controls
-                    src={recordings[currentIndex].audioUrl ?? undefined}
-                    className="w-full"
+                    src={recordings[currentIndex].audioUrl ?? ''}
+                    className="mb-2"
                   />
                   <div className="grid grid-cols-2 gap-3">
                     <ComicButton variant="warning" size="md" onClick={reRecord}>

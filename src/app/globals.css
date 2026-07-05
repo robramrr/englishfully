@@ -147,6 +147,15 @@ body::before {
   transform: translate(2px, 2px) scale(0.95);
 }
 
+.comic-audio-player__play:active {
+  box-shadow: var(--comic-shadow-sm);
+  transform: translate(2px, 2px) scale(0.95);
+}
+
+.comic-audio-player__fill {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand-navy) 20%, transparent);
+}
+
 .comic-card {
   @apply p-6 rounded-xl;
   border: var(--comic-border);
