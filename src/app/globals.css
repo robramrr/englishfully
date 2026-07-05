@@ -170,20 +170,24 @@ body::before {
   box-shadow: none !important;
 }
 
+.speak-page .comic-title {
+  text-shadow: none;
+}
+
 /* Teacher /speak-and-submit — flat headings only */
 .speak-and-submit-page .comic-title {
   text-shadow: none;
 }
 
 .speak-page .speak-identity-title {
-  font-size: 1.0625rem;
+  font-size: 1.1875rem;
   letter-spacing: 0.02em;
   line-height: 1.25;
 }
 
 @media (min-width: 380px) {
   .speak-page .speak-identity-title {
-    font-size: 1.1875rem;
+    font-size: 1.3125rem;
   }
 }
 
