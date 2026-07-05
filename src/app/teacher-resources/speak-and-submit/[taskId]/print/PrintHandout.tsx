@@ -101,9 +101,12 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
           </section>
 
           <section className="border-4 border-[var(--comic-black)] p-6">
-            <div className="overflow-hidden mb-4">
-              <div className="float-left w-[58%] text-left pr-4">
-                <ComicTitle level={3} className="mb-2 text-[var(--comic-secondary)]">
+            <div className="flex items-start justify-between gap-2 mb-4">
+              <div className="text-left min-w-0">
+                <ComicTitle
+                  level={6}
+                  className="!text-xl text-[var(--comic-secondary)] mb-2 whitespace-nowrap"
+                >
                   Scan to record &amp; submit
                 </ComicTitle>
                 <ComicText className="text-sm">
@@ -118,13 +121,13 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
               <img
                 src={qrCode}
                 alt="QR code"
-                className="float-right"
+                className="shrink-0"
                 width={200}
                 height={200}
               />
             </div>
 
-            <hr className="clear-both border-0 border-t-4 border-[var(--comic-black)] mb-4" />
+            <hr className="border-0 border-t-4 border-[var(--comic-black)] mb-4" />
 
             <ComicText className="font-bold text-[8px] whitespace-nowrap text-center">
               {studentUrl}
