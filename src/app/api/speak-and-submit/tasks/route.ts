@@ -3,25 +3,44 @@ import { isTeacherAuthenticated } from '@/lib/speak-and-submit/auth';
 import { createTask, listTasks } from '@/lib/speak-and-submit/db';
 import { getRequestOrigin, jsonError } from '@/lib/speak-and-submit/api';
 import { getStudentTaskUrl } from '@/lib/speak-and-submit/qr';
-import type { CreateTaskPayload, TaskType } from '@/lib/speak-and-submit/types';
-import { getDefaultMaxRecordingSeconds } from '@/lib/speak-and-submit/types';
+import type { CreateTaskPayload, ItemTaskType, TaskSectionInput } from '@/lib/speak-and-submit/types';
+import { ITEM_TASK_TYPES, getDefaultMaxRecordingSeconds } from '@/lib/speak-and-submit/types';
 
-const VALID_TYPES: TaskType[] = ['single_sentence', 'sentence_set', 'vocab_list', 'prompt'];
+function normalizeSection(section: TaskSectionInput): TaskSectionInput | null {
+  const itemType = section.item_type;
+  if (!ITEM_TASK_TYPES.includes(itemType)) return null;
+
+  const items = section.items.map((item) => item.trim()).filter(Boolean);
+  if (items.length === 0) return null;
+
+  if (itemType === 'single_sentence' && items.length !== 1) return null;
+  if (itemType === 'prompt' && items.length !== 1) return null;
+
+  const maxSeconds =
+    section.max_recording_seconds ?? getDefaultMaxRecordingSeconds(itemType);
+  if (maxSeconds < 5 || maxSeconds > 300) return null;
+
+  return {
+    item_type: itemType,
+    max_recording_seconds: maxSeconds,
+    items,
+  };
+}
 
 function validatePayload(body: CreateTaskPayload): string | null {
   if (!body.title?.trim()) return 'Title is required';
   if (!body.class_name?.trim()) return 'Class name is required';
-  if (!VALID_TYPES.includes(body.task_type)) return 'Invalid task type';
-  if (!Array.isArray(body.items) || body.items.filter((item) => item.trim()).length === 0) {
-    return 'At least one item is required';
+  if (!Array.isArray(body.sections) || body.sections.length === 0) {
+    return 'At least one task part is required';
   }
-  if (body.task_type === 'single_sentence' && body.items.filter((item) => item.trim()).length !== 1) {
-    return 'Single sentence tasks require exactly one sentence';
+
+  for (let index = 0; index < body.sections.length; index += 1) {
+    const section = normalizeSection(body.sections[index]);
+    if (!section) {
+      return `Task part ${index + 1} is invalid. Check the type, items, and recording limit.`;
+    }
   }
-  const maxSeconds = body.max_recording_seconds ?? getDefaultMaxRecordingSeconds(body.task_type);
-  if (maxSeconds < 5 || maxSeconds > 300) {
-    return 'Max recording time must be between 5 and 300 seconds';
-  }
+
   return null;
 }
 
@@ -49,8 +68,12 @@ export async function POST(request: NextRequest) {
     const validationError = validatePayload(body);
     if (validationError) return jsonError(validationError, 400);
 
+    const sections = body.sections
+      .map((section) => normalizeSection(section))
+      .filter((section): section is TaskSectionInput => section !== null);
+
     const origin = getRequestOrigin(request);
-    const { task, items } = await createTask(body, '');
+    const { task, items } = await createTask({ ...body, sections }, '');
 
     const actualUrl = getStudentTaskUrl(task.id, origin);
     const { sql } = await import('@vercel/postgres');

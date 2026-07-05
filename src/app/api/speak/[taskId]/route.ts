@@ -28,6 +28,9 @@ export async function GET(_request: Request, { params }: RouteParams) {
         id: item.id,
         order_index: item.order_index,
         content: item.content,
+        item_type: item.item_type,
+        section_index: item.section_index,
+        max_recording_seconds: item.max_recording_seconds,
       })),
     });
   } catch (error) {

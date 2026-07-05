@@ -6,8 +6,8 @@ import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import ComicAudioPlayer from '../ComicAudioPlayer';
-import type { PublicTask, TaskType } from '@/lib/speak-and-submit/types';
-import { STUDENT_LETTER_OPTIONS, getDefaultEntryConfig } from '@/lib/speak-and-submit/types';
+import type { ItemTaskType, PublicTask } from '@/lib/speak-and-submit/types';
+import { STUDENT_LETTER_OPTIONS, STUDENT_TASK_TYPE_LABELS, getDefaultEntryConfig } from '@/lib/speak-and-submit/types';
 
 type Step = 'loading' | 'identity' | 'record' | 'submitting' | 'done' | 'error';
 
@@ -131,7 +131,19 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
     () => Array.from({ length: maxStudentNumber }, (_, index) => String(index + 1)),
     [maxStudentNumber]
   );
-  const maxRecordingSeconds = task?.max_recording_seconds ?? 25;
+  const maxRecordingSeconds =
+    currentItem?.max_recording_seconds ?? task?.max_recording_seconds ?? 25;
+  const previousItem = currentIndex > 0 ? task?.items[currentIndex - 1] : null;
+  const currentItemType: ItemTaskType =
+    currentItem?.item_type ??
+    (task?.task_type === 'mixed' ? 'single_sentence' : (task?.task_type as ItemTaskType)) ??
+    'single_sentence';
+  const showSectionHeader =
+    currentIndex === 0 || currentItem?.section_index !== previousItem?.section_index;
+  const sectionCount = useMemo(
+    () => new Set(task?.items.map((item) => item.section_index) ?? []).size,
+    [task]
+  );
 
   useEffect(() => {
     currentIndexRef.current = currentIndex;
@@ -506,19 +518,8 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
     }
   }
 
-  function taskTypeLabel(type: TaskType): string {
-    switch (type) {
-      case 'single_sentence':
-        return 'Say this sentence';
-      case 'sentence_set':
-        return 'Say each sentence';
-      case 'vocab_list':
-        return 'Say each word';
-      case 'prompt':
-        return 'Answer this prompt';
-      default:
-        return 'Speaking task';
-    }
+  function taskTypeLabel(type: ItemTaskType): string {
+    return STUDENT_TASK_TYPE_LABELS[type];
   }
 
   if (step === 'loading') {
@@ -678,9 +679,18 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
         {step === 'record' || step === 'submitting' ? (
           <ComicCard>
-            <ComicText className="text-[var(--comic-dark)] font-bold mb-2">
-              {taskTypeLabel(task.task_type)}
-            </ComicText>
+            {showSectionHeader ? (
+              <>
+                {sectionCount > 1 ? (
+                  <ComicText className="text-[var(--comic-secondary)] font-bold mb-1">
+                    Part {((currentItem?.section_index ?? 0) + 1)} of {sectionCount}
+                  </ComicText>
+                ) : null}
+                <ComicText className="text-[var(--comic-dark)] font-bold mb-2">
+                  {taskTypeLabel(currentItemType)}
+                </ComicText>
+              </>
+            ) : null}
             {totalItems > 1 ? (
               <ComicText className="text-[var(--comic-secondary)] font-bold text-lg mb-4">
                 Item {currentIndex + 1} of {totalItems}

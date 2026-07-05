@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ComicButton from '../../../../components/ComicButton';
@@ -11,14 +11,12 @@ import Footer from '../../../../components/Footer';
 import SubmissionsDashboard from '../../../../components/speak-and-submit/SubmissionsDashboard';
 import TeacherAuthGate from '../../../../components/speak-and-submit/TeacherAuthGate';
 import { generateQrDataUrl } from '@/lib/speak-and-submit/qr';
-import type { SpeakTask, SpeakTaskItem, TaskType } from '@/lib/speak-and-submit/types';
-
-const TASK_TYPE_LABELS: Record<TaskType, string> = {
-  single_sentence: 'Single Sentence',
-  sentence_set: 'Multiple Sentences',
-  vocab_list: 'Vocabulary List',
-  prompt: 'Open Prompt',
-};
+import type { SpeakTask, SpeakTaskItem } from '@/lib/speak-and-submit/types';
+import {
+  TASK_TYPE_LABELS,
+  formatTaskTypesFromItems,
+  groupTaskItemsBySection,
+} from '@/lib/speak-and-submit/types';
 
 interface TaskDetailPageProps {
   params: { taskId: string };
@@ -31,6 +29,9 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps) {
   const [qrCode, setQrCode] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const itemSections = useMemo(() => groupTaskItemsBySection(items), [items]);
+  const hasMultipleParts = itemSections.length > 1;
 
   useEffect(() => {
     async function loadTask() {
@@ -107,7 +108,9 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps) {
                   Class: {task.class_name}
                 </ComicText>
                 <ComicText className="text-[var(--comic-dark)] mb-4">
-                  {TASK_TYPE_LABELS[task.task_type]}
+                  {task.task_type === 'mixed'
+                    ? formatTaskTypesFromItems(items)
+                    : TASK_TYPE_LABELS[task.task_type]}
                 </ComicText>
 
                 <div className="grid md:grid-cols-2 gap-8 items-start">
@@ -115,17 +118,28 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps) {
                     <ComicTitle level={4} className="mb-3 text-[var(--comic-secondary)]">
                       Task items
                     </ComicTitle>
-                    <ol className="space-y-3 text-left">
-                      {items.map((item) => (
-                        <li
-                          key={item.id}
-                          className="comic-border bg-white p-4 rounded-lg text-[var(--comic-dark)] font-bold"
-                        >
-                          {items.length > 1 ? `${item.order_index + 1}. ` : ''}
-                          {item.content}
-                        </li>
+                    <div className="space-y-6 text-left">
+                      {itemSections.map((section) => (
+                        <div key={`section-${section.sectionIndex}`}>
+                          {hasMultipleParts ? (
+                            <ComicText className="text-[var(--comic-secondary)] font-bold mb-2">
+                              Part {section.sectionIndex + 1}: {TASK_TYPE_LABELS[section.itemType]}
+                            </ComicText>
+                          ) : null}
+                          <ol className="space-y-3">
+                            {section.items.map((item, index) => (
+                              <li
+                                key={item.id}
+                                className="comic-border bg-white p-4 rounded-lg text-[var(--comic-dark)] font-bold"
+                              >
+                                {section.items.length > 1 ? `${index + 1}. ` : ''}
+                                {item.content}
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
                       ))}
-                    </ol>
+                    </div>
                   </div>
                   <div className="text-center">
                     <ComicTitle level={4} className="mb-3 text-[var(--comic-secondary)]">

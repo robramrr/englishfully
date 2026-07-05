@@ -3,6 +3,7 @@
 import ComicText from '../../../../../components/ComicText';
 import ComicTitle from '../../../../../components/ComicTitle';
 import type { SpeakTask, SpeakTaskItem } from '@/lib/speak-and-submit/types';
+import { TASK_TYPE_LABELS, groupTaskItemsBySection } from '@/lib/speak-and-submit/types';
 
 interface PrintHandoutProps {
   task: SpeakTask;
@@ -12,6 +13,9 @@ interface PrintHandoutProps {
 }
 
 export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintHandoutProps) {
+  const sections = groupTaskItemsBySection(items);
+  const hasMultipleParts = sections.length > 1;
+
   return (
     <>
       <style jsx global>{`
@@ -56,13 +60,24 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
             Your speaking task
           </ComicTitle>
           <ol className="space-y-4">
-            {items.map((item) => (
-              <li
-                key={item.id}
-                className="border-4 border-[var(--comic-black)] p-4 font-bold text-lg leading-relaxed"
-              >
-                {items.length > 1 ? `${item.order_index + 1}. ` : ''}
-                {item.content}
+            {sections.map((section) => (
+              <li key={`section-${section.sectionIndex}`} className="space-y-4">
+                {hasMultipleParts ? (
+                  <ComicText className="font-bold text-lg text-[var(--comic-secondary)]">
+                    Part {section.sectionIndex + 1}: {TASK_TYPE_LABELS[section.itemType]}
+                  </ComicText>
+                ) : null}
+                <ol className="space-y-4">
+                  {section.items.map((item, index) => (
+                    <li
+                      key={item.id}
+                      className="border-4 border-[var(--comic-black)] p-4 font-bold text-lg leading-relaxed"
+                    >
+                      {section.items.length > 1 ? `${index + 1}. ` : ''}
+                      {item.content}
+                    </li>
+                  ))}
+                </ol>
               </li>
             ))}
           </ol>

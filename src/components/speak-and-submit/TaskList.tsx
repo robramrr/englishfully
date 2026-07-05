@@ -5,14 +5,8 @@ import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
-import type { SpeakTask, TaskType } from '@/lib/speak-and-submit/types';
-
-const TASK_TYPE_LABELS: Record<TaskType, string> = {
-  single_sentence: 'Single Sentence',
-  sentence_set: 'Multiple Sentences',
-  vocab_list: 'Vocabulary List',
-  prompt: 'Open Prompt',
-};
+import type { SpeakTask } from '@/lib/speak-and-submit/types';
+import { TASK_TYPE_LABELS } from '@/lib/speak-and-submit/types';
 
 interface TaskListProps {
   tasks: SpeakTask[];

@@ -2,13 +2,18 @@ import { sql } from '@vercel/postgres';
 import { nanoid } from 'nanoid';
 import type {
   CreateTaskPayload,
+  ItemTaskType,
   SpeakSubmission,
   SpeakTask,
   SpeakTaskItem,
   SubmitPayload,
   TaskType,
 } from './types';
-import { getDefaultMaxRecordingSeconds, normalizeStudentNumber } from './types';
+import {
+  deriveTaskType,
+  getDefaultMaxRecordingSeconds,
+  normalizeStudentNumber,
+} from './types';
 
 let schemaReady: Promise<void> | null = null;
 
@@ -20,7 +25,7 @@ export async function ensureSchema(): Promise<void> {
           id TEXT PRIMARY KEY,
           teacher_id TEXT NOT NULL DEFAULT 'default',
           title TEXT NOT NULL,
-          task_type TEXT NOT NULL CHECK (task_type IN ('single_sentence', 'sentence_set', 'vocab_list', 'prompt')),
+          task_type TEXT NOT NULL,
           class_name TEXT NOT NULL,
           max_recording_seconds INTEGER NOT NULL DEFAULT 25,
           qr_code_url TEXT,
@@ -36,8 +41,23 @@ export async function ensureSchema(): Promise<void> {
           id TEXT PRIMARY KEY,
           task_id TEXT NOT NULL REFERENCES speak_tasks(id) ON DELETE CASCADE,
           order_index INTEGER NOT NULL,
-          content TEXT NOT NULL
+          content TEXT NOT NULL,
+          item_type TEXT,
+          section_index INTEGER NOT NULL DEFAULT 0,
+          max_recording_seconds INTEGER
         )
+      `;
+      await sql`
+        ALTER TABLE speak_task_items
+        ADD COLUMN IF NOT EXISTS item_type TEXT
+      `;
+      await sql`
+        ALTER TABLE speak_task_items
+        ADD COLUMN IF NOT EXISTS section_index INTEGER NOT NULL DEFAULT 0
+      `;
+      await sql`
+        ALTER TABLE speak_task_items
+        ADD COLUMN IF NOT EXISTS max_recording_seconds INTEGER
       `;
       await sql`
         CREATE TABLE IF NOT EXISTS speak_submissions (
@@ -72,12 +92,15 @@ function rowToTask(row: Record<string, unknown>): SpeakTask {
   };
 }
 
-function rowToItem(row: Record<string, unknown>): SpeakTaskItem {
+function rowToItem(row: Record<string, unknown>, fallbackType?: ItemTaskType): SpeakTaskItem {
   return {
     id: row.id as string,
     task_id: row.task_id as string,
     order_index: row.order_index as number,
     content: row.content as string,
+    item_type: (row.item_type as ItemTaskType) ?? fallbackType ?? 'single_sentence',
+    section_index: (row.section_index as number) ?? 0,
+    max_recording_seconds: (row.max_recording_seconds as number | null) ?? null,
   };
 }
 
@@ -101,37 +124,62 @@ export async function createTask(
 ): Promise<{ task: SpeakTask; items: SpeakTaskItem[] }> {
   await ensureSchema();
   const taskId = nanoid(21);
-  const items = payload.items
-    .map((content) => content.trim())
-    .filter(Boolean);
+  const sections = payload.sections.map((section) => ({
+    item_type: section.item_type,
+    max_recording_seconds: Math.min(
+      300,
+      Math.max(
+        5,
+        section.max_recording_seconds || getDefaultMaxRecordingSeconds(section.item_type)
+      )
+    ),
+    items: section.items.map((content) => content.trim()).filter(Boolean),
+  }));
 
-  if (items.length === 0) {
+  const flatItems = sections.flatMap((section) => section.items);
+  if (flatItems.length === 0) {
     throw new Error('At least one task item is required');
   }
 
-  const maxRecordingSeconds = Math.min(
-    300,
-    Math.max(5, payload.max_recording_seconds || getDefaultMaxRecordingSeconds(payload.task_type))
-  );
+  const taskType = deriveTaskType(sections);
+  const maxRecordingSeconds = Math.max(...sections.map((section) => section.max_recording_seconds));
 
   await sql`
     INSERT INTO speak_tasks (id, title, task_type, class_name, max_recording_seconds, qr_code_url)
-    VALUES (${taskId}, ${payload.title.trim()}, ${payload.task_type}, ${payload.class_name.trim()}, ${maxRecordingSeconds}, ${studentUrl})
+    VALUES (${taskId}, ${payload.title.trim()}, ${taskType}, ${payload.class_name.trim()}, ${maxRecordingSeconds}, ${studentUrl})
   `;
 
   const createdItems: SpeakTaskItem[] = [];
-  for (let index = 0; index < items.length; index += 1) {
-    const itemId = nanoid(21);
-    await sql`
-      INSERT INTO speak_task_items (id, task_id, order_index, content)
-      VALUES (${itemId}, ${taskId}, ${index}, ${items[index]})
-    `;
-    createdItems.push({
-      id: itemId,
-      task_id: taskId,
-      order_index: index,
-      content: items[index],
-    });
+  let orderIndex = 0;
+  for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex += 1) {
+    const section = sections[sectionIndex];
+    for (const content of section.items) {
+      const itemId = nanoid(21);
+      await sql`
+        INSERT INTO speak_task_items (
+          id, task_id, order_index, content, item_type, section_index, max_recording_seconds
+        )
+        VALUES (
+          ${itemId},
+          ${taskId},
+          ${orderIndex},
+          ${content},
+          ${section.item_type},
+          ${sectionIndex},
+          ${section.max_recording_seconds}
+        )
+      `;
+      createdItems.push({
+        id: itemId,
+        task_id: taskId,
+        order_index: orderIndex,
+        content,
+        item_type: section.item_type,
+        section_index: sectionIndex,
+        max_recording_seconds: section.max_recording_seconds,
+      });
+      orderIndex += 1;
+    }
   }
 
   const { rows } = await sql`SELECT * FROM speak_tasks WHERE id = ${taskId}`;
@@ -153,12 +201,15 @@ export async function getTaskById(taskId: string): Promise<SpeakTask | null> {
 
 export async function getTaskItems(taskId: string): Promise<SpeakTaskItem[]> {
   await ensureSchema();
+  const task = await getTaskById(taskId);
+  const fallbackType =
+    task && task.task_type !== 'mixed' ? (task.task_type as ItemTaskType) : 'single_sentence';
   const { rows } = await sql`
     SELECT * FROM speak_task_items
     WHERE task_id = ${taskId}
     ORDER BY order_index ASC
   `;
-  return rows.map(rowToItem);
+  return rows.map((row) => rowToItem(row, fallbackType));
 }
 
 export async function deleteTask(taskId: string): Promise<boolean> {

@@ -1,15 +1,67 @@
-export type TaskType = 'single_sentence' | 'sentence_set' | 'vocab_list' | 'prompt';
+export type ItemTaskType = 'single_sentence' | 'sentence_set' | 'vocab_list' | 'prompt';
+export type TaskType = ItemTaskType | 'mixed';
 export type NameMode = 'nickname' | 'first_last';
 
-export const DEFAULT_MAX_RECORDING_SECONDS: Record<TaskType, number> = {
+export const ITEM_TASK_TYPES: ItemTaskType[] = [
+  'single_sentence',
+  'sentence_set',
+  'vocab_list',
+  'prompt',
+];
+
+export const TASK_TYPE_LABELS: Record<TaskType, string> = {
+  single_sentence: 'Single Sentence',
+  sentence_set: 'Multiple Sentences',
+  vocab_list: 'Vocabulary List',
+  prompt: 'Open Prompt',
+  mixed: 'Mixed task',
+};
+
+export const STUDENT_TASK_TYPE_LABELS: Record<ItemTaskType, string> = {
+  single_sentence: 'Say this sentence',
+  sentence_set: 'Say each sentence',
+  vocab_list: 'Say each word',
+  prompt: 'Answer this prompt',
+};
+
+export const DEFAULT_MAX_RECORDING_SECONDS: Record<ItemTaskType, number> = {
   single_sentence: 25,
   sentence_set: 25,
   vocab_list: 25,
   prompt: 60,
 };
 
-export function getDefaultMaxRecordingSeconds(taskType: TaskType): number {
+export function getDefaultMaxRecordingSeconds(taskType: ItemTaskType): number {
   return DEFAULT_MAX_RECORDING_SECONDS[taskType];
+}
+
+export function deriveTaskType(sections: TaskSectionInput[]): TaskType {
+  const types = new Set(sections.map((section) => section.item_type));
+  if (types.size > 1) return 'mixed';
+  return sections[0]?.item_type ?? 'single_sentence';
+}
+
+export function formatTaskTypesFromItems(
+  items: Array<{ item_type: ItemTaskType; section_index: number }>
+): string {
+  const sectionTypes: ItemTaskType[] = [];
+  let lastSection = -1;
+  for (const item of items) {
+    if (item.section_index !== lastSection) {
+      sectionTypes.push(item.item_type);
+      lastSection = item.section_index;
+    }
+  }
+  if (sectionTypes.length <= 1) {
+    return TASK_TYPE_LABELS[sectionTypes[0] ?? 'single_sentence'];
+  }
+  return sectionTypes.map((type) => TASK_TYPE_LABELS[type]).join(' + ');
+}
+
+export interface TaskSectionInput {
+  item_type: ItemTaskType;
+  max_recording_seconds: number;
+  items: string[];
 }
 
 export function normalizeStudentNumber(value: string): string {
@@ -70,6 +122,28 @@ export interface SpeakTaskItem {
   task_id: string;
   order_index: number;
   content: string;
+  item_type: ItemTaskType;
+  section_index: number;
+  max_recording_seconds: number | null;
+}
+
+export function groupTaskItemsBySection<T extends SpeakTaskItem>(
+  items: T[]
+): Array<{ sectionIndex: number; itemType: ItemTaskType; items: T[] }> {
+  const groups: Array<{ sectionIndex: number; itemType: ItemTaskType; items: T[] }> = [];
+  for (const item of items) {
+    const last = groups[groups.length - 1];
+    if (!last || last.sectionIndex !== item.section_index) {
+      groups.push({
+        sectionIndex: item.section_index,
+        itemType: item.item_type,
+        items: [item],
+      });
+    } else {
+      last.items.push(item);
+    }
+  }
+  return groups;
 }
 
 export interface SpeakSubmission {
@@ -95,15 +169,16 @@ export interface PublicTask {
     id: string;
     order_index: number;
     content: string;
+    item_type: ItemTaskType;
+    section_index: number;
+    max_recording_seconds: number | null;
   }>;
 }
 
 export interface CreateTaskPayload {
   title: string;
-  task_type: TaskType;
   class_name: string;
-  max_recording_seconds: number;
-  items: string[];
+  sections: TaskSectionInput[];
 }
 
 export interface SubmitPayload {
