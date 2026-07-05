@@ -26,7 +26,16 @@ function getSupportedMimeType(): string | undefined {
   return candidates.find((type) => MediaRecorder.isTypeSupported(type));
 }
 
-async function uploadRecording(taskId: string, blob: Blob): Promise<string> {
+async function uploadRecording(
+  taskId: string,
+  blob: Blob,
+  meta: {
+    studentName: string;
+    studentNumber: string;
+    classNumber: string;
+    itemIndex: number;
+  }
+): Promise<string> {
   if (blob.size === 0) {
     throw new Error('Recording is empty. Please re-record this item.');
   }
@@ -41,6 +50,10 @@ async function uploadRecording(taskId: string, blob: Blob): Promise<string> {
 
   const formData = new FormData();
   formData.append('file', blob, `recording.${extension}`);
+  formData.append('student_name', meta.studentName);
+  formData.append('student_number', meta.studentNumber);
+  formData.append('class_number', meta.classNumber);
+  formData.append('item_index', String(meta.itemIndex));
 
   const response = await fetch(`/api/speak/${taskId}/upload`, {
     method: 'POST',
@@ -276,11 +289,16 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
     try {
       const uploaded = await Promise.all(
-        recordings.map(async (recording) => {
+        recordings.map(async (recording, index) => {
           if (recording.uploadedUrl) {
             return recording;
           }
-          const uploadedUrl = await uploadRecording(taskId, recording.blob as Blob);
+          const uploadedUrl = await uploadRecording(taskId, recording.blob as Blob, {
+            studentName: studentName.trim(),
+            studentNumber: studentNumber.trim(),
+            classNumber: classNumber.trim(),
+            itemIndex: index,
+          });
           return { ...recording, uploadedUrl };
         })
       );

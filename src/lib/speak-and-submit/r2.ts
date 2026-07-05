@@ -1,5 +1,4 @@
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { nanoid } from 'nanoid';
 
 function getR2Client(): S3Client {
   const endpoint = process.env.R2_ENDPOINT;
@@ -71,13 +70,43 @@ function extensionForContentType(contentType: string): string {
   return 'webm';
 }
 
+export function sanitizePathSegment(value: string, maxLen = 48): string {
+  return (
+    value
+      .trim()
+      .normalize('NFKD')
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .slice(0, maxLen)
+      .replace(/^-+|-+$/g, '') || 'unknown'
+  );
+}
+
+export interface AudioUploadContext {
+  taskId: string;
+  classNumber: string;
+  studentNumber: string;
+  studentName: string;
+  itemIndex: number;
+}
+
+export function buildAudioObjectKey(context: AudioUploadContext, extension: string): string {
+  const classFolder = sanitizePathSegment(context.classNumber);
+  const studentFolder = `${sanitizePathSegment(context.studentNumber)}_${sanitizePathSegment(context.studentName)}`;
+  const itemLabel = String(context.itemIndex + 1).padStart(2, '0');
+  const fileName = `${sanitizePathSegment(context.studentNumber)}_item-${itemLabel}.${extension}`;
+
+  return `speak-and-submit/${context.taskId}/class-${classFolder}/${studentFolder}/${fileName}`;
+}
+
 export async function uploadAudioToR2(
-  taskId: string,
+  context: AudioUploadContext,
   buffer: Buffer,
   contentType: string
 ): Promise<{ key: string; url: string }> {
   const extension = extensionForContentType(contentType);
-  const key = `speak-and-submit/${taskId}/${nanoid()}.${extension}`;
+  const key = buildAudioObjectKey(context, extension);
   const client = getR2Client();
 
   await client.send(
@@ -86,6 +115,13 @@ export async function uploadAudioToR2(
       Key: key,
       Body: buffer,
       ContentType: contentType || 'audio/webm',
+      Metadata: {
+        'student-name': context.studentName.trim(),
+        'student-number': context.studentNumber.trim(),
+        'class-number': context.classNumber.trim(),
+        'item-index': String(context.itemIndex + 1),
+        'task-id': context.taskId,
+      },
     })
   );
 
