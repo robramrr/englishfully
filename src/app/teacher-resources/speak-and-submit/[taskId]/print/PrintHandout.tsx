@@ -49,7 +49,10 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
         <main className="print-page max-w-3xl mx-auto px-8 py-10 bg-white text-[var(--comic-dark)]">
           <div className="grid grid-cols-3 items-center gap-3 mb-8 border-b-4 border-[var(--comic-black)] pb-4">
             <ComicText className="font-bold text-xl text-left">{task.title}</ComicText>
-            <ComicTitle level={2} className="text-[var(--comic-secondary)] text-center mb-0">
+            <ComicTitle
+              level={6}
+              className="text-[var(--comic-secondary)] text-center mb-0 !text-sm whitespace-nowrap"
+            >
               🎙️ Speak &amp; Submit
             </ComicTitle>
             <ComicText className="font-bold text-xl text-right">
