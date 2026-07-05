@@ -71,9 +71,12 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
               {sections.map((section) => (
                 <li key={`section-${section.sectionIndex}`} className="space-y-4">
                   {hasMultipleParts ? (
-                    <ComicText className="font-bold text-lg text-[var(--comic-secondary)]">
+                    <ComicTitle
+                      level={6}
+                      className="!text-xl text-[var(--comic-secondary)] mb-0"
+                    >
                       Part {section.sectionIndex + 1}: {TASK_TYPE_LABELS[section.itemType]}
-                    </ComicText>
+                    </ComicTitle>
                   ) : null}
                   <ol className="space-y-4">
                     {section.itemType === 'vocab_list' ? (
@@ -119,7 +122,6 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
                   <br />
                   3. Record each item and submit
                 </ComicText>
-                <ComicText className="font-bold text-[10px] whitespace-nowrap mt-2">{studentUrl}</ComicText>
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -130,6 +132,12 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
                 height={200}
               />
             </div>
+
+            <hr className="border-0 border-t-4 border-[var(--comic-black)] mb-4" />
+
+            <ComicText className="font-bold text-[10px] whitespace-nowrap text-center">
+              {studentUrl}
+            </ComicText>
           </section>
         </main>
       </div>
