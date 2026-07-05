@@ -67,7 +67,7 @@ export default function PrintHandout({
               level={6}
               className="!text-xl text-[var(--comic-primary)] mb-4"
             >
-              speaking task
+              🎙️ Speaking Task
             </ComicTitle>
             <ol className="space-y-4">
               {sections.map((section) => (
