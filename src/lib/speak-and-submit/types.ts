@@ -1,4 +1,32 @@
 export type TaskType = 'single_sentence' | 'sentence_set' | 'vocab_list' | 'prompt';
+export type NameMode = 'nickname' | 'first_last';
+
+export interface SpeakClassOption {
+  id: string;
+  label: string;
+  max_student_number: number;
+  sort_order: number;
+}
+
+export interface SpeakEntryConfig {
+  name_mode: NameMode;
+  classes: SpeakClassOption[];
+}
+
+export interface SaveEntryConfigPayload {
+  name_mode: NameMode;
+  classes: Array<{
+    label: string;
+    max_student_number: number;
+  }>;
+}
+
+export function getDefaultEntryConfig(): SpeakEntryConfig {
+  return {
+    name_mode: 'nickname',
+    classes: [],
+  };
+}
 
 export interface SpeakTask {
   id: string;
@@ -34,6 +62,7 @@ export interface PublicTask {
   title: string;
   task_type: TaskType;
   class_name: string;
+  entry_config: SpeakEntryConfig;
   items: Array<{
     id: string;
     order_index: number;

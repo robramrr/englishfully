@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getTaskById, getTaskItems } from '@/lib/speak-and-submit/db';
+import { getEntryConfig } from '@/lib/speak-and-submit/settings';
 import { jsonError } from '@/lib/speak-and-submit/api';
 
 interface RouteParams {
@@ -12,6 +13,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
     if (!task) return jsonError('Task not found', 404);
 
     const items = await getTaskItems(params.taskId);
+    const entryConfig = await getEntryConfig(task.teacher_id);
 
     return NextResponse.json({
       task: {
@@ -19,6 +21,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
         title: task.title,
         task_type: task.task_type,
         class_name: task.class_name,
+        entry_config: entryConfig,
       },
       items: items.map((item) => ({
         id: item.id,

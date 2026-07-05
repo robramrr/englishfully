@@ -8,6 +8,7 @@ import ComicText from '../../../components/ComicText';
 import ComicTitle from '../../../components/ComicTitle';
 import Footer from '../../../components/Footer';
 import CreateTaskForm from '../../../components/speak-and-submit/CreateTaskForm';
+import StudentEntrySettings from '../../../components/speak-and-submit/StudentEntrySettings';
 import TaskList from '../../../components/speak-and-submit/TaskList';
 import TeacherAuthGate from '../../../components/speak-and-submit/TeacherAuthGate';
 import type { SpeakTask } from '@/lib/speak-and-submit/types';
@@ -48,6 +49,8 @@ export default function SpeakAndSubmitPage() {
               </ComicButton>
             </Link>
           </div>
+
+          <StudentEntrySettings />
 
           <CreateTaskForm
             onCreated={() => {

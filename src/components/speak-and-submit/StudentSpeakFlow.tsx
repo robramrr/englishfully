@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import ComicAudioPlayer from '../ComicAudioPlayer';
 import type { PublicTask, TaskType } from '@/lib/speak-and-submit/types';
+import { getDefaultEntryConfig } from '@/lib/speak-and-submit/types';
 
 type Step = 'loading' | 'identity' | 'record' | 'submitting' | 'done' | 'error';
 
@@ -93,9 +94,14 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
   const [step, setStep] = useState<Step>('loading');
   const [task, setTask] = useState<PublicTask | null>(null);
   const [error, setError] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [studentName, setStudentName] = useState('');
   const [studentNumber, setStudentNumber] = useState('');
   const [classNumber, setClassNumber] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState('');
+  const [manualClassNumber, setManualClassNumber] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [recordings, setRecordings] = useState<RecordingState[]>([]);
   const [isRecording, setIsRecording] = useState(false);
@@ -111,6 +117,17 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
   const currentItem = task?.items[currentIndex];
   const totalItems = task?.items.length ?? 0;
+  const entryConfig = task?.entry_config ?? getDefaultEntryConfig();
+  const usesClassDropdown = entryConfig.classes.length > 0;
+  const selectedClass = useMemo(
+    () => entryConfig.classes.find((item) => item.id === selectedClassId) ?? null,
+    [entryConfig.classes, selectedClassId]
+  );
+  const maxStudentNumber = selectedClass?.max_student_number ?? 35;
+  const studentNumberOptions = useMemo(
+    () => Array.from({ length: maxStudentNumber }, (_, index) => String(index + 1)),
+    [maxStudentNumber]
+  );
 
   useEffect(() => {
     currentIndexRef.current = currentIndex;
@@ -127,8 +144,12 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
         }
         setTask({
           ...data.task,
+          entry_config: data.task.entry_config ?? getDefaultEntryConfig(),
           items: data.items,
         });
+        if (data.task.entry_config?.classes?.length > 0) {
+          setSelectedClassId(data.task.entry_config.classes[0].id);
+        }
         setRecordings(
           data.items.map((item: PublicTask['items'][number]) => ({
             task_item_id: item.id,
@@ -145,6 +166,48 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
         setStep('error');
       });
   }, [taskId]);
+
+  useEffect(() => {
+    if (studentNumber && Number.parseInt(studentNumber, 10) > maxStudentNumber) {
+      setStudentNumber('');
+    }
+  }, [maxStudentNumber, studentNumber]);
+
+  function handleContinueIdentity() {
+    const resolvedName =
+      entryConfig.name_mode === 'first_last'
+        ? `${firstName.trim()} ${lastName.trim()}`.trim()
+        : nickname.trim();
+
+    const resolvedClass = usesClassDropdown
+      ? selectedClass?.label ?? ''
+      : manualClassNumber.trim();
+
+    if (entryConfig.name_mode === 'first_last') {
+      if (!firstName.trim() || !lastName.trim()) {
+        setError('Please enter your first and last name.');
+        return;
+      }
+    } else if (!nickname.trim()) {
+      setError('Please enter your nickname.');
+      return;
+    }
+
+    if (!studentNumber) {
+      setError('Please select your student number.');
+      return;
+    }
+
+    if (!resolvedClass) {
+      setError(usesClassDropdown ? 'Please select your class.' : 'Please enter your class.');
+      return;
+    }
+
+    setStudentName(resolvedName);
+    setClassNumber(resolvedClass);
+    setError('');
+    setStep('record');
+  }
 
   useEffect(() => {
     return () => {
@@ -466,40 +529,79 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
               Your teacher will use this recording for class feedback only.
             </ComicText>
             <div className="space-y-4">
-              <input
+              {entryConfig.name_mode === 'first_last' ? (
+                <>
+                  <input
+                    className="w-full comic-input text-lg py-4"
+                    placeholder="First name"
+                    value={firstName}
+                    onChange={(event) => setFirstName(event.target.value)}
+                    autoComplete="given-name"
+                    required
+                  />
+                  <input
+                    className="w-full comic-input text-lg py-4"
+                    placeholder="Last name"
+                    value={lastName}
+                    onChange={(event) => setLastName(event.target.value)}
+                    autoComplete="family-name"
+                    required
+                  />
+                </>
+              ) : (
+                <input
+                  className="w-full comic-input text-lg py-4"
+                  placeholder="Nickname"
+                  value={nickname}
+                  onChange={(event) => setNickname(event.target.value)}
+                  autoComplete="nickname"
+                  required
+                />
+              )}
+
+              {usesClassDropdown ? (
+                <select
+                  className="w-full comic-input text-lg py-4"
+                  value={selectedClassId}
+                  onChange={(event) => setSelectedClassId(event.target.value)}
+                  required
+                >
+                  <option value="">Select class</option>
+                  {entryConfig.classes.map((classOption) => (
+                    <option key={classOption.id} value={classOption.id}>
+                      {classOption.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  className="w-full comic-input text-lg py-4"
+                  placeholder="Class"
+                  value={manualClassNumber}
+                  onChange={(event) => setManualClassNumber(event.target.value)}
+                  required
+                />
+              )}
+
+              <select
                 className="w-full comic-input text-lg py-4"
-                placeholder="Your name"
-                value={studentName}
-                onChange={(event) => setStudentName(event.target.value)}
-                required
-              />
-              <input
-                className="w-full comic-input text-lg py-4"
-                placeholder="Student number"
-                inputMode="numeric"
                 value={studentNumber}
                 onChange={(event) => setStudentNumber(event.target.value)}
                 required
-              />
-              <input
-                className="w-full comic-input text-lg py-4"
-                placeholder="Class number"
-                value={classNumber}
-                onChange={(event) => setClassNumber(event.target.value)}
-                required
-              />
+              >
+                <option value="">Student number</option>
+                {studentNumberOptions.map((number) => (
+                  <option key={number} value={number}>
+                    {number}
+                  </option>
+                ))}
+              </select>
+
               <ComicButton
                 variant="primary"
                 size="lg"
                 className="w-full"
-                onClick={() => {
-                  if (!studentName.trim() || !studentNumber.trim() || !classNumber.trim()) {
-                    setError('Please fill in all fields.');
-                    return;
-                  }
-                  setError('');
-                  setStep('record');
-                }}
+                onClick={handleContinueIdentity}
               >
                 Continue
               </ComicButton>
