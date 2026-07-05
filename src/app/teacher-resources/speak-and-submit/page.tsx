@@ -29,7 +29,7 @@ export default function SpeakAndSubmitPage() {
   }, [loadTasks]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--comic-light)]">
+    <div className="speak-and-submit-page flex flex-col min-h-screen bg-[var(--comic-light)]">
       <section className="comic-bg-secondary py-16 px-4 comic-pattern-dots text-center">
         <ComicTitle level={1} className="comic-text-white mb-4">
           🎙️ Speak &amp; Submit

@@ -31,6 +31,7 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
         }
       `}</style>
 
+      <div className="speak-and-submit-page">
       <div className="no-print bg-[var(--comic-light)] px-4 py-6 text-center">
         <button
           type="button"
@@ -83,6 +84,7 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
           </ComicText>
         </section>
       </main>
+      </div>
     </>
   );
 }

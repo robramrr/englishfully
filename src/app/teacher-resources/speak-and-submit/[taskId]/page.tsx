@@ -74,7 +74,7 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps) {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--comic-light)]">
+    <div className="speak-and-submit-page flex flex-col min-h-screen bg-[var(--comic-light)]">
       <TeacherAuthGate>
         <section className="max-w-6xl mx-auto py-16 px-4 space-y-8">
           <div className="flex flex-wrap gap-3">
