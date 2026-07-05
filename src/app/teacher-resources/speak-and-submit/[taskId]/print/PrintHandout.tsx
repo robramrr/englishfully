@@ -101,18 +101,19 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
           </section>
 
           <section className="border-4 border-[var(--comic-black)] p-6">
-            <ComicTitle level={3} className="mb-4 text-center text-[var(--comic-secondary)]">
-              Scan to record &amp; submit
-            </ComicTitle>
-
             <div className="overflow-hidden mb-4">
-              <ComicText className="float-left w-[58%] text-left text-sm pr-4">
-                1. Scan QR code with phone
-                <br />
-                2. Enter name, number, and class
-                <br />
-                3. Record each item and submit
-              </ComicText>
+              <div className="float-left w-[58%] text-left pr-4">
+                <ComicTitle level={3} className="mb-2 text-[var(--comic-secondary)]">
+                  Scan to record &amp; submit
+                </ComicTitle>
+                <ComicText className="text-sm">
+                  1. Scan QR code with your phone
+                  <br />
+                  2. Enter name, number, and class
+                  <br />
+                  3. Record each item and submit
+                </ComicText>
+              </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={qrCode}
@@ -125,7 +126,7 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
 
             <hr className="clear-both border-0 border-t-4 border-[var(--comic-black)] mb-4" />
 
-            <ComicText className="font-bold text-[10px] whitespace-nowrap text-center">
+            <ComicText className="font-bold text-[8px] whitespace-nowrap text-center">
               {studentUrl}
             </ComicText>
           </section>
