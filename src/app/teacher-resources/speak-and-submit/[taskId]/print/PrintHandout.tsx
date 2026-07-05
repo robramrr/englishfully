@@ -10,9 +10,16 @@ interface PrintHandoutProps {
   items: SpeakTaskItem[];
   studentUrl: string;
   qrCode: string;
+  teacherName: string;
 }
 
-export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintHandoutProps) {
+export default function PrintHandout({
+  task,
+  items,
+  studentUrl,
+  qrCode,
+  teacherName,
+}: PrintHandoutProps) {
   const sections = groupTaskItemsBySection(items);
   const hasMultipleParts = sections.length > 1;
 
@@ -48,13 +55,8 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
 
         <main className="print-page max-w-3xl mx-auto px-8 py-10 bg-white text-[var(--comic-dark)]">
           <div className="grid grid-cols-3 items-center gap-3 mb-8 border-b-4 border-[var(--comic-black)] pb-4">
-            <ComicText className="font-bold text-xl text-left">{task.title}</ComicText>
-            <ComicTitle
-              level={6}
-              className="!text-xl text-[var(--comic-secondary)] text-center mb-0 whitespace-nowrap"
-            >
-              🎙️ Speak &amp; Submit
-            </ComicTitle>
+            <ComicText className="font-bold text-xl text-left">{teacherName}</ComicText>
+            <ComicText className="font-bold text-xl text-center">{task.title}</ComicText>
             <ComicText className="font-bold text-xl text-right">
               Class: {task.class_name}
             </ComicText>
@@ -113,7 +115,7 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
                   Scan to record &amp; submit
                 </ComicTitle>
                 <ComicText className="text-sm">
-                  1. Scan QR code with your phone
+                  1. Scan QR code with your phone camera
                   <br />
                   2. Enter student name, number, and class
                   <br />

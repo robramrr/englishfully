@@ -639,7 +639,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
                   onChange={(event) => setStudentNumber(event.target.value)}
                   required
                 >
-                  <option value="">Number</option>
+                  <option value="">#</option>
                   {studentNumberOptions.map((number) => (
                     <option key={number} value={number}>
                       {number}
