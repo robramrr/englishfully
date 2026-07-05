@@ -49,12 +49,9 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
         <main className="print-page max-w-3xl mx-auto px-8 py-10 bg-white text-[var(--comic-dark)]">
           <div className="grid grid-cols-3 items-center gap-3 mb-8 border-b-4 border-[var(--comic-black)] pb-4">
             <ComicText className="font-bold text-xl text-left">{task.title}</ComicText>
-            <ComicTitle
-              level={6}
-              className="text-[var(--comic-secondary)] text-center mb-0 !text-sm whitespace-nowrap"
-            >
+            <ComicText className="font-bold text-xl text-center text-[var(--comic-secondary)] whitespace-nowrap">
               🎙️ Speak &amp; Submit
-            </ComicTitle>
+            </ComicText>
             <ComicText className="font-bold text-xl text-right">
               Class: {task.class_name}
             </ComicText>
@@ -73,15 +70,27 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
                     </ComicText>
                   ) : null}
                   <ol className="space-y-4">
-                    {section.items.map((item, index) => (
-                      <li
-                        key={item.id}
-                        className="border-4 border-[var(--comic-black)] p-4 font-bold text-lg leading-relaxed"
-                      >
-                        {section.items.length > 1 ? `${index + 1}. ` : ''}
-                        {item.content}
+                    {section.itemType === 'vocab_list' ? (
+                      <li className="border-4 border-[var(--comic-black)] p-4 font-bold text-lg leading-relaxed">
+                        <span className="flex flex-wrap justify-between gap-x-6 gap-y-2">
+                          {section.items.map((item, index) => (
+                            <span key={item.id}>
+                              {index + 1}. {item.content}
+                            </span>
+                          ))}
+                        </span>
                       </li>
-                    ))}
+                    ) : (
+                      section.items.map((item, index) => (
+                        <li
+                          key={item.id}
+                          className="border-4 border-[var(--comic-black)] p-4 font-bold text-lg leading-relaxed"
+                        >
+                          {section.items.length > 1 ? `${index + 1}. ` : ''}
+                          {item.content}
+                        </li>
+                      ))
+                    )}
                   </ol>
                 </li>
               ))}
