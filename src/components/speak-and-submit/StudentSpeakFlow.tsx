@@ -27,8 +27,20 @@ function getSupportedMimeType(): string | undefined {
 }
 
 async function uploadRecording(taskId: string, blob: Blob): Promise<string> {
+  if (blob.size === 0) {
+    throw new Error('Recording is empty. Please re-record this item.');
+  }
+
+  const extension = blob.type.includes('mp4')
+    ? 'mp4'
+    : blob.type.includes('mpeg')
+      ? 'mp3'
+      : blob.type.includes('ogg')
+        ? 'ogg'
+        : 'webm';
+
   const formData = new FormData();
-  formData.append('file', blob, `recording.${blob.type.includes('mp4') ? 'mp4' : 'webm'}`);
+  formData.append('file', blob, `recording.${extension}`);
 
   const response = await fetch(`/api/speak/${taskId}/upload`, {
     method: 'POST',
@@ -58,12 +70,16 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
+  const currentIndexRef = useRef(0);
 
   const currentItem = task?.items[currentIndex];
   const totalItems = task?.items.length ?? 0;
+
+  useEffect(() => {
+    currentIndexRef.current = currentIndex;
+  }, [currentIndex]);
 
   useEffect(() => {
     fetch(`/api/speak/${taskId}`)
@@ -122,27 +138,53 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
   async function startRecording() {
     setError('');
     try {
-      const stream = await ensureMicStream();
+      if (mediaRecorderRef.current?.state === 'recording') {
+        return;
+      }
+
+      let stream = mediaStreamRef.current;
+      const tracksLive =
+        stream?.getAudioTracks().some((track) => track.readyState === 'live') ?? false;
+
+      if (!tracksLive) {
+        mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+        stream = await ensureMicStream();
+      }
+
       const mimeType = getSupportedMimeType();
       const recorder = mimeType
-        ? new MediaRecorder(stream, { mimeType })
-        : new MediaRecorder(stream);
+        ? new MediaRecorder(stream as MediaStream, { mimeType })
+        : new MediaRecorder(stream as MediaStream);
 
-      chunksRef.current = [];
+      const recordingIndex = currentIndexRef.current;
+      const recordedChunks: Blob[] = [];
+
       recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) chunksRef.current.push(event.data);
+        if (event.data.size > 0) {
+          recordedChunks.push(event.data);
+        }
       };
 
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, {
-          type: mimeType || recorder.mimeType || 'audio/webm',
-        });
+        if (timerRef.current) window.clearInterval(timerRef.current);
+        setIsRecording(false);
+        mediaRecorderRef.current = null;
+
+        const finalType = recorder.mimeType || mimeType || 'audio/webm';
+        const blob = new Blob(recordedChunks, { type: finalType });
+
+        if (blob.size === 0) {
+          setError('Recording failed — no audio was captured. Please try again.');
+          return;
+        }
+
         const duration = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000));
         const previewUrl = URL.createObjectURL(blob);
 
         setRecordings((current) =>
           current.map((recording, index) =>
-            index === currentIndex
+            index === recordingIndex
               ? {
                   ...recording,
                   blob,
@@ -153,14 +195,13 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
               : recording
           )
         );
-        setIsRecording(false);
-        if (timerRef.current) window.clearInterval(timerRef.current);
         setElapsedSeconds(duration);
       };
 
       mediaRecorderRef.current = recorder;
       startTimeRef.current = Date.now();
-      recorder.start();
+      // Timeslice ensures browsers emit chunks on every recording, not just the first.
+      recorder.start(250);
       setIsRecording(true);
       setElapsedSeconds(0);
       timerRef.current = window.setInterval(() => {
@@ -172,7 +213,18 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
   }
 
   function stopRecording() {
-    mediaRecorderRef.current?.stop();
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state === 'inactive') return;
+
+    try {
+      if (recorder.state === 'recording') {
+        recorder.requestData();
+      }
+    } catch {
+      // requestData is not supported in every browser.
+    }
+
+    recorder.stop();
   }
 
   function reRecord() {
@@ -195,7 +247,8 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
   }
 
   function goNext() {
-    if (!recordings[currentIndex]?.blob) {
+    const currentRecording = recordings[currentIndex];
+    if (!currentRecording?.blob || currentRecording.blob.size === 0) {
       setError('Please record this item before continuing.');
       return;
     }
@@ -207,7 +260,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
   }
 
   async function submitAll() {
-    if (recordings.some((recording) => !recording.blob)) {
+    if (recordings.some((recording) => !recording.blob || recording.blob.size === 0)) {
       setError('Please record every item before submitting.');
       return;
     }
@@ -407,9 +460,14 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
                 </>
               ) : null}
 
-              {recordings[currentIndex]?.audioUrl ? (
+              {recordings[currentIndex]?.audioUrl && recordings[currentIndex]?.blob?.size ? (
                 <>
-                  <audio controls src={recordings[currentIndex].audioUrl ?? undefined} className="w-full" />
+                  <audio
+                    key={recordings[currentIndex].audioUrl ?? undefined}
+                    controls
+                    src={recordings[currentIndex].audioUrl ?? undefined}
+                    className="w-full"
+                  />
                   <div className="grid grid-cols-2 gap-3">
                     <ComicButton variant="warning" size="md" onClick={reRecord}>
                       Re-record
