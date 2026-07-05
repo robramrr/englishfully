@@ -100,20 +100,32 @@ export default function PrintHandout({ task, items, studentUrl, qrCode }: PrintH
             </ol>
           </section>
 
-          <section className="border-4 border-[var(--comic-black)] p-6 text-center">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-secondary)]">
+          <section className="border-4 border-[var(--comic-black)] p-6">
+            <ComicTitle level={3} className="mb-4 text-center text-[var(--comic-secondary)]">
               Scan to record &amp; submit
             </ComicTitle>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qrCode} alt="QR code" className="mx-auto mb-4" width={240} height={240} />
-            <ComicText className="font-bold break-all text-sm">{studentUrl}</ComicText>
-            <ComicText className="mt-4 text-sm">
-              1. Scan the QR code with your phone camera
-              <br />
-              2. Enter student name, number, and class
-              <br />
-              3. Record each item and submit
-            </ComicText>
+
+            <div className="overflow-hidden mb-4">
+              <ComicText className="float-left w-[58%] text-left text-sm pr-4">
+                1. Scan the QR code with your phone camera
+                <br />
+                2. Enter student name, number, and class
+                <br />
+                3. Record each item and submit
+              </ComicText>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={qrCode}
+                alt="QR code"
+                className="float-right"
+                width={200}
+                height={200}
+              />
+            </div>
+
+            <hr className="clear-both border-0 border-t-4 border-[var(--comic-black)] mb-4" />
+
+            <ComicText className="font-bold break-all text-sm text-center">{studentUrl}</ComicText>
           </section>
         </main>
       </div>
