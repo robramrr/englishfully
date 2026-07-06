@@ -31,6 +31,47 @@ interface StudentSpeakFlowProps {
   taskId: string;
 }
 
+interface PromptOptionDisplayProps {
+  content: string;
+  optionLabel?: string;
+  rules?: string | null;
+  example?: string | null;
+  className?: string;
+}
+
+function PromptOptionDisplay({
+  content,
+  optionLabel,
+  rules,
+  example,
+  className = '',
+}: PromptOptionDisplayProps) {
+  return (
+    <div className={`student-prompt-option space-y-1 leading-snug ${className}`}>
+      <p className="flex items-baseline justify-between gap-3 text-[var(--comic-dark)]">
+        <span className="student-prompt-title">{content}</span>
+        {optionLabel ? (
+          <span className="student-prompt-option-label shrink-0 text-[var(--comic-secondary)] whitespace-nowrap">
+            {optionLabel}
+          </span>
+        ) : null}
+      </p>
+      {rules ? (
+        <p className="student-prompt-rules text-[var(--comic-dark)]">
+          <span className="text-[var(--comic-secondary)] font-bold">Rules: </span>
+          {rules}
+        </p>
+      ) : null}
+      {example ? (
+        <p className="student-prompt-example text-[var(--comic-dark)] italic">
+          <span className="text-[var(--comic-secondary)] not-italic font-bold">Example: </span>
+          {example}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function getSupportedMimeType(): string | undefined {
   const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/aac'];
   return candidates.find((type) => MediaRecorder.isTypeSupported(type));
@@ -637,6 +678,29 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
   return (
     <div className="speak-page min-h-screen bg-[var(--comic-light)] px-4 py-8">
+      <style jsx global>{`
+        .speak-page .student-prompt-option {
+          line-height: 1.35;
+        }
+        .speak-page .student-prompt-title,
+        .speak-page .student-prompt-option-label {
+          font-size: 17px;
+          font-weight: bold;
+        }
+        .speak-page .student-prompt-rules {
+          font-size: 15px;
+          font-weight: normal;
+        }
+        .speak-page .student-prompt-example {
+          font-size: 15px;
+          font-weight: normal;
+        }
+        .speak-page .student-choose-prompt {
+          font-size: 17px;
+          font-weight: bold;
+          line-height: 1.35;
+        }
+      `}</style>
       <div className="max-w-xl mx-auto space-y-6">
         <div className="text-center">
           <ComicTitle level={2} className="text-[var(--comic-secondary)] mb-2">
@@ -774,30 +838,18 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
               </ComicText>
             ) : null}
 
-            <div className="comic-border-thick bg-white p-5 mb-6 rounded-lg space-y-4">
-              <ComicText className="text-[var(--comic-dark)] font-bold !text-sm leading-relaxed">
-                {currentItem?.content}
-              </ComicText>
-              {currentItem?.prompt_rules ? (
-                <div>
-                  <ComicText className="text-[var(--comic-secondary)] font-bold !text-xl mb-1">
-                    Rules
-                  </ComicText>
-                  <ComicText className="text-[var(--comic-dark)] font-bold !text-xl leading-relaxed">
-                    {currentItem.prompt_rules}
-                  </ComicText>
-                </div>
-              ) : null}
-              {currentItem?.prompt_example ? (
-                <div>
-                  <ComicText className="text-[var(--comic-secondary)] font-bold text-sm mb-1">
-                    Example
-                  </ComicText>
-                  <ComicText className="text-[var(--comic-dark)] font-bold text-sm leading-relaxed italic">
-                    {currentItem.prompt_example}
-                  </ComicText>
-                </div>
-              ) : null}
+            <div className="comic-border-thick bg-white p-5 mb-6 rounded-lg">
+              {currentItemType === 'prompt' ? (
+                <PromptOptionDisplay
+                  content={currentItem?.content ?? ''}
+                  rules={currentItem?.prompt_rules}
+                  example={currentItem?.prompt_example}
+                />
+              ) : (
+                <ComicText className="text-[var(--comic-dark)] font-bold text-xl leading-relaxed">
+                  {currentItem?.content}
+                </ComicText>
+              )}
             </div>
 
             {micDenied ? (
@@ -863,36 +915,26 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
 
         {step === 'choose_prompt' ? (
           <ComicCard>
-            <ComicTitle level={4} className="mb-2 text-[var(--comic-primary)] text-center">
-              Choose your prompt
+            <ComicTitle level={4} className="mb-1 text-[var(--comic-primary)] text-center">
+              🎙️ Speaking Task
             </ComicTitle>
-            <ComicText className="text-[var(--comic-dark)] font-bold mb-6 text-center text-sm">
-              Pick one prompt to answer. You will record only your chosen prompt.
-            </ComicText>
-            <div className="space-y-4">
+            <p className="student-choose-prompt text-[var(--comic-secondary)] text-center mb-4 mt-2">
+              Choose one prompt:
+            </p>
+            <div className="space-y-3">
               {choosePromptOptions.map((option, index) => (
                 <button
                   key={option.id}
                   type="button"
                   onClick={() => handleSelectPrompt(option.id)}
-                  className="w-full text-left comic-border bg-white rounded-lg p-4 hover:bg-[var(--comic-light)] transition-colors"
+                  className="w-full text-left comic-border bg-white rounded-lg p-3 hover:bg-[var(--comic-light)] transition-colors"
                 >
-                  <ComicText className="text-[var(--comic-dark)] font-bold mb-3 leading-relaxed !text-sm">
-                    <span className="text-[var(--comic-secondary)]">Option {index + 1}: </span>
-                    {option.content}
-                  </ComicText>
-                  {option.prompt_rules ? (
-                    <ComicText className="text-[var(--comic-dark)] font-bold !text-xl mb-2 leading-relaxed">
-                      <span className="text-[var(--comic-secondary)]">Rules: </span>
-                      {option.prompt_rules}
-                    </ComicText>
-                  ) : null}
-                  {option.prompt_example ? (
-                    <ComicText className="text-[var(--comic-dark)] text-sm italic">
-                      <span className="font-bold text-[var(--comic-secondary)] not-italic">Example: </span>
-                      {option.prompt_example}
-                    </ComicText>
-                  ) : null}
+                  <PromptOptionDisplay
+                    content={option.content}
+                    optionLabel={`Option ${index + 1}`}
+                    rules={option.prompt_rules}
+                    example={option.prompt_example}
+                  />
                 </button>
               ))}
             </div>
