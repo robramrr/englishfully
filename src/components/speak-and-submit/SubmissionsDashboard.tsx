@@ -117,6 +117,7 @@ export default function SubmissionsDashboard({ taskId }: SubmissionsDashboardPro
   const [error, setError] = useState('');
   const [expandedClasses, setExpandedClasses] = useState<Set<string>>(new Set());
   const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
+  const [deletingStudentKey, setDeletingStudentKey] = useState<string | null>(null);
 
   async function loadSubmissions(nextSort = sort) {
     setLoading(true);
@@ -176,6 +177,44 @@ export default function SubmissionsDashboard({ taskId }: SubmissionsDashboardPro
       }
       return next;
     });
+  }
+
+  async function handleDeleteStudent(student: StudentGroup) {
+    const confirmed = window.confirm(
+      `Delete all submissions for ${student.student_name} (student #${student.student_number}, class ${student.class_number})?\n\nThey will be able to submit again.`
+    );
+    if (!confirmed) return;
+
+    const key = studentKey(student);
+    setDeletingStudentKey(key);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/speak-and-submit/tasks/${taskId}/submissions`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_number: student.student_number,
+          class_number: student.class_number,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || 'Failed to delete submission.');
+        return;
+      }
+
+      setExpandedStudents((current) => {
+        const next = new Set(current);
+        next.delete(key);
+        return next;
+      });
+      await loadSubmissions(sort);
+    } catch {
+      setError('Failed to delete submission.');
+    } finally {
+      setDeletingStudentKey(null);
+    }
   }
 
   if (loading) {
@@ -261,24 +300,37 @@ export default function SubmissionsDashboard({ taskId }: SubmissionsDashboardPro
                           key={key}
                           className="comic-border bg-white rounded-lg overflow-hidden"
                         >
-                          <button
-                            type="button"
-                            onClick={() => toggleStudent(student)}
-                            className="w-full text-left px-4 py-3 flex items-center justify-between gap-4 hover:bg-[var(--comic-light)]"
-                          >
-                            <div>
-                              <ComicText className="text-[var(--comic-dark)] font-bold text-lg">
-                                {student.student_name}
-                              </ComicText>
-                              <ComicText className="text-[var(--comic-secondary)] font-bold">
-                                Student #{student.student_number} · {sortedSubmissions.length} recording
-                                {sortedSubmissions.length === 1 ? '' : 's'}
-                              </ComicText>
+                          <div className="flex items-stretch">
+                            <button
+                              type="button"
+                              onClick={() => toggleStudent(student)}
+                              className="flex-grow text-left px-4 py-3 flex items-center justify-between gap-4 hover:bg-[var(--comic-light)]"
+                            >
+                              <div>
+                                <ComicText className="text-[var(--comic-dark)] font-bold text-lg">
+                                  {student.student_name}
+                                </ComicText>
+                                <ComicText className="text-[var(--comic-secondary)] font-bold">
+                                  Student #{student.student_number} · {sortedSubmissions.length} recording
+                                  {sortedSubmissions.length === 1 ? '' : 's'}
+                                </ComicText>
+                              </div>
+                              <span className="font-bungee text-lg text-[var(--comic-secondary)] shrink-0">
+                                {studentOpen ? '▼' : '▶'}
+                              </span>
+                            </button>
+                            <div className="flex items-center px-3 border-l-4 border-[var(--comic-black)] bg-white">
+                              <ComicButton
+                                type="button"
+                                variant="danger"
+                                size="sm"
+                                disabled={deletingStudentKey === key}
+                                onClick={() => handleDeleteStudent(student)}
+                              >
+                                {deletingStudentKey === key ? 'Deleting…' : 'Delete'}
+                              </ComicButton>
                             </div>
-                            <span className="font-bungee text-lg text-[var(--comic-secondary)] shrink-0">
-                              {studentOpen ? '▼' : '▶'}
-                            </span>
-                          </button>
+                          </div>
 
                           {studentOpen ? (
                             <div className="border-t-4 border-[var(--comic-black)] px-4 py-4 space-y-4 bg-[var(--comic-light)]">

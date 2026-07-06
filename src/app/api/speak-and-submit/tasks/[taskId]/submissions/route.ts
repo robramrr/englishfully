@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isTeacherAuthenticated } from '@/lib/speak-and-submit/auth';
-import { getSubmissionsForTask, getTaskById } from '@/lib/speak-and-submit/db';
+import { deleteStudentSubmissions, getSubmissionsForTask, getTaskById } from '@/lib/speak-and-submit/db';
 import { jsonError } from '@/lib/speak-and-submit/api';
+import { deleteAudioUrls } from '@/lib/speak-and-submit/r2';
 
 interface RouteParams {
   params: { taskId: string };
@@ -63,5 +64,42 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error('Get submissions error:', error);
     return jsonError('Failed to load submissions', 500);
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  if (!(await isTeacherAuthenticated())) {
+    return jsonError('Unauthorized', 401);
+  }
+
+  try {
+    const task = await getTaskById(params.taskId);
+    if (!task) return jsonError('Task not found', 404);
+
+    const body = (await request.json()) as {
+      student_number?: string;
+      class_number?: string;
+    };
+
+    if (!body.student_number?.trim() || !body.class_number?.trim()) {
+      return jsonError('Student number and class are required', 400);
+    }
+
+    const { deletedCount, audioUrls } = await deleteStudentSubmissions(
+      params.taskId,
+      body.student_number,
+      body.class_number
+    );
+
+    if (deletedCount === 0) {
+      return jsonError('No submissions found for this student', 404);
+    }
+
+    await deleteAudioUrls(audioUrls);
+
+    return NextResponse.json({ success: true, deletedCount });
+  } catch (error) {
+    console.error('Delete submissions error:', error);
+    return jsonError('Failed to delete submissions', 500);
   }
 }

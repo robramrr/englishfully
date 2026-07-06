@@ -1,4 +1,4 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 function getR2Client(): S3Client {
   const endpoint = process.env.R2_ENDPOINT;
@@ -146,6 +146,32 @@ export async function getAudioFromR2(key: string): Promise<Buffer> {
   }
 
   return Buffer.from(bytes);
+}
+
+export async function deleteAudioFromR2(key: string): Promise<void> {
+  const client = getR2Client();
+  await client.send(
+    new DeleteObjectCommand({
+      Bucket: getBucketName(),
+      Key: key,
+    })
+  );
+}
+
+export async function deleteAudioUrls(urls: string[]): Promise<void> {
+  const keys = urls
+    .map((url) => extractKeyFromUrl(url))
+    .filter((key): key is string => Boolean(key));
+
+  await Promise.all(
+    keys.map(async (key) => {
+      try {
+        await deleteAudioFromR2(key);
+      } catch (error) {
+        console.error('Failed to delete R2 audio:', key, error);
+      }
+    })
+  );
 }
 
 export async function fetchAudioBuffer(audioUrl: string): Promise<ArrayBuffer | null> {

@@ -326,6 +326,37 @@ export async function createSubmissions(
   return created;
 }
 
+export async function deleteStudentSubmissions(
+  taskId: string,
+  studentNumber: string,
+  classNumber: string
+): Promise<{ deletedCount: number; audioUrls: string[] }> {
+  await ensureSchema();
+  const normalizedNumber = normalizeStudentNumber(studentNumber);
+  const normalizedClass = classNumber.trim();
+
+  const { rows } = await sql`
+    SELECT audio_url FROM speak_submissions
+    WHERE task_id = ${taskId}
+      AND student_number = ${normalizedNumber}
+      AND class_number = ${normalizedClass}
+  `;
+
+  const audioUrls = rows.map((row) => row.audio_url as string);
+
+  const result = await sql`
+    DELETE FROM speak_submissions
+    WHERE task_id = ${taskId}
+      AND student_number = ${normalizedNumber}
+      AND class_number = ${normalizedClass}
+  `;
+
+  return {
+    deletedCount: result.rowCount ?? 0,
+    audioUrls,
+  };
+}
+
 export async function taskExists(taskId: string): Promise<boolean> {
   await ensureSchema();
   const { rows } = await sql`SELECT 1 FROM speak_tasks WHERE id = ${taskId} LIMIT 1`;
