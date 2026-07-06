@@ -43,9 +43,18 @@ export default function PrintHandout({
             padding: 0 !important;
           }
           .print-prompt-option {
-            font-size: 11px !important;
             line-height: 1.35 !important;
             padding: 6px 8px !important;
+          }
+          .print-prompt-title,
+          .print-prompt-option-label {
+            font-size: 12px !important;
+          }
+          .print-prompt-rules {
+            font-size: 11px !important;
+          }
+          .print-prompt-example {
+            font-size: 12px !important;
           }
           .print-prompt-section {
             gap: 6px !important;
@@ -114,21 +123,21 @@ export default function PrintHandout({
                             className="print-prompt-option border-4 border-[var(--comic-black)] p-2 font-bold text-sm leading-snug space-y-1"
                           >
                             <p className="flex items-baseline justify-between gap-3 text-[var(--comic-dark)]">
-                              <span>{item.content}</span>
+                              <span className="print-prompt-title">{item.content}</span>
                               {section.items.length > 1 ? (
-                                <span className="shrink-0 text-[var(--comic-secondary)] whitespace-nowrap">
+                                <span className="print-prompt-option-label shrink-0 text-[var(--comic-secondary)] whitespace-nowrap">
                                   Option {index + 1}
                                 </span>
                               ) : null}
                             </p>
                             {item.prompt_rules ? (
-                              <p className="text-xs leading-snug">
+                              <p className="print-prompt-rules text-xs leading-snug">
                                 <span className="text-[var(--comic-secondary)]">Rules: </span>
                                 {item.prompt_rules}
                               </p>
                             ) : null}
                             {item.prompt_example ? (
-                              <p className="text-xs leading-snug italic">
+                              <p className="print-prompt-example text-xs leading-snug italic">
                                 <span className="text-[var(--comic-secondary)] not-italic">Example: </span>
                                 {item.prompt_example}
                               </p>
