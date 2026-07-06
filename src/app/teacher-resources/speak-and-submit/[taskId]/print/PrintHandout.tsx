@@ -39,6 +39,14 @@ export default function PrintHandout({
             margin: 0 !important;
             padding: 0 !important;
           }
+          .print-prompt-option {
+            font-size: 11px !important;
+            line-height: 1.35 !important;
+            padding: 6px 8px !important;
+          }
+          .print-prompt-section {
+            gap: 6px !important;
+          }
         }
       `}</style>
 
@@ -89,34 +97,36 @@ export default function PrintHandout({
                         </span>
                       </li>
                     ) : section.itemType === 'prompt' ? (
-                      <li className="space-y-4">
+                      <li className="print-prompt-section space-y-2">
                         {section.items.length > 1 ? (
-                          <ComicText className="font-bold text-sm text-[var(--comic-secondary)]">
+                          <p className="font-bold text-xs text-[var(--comic-secondary)]">
                             Choose one prompt:
-                          </ComicText>
+                          </p>
                         ) : null}
                         {section.items.map((item, index) => (
                           <div
                             key={item.id}
-                            className="border-4 border-[var(--comic-black)] p-4 font-bold text-lg leading-relaxed space-y-2"
+                            className="print-prompt-option border-4 border-[var(--comic-black)] p-2 font-bold text-sm leading-snug space-y-1"
                           >
-                            {section.items.length > 1 ? (
-                              <ComicText className="text-[var(--comic-secondary)]">
-                                Option {index + 1}
-                              </ComicText>
-                            ) : null}
-                            <div>{item.content}</div>
+                            <p className="text-[var(--comic-dark)]">
+                              {section.items.length > 1 ? (
+                                <span className="text-[var(--comic-secondary)]">
+                                  Option {index + 1}:{' '}
+                                </span>
+                              ) : null}
+                              {item.content}
+                            </p>
                             {item.prompt_rules ? (
-                              <ComicText className="text-base">
+                              <p className="text-xs leading-snug">
                                 <span className="text-[var(--comic-secondary)]">Rules: </span>
                                 {item.prompt_rules}
-                              </ComicText>
+                              </p>
                             ) : null}
                             {item.prompt_example ? (
-                              <ComicText className="text-base italic">
+                              <p className="text-xs leading-snug italic">
                                 <span className="text-[var(--comic-secondary)] not-italic">Example: </span>
                                 {item.prompt_example}
-                              </ComicText>
+                              </p>
                             ) : null}
                           </div>
                         ))}
