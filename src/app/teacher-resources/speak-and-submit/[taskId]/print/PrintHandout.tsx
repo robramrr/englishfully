@@ -22,6 +22,9 @@ export default function PrintHandout({
 }: PrintHandoutProps) {
   const sections = groupTaskItemsBySection(items);
   const hasMultipleParts = sections.length > 1;
+  const hasMultiPromptSection = sections.some(
+    (section) => section.itemType === 'prompt' && section.items.length > 1
+  );
 
   return (
     <>
@@ -71,12 +74,19 @@ export default function PrintHandout({
           </div>
 
           <section className="mb-8">
-            <ComicTitle
-              level={6}
-              className="!text-xl text-[var(--comic-primary)] mb-4"
-            >
-              🎙️ Speaking Task
-            </ComicTitle>
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-4">
+              {hasMultiPromptSection ? (
+                <p className="font-bold text-xs text-[var(--comic-secondary)] whitespace-nowrap">
+                  Choose one prompt:
+                </p>
+              ) : null}
+              <ComicTitle
+                level={6}
+                className="!text-xl text-[var(--comic-primary)]"
+              >
+                🎙️ Speaking Task
+              </ComicTitle>
+            </div>
             <ol className="space-y-4">
               {sections.map((section) => (
                 <li key={`section-${section.sectionIndex}`} className="space-y-4">
@@ -98,23 +108,18 @@ export default function PrintHandout({
                       </li>
                     ) : section.itemType === 'prompt' ? (
                       <li className="print-prompt-section space-y-2">
-                        {section.items.length > 1 ? (
-                          <p className="font-bold text-xs text-[var(--comic-secondary)]">
-                            Choose one prompt:
-                          </p>
-                        ) : null}
                         {section.items.map((item, index) => (
                           <div
                             key={item.id}
                             className="print-prompt-option border-4 border-[var(--comic-black)] p-2 font-bold text-sm leading-snug space-y-1"
                           >
-                            <p className="text-[var(--comic-dark)]">
+                            <p className="flex items-baseline justify-between gap-3 text-[var(--comic-dark)]">
+                              <span>{item.content}</span>
                               {section.items.length > 1 ? (
-                                <span className="text-[var(--comic-secondary)]">
-                                  Option {index + 1}:{' '}
+                                <span className="shrink-0 text-[var(--comic-secondary)] whitespace-nowrap">
+                                  Option {index + 1}
                                 </span>
                               ) : null}
-                              {item.content}
                             </p>
                             {item.prompt_rules ? (
                               <p className="text-xs leading-snug">
