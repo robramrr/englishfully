@@ -35,19 +35,19 @@ export default function PrintHandout({
         }
         .speak-and-submit-page .print-prompt-title,
         .speak-and-submit-page .print-prompt-option-label {
-          font-size: 14px;
+          font-size: 15px;
           font-weight: bold;
         }
         .speak-and-submit-page .print-prompt-rules {
-          font-size: 12px;
+          font-size: 13px;
           font-weight: normal;
         }
         .speak-and-submit-page .print-prompt-example {
-          font-size: 12px;
+          font-size: 13px;
           font-weight: normal;
         }
         .speak-and-submit-page .print-choose-prompt {
-          font-size: 14px;
+          font-size: 15px;
           font-weight: bold;
           margin-top: 10px;
         }
@@ -71,16 +71,16 @@ export default function PrintHandout({
           }
           .speak-and-submit-page .print-prompt-title,
           .speak-and-submit-page .print-prompt-option-label {
-            font-size: 12px !important;
+            font-size: 13px !important;
             line-height: 1.35 !important;
           }
           .speak-and-submit-page .print-prompt-rules {
-            font-size: 11px !important;
+            font-size: 12px !important;
             line-height: 1.35 !important;
             font-weight: normal !important;
           }
           .speak-and-submit-page .print-prompt-example {
-            font-size: 12px !important;
+            font-size: 13px !important;
             line-height: 1.35 !important;
             font-weight: normal !important;
           }
@@ -88,7 +88,7 @@ export default function PrintHandout({
             gap: 6px !important;
           }
           .speak-and-submit-page .print-choose-prompt {
-            font-size: 14px !important;
+            font-size: 15px !important;
             margin-top: 10px !important;
           }
         }
