@@ -48,7 +48,7 @@ function PromptOptionDisplay({
 }: PromptOptionDisplayProps) {
   return (
     <div className={`student-prompt-option space-y-1 leading-snug ${className}`}>
-      <p className="flex items-baseline justify-between gap-3 text-[var(--comic-dark)]">
+      <p className="student-prompt-heading flex items-baseline justify-between gap-3 text-[var(--comic-dark)]">
         <span className="student-prompt-title">{content}</span>
         {optionLabel ? (
           <span className="student-prompt-option-label shrink-0 text-[var(--comic-secondary)] whitespace-nowrap">
@@ -717,6 +717,9 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
         .speak-page .student-prompt-option {
           line-height: 1.35;
         }
+        .speak-page .student-prompt-heading {
+          padding-bottom: 8px;
+        }
         .speak-page .student-prompt-title,
         .speak-page .student-prompt-option-label {
           font-size: 17px;
@@ -862,9 +865,11 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
                     Part {((currentItem?.section_index ?? 0) + 1)} of {sectionCount}
                   </ComicText>
                 ) : null}
-                <ComicText className="text-[var(--comic-dark)] font-bold mb-2">
-                  {taskTypeLabel(currentItemType)}
-                </ComicText>
+                {currentItemType !== 'prompt' ? (
+                  <ComicText className="text-[var(--comic-dark)] font-bold mb-2">
+                    {taskTypeLabel(currentItemType)}
+                  </ComicText>
+                ) : null}
               </>
             ) : null}
             {totalItems > 1 ? (
@@ -881,7 +886,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
                 disabled={step === 'submitting' || isRecording}
                 onClick={handleChangePrompt}
               >
-                ← Choose a different prompt
+                ← Go back
               </ComicButton>
             ) : null}
 
