@@ -213,6 +213,15 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
     () => new Set(task?.items.map((item) => item.section_index) ?? []).size,
     [task]
   );
+  const canChangePromptChoice = useMemo(() => {
+    if (!task || !currentItem || currentItem.item_type !== 'prompt') return false;
+    return (
+      task.items.filter(
+        (item) =>
+          item.item_type === 'prompt' && item.section_index === currentItem.section_index
+      ).length > 1
+    );
+  }, [task, currentItem]);
 
   useEffect(() => {
     currentIndexRef.current = currentIndex;
@@ -293,6 +302,32 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
     const newIndex = queue.findIndex((item) => item.id === itemId);
     setCurrentIndex(newIndex >= 0 ? newIndex : queue.length - 1);
     setElapsedSeconds(0);
+  }
+
+  function handleChangePrompt() {
+    if (!task || !currentItem || currentItem.item_type !== 'prompt') return;
+
+    const sectionIndex = currentItem.section_index;
+    const sectionHasMultiplePrompts =
+      task.items.filter(
+        (item) => item.item_type === 'prompt' && item.section_index === sectionIndex
+      ).length > 1;
+    if (!sectionHasMultiplePrompts) return;
+
+    recordingSessionRef.current += 1;
+    releaseMicStream();
+    mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current = null;
+    clearRecordingTimer();
+    setIsRecording(false);
+    setError('');
+    setElapsedSeconds(0);
+
+    const newSelections = { ...promptSelections };
+    delete newSelections[sectionIndex];
+    setPromptSelections(newSelections);
+    setChoosePromptSection(sectionIndex);
+    setStep('choose_prompt');
   }
 
   async function handleContinueIdentity() {
@@ -836,6 +871,18 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
               <ComicText className="text-[var(--comic-secondary)] font-bold text-lg mb-4">
                 Item {currentIndex + 1} of {totalItems}
               </ComicText>
+            ) : null}
+
+            {canChangePromptChoice ? (
+              <ComicButton
+                variant="accent"
+                size="sm"
+                className="mb-4"
+                disabled={step === 'submitting' || isRecording}
+                onClick={handleChangePrompt}
+              >
+                ← Choose a different prompt
+              </ComicButton>
             ) : null}
 
             <div className="comic-border-thick bg-white p-5 mb-6 rounded-lg">
