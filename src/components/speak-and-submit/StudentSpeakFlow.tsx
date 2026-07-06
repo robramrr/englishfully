@@ -14,6 +14,7 @@ import {
   getDefaultEntryConfig,
   getPromptSectionsNeedingChoice,
   groupTaskItemsBySection,
+  sortSpeakClassOptions,
 } from '@/lib/speak-and-submit/types';
 
 type Step = 'loading' | 'identity' | 'choose_prompt' | 'record' | 'submitting' | 'done' | 'error';
@@ -143,11 +144,15 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
     );
   }, [task, choosePromptSection]);
   const entryConfig = task?.entry_config ?? getDefaultEntryConfig();
-  const usesClassDropdown = entryConfig.classes.length > 0;
+  const sortedClasses = useMemo(
+    () => sortSpeakClassOptions(entryConfig.classes),
+    [entryConfig.classes]
+  );
+  const usesClassDropdown = sortedClasses.length > 0;
   const usesStudentLetter = entryConfig.student_letter_enabled;
   const selectedClass = useMemo(
-    () => entryConfig.classes.find((item) => item.id === selectedClassId) ?? null,
-    [entryConfig.classes, selectedClassId]
+    () => sortedClasses.find((item) => item.id === selectedClassId) ?? null,
+    [sortedClasses, selectedClassId]
   );
   const maxStudentNumber = selectedClass?.max_student_number ?? 35;
   const studentNumberOptions = useMemo(
@@ -187,7 +192,8 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
           items: data.items,
         });
         if (data.task.entry_config?.classes?.length > 0) {
-          setSelectedClassId(data.task.entry_config.classes[0].id);
+          const classes = sortSpeakClassOptions(data.task.entry_config.classes);
+          setSelectedClassId(classes[0].id);
         }
         setStep('identity');
       })
@@ -687,7 +693,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
                   required
                 >
                   <option value="">Select class</option>
-                  {entryConfig.classes.map((classOption) => (
+                  {sortedClasses.map((classOption) => (
                     <option key={classOption.id} value={classOption.id}>
                       {classOption.label}
                     </option>

@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSubmissions, getTaskById, getTaskItems } from '@/lib/speak-and-submit/db';
 import { jsonError } from '@/lib/speak-and-submit/api';
 import type { SubmitPayload } from '@/lib/speak-and-submit/types';
+import {
+  getExpectedSubmissionItems,
+  groupTaskItemsBySection,
+} from '@/lib/speak-and-submit/types';
 
 interface RouteParams {
   params: { taskId: string };
@@ -23,8 +27,38 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     const items = await getTaskItems(params.taskId);
-    if (body.recordings.length !== items.length) {
+    const recordingItemIds = body.recordings.map((recording) => recording.task_item_id);
+    const expectedItems = getExpectedSubmissionItems(items, recordingItemIds);
+
+    if (expectedItems.length === 0) {
       return jsonError('Please submit a recording for every item', 400);
+    }
+
+    if (body.recordings.length !== expectedItems.length) {
+      return jsonError('Please submit a recording for every item', 400);
+    }
+
+    const expectedIds = new Set(expectedItems.map((item) => item.id));
+    const itemIds = new Set(items.map((item) => item.id));
+
+    for (const recording of body.recordings) {
+      if (!itemIds.has(recording.task_item_id)) {
+        return jsonError('Invalid task item in submission', 400);
+      }
+      if (!expectedIds.has(recording.task_item_id)) {
+        return jsonError('Invalid recording for unselected item', 400);
+      }
+    }
+
+    for (const group of groupTaskItemsBySection(items)) {
+      if (group.itemType === 'prompt' && group.items.length > 1) {
+        const submittedCount = group.items.filter((item) =>
+          recordingItemIds.includes(item.id)
+        ).length;
+        if (submittedCount !== 1) {
+          return jsonError('Please choose and record exactly one prompt', 400);
+        }
+      }
     }
 
     for (const recording of body.recordings) {

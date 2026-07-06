@@ -107,6 +107,31 @@ export function buildStudentRecordingItems<
   return result;
 }
 
+export function derivePromptSelectionsFromRecordings<
+  T extends { id: string; item_type: ItemTaskType; section_index: number },
+>(items: T[], recordingItemIds: string[]): Record<number, string> {
+  const submittedIds = new Set(recordingItemIds);
+  const selections: Record<number, string> = {};
+
+  for (const group of groupTaskItemsBySection(items)) {
+    if (group.itemType === 'prompt' && group.items.length > 1) {
+      const chosen = group.items.find((item) => submittedIds.has(item.id));
+      if (chosen) {
+        selections[group.sectionIndex] = chosen.id;
+      }
+    }
+  }
+
+  return selections;
+}
+
+export function getExpectedSubmissionItems<
+  T extends { id: string; item_type: ItemTaskType; section_index: number },
+>(items: T[], recordingItemIds: string[]): T[] {
+  const promptSelections = derivePromptSelectionsFromRecordings(items, recordingItemIds);
+  return buildStudentRecordingItems(items, promptSelections);
+}
+
 export function getPromptSectionsNeedingChoice<
   T extends { item_type: ItemTaskType; section_index: number },
 >(items: T[]): number[] {
@@ -129,6 +154,12 @@ export interface SpeakClassOption {
   label: string;
   max_student_number: number;
   sort_order: number;
+}
+
+export function sortSpeakClassOptions<T extends SpeakClassOption>(classes: T[]): T[] {
+  return [...classes].sort((a, b) =>
+    a.label.localeCompare(b.label, undefined, { numeric: true, sensitivity: 'base' })
+  );
 }
 
 export interface SpeakEntryConfig {

@@ -7,6 +7,7 @@ import type {
   SpeakClassOption,
   SpeakEntryConfig,
 } from './types';
+import { sortSpeakClassOptions } from './types';
 
 const DEFAULT_TEACHER_ID = 'default';
 const DEFAULT_MAX_STUDENTS = 35;
@@ -76,7 +77,7 @@ export async function getEntryConfig(
   return {
     name_mode: nameMode,
     student_letter_enabled: studentLetterEnabled,
-    classes: classRows.map(rowToClassOption),
+    classes: sortSpeakClassOptions(classRows.map(rowToClassOption)),
   };
 }
 
