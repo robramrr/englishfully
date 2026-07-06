@@ -769,15 +769,15 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
             ) : null}
 
             <div className="comic-border-thick bg-white p-5 mb-6 rounded-lg space-y-4">
-              <ComicText className="text-[var(--comic-dark)] font-bold text-xl leading-relaxed">
+              <ComicText className="text-[var(--comic-dark)] font-bold !text-sm leading-relaxed">
                 {currentItem?.content}
               </ComicText>
               {currentItem?.prompt_rules ? (
                 <div>
-                  <ComicText className="text-[var(--comic-secondary)] font-bold text-sm mb-1">
+                  <ComicText className="text-[var(--comic-secondary)] font-bold !text-xl mb-1">
                     Rules
                   </ComicText>
-                  <ComicText className="text-[var(--comic-dark)] font-bold text-sm leading-relaxed">
+                  <ComicText className="text-[var(--comic-dark)] font-bold !text-xl leading-relaxed">
                     {currentItem.prompt_rules}
                   </ComicText>
                 </div>
@@ -871,15 +871,13 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
                   onClick={() => handleSelectPrompt(option.id)}
                   className="w-full text-left comic-border bg-white rounded-lg p-4 hover:bg-[var(--comic-light)] transition-colors"
                 >
-                  <ComicText className="text-[var(--comic-secondary)] font-bold mb-2">
-                    Option {index + 1}
-                  </ComicText>
-                  <ComicText className="text-[var(--comic-dark)] font-bold mb-3 leading-relaxed">
+                  <ComicText className="text-[var(--comic-dark)] font-bold mb-3 leading-relaxed !text-sm">
+                    <span className="text-[var(--comic-secondary)]">Option {index + 1}: </span>
                     {option.content}
                   </ComicText>
                   {option.prompt_rules ? (
-                    <ComicText className="text-[var(--comic-dark)] text-sm mb-2">
-                      <span className="font-bold text-[var(--comic-secondary)]">Rules: </span>
+                    <ComicText className="text-[var(--comic-dark)] font-bold !text-xl mb-2 leading-relaxed">
+                      <span className="text-[var(--comic-secondary)]">Rules: </span>
                       {option.prompt_rules}
                     </ComicText>
                   ) : null}
