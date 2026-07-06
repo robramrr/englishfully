@@ -29,6 +29,24 @@ export default function PrintHandout({
   return (
     <>
       <style jsx global>{`
+        .speak-and-submit-page .print-prompt-option {
+          line-height: 1.35;
+          padding: 8px;
+        }
+        .speak-and-submit-page .print-prompt-title,
+        .speak-and-submit-page .print-prompt-option-label {
+          font-size: 14px;
+          font-weight: bold;
+        }
+        .speak-and-submit-page .print-prompt-rules {
+          font-size: 12px;
+          font-weight: normal;
+        }
+        .speak-and-submit-page .print-prompt-example {
+          font-size: 12px;
+          font-weight: normal;
+        }
+
         @media print {
           body {
             background: white !important;
@@ -42,21 +60,26 @@ export default function PrintHandout({
             margin: 0 !important;
             padding: 0 !important;
           }
-          .print-prompt-option {
-            line-height: 1.35 !important;
+          .speak-and-submit-page .print-prompt-option {
             padding: 6px 8px !important;
+            font-size: inherit !important;
           }
-          .print-prompt-title,
-          .print-prompt-option-label {
+          .speak-and-submit-page .print-prompt-title,
+          .speak-and-submit-page .print-prompt-option-label {
             font-size: 12px !important;
+            line-height: 1.35 !important;
           }
-          .print-prompt-rules {
+          .speak-and-submit-page .print-prompt-rules {
             font-size: 11px !important;
+            line-height: 1.35 !important;
+            font-weight: normal !important;
           }
-          .print-prompt-example {
+          .speak-and-submit-page .print-prompt-example {
             font-size: 12px !important;
+            line-height: 1.35 !important;
+            font-weight: normal !important;
           }
-          .print-prompt-section {
+          .speak-and-submit-page .print-prompt-section {
             gap: 6px !important;
           }
         }
@@ -84,17 +107,17 @@ export default function PrintHandout({
 
           <section className="mb-8">
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-4">
-              {hasMultiPromptSection ? (
-                <p className="font-bold text-xs text-[var(--comic-secondary)] whitespace-nowrap">
-                  Choose one prompt:
-                </p>
-              ) : null}
               <ComicTitle
                 level={6}
                 className="!text-xl text-[var(--comic-primary)]"
               >
                 🎙️ Speaking Task
               </ComicTitle>
+              {hasMultiPromptSection ? (
+                <p className="font-bold text-xs text-[var(--comic-secondary)] whitespace-nowrap">
+                  Choose one prompt:
+                </p>
+              ) : null}
             </div>
             <ol className="space-y-4">
               {sections.map((section) => (
@@ -120,7 +143,7 @@ export default function PrintHandout({
                         {section.items.map((item, index) => (
                           <div
                             key={item.id}
-                            className="print-prompt-option border-4 border-[var(--comic-black)] p-2 font-bold text-sm leading-snug space-y-1"
+                            className="print-prompt-option border-4 border-[var(--comic-black)] p-2 leading-snug space-y-1"
                           >
                             <p className="flex items-baseline justify-between gap-3 text-[var(--comic-dark)]">
                               <span className="print-prompt-title">{item.content}</span>
@@ -131,14 +154,14 @@ export default function PrintHandout({
                               ) : null}
                             </p>
                             {item.prompt_rules ? (
-                              <p className="print-prompt-rules text-xs leading-snug">
-                                <span className="text-[var(--comic-secondary)]">Rules: </span>
+                              <p className="print-prompt-rules leading-snug">
+                                <span className="text-[var(--comic-secondary)] font-bold">Rules: </span>
                                 {item.prompt_rules}
                               </p>
                             ) : null}
                             {item.prompt_example ? (
-                              <p className="print-prompt-example text-xs leading-snug italic">
-                                <span className="text-[var(--comic-secondary)] not-italic">Example: </span>
+                              <p className="print-prompt-example leading-snug italic">
+                                <span className="text-[var(--comic-secondary)] not-italic font-bold">Example: </span>
                                 {item.prompt_example}
                               </p>
                             ) : null}
