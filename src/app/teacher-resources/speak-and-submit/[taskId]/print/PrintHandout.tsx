@@ -106,15 +106,15 @@ export default function PrintHandout({
           </div>
 
           <section className="mb-8">
-            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-4">
+            <div className="mb-4">
               <ComicTitle
                 level={6}
-                className="!text-xl text-[var(--comic-primary)]"
+                className="!text-xl text-[var(--comic-primary)] mb-1"
               >
                 🎙️ Speaking Task
               </ComicTitle>
               {hasMultiPromptSection ? (
-                <p className="font-bold text-xs text-[var(--comic-secondary)] whitespace-nowrap">
+                <p className="print-prompt-title text-[var(--comic-secondary)]">
                   Choose one prompt:
                 </p>
               ) : null}
