@@ -88,6 +88,39 @@ export default function PrintHandout({
                           ))}
                         </span>
                       </li>
+                    ) : section.itemType === 'prompt' ? (
+                      <li className="space-y-4">
+                        {section.items.length > 1 ? (
+                          <ComicText className="font-bold text-sm text-[var(--comic-secondary)]">
+                            Choose one prompt:
+                          </ComicText>
+                        ) : null}
+                        {section.items.map((item, index) => (
+                          <div
+                            key={item.id}
+                            className="border-4 border-[var(--comic-black)] p-4 font-bold text-lg leading-relaxed space-y-2"
+                          >
+                            {section.items.length > 1 ? (
+                              <ComicText className="text-[var(--comic-secondary)]">
+                                Option {index + 1}
+                              </ComicText>
+                            ) : null}
+                            <div>{item.content}</div>
+                            {item.prompt_rules ? (
+                              <ComicText className="text-base">
+                                <span className="text-[var(--comic-secondary)]">Rules: </span>
+                                {item.prompt_rules}
+                              </ComicText>
+                            ) : null}
+                            {item.prompt_example ? (
+                              <ComicText className="text-base italic">
+                                <span className="text-[var(--comic-secondary)] not-italic">Example: </span>
+                                {item.prompt_example}
+                              </ComicText>
+                            ) : null}
+                          </div>
+                        ))}
+                      </li>
                     ) : (
                       section.items.map((item, index) => (
                         <li

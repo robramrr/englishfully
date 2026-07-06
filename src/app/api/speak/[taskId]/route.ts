@@ -31,6 +31,8 @@ export async function GET(_request: Request, { params }: RouteParams) {
         item_type: item.item_type,
         section_index: item.section_index,
         max_recording_seconds: item.max_recording_seconds,
+        prompt_rules: item.prompt_rules,
+        prompt_example: item.prompt_example,
       })),
     });
   } catch (error) {

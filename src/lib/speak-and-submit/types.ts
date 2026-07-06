@@ -21,7 +21,7 @@ export const STUDENT_TASK_TYPE_LABELS: Record<ItemTaskType, string> = {
   single_sentence: 'Say this sentence',
   sentence_set: 'Say each sentence',
   vocab_list: 'Say each word',
-  prompt: 'Answer this prompt',
+  prompt: 'Choose a prompt and record your answer',
 };
 
 export const DEFAULT_MAX_RECORDING_SECONDS: Record<ItemTaskType, number> = {
@@ -58,10 +58,61 @@ export function formatTaskTypesFromItems(
   return sectionTypes.map((type) => TASK_TYPE_LABELS[type]).join(' + ');
 }
 
+export interface TaskItemInput {
+  content: string;
+  prompt_rules?: string;
+  prompt_example?: string;
+}
+
 export interface TaskSectionInput {
   item_type: ItemTaskType;
   max_recording_seconds: number;
-  items: string[];
+  items: TaskItemInput[];
+}
+
+export function normalizeTaskItemInput(
+  item: string | TaskItemInput
+): TaskItemInput {
+  if (typeof item === 'string') {
+    return { content: item.trim() };
+  }
+  return {
+    content: String(item.content ?? '').trim(),
+    prompt_rules: item.prompt_rules?.trim() || undefined,
+    prompt_example: item.prompt_example?.trim() || undefined,
+  };
+}
+
+export function buildStudentRecordingItems<
+  T extends {
+    id: string;
+    item_type: ItemTaskType;
+    section_index: number;
+  },
+>(items: T[], promptSelections: Record<number, string>): T[] {
+  const groups = groupTaskItemsBySection(items);
+  const result: T[] = [];
+  for (const group of groups) {
+    if (group.itemType === 'prompt' && group.items.length > 1) {
+      const selectedId = promptSelections[group.sectionIndex];
+      if (!selectedId) {
+        break;
+      }
+      const selected = group.items.find((item) => item.id === selectedId);
+      if (selected) result.push(selected);
+    } else {
+      result.push(...group.items);
+    }
+  }
+  return result;
+}
+
+export function getPromptSectionsNeedingChoice<
+  T extends { item_type: ItemTaskType; section_index: number },
+>(items: T[]): number[] {
+  return groupTaskItemsBySection(items)
+    .filter((group) => group.itemType === 'prompt' && group.items.length > 1)
+    .map((group) => group.sectionIndex);
 }
 
 export function normalizeStudentNumber(value: string): string {
@@ -125,11 +176,13 @@ export interface SpeakTaskItem {
   item_type: ItemTaskType;
   section_index: number;
   max_recording_seconds: number | null;
+  prompt_rules: string | null;
+  prompt_example: string | null;
 }
 
-export function groupTaskItemsBySection<T extends SpeakTaskItem>(
-  items: T[]
-): Array<{ sectionIndex: number; itemType: ItemTaskType; items: T[] }> {
+export function groupTaskItemsBySection<
+  T extends { section_index: number; item_type: ItemTaskType },
+>(items: T[]): Array<{ sectionIndex: number; itemType: ItemTaskType; items: T[] }> {
   const groups: Array<{ sectionIndex: number; itemType: ItemTaskType; items: T[] }> = [];
   for (const item of items) {
     const last = groups[groups.length - 1];
@@ -172,6 +225,8 @@ export interface PublicTask {
     item_type: ItemTaskType;
     section_index: number;
     max_recording_seconds: number | null;
+    prompt_rules: string | null;
+    prompt_example: string | null;
   }>;
 }
 

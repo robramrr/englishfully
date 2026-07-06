@@ -126,17 +126,52 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps) {
                               Part {section.sectionIndex + 1}: {TASK_TYPE_LABELS[section.itemType]}
                             </ComicText>
                           ) : null}
-                          <ol className="space-y-3">
-                            {section.items.map((item, index) => (
-                              <li
-                                key={item.id}
-                                className="comic-border bg-white p-4 rounded-lg text-[var(--comic-dark)] font-bold"
-                              >
-                                {section.items.length > 1 ? `${index + 1}. ` : ''}
-                                {item.content}
-                              </li>
-                            ))}
-                          </ol>
+                          {section.itemType === 'prompt' ? (
+                            <ol className="space-y-3">
+                              {section.items.length > 1 ? (
+                                <ComicText className="text-[var(--comic-secondary)] font-bold text-sm">
+                                  Student chooses one prompt:
+                                </ComicText>
+                              ) : null}
+                              {section.items.map((item, index) => (
+                                <li
+                                  key={item.id}
+                                  className="comic-border bg-white p-4 rounded-lg text-[var(--comic-dark)] font-bold space-y-2"
+                                >
+                                  {section.items.length > 1 ? (
+                                    <ComicText className="text-[var(--comic-secondary)] text-sm">
+                                      Option {index + 1}
+                                    </ComicText>
+                                  ) : null}
+                                  <div>{item.content}</div>
+                                  {item.prompt_rules ? (
+                                    <ComicText className="text-sm">
+                                      <span className="text-[var(--comic-secondary)]">Rules: </span>
+                                      {item.prompt_rules}
+                                    </ComicText>
+                                  ) : null}
+                                  {item.prompt_example ? (
+                                    <ComicText className="text-sm italic">
+                                      <span className="text-[var(--comic-secondary)] not-italic">Example: </span>
+                                      {item.prompt_example}
+                                    </ComicText>
+                                  ) : null}
+                                </li>
+                              ))}
+                            </ol>
+                          ) : (
+                            <ol className="space-y-3">
+                              {section.items.map((item, index) => (
+                                <li
+                                  key={item.id}
+                                  className="comic-border bg-white p-4 rounded-lg text-[var(--comic-dark)] font-bold"
+                                >
+                                  {section.items.length > 1 ? `${index + 1}. ` : ''}
+                                  {item.content}
+                                </li>
+                              ))}
+                            </ol>
+                          )}
                         </div>
                       ))}
                     </div>

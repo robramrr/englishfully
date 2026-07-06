@@ -4,17 +4,20 @@ import { createTask, listTasks } from '@/lib/speak-and-submit/db';
 import { getRequestOrigin, jsonError } from '@/lib/speak-and-submit/api';
 import { getStudentTaskUrl } from '@/lib/speak-and-submit/qr';
 import type { CreateTaskPayload, ItemTaskType, TaskSectionInput } from '@/lib/speak-and-submit/types';
-import { ITEM_TASK_TYPES, getDefaultMaxRecordingSeconds } from '@/lib/speak-and-submit/types';
+import {
+  ITEM_TASK_TYPES,
+  getDefaultMaxRecordingSeconds,
+  normalizeTaskItemInput,
+} from '@/lib/speak-and-submit/types';
 
 function normalizeSection(section: TaskSectionInput): TaskSectionInput | null {
   const itemType = section.item_type;
   if (!ITEM_TASK_TYPES.includes(itemType)) return null;
 
-  const items = section.items.map((item) => item.trim()).filter(Boolean);
+  const items = section.items.map((item) => normalizeTaskItemInput(item)).filter((item) => item.content);
   if (items.length === 0) return null;
 
   if (itemType === 'single_sentence' && items.length !== 1) return null;
-  if (itemType === 'prompt' && items.length !== 1) return null;
 
   const maxSeconds =
     section.max_recording_seconds ?? getDefaultMaxRecordingSeconds(itemType);

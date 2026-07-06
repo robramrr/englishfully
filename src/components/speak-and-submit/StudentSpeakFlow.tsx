@@ -7,9 +7,16 @@ import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import ComicAudioPlayer from '../ComicAudioPlayer';
 import type { ItemTaskType, PublicTask } from '@/lib/speak-and-submit/types';
-import { STUDENT_LETTER_OPTIONS, STUDENT_TASK_TYPE_LABELS, getDefaultEntryConfig } from '@/lib/speak-and-submit/types';
+import {
+  STUDENT_LETTER_OPTIONS,
+  STUDENT_TASK_TYPE_LABELS,
+  buildStudentRecordingItems,
+  getDefaultEntryConfig,
+  getPromptSectionsNeedingChoice,
+  groupTaskItemsBySection,
+} from '@/lib/speak-and-submit/types';
 
-type Step = 'loading' | 'identity' | 'record' | 'submitting' | 'done' | 'error';
+type Step = 'loading' | 'identity' | 'choose_prompt' | 'record' | 'submitting' | 'done' | 'error';
 
 interface RecordingState {
   task_item_id: string;
@@ -109,7 +116,13 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [micDenied, setMicDenied] = useState(false);
   const [checkingIdentity, setCheckingIdentity] = useState(false);
+  const [promptSelections, setPromptSelections] = useState<Record<number, string>>({});
+  const [choosePromptSection, setChoosePromptSection] = useState<number | null>(null);
 
+  const activeItems = useMemo(
+    () => buildStudentRecordingItems(task?.items ?? [], promptSelections),
+    [task, promptSelections]
+  );
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingSessionRef = useRef(0);
@@ -117,8 +130,18 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
   const startTimeRef = useRef<number>(0);
   const currentIndexRef = useRef(0);
 
-  const currentItem = task?.items[currentIndex];
-  const totalItems = task?.items.length ?? 0;
+  const currentItem = activeItems[currentIndex];
+  const totalItems = activeItems.length;
+  const nextUnchosenPromptSection = useMemo(
+    () => (task ? getPromptSectionsNeedingChoice(task.items).find((s) => !promptSelections[s]) ?? null : null),
+    [task, promptSelections]
+  );
+  const choosePromptOptions = useMemo(() => {
+    if (!task || choosePromptSection === null) return [];
+    return task.items.filter(
+      (item) => item.item_type === 'prompt' && item.section_index === choosePromptSection
+    );
+  }, [task, choosePromptSection]);
   const entryConfig = task?.entry_config ?? getDefaultEntryConfig();
   const usesClassDropdown = entryConfig.classes.length > 0;
   const usesStudentLetter = entryConfig.student_letter_enabled;
@@ -133,7 +156,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
   );
   const maxRecordingSeconds =
     currentItem?.max_recording_seconds ?? task?.max_recording_seconds ?? 25;
-  const previousItem = currentIndex > 0 ? task?.items[currentIndex - 1] : null;
+  const previousItem = currentIndex > 0 ? activeItems[currentIndex - 1] : null;
   const currentItemType: ItemTaskType =
     currentItem?.item_type ??
     (task?.task_type === 'mixed' ? 'single_sentence' : (task?.task_type as ItemTaskType)) ??
@@ -166,15 +189,6 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
         if (data.task.entry_config?.classes?.length > 0) {
           setSelectedClassId(data.task.entry_config.classes[0].id);
         }
-        setRecordings(
-          data.items.map((item: PublicTask['items'][number]) => ({
-            task_item_id: item.id,
-            blob: null,
-            audioUrl: null,
-            duration_seconds: 0,
-            uploadedUrl: null,
-          }))
-        );
         setStep('identity');
       })
       .catch(() => {
@@ -194,6 +208,44 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
       return `${number}${letter}`;
     }
     return number;
+  }
+
+  function beginRecording(
+    items: PublicTask['items'],
+    selections: Record<number, string>,
+    preserveRecordings?: RecordingState[]
+  ) {
+    const queue = buildStudentRecordingItems(items, selections);
+    setRecordings(
+      queue.map((item) => {
+        const existing = preserveRecordings?.find((recording) => recording.task_item_id === item.id);
+        return (
+          existing ?? {
+            task_item_id: item.id,
+            blob: null,
+            audioUrl: null,
+            duration_seconds: 0,
+            uploadedUrl: null,
+          }
+        );
+      })
+    );
+    setStep('record');
+  }
+
+  function handleSelectPrompt(itemId: string) {
+    if (!task || choosePromptSection === null) return;
+
+    const newSelections = { ...promptSelections, [choosePromptSection]: itemId };
+    setPromptSelections(newSelections);
+    setChoosePromptSection(null);
+    setError('');
+
+    const queue = buildStudentRecordingItems(task.items, newSelections);
+    beginRecording(task.items, newSelections, recordings);
+    const newIndex = queue.findIndex((item) => item.id === itemId);
+    setCurrentIndex(newIndex >= 0 ? newIndex : queue.length - 1);
+    setElapsedSeconds(0);
   }
 
   async function handleContinueIdentity() {
@@ -264,7 +316,20 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
     setStudentName(resolvedName);
     setClassNumber(resolvedClass);
     setStudentNumber(formattedNumber);
-    setStep('record');
+    setPromptSelections({});
+    setCurrentIndex(0);
+
+    const items = task?.items ?? [];
+    const initialQueue = buildStudentRecordingItems(items, {});
+    const firstPromptSection = getPromptSectionsNeedingChoice(items)[0] ?? null;
+
+    if (initialQueue.length === 0 && firstPromptSection !== null) {
+      setChoosePromptSection(firstPromptSection);
+      setStep('choose_prompt');
+      return;
+    }
+
+    beginRecording(items, {});
   }
 
   useEffect(() => {
@@ -463,6 +528,12 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
     if (currentIndex < totalItems - 1) {
       setCurrentIndex((value) => value + 1);
       setElapsedSeconds(0);
+      return;
+    }
+
+    if (task && nextUnchosenPromptSection !== null) {
+      setChoosePromptSection(nextUnchosenPromptSection);
+      setStep('choose_prompt');
     }
   }
 
@@ -697,10 +768,30 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
               </ComicText>
             ) : null}
 
-            <div className="comic-border-thick bg-white p-5 mb-6 rounded-lg">
+            <div className="comic-border-thick bg-white p-5 mb-6 rounded-lg space-y-4">
               <ComicText className="text-[var(--comic-dark)] font-bold text-xl leading-relaxed">
                 {currentItem?.content}
               </ComicText>
+              {currentItem?.prompt_rules ? (
+                <div>
+                  <ComicText className="text-[var(--comic-secondary)] font-bold text-sm mb-1">
+                    Rules
+                  </ComicText>
+                  <ComicText className="text-[var(--comic-dark)] font-bold text-sm leading-relaxed">
+                    {currentItem.prompt_rules}
+                  </ComicText>
+                </div>
+              ) : null}
+              {currentItem?.prompt_example ? (
+                <div>
+                  <ComicText className="text-[var(--comic-secondary)] font-bold text-sm mb-1">
+                    Example
+                  </ComicText>
+                  <ComicText className="text-[var(--comic-dark)] font-bold text-sm leading-relaxed italic">
+                    {currentItem.prompt_example}
+                  </ComicText>
+                </div>
+              ) : null}
             </div>
 
             {micDenied ? (
@@ -743,7 +834,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
                     <ComicButton variant="warning" size="sm" onClick={reRecord}>
                       Try again
                     </ComicButton>
-                    {currentIndex < totalItems - 1 ? (
+                    {currentIndex < totalItems - 1 || nextUnchosenPromptSection !== null ? (
                       <ComicButton variant="primary" size="sm" onClick={goNext}>
                         Next item →
                       </ComicButton>
@@ -760,6 +851,46 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
                   </div>
                 </>
               ) : null}
+            </div>
+          </ComicCard>
+        ) : null}
+
+        {step === 'choose_prompt' ? (
+          <ComicCard>
+            <ComicTitle level={4} className="mb-2 text-[var(--comic-primary)] text-center">
+              Choose your prompt
+            </ComicTitle>
+            <ComicText className="text-[var(--comic-dark)] font-bold mb-6 text-center text-sm">
+              Pick one prompt to answer. You will record only your chosen prompt.
+            </ComicText>
+            <div className="space-y-4">
+              {choosePromptOptions.map((option, index) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => handleSelectPrompt(option.id)}
+                  className="w-full text-left comic-border bg-white rounded-lg p-4 hover:bg-[var(--comic-light)] transition-colors"
+                >
+                  <ComicText className="text-[var(--comic-secondary)] font-bold mb-2">
+                    Option {index + 1}
+                  </ComicText>
+                  <ComicText className="text-[var(--comic-dark)] font-bold mb-3 leading-relaxed">
+                    {option.content}
+                  </ComicText>
+                  {option.prompt_rules ? (
+                    <ComicText className="text-[var(--comic-dark)] text-sm mb-2">
+                      <span className="font-bold text-[var(--comic-secondary)]">Rules: </span>
+                      {option.prompt_rules}
+                    </ComicText>
+                  ) : null}
+                  {option.prompt_example ? (
+                    <ComicText className="text-[var(--comic-dark)] text-sm italic">
+                      <span className="font-bold text-[var(--comic-secondary)] not-italic">Example: </span>
+                      {option.prompt_example}
+                    </ComicText>
+                  ) : null}
+                </button>
+              ))}
             </div>
           </ComicCard>
         ) : null}

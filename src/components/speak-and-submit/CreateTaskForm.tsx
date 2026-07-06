@@ -15,11 +15,22 @@ const TASK_TYPE_OPTIONS: Array<{ value: ItemTaskType; label: string; emoji: stri
   { value: 'prompt', label: 'Open Prompt', emoji: '🎤' },
 ];
 
+interface PromptDraft {
+  content: string;
+  rules: string;
+  example: string;
+}
+
 interface SectionState {
   id: string;
   item_type: ItemTaskType;
   max_recording_seconds: number;
   items: string[];
+  prompts: PromptDraft[];
+}
+
+function emptyPrompt(): PromptDraft {
+  return { content: '', rules: '', example: '' };
 }
 
 function createSection(itemType: ItemTaskType = 'single_sentence'): SectionState {
@@ -28,6 +39,7 @@ function createSection(itemType: ItemTaskType = 'single_sentence'): SectionState
     item_type: itemType,
     max_recording_seconds: getDefaultMaxRecordingSeconds(itemType),
     items: [''],
+    prompts: [emptyPrompt()],
   };
 }
 
@@ -54,11 +66,19 @@ export default function CreateTaskForm({ onCreated }: CreateTaskFormProps) {
       item_type: nextType,
       max_recording_seconds: getDefaultMaxRecordingSeconds(nextType),
       items:
-        nextType === 'single_sentence' || nextType === 'prompt'
+        nextType === 'single_sentence'
           ? [section.items[0] ?? '']
-          : section.items.length >= 2
+          : nextType === 'prompt'
             ? section.items
-            : [section.items[0] ?? '', ''],
+            : section.items.length >= 2
+              ? section.items
+              : [section.items[0] ?? '', ''],
+      prompts:
+        nextType === 'prompt'
+          ? section.prompts.length > 0
+            ? section.prompts
+            : [emptyPrompt()]
+          : [emptyPrompt()],
     }));
   }
 
@@ -69,6 +89,20 @@ export default function CreateTaskForm({ onCreated }: CreateTaskFormProps) {
     }));
   }
 
+  function updatePrompt(
+    sectionId: string,
+    index: number,
+    field: keyof PromptDraft,
+    value: string
+  ) {
+    updateSection(sectionId, (section) => ({
+      ...section,
+      prompts: section.prompts.map((prompt, promptIndex) =>
+        promptIndex === index ? { ...prompt, [field]: value } : prompt
+      ),
+    }));
+  }
+
   function addSectionItem(sectionId: string) {
     updateSection(sectionId, (section) => ({
       ...section,
@@ -76,10 +110,24 @@ export default function CreateTaskForm({ onCreated }: CreateTaskFormProps) {
     }));
   }
 
+  function addPrompt(sectionId: string) {
+    updateSection(sectionId, (section) => ({
+      ...section,
+      prompts: [...section.prompts, emptyPrompt()],
+    }));
+  }
+
   function removeSectionItem(sectionId: string, index: number) {
     updateSection(sectionId, (section) => ({
       ...section,
       items: section.items.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  }
+
+  function removePrompt(sectionId: string, index: number) {
+    updateSection(sectionId, (section) => ({
+      ...section,
+      prompts: section.prompts.filter((_, promptIndex) => promptIndex !== index),
     }));
   }
 
@@ -91,6 +139,28 @@ export default function CreateTaskForm({ onCreated }: CreateTaskFormProps) {
     setSections((current) =>
       current.length <= 1 ? current : current.filter((section) => section.id !== sectionId)
     );
+  }
+
+  function sectionPayload(section: SectionState) {
+    if (section.item_type === 'prompt') {
+      return {
+        item_type: section.item_type,
+        max_recording_seconds: section.max_recording_seconds,
+        items: section.prompts
+          .filter((prompt) => prompt.content.trim())
+          .map((prompt) => ({
+            content: prompt.content.trim(),
+            prompt_rules: prompt.rules.trim() || undefined,
+            prompt_example: prompt.example.trim() || undefined,
+          })),
+      };
+    }
+
+    return {
+      item_type: section.item_type,
+      max_recording_seconds: section.max_recording_seconds,
+      items: section.items.filter((item) => item.trim()).map((item) => ({ content: item.trim() })),
+    };
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -105,11 +175,7 @@ export default function CreateTaskForm({ onCreated }: CreateTaskFormProps) {
         body: JSON.stringify({
           title,
           class_name: className,
-          sections: sections.map((section) => ({
-            item_type: section.item_type,
-            max_recording_seconds: section.max_recording_seconds,
-            items: section.items,
-          })),
+          sections: sections.map((section) => sectionPayload(section)),
         }),
       });
 
@@ -137,7 +203,8 @@ export default function CreateTaskForm({ onCreated }: CreateTaskFormProps) {
       </ComicTitle>
       <ComicText className="text-[var(--comic-dark)] font-bold mb-6">
         Build one QR-code homework task. Add multiple parts if you want — for example, a single
-        sentence plus a vocabulary list.
+        sentence plus a vocabulary list. For open prompts, add several options — students choose one
+        to answer.
       </ComicText>
 
       <form onSubmit={handleSubmit} className="space-y-6 text-left">
@@ -235,65 +302,133 @@ export default function CreateTaskForm({ onCreated }: CreateTaskFormProps) {
                 </div>
 
                 <div className="space-y-3">
-                  <ComicText className="text-[var(--comic-dark)] font-bold">
-                    {isPrompt ? 'Speaking prompt' : isMultiItem ? 'Items' : 'Target sentence'}
-                  </ComicText>
-
-                  {section.items.map((item, index) => (
-                    <div key={`${section.id}-item-${index}`} className="flex gap-3 items-start">
+                  {isPrompt ? (
+                    <>
+                      <ComicText className="text-[var(--comic-dark)] font-bold">
+                        Speaking prompts
+                      </ComicText>
+                      <ComicText className="text-[var(--comic-dark)] text-sm">
+                        Add multiple prompts. Each student chooses one to answer. Include rules and
+                        an example for each prompt.
+                      </ComicText>
+                      {section.prompts.map((prompt, index) => (
+                        <div
+                          key={`${section.id}-prompt-${index}`}
+                          className="comic-border rounded-lg p-4 space-y-3 bg-[var(--comic-light)]"
+                        >
+                          <ComicText className="text-[var(--comic-secondary)] font-bold">
+                            Prompt {index + 1}
+                          </ComicText>
+                          <div>
+                            <ComicText className="text-[var(--comic-dark)] font-bold mb-1 text-sm">
+                              Prompt
+                            </ComicText>
+                            <textarea
+                              className="w-full comic-textarea min-h-24"
+                              value={prompt.content}
+                              onChange={(event) =>
+                                updatePrompt(section.id, index, 'content', event.target.value)
+                              }
+                              placeholder="Describe your weekend using past tense verbs."
+                              required
+                            />
+                          </div>
+                          <div>
+                            <ComicText className="text-[var(--comic-dark)] font-bold mb-1 text-sm">
+                              Rules
+                            </ComicText>
+                            <textarea
+                              className="w-full comic-textarea min-h-20"
+                              value={prompt.rules}
+                              onChange={(event) =>
+                                updatePrompt(section.id, index, 'rules', event.target.value)
+                              }
+                              placeholder="Use at least 3 past tense verbs. Speak for 30–60 seconds."
+                            />
+                          </div>
+                          <div>
+                            <ComicText className="text-[var(--comic-dark)] font-bold mb-1 text-sm">
+                              Example
+                            </ComicText>
+                            <textarea
+                              className="w-full comic-textarea min-h-20"
+                              value={prompt.example}
+                              onChange={(event) =>
+                                updatePrompt(section.id, index, 'example', event.target.value)
+                              }
+                              placeholder="Last Saturday I visited my grandmother and we cooked dinner together."
+                            />
+                          </div>
+                          {section.prompts.length > 1 ? (
+                            <ComicButton
+                              type="button"
+                              variant="danger"
+                              size="sm"
+                              onClick={() => removePrompt(section.id, index)}
+                            >
+                              Remove prompt
+                            </ComicButton>
+                          ) : null}
+                        </div>
+                      ))}
+                      <ComicButton
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => addPrompt(section.id)}
+                      >
+                        + Add prompt
+                      </ComicButton>
+                    </>
+                  ) : (
+                    <>
+                      <ComicText className="text-[var(--comic-dark)] font-bold">
+                        {isMultiItem ? 'Items' : 'Target sentence'}
+                      </ComicText>
+                      {section.items.map((item, index) => (
+                        <div key={`${section.id}-item-${index}`} className="flex gap-3 items-start">
+                          {isMultiItem ? (
+                            <span className="font-bungee text-[var(--comic-secondary)] pt-3 min-w-[2rem]">
+                              {index + 1}.
+                            </span>
+                          ) : null}
+                          <input
+                            className="w-full comic-input"
+                            value={item}
+                            onChange={(event) =>
+                              updateSectionItem(section.id, index, event.target.value)
+                            }
+                            placeholder={
+                              section.item_type === 'vocab_list'
+                                ? 'adventure'
+                                : 'I went to the market yesterday.'
+                            }
+                            required
+                          />
+                          {isMultiItem && section.items.length > 1 ? (
+                            <ComicButton
+                              type="button"
+                              variant="danger"
+                              size="sm"
+                              onClick={() => removeSectionItem(section.id, index)}
+                            >
+                              Remove
+                            </ComicButton>
+                          ) : null}
+                        </div>
+                      ))}
                       {isMultiItem ? (
-                        <span className="font-bungee text-[var(--comic-secondary)] pt-3 min-w-[2rem]">
-                          {index + 1}.
-                        </span>
-                      ) : null}
-                      {isPrompt ? (
-                        <textarea
-                          className="w-full comic-textarea min-h-28"
-                          value={item}
-                          onChange={(event) =>
-                            updateSectionItem(section.id, index, event.target.value)
-                          }
-                          placeholder="Describe your weekend using past tense verbs."
-                          required
-                        />
-                      ) : (
-                        <input
-                          className="w-full comic-input"
-                          value={item}
-                          onChange={(event) =>
-                            updateSectionItem(section.id, index, event.target.value)
-                          }
-                          placeholder={
-                            section.item_type === 'vocab_list'
-                              ? 'adventure'
-                              : 'I went to the market yesterday.'
-                          }
-                          required
-                        />
-                      )}
-                      {isMultiItem && section.items.length > 1 ? (
                         <ComicButton
                           type="button"
-                          variant="danger"
+                          variant="secondary"
                           size="sm"
-                          onClick={() => removeSectionItem(section.id, index)}
+                          onClick={() => addSectionItem(section.id)}
                         >
-                          Remove
+                          + Add item
                         </ComicButton>
                       ) : null}
-                    </div>
-                  ))}
-
-                  {isMultiItem ? (
-                    <ComicButton
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => addSectionItem(section.id)}
-                    >
-                      + Add item
-                    </ComicButton>
-                  ) : null}
+                    </>
+                  )}
                 </div>
               </div>
             );

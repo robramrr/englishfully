@@ -13,7 +13,9 @@ import {
   deriveTaskType,
   getDefaultMaxRecordingSeconds,
   normalizeStudentNumber,
+  normalizeTaskItemInput,
 } from './types';
+import type { TaskItemInput } from './types';
 
 let schemaReady: Promise<void> | null = null;
 
@@ -64,6 +66,14 @@ export async function ensureSchema(): Promise<void> {
         ADD COLUMN IF NOT EXISTS max_recording_seconds INTEGER
       `;
       await sql`
+        ALTER TABLE speak_task_items
+        ADD COLUMN IF NOT EXISTS prompt_rules TEXT
+      `;
+      await sql`
+        ALTER TABLE speak_task_items
+        ADD COLUMN IF NOT EXISTS prompt_example TEXT
+      `;
+      await sql`
         CREATE TABLE IF NOT EXISTS speak_submissions (
           id TEXT PRIMARY KEY,
           task_id TEXT NOT NULL REFERENCES speak_tasks(id) ON DELETE CASCADE,
@@ -105,6 +115,8 @@ function rowToItem(row: Record<string, unknown>, fallbackType?: ItemTaskType): S
     item_type: (row.item_type as ItemTaskType) ?? fallbackType ?? 'single_sentence',
     section_index: (row.section_index as number) ?? 0,
     max_recording_seconds: (row.max_recording_seconds as number | null) ?? null,
+    prompt_rules: (row.prompt_rules as string | null) ?? null,
+    prompt_example: (row.prompt_example as string | null) ?? null,
   };
 }
 
@@ -137,7 +149,9 @@ export async function createTask(
         section.max_recording_seconds || getDefaultMaxRecordingSeconds(section.item_type)
       )
     ),
-    items: section.items.map((content) => content.trim()).filter(Boolean),
+    items: section.items
+      .map((item) => normalizeTaskItemInput(item))
+      .filter((item) => item.content.length > 0),
   }));
 
   const flatItems = sections.flatMap((section) => section.items);
@@ -157,30 +171,35 @@ export async function createTask(
   let orderIndex = 0;
   for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex += 1) {
     const section = sections[sectionIndex];
-    for (const content of section.items) {
+    for (const item of section.items) {
       const itemId = nanoid(21);
       await sql`
         INSERT INTO speak_task_items (
-          id, task_id, order_index, content, item_type, section_index, max_recording_seconds
+          id, task_id, order_index, content, item_type, section_index, max_recording_seconds,
+          prompt_rules, prompt_example
         )
         VALUES (
           ${itemId},
           ${taskId},
           ${orderIndex},
-          ${content},
+          ${item.content},
           ${section.item_type},
           ${sectionIndex},
-          ${section.max_recording_seconds}
+          ${section.max_recording_seconds},
+          ${item.prompt_rules ?? null},
+          ${item.prompt_example ?? null}
         )
       `;
       createdItems.push({
         id: itemId,
         task_id: taskId,
         order_index: orderIndex,
-        content,
+        content: item.content,
         item_type: section.item_type,
         section_index: sectionIndex,
         max_recording_seconds: section.max_recording_seconds,
+        prompt_rules: item.prompt_rules ?? null,
+        prompt_example: item.prompt_example ?? null,
       });
       orderIndex += 1;
     }
