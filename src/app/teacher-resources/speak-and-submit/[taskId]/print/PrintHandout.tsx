@@ -46,6 +46,11 @@ export default function PrintHandout({
           font-size: 12px;
           font-weight: normal;
         }
+        .speak-and-submit-page .print-choose-prompt {
+          font-size: 14px;
+          font-weight: bold;
+          margin-top: 10px;
+        }
 
         @media print {
           body {
@@ -82,6 +87,10 @@ export default function PrintHandout({
           .speak-and-submit-page .print-prompt-section {
             gap: 6px !important;
           }
+          .speak-and-submit-page .print-choose-prompt {
+            font-size: 14px !important;
+            margin-top: 10px !important;
+          }
         }
       `}</style>
 
@@ -109,12 +118,12 @@ export default function PrintHandout({
             <div className="mb-4">
               <ComicTitle
                 level={6}
-                className="!text-xl text-[var(--comic-primary)] mb-1"
+                className="!text-xl text-[var(--comic-primary)]"
               >
                 🎙️ Speaking Task
               </ComicTitle>
               {hasMultiPromptSection ? (
-                <p className="print-prompt-title text-[var(--comic-secondary)]">
+                <p className="print-choose-prompt text-[var(--comic-secondary)]">
                   Choose one prompt:
                 </p>
               ) : null}
