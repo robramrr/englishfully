@@ -1,5 +1,5 @@
-/** Public web demo for the EnglishFeed app (Vercel). */
-export const ENGLISHFEED_DEMO_URL = "https://englishfeed.vercel.app/";
+/** Public EnglishFeed app (Try Demo links). */
+export const ENGLISHFEED_DEMO_URL = "https://www.englishfeed.com/";
 
 /** Vimeo embed URL for EnglishFeed on the homepage (hero + promo sections). */
 export const ENGLISHFEED_HOMEPAGE_VIMEO_EMBED_SRC =
