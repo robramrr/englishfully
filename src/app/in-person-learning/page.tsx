@@ -12,6 +12,7 @@ import {
   ONSITE_ONE_ON_ONE_PRACTICE_URL,
   ONSITE_SMALL_GROUP_SPEAKING_LAB_URL,
 } from "../../constants/images";
+import { PRIVATE_HOUR_PLANS } from "../../constants/inPersonPricing";
 import { useI18n } from "../../i18n/I18nProvider";
 
 const PRIVATE_PRICING_FEATURES = [
@@ -332,6 +333,33 @@ function PricingPracticePhotoFrame({ src, alt }: { src: string; alt: string }) {
   );
 }
 
+function PrivateHourlyPricing() {
+  const { t } = useI18n();
+  const [planIndex, setPlanIndex] = useState(0);
+  const plan = PRIVATE_HOUR_PLANS[planIndex];
+
+  return (
+    <div className="mb-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+      <ComicText className="text-[var(--comic-dark)] font-bold text-2xl whitespace-nowrap">
+        {plan.ratePerHour} {t.inPersonLearning.privateRateUnit}
+      </ComicText>
+      <select
+        className="comic-input min-w-[12.5rem] py-2 text-base font-bold"
+        value={planIndex}
+        onChange={(event) => setPlanIndex(Number.parseInt(event.target.value, 10))}
+        aria-label={t.inPersonLearning.privatePlanSelectLabel}
+      >
+        {PRIVATE_HOUR_PLANS.map((option, index) => (
+          <option key={option.hours} value={index}>
+            {option.hours} {t.inPersonLearning.privateHoursUnit} —{" "}
+            {option.totalBaht.toLocaleString()} {t.inPersonLearning.privateCurrencyUnit}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 // Pricing & Packages Section
 function PricingPackagesSection() {
   const { t } = useI18n();
@@ -363,7 +391,7 @@ function PricingPackagesSection() {
             {t.inPersonLearning.privateSubtitle}
           </ComicText>
           <div className="mb-4">
-            <ComicText className="text-[var(--comic-dark)] font-bold text-2xl">{t.inPersonLearning.privatePrice}</ComicText>
+            <PrivateHourlyPricing />
           </div>
           <PricingFeatureChecklist translationKeys={PRIVATE_PRICING_FEATURES} />
           <ComicButton variant="primary" size="sm" href="#booking-form">
