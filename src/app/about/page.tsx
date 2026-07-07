@@ -60,7 +60,7 @@ function OurStorySection() {
   return (
     <section className="max-w-6xl mx-auto py-24 px-4">
       <div className="text-center mb-16">
-        <ComicTitle level={2} className="mb-8 text-[var(--comic-primary)]">
+        <ComicTitle level={2} className="comic-title-no-shadow mb-8 text-[var(--comic-primary)]">
           {t.about.ourStoryTitle}
         </ComicTitle>
         <ComicText size="lg" className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto">
@@ -70,7 +70,7 @@ function OurStorySection() {
       
       <div className="grid md:grid-cols-2 gap-12 mb-16">
         <ComicCard className="comic-shadow-xl">
-          <ComicTitle level={3} className="mb-6 text-[var(--comic-primary)]">
+          <ComicTitle level={3} className="comic-title-no-shadow mb-6 text-[var(--comic-primary)]">
             {t.about.ourMissionTitle}
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
@@ -82,17 +82,18 @@ function OurStorySection() {
         </ComicCard>
         
         <ComicCard className="comic-shadow-xl">
-          <ComicTitle level={3} className="mb-6 text-[var(--comic-secondary)]">
+          <ComicTitle level={3} className="comic-title-no-shadow mb-6 text-[var(--comic-secondary)]">
             {t.about.localImpactTitle}
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
             {t.about.localImpactDesc}
           </ComicText>
-          <ul className="text-[var(--comic-dark)] space-y-2">
-            <li>{t.about.localImpactItem1}</li>
-            <li>{t.about.localImpactItem2}</li>
-            <li>{t.about.localImpactItem3}</li>
-          </ul>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1783440716/englishfully/company/class.png"
+            alt={t.about.localImpactImageAlt}
+            className="w-full rounded-lg comic-border-thick"
+          />
         </ComicCard>
       </div>
     </section>
@@ -117,7 +118,7 @@ function TeamSection() {
         
         <div className="grid md:grid-cols-2 gap-8 mb-16">
           <ComicCard className="comic-shadow-lg text-center">
-            <ComicTitle level={4} className="mb-4 text-[var(--comic-secondary)]">
+            <ComicTitle level={4} className="comic-title-no-shadow mb-4 text-[var(--comic-secondary)]">
               {t.about.teachingTeamTitle}
             </ComicTitle>
             <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
@@ -132,7 +133,7 @@ function TeamSection() {
           </ComicCard>
           
           <ComicCard className="comic-shadow-lg text-center">
-            <ComicTitle level={4} className="mb-4 text-[var(--comic-success)]">
+            <ComicTitle level={4} className="comic-title-no-shadow mb-4 text-[var(--comic-success)]">
               {t.about.techTeamTitle}
             </ComicTitle>
             <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
@@ -146,6 +147,39 @@ function TeamSection() {
             </ul>
           </ComicCard>
         </div>
+
+        <ComicCard className="comic-shadow-lg overflow-hidden">
+          <div className="grid md:grid-cols-[auto_1fr] gap-8 items-start">
+            <div className="flex flex-col items-center gap-4 mx-auto md:mx-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1783439716/englishfully/company/Robert.jpg"
+                alt="Robert, founder of Englishfully"
+                className="w-40 h-40 md:w-48 md:h-48 object-cover object-top comic-border-thick rounded-lg"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1783440767/englishfully/company/university.jpg"
+                alt="California State University, Fullerton"
+                className="w-20 h-20 object-contain"
+              />
+            </div>
+            <div className="text-center md:text-left">
+              <ComicTitle level={4} className="comic-title-no-shadow mb-2 text-[var(--comic-primary)]">
+                {t.about.founderTitle}
+              </ComicTitle>
+              <ComicText className="text-[var(--comic-secondary)] font-bold mb-4">
+                {t.about.founderLocation}
+              </ComicText>
+              <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
+                {t.about.founderBio1}
+              </ComicText>
+              <ComicText className="text-[var(--comic-dark)] font-bold">
+                {t.about.founderBio2}
+              </ComicText>
+            </div>
+          </div>
+        </ComicCard>
       </div>
     </section>
   );
@@ -158,7 +192,7 @@ function ValuesSection() {
   return (
     <section className="max-w-6xl mx-auto py-24 px-4">
       <div className="text-center mb-16">
-        <ComicTitle level={2} className="mb-8 text-[var(--comic-success)]">
+        <ComicTitle level={2} className="comic-title-no-shadow mb-8 text-[var(--comic-success)]">
           {t.about.valuesTitle}
         </ComicTitle>
         <ComicText size="lg" className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto">
@@ -168,7 +202,7 @@ function ValuesSection() {
       
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
         <ComicCard className="comic-shadow-xl text-center">
-          <ComicTitle level={4} className="mb-4 text-[var(--comic-primary)]">
+          <ComicTitle level={4} className="comic-title-no-shadow mb-4 text-[var(--comic-primary)]">
             {t.about.innovateTitle}
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold">
@@ -177,7 +211,7 @@ function ValuesSection() {
         </ComicCard>
         
         <ComicCard className="comic-shadow-xl text-center">
-          <ComicTitle level={4} className="mb-4 text-[var(--comic-success)]">
+          <ComicTitle level={4} className="comic-title-no-shadow mb-4 text-[var(--comic-success)]">
             {t.about.accessibleTitle}
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold">
@@ -195,7 +229,7 @@ function ValuesSection() {
         </ComicCard>
         
         <ComicCard className="comic-shadow-xl text-center">
-          <ComicTitle level={4} className="mb-4 text-[var(--comic-danger)]">
+          <ComicTitle level={4} className="comic-title-no-shadow mb-4 text-[var(--comic-danger)]">
             {t.about.funTitle}
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold">
