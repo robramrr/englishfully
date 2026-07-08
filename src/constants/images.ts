@@ -76,6 +76,6 @@ export const ONLINE_LEARNING_HERO_SLIDE_URLS = [
   ONLINE_SUBSCRIPTION_PRO_URL,
 ] as const;
 
-/** Contact page — Bangkok office neighborhood photo. */
+/** Contact page — Englishfully office location photo. */
 export const CONTACT_OFFICE_IMAGE_URL =
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS3fVVzcXdKkYUReyLRxW1ASWSTtbcR6xShhNiO4se2iFnYYCp4G6-7aLRo&s=10";
+  "https://res.cloudinary.com/dkbf7tvcx/image/upload/l_text:montserrat_40_style_light:Englishfully%20Located%20at%2011th%20Floor,co_rgb:ffffff,g_center/v1783520856/englishfully/company/englishfully-office.jpg";
