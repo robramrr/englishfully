@@ -1,12 +1,16 @@
+import { unstable_noStore as noStore } from 'next/cache';
 import { NextResponse } from 'next/server';
 import { getTaskById, getTaskItems } from '@/lib/speak-and-submit/db';
 import { getEntryConfig } from '@/lib/speak-and-submit/settings';
 import { jsonError } from '@/lib/speak-and-submit/api';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const NO_STORE_HEADERS = {
-  'Cache-Control': 'no-store, no-cache, must-revalidate',
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  'CDN-Cache-Control': 'no-store',
+  'Vercel-CDN-Cache-Control': 'no-store',
 };
 
 interface RouteParams {
@@ -14,12 +18,15 @@ interface RouteParams {
 }
 
 export async function GET(_request: Request, { params }: RouteParams) {
+  noStore();
+
   try {
     const task = await getTaskById(params.taskId);
     if (!task) return jsonError('Task not found', 404);
 
     const items = await getTaskItems(params.taskId);
-    const entryConfig = await getEntryConfig(task.teacher_id);
+    const teacherId = task.teacher_id || 'default';
+    const entryConfig = await getEntryConfig(teacherId);
 
     return NextResponse.json(
       {
@@ -42,7 +49,12 @@ export async function GET(_request: Request, { params }: RouteParams) {
           prompt_example: item.prompt_example,
         })),
       },
-      { headers: NO_STORE_HEADERS }
+      {
+        headers: {
+          ...NO_STORE_HEADERS,
+          'X-Class-Count': String(entryConfig.classes.length),
+        },
+      }
     );
   } catch (error) {
     console.error('Public task fetch error:', error);

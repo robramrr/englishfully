@@ -228,7 +228,7 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
   }, [currentIndex]);
 
   useEffect(() => {
-    fetch(`/api/speak/${taskId}`)
+    fetch(`/api/speak/${taskId}`, { cache: 'no-store' })
       .then((response) => response.json())
       .then((data) => {
         if (!data.task) {
