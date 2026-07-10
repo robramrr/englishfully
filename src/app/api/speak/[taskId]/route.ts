@@ -3,6 +3,12 @@ import { getTaskById, getTaskItems } from '@/lib/speak-and-submit/db';
 import { getEntryConfig } from '@/lib/speak-and-submit/settings';
 import { jsonError } from '@/lib/speak-and-submit/api';
 
+export const dynamic = 'force-dynamic';
+
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate',
+};
+
 interface RouteParams {
   params: { taskId: string };
 }
@@ -15,26 +21,29 @@ export async function GET(_request: Request, { params }: RouteParams) {
     const items = await getTaskItems(params.taskId);
     const entryConfig = await getEntryConfig(task.teacher_id);
 
-    return NextResponse.json({
-      task: {
-        id: task.id,
-        title: task.title,
-        task_type: task.task_type,
-        class_name: task.class_name,
-        max_recording_seconds: task.max_recording_seconds,
-        entry_config: entryConfig,
+    return NextResponse.json(
+      {
+        task: {
+          id: task.id,
+          title: task.title,
+          task_type: task.task_type,
+          class_name: task.class_name,
+          max_recording_seconds: task.max_recording_seconds,
+          entry_config: entryConfig,
+        },
+        items: items.map((item) => ({
+          id: item.id,
+          order_index: item.order_index,
+          content: item.content,
+          item_type: item.item_type,
+          section_index: item.section_index,
+          max_recording_seconds: item.max_recording_seconds,
+          prompt_rules: item.prompt_rules,
+          prompt_example: item.prompt_example,
+        })),
       },
-      items: items.map((item) => ({
-        id: item.id,
-        order_index: item.order_index,
-        content: item.content,
-        item_type: item.item_type,
-        section_index: item.section_index,
-        max_recording_seconds: item.max_recording_seconds,
-        prompt_rules: item.prompt_rules,
-        prompt_example: item.prompt_example,
-      })),
-    });
+      { headers: NO_STORE_HEADERS }
+    );
   } catch (error) {
     console.error('Public task fetch error:', error);
     return jsonError('Failed to load task', 500);
