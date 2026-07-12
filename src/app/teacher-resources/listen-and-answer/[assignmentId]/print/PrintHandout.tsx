@@ -111,12 +111,22 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
           </div>
 
           <section className="mb-4">
-            <div className="font-bold border-b-2 border-[var(--comic-black)] pb-2 mb-4">
-              <div className="flex flex-wrap gap-x-4 gap-y-1">
-                <span>Nickname:</span>
-                <span>Student # / ID:</span>
-                <span>Date: / / /</span>
-              </div>
+            <div className="flex flex-wrap gap-6 items-end font-bold mb-4">
+              <span>
+                Nickname:{' '}
+                <span className="inline-block border-b-2 border-[var(--comic-black)] w-40 align-bottom" />
+              </span>
+              <span>
+                Student # / ID:{' '}
+                <span className="inline-block border-b-2 border-[var(--comic-black)] w-8 align-bottom" /> /{' '}
+                <span className="inline-block border-b-2 border-[var(--comic-black)] w-8 align-bottom" />
+              </span>
+              <span>
+                Date:{' '}
+                <span className="inline-block border-b-2 border-[var(--comic-black)] w-8 align-bottom" /> /{' '}
+                <span className="inline-block border-b-2 border-[var(--comic-black)] w-8 align-bottom" /> /{' '}
+                <span className="inline-block border-b-2 border-[var(--comic-black)] w-10 align-bottom" />
+              </span>
             </div>
             <ComicTitle level={6} className="!text-xl !mb-0 py-2 text-[var(--comic-primary)]">
               👂 Listen &amp; Answer
