@@ -11,6 +11,8 @@ import TotalTimeDisplay, {
 import type { ListenAssignmentWithParts } from '@/lib/listen-and-answer/types';
 import {
   QUESTION_TYPE_LABELS,
+  formatAnswerKeyAnswer,
+  formatPrintChoiceLine,
   formatQuestionLabel,
   getPrintableQuestions,
 } from '@/lib/listen-and-answer/types';
@@ -209,7 +211,14 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
                     {question.choices.length > 0 ? (
                       <div className="listen-print-choices space-y-0.5 text-sm font-normal leading-relaxed pl-1 text-[var(--comic-dark)]">
                         {question.choices
-                          .filter((choice) => choice.trim())
+                          .map((choice, choiceIndex) =>
+                            formatPrintChoiceLine(
+                              question.question_type,
+                              choiceIndex,
+                              choice
+                            )
+                          )
+                          .filter((choice) => choice)
                           .map((choice) => (
                             <div key={choice}>{choice}</div>
                           ))}
@@ -244,7 +253,7 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
                   <ol className="space-y-1 text-sm leading-relaxed">
                     {printableQuestions.map((question, questionIndex) => (
                       <li key={question.id}>
-                        {formatQuestionLabel(questionIndex)}: {question.correct_answer || '—'}
+                        {formatQuestionLabel(questionIndex)}: {formatAnswerKeyAnswer(question)}
                       </li>
                     ))}
                   </ol>

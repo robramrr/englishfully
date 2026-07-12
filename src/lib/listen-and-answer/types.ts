@@ -209,6 +209,42 @@ export function formatQuestionLabel(index: number): string {
   return `Question ${index + 1}`;
 }
 
+export function formatPrintChoiceLine(
+  questionType: QuestionType,
+  choiceIndex: number,
+  choiceText: string
+): string {
+  const trimmed = choiceText.trim();
+  if (!trimmed) return '';
+
+  if (questionType === 'true_false') {
+    const letter = String.fromCharCode(65 + choiceIndex);
+    return `${letter}. ${trimmed}`;
+  }
+
+  return trimmed;
+}
+
+export function formatAnswerKeyAnswer(question: {
+  question_type: QuestionType;
+  correct_answer: string;
+  choices: string[];
+}): string {
+  const answer = question.correct_answer.trim();
+  if (!answer) return '—';
+
+  if (question.question_type === 'true_false') {
+    const choiceIndex = question.choices.findIndex(
+      (choice) => choice.trim().toLowerCase() === answer.toLowerCase()
+    );
+    if (choiceIndex >= 0) {
+      return String.fromCharCode(65 + choiceIndex);
+    }
+  }
+
+  return answer;
+}
+
 export function reorderItems<T extends { sort_order: number }>(items: T[]): T[] {
   return items.map((item, index) => ({ ...item, sort_order: index }));
 }
