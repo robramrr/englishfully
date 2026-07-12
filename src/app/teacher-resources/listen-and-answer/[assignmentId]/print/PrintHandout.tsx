@@ -110,18 +110,18 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
             <div className="flex flex-wrap gap-6 items-end font-bold text-lg mb-4">
               <span>
                 Nickname:{' '}
-                <span className="inline-block border-b-4 border-[var(--comic-black)] w-40 align-bottom" />
+                <span className="inline-block border-b-2 border-[var(--comic-black)] w-40 align-bottom" />
               </span>
               <span>
                 Student # / ID:{' '}
-                <span className="inline-block border-b-4 border-[var(--comic-black)] w-10 align-bottom" /> /{' '}
-                <span className="inline-block border-b-4 border-[var(--comic-black)] w-10 align-bottom" />
+                <span className="inline-block border-b-2 border-[var(--comic-black)] w-10 align-bottom" /> /{' '}
+                <span className="inline-block border-b-2 border-[var(--comic-black)] w-10 align-bottom" />
               </span>
               <span>
                 Date:{' '}
-                <span className="inline-block border-b-4 border-[var(--comic-black)] w-8 align-bottom" /> /{' '}
-                <span className="inline-block border-b-4 border-[var(--comic-black)] w-8 align-bottom" /> /{' '}
-                <span className="inline-block border-b-4 border-[var(--comic-black)] w-10 align-bottom" />
+                <span className="inline-block border-b-2 border-[var(--comic-black)] w-8 align-bottom" /> /{' '}
+                <span className="inline-block border-b-2 border-[var(--comic-black)] w-8 align-bottom" /> /{' '}
+                <span className="inline-block border-b-2 border-[var(--comic-black)] w-10 align-bottom" />
               </span>
             </div>
             {assignment.due_date ? (
@@ -138,13 +138,22 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
               <section key={part.id} className="mb-6">
                 <div className="flex flex-wrap gap-4 items-start mb-4">
                   {part.thumbnail_url.trim() ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={part.thumbnail_url}
-                      alt=""
-                      className="block max-h-32 comic-border object-cover"
-                    />
-                  ) : null}
+                    <div className="shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={part.thumbnail_url}
+                        alt=""
+                        className="block max-h-32 comic-border object-cover"
+                      />
+                      <ComicText className="font-bold text-xl text-[var(--comic-secondary)] mt-1">
+                        {part.title || `Part ${partIndex + 1}`}
+                      </ComicText>
+                    </div>
+                  ) : (
+                    <ComicText className="font-bold text-xl text-[var(--comic-secondary)]">
+                      {part.title || `Part ${partIndex + 1}`}
+                    </ComicText>
+                  )}
                   {part.qr_enabled && qrCodes[part.id] ? (
                     <div className="shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -161,10 +170,6 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                     </div>
                   ) : null}
                 </div>
-
-                <ComicText className="font-bold text-xl text-[var(--comic-secondary)] mb-4">
-                  {part.title || `Part ${partIndex + 1}`}
-                </ComicText>
 
                 <ComicText className="font-bold mb-4">
                   Listen carefully. Then answer the questions below.

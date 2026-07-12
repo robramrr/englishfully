@@ -74,16 +74,16 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
         <div className="mb-4 space-y-2">
           <div className="flex flex-wrap gap-6 items-end font-bold text-lg">
             <span>
-              Nickname: <span className="inline-block border-b-4 border-[var(--comic-black)] w-40 align-bottom" />
+              Nickname: <span className="inline-block border-b-2 border-[var(--comic-black)] w-40 align-bottom" />
             </span>
             <span>
-              Student # / ID: <span className="inline-block border-b-4 border-[var(--comic-black)] w-10 align-bottom" /> /{' '}
-              <span className="inline-block border-b-4 border-[var(--comic-black)] w-10 align-bottom" />
+              Student # / ID: <span className="inline-block border-b-2 border-[var(--comic-black)] w-10 align-bottom" /> /{' '}
+              <span className="inline-block border-b-2 border-[var(--comic-black)] w-10 align-bottom" />
             </span>
             <span>
-              Date: <span className="inline-block border-b-4 border-[var(--comic-black)] w-8 align-bottom" /> /{' '}
-              <span className="inline-block border-b-4 border-[var(--comic-black)] w-8 align-bottom" /> /{' '}
-              <span className="inline-block border-b-4 border-[var(--comic-black)] w-10 align-bottom" />
+              Date: <span className="inline-block border-b-2 border-[var(--comic-black)] w-8 align-bottom" /> /{' '}
+              <span className="inline-block border-b-2 border-[var(--comic-black)] w-8 align-bottom" /> /{' '}
+              <span className="inline-block border-b-2 border-[var(--comic-black)] w-10 align-bottom" />
             </span>
           </div>
           {assignment.due_date ? (
@@ -100,13 +100,22 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
             <section key={part.id} className="mb-6">
               <div className="flex flex-wrap gap-4 items-start mb-4">
                 {part.thumbnail_url.trim() ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={part.thumbnail_url}
-                    alt=""
-                    className="block max-h-28 comic-border object-cover"
-                  />
-                ) : null}
+                  <div className="shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={part.thumbnail_url}
+                      alt=""
+                      className="block max-h-28 comic-border object-cover"
+                    />
+                    <ComicTitle level={4} className="!text-xl !mb-0 mt-1 text-[var(--comic-primary)]">
+                      {part.title || `Part ${partIndex + 1}`}
+                    </ComicTitle>
+                  </div>
+                ) : (
+                  <ComicTitle level={4} className="!text-xl !mb-0 text-[var(--comic-primary)]">
+                    {part.title || `Part ${partIndex + 1}`}
+                  </ComicTitle>
+                )}
                 {part.qr_enabled && qrCodes[part.id] ? (
                   <div className="shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -123,10 +132,6 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
                   </div>
                 ) : null}
               </div>
-
-              <ComicTitle level={4} className="mb-4 text-[var(--comic-primary)]">
-                {part.title || `Part ${partIndex + 1}`}
-              </ComicTitle>
 
               <ComicText className="font-bold mb-4">
                 Listen carefully. Then answer the questions below.
