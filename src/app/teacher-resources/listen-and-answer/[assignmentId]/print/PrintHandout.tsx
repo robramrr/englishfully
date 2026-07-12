@@ -38,7 +38,7 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
             const dataUrl = await QRCode.toDataURL(part.audio_url.trim(), {
               errorCorrectionLevel: 'M',
               margin: 0,
-              width: 160,
+              width: 128,
               color: { dark: '#001a48', light: '#ffffff' },
             });
             return [part.id, dataUrl] as const;
@@ -147,7 +147,7 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                       <img
                         src={part.thumbnail_url}
                         alt=""
-                        className="block max-h-32 comic-border object-cover"
+                        className="block h-32 w-auto comic-border object-cover"
                       />
                       <ComicText className="font-bold text-xl text-[var(--comic-secondary)] mt-1">
                         {part.title || `Part ${partIndex + 1}`}
@@ -164,9 +164,7 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                       <img
                         src={qrCodes[part.id]}
                         alt="Audio QR code"
-                        width={160}
-                        height={160}
-                        className="block"
+                        className="block h-32 w-32"
                       />
                       <ComicText className="text-xs font-bold mt-1 text-center">
                         Scan to listen

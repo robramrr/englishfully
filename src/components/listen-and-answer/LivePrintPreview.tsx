@@ -39,7 +39,7 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
             const dataUrl = await QRCode.toDataURL(part.audio_url.trim(), {
               errorCorrectionLevel: 'M',
               margin: 0,
-              width: 120,
+              width: 112,
               color: { dark: '#001a48', light: '#ffffff' },
             });
             return [part.id, dataUrl] as const;
@@ -112,7 +112,7 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
                     <img
                       src={part.thumbnail_url}
                       alt=""
-                      className="block max-h-28 comic-border object-cover"
+                      className="block h-28 w-auto comic-border object-cover"
                     />
                     <ComicTitle level={4} className="!text-xl !mb-0 mt-1 text-[var(--comic-primary)]">
                       {part.title || `Part ${partIndex + 1}`}
@@ -129,9 +129,7 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
                     <img
                       src={qrCodes[part.id]}
                       alt="Audio QR code"
-                      width={120}
-                      height={120}
-                      className="block"
+                      className="block h-28 w-28"
                     />
                     <ComicText className="text-xs font-bold mt-1 text-center">
                       Scan to listen
