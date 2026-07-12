@@ -65,6 +65,10 @@ export async function ensureSchema(): Promise<void> {
       `;
       await sql`CREATE INDEX IF NOT EXISTS idx_listen_parts_assignment ON listen_parts(assignment_id, sort_order)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_listen_questions_part ON listen_questions(part_id, sort_order)`;
+      await sql`
+        ALTER TABLE listen_assignments
+        ADD COLUMN IF NOT EXISTS include_student_info_line BOOLEAN NOT NULL DEFAULT false
+      `;
     })();
   }
   await schemaReady;
@@ -79,6 +83,7 @@ function rowToAssignment(row: Record<string, unknown>): ListenAssignment {
     class_name: row.class_name as string,
     due_date: (row.due_date as string | null) ?? null,
     include_answer_key: Boolean(row.include_answer_key),
+    include_student_info_line: Boolean(row.include_student_info_line),
     status: (row.status as 'draft' | 'published') ?? 'draft',
     created_at: new Date(row.created_at as string).toISOString(),
     updated_at: new Date(row.updated_at as string).toISOString(),
@@ -266,6 +271,7 @@ export async function saveAssignment(
       class_name = ${payload.class_name.trim()},
       due_date = ${payload.due_date},
       include_answer_key = ${Boolean(payload.include_answer_key)},
+      include_student_info_line = ${Boolean(payload.include_student_info_line)},
       status = ${payload.status},
       updated_at = NOW()
     WHERE id = ${assignmentId} AND teacher_id = ${teacherId}
@@ -291,6 +297,7 @@ export async function duplicateAssignment(
     class_name: source.class_name,
     due_date: source.due_date,
     include_answer_key: source.include_answer_key,
+    include_student_info_line: source.include_student_info_line,
     status: 'draft',
     parts: source.parts.map((part) => ({
       title: part.title,

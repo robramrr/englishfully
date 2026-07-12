@@ -53,6 +53,7 @@ function buildPayload(
   className: string,
   dueDate: string,
   includeAnswerKey: boolean,
+  includeStudentInfoLine: boolean,
   status: 'draft' | 'published',
   parts: ClientListeningPart[]
 ): SaveAssignmentPayload {
@@ -62,6 +63,7 @@ function buildPayload(
     class_name: className,
     due_date: dueDate || null,
     include_answer_key: includeAnswerKey,
+    include_student_info_line: includeStudentInfoLine,
     status,
     parts: parts.map((part) => ({
       id: part.id,
@@ -97,6 +99,9 @@ export default function AssignmentEditor({
   const [className, setClassName] = useState(initialAssignment.class_name);
   const [dueDate, setDueDate] = useState(initialAssignment.due_date ?? '');
   const [includeAnswerKey, setIncludeAnswerKey] = useState(initialAssignment.include_answer_key);
+  const [includeStudentInfoLine, setIncludeStudentInfoLine] = useState(
+    initialAssignment.include_student_info_line ?? false
+  );
   const [parts, setParts] = useState<ClientListeningPart[]>(() => toClientParts(initialAssignment));
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -112,10 +117,11 @@ export default function AssignmentEditor({
         className,
         dueDate,
         includeAnswerKey,
+        includeStudentInfoLine,
         'draft',
         parts
       ),
-    [teacherName, title, className, dueDate, includeAnswerKey, parts]
+    [teacherName, title, className, dueDate, includeAnswerKey, includeStudentInfoLine, parts]
   );
 
   const saveAssignment = useCallback(
@@ -252,6 +258,7 @@ export default function AssignmentEditor({
     class_name: className,
     due_date: dueDate || null,
     include_answer_key: includeAnswerKey,
+    include_student_info_line: includeStudentInfoLine,
     parts: payload.parts.map((part, partIndex) => ({
       id: part.id || `preview-part-${partIndex}`,
       assignment_id: assignmentId,
@@ -347,6 +354,15 @@ export default function AssignmentEditor({
             onChange={(event) => setIncludeAnswerKey(event.target.checked)}
           />
           Create Answer Key (prints on a separate page)
+        </label>
+
+        <label className="flex items-center gap-2 mt-3 font-bold text-[var(--comic-dark)]">
+          <input
+            type="checkbox"
+            checked={includeStudentInfoLine}
+            onChange={(event) => setIncludeStudentInfoLine(event.target.checked)}
+          />
+          Show Name / Student # / Date line on worksheet
         </label>
       </ComicCard>
 
