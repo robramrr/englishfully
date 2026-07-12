@@ -9,6 +9,7 @@ import TotalTimeDisplay, {
   hasTotalTimeContent,
 } from './TotalTimeDisplay';
 import ScantronAnswerSheet from './ScantronAnswerSheet';
+import PartThumbnailBlock from './PartThumbnailBlock';
 import type { ListenAssignmentWithParts } from '@/lib/listen-and-answer/types';
 import {
   QUESTION_TYPE_LABELS,
@@ -145,23 +146,12 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
           return (
             <section key={part.id} className="mb-6">
               <div className="flex flex-wrap gap-4 items-start mb-4">
-                {part.thumbnail_url.trim() ? (
-                  <div className="shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={part.thumbnail_url}
-                      alt=""
-                      className="block h-28 w-auto comic-border object-cover"
-                    />
-                    <ComicTitle level={4} className="!text-xl !mb-0 mt-1 text-[var(--comic-primary)]">
-                      {part.title || `Part ${partIndex + 1}`}
-                    </ComicTitle>
-                  </div>
-                ) : (
-                  <ComicTitle level={4} className="!text-xl !mb-0 text-[var(--comic-primary)]">
-                    {part.title || `Part ${partIndex + 1}`}
-                  </ComicTitle>
-                )}
+                <PartThumbnailBlock
+                  part={part}
+                  partIndex={partIndex}
+                  imageHeightClass="h-28"
+                  titleComponent="title"
+                />
                 {part.qr_enabled && qrCodes[part.id] ? (
                   <div className="shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}

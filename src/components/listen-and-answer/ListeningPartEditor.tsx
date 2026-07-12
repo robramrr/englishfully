@@ -234,7 +234,7 @@ export default function ListeningPartEditor({
       </div>
 
       {part.thumbnail_url.trim() ? (
-        <div className="mb-6">
+        <div className="mb-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={part.thumbnail_url}
@@ -242,6 +242,48 @@ export default function ListeningPartEditor({
             className="max-h-40 comic-border rounded-lg object-cover"
           />
         </div>
+      ) : null}
+
+      <label className="flex items-center gap-2 mb-3 font-bold text-[var(--comic-dark)]">
+        <input
+          type="checkbox"
+          checked={part.additional_thumbnail_enabled}
+          onChange={(event) =>
+            onChange(part.clientId, {
+              additional_thumbnail_enabled: event.target.checked,
+              additional_thumbnail_url: event.target.checked
+                ? part.additional_thumbnail_url
+                : '',
+            })
+          }
+        />
+        Add additional thumbnail image (prints next to the first thumbnail)
+      </label>
+
+      {part.additional_thumbnail_enabled ? (
+        <>
+          <div className="mb-4">
+            <ComicText className="font-bold mb-1 text-sm">Additional Thumbnail URL</ComicText>
+            <input
+              className="w-full comic-input"
+              value={part.additional_thumbnail_url}
+              onChange={(event) =>
+                onChange(part.clientId, { additional_thumbnail_url: event.target.value })
+              }
+              placeholder="https://..."
+            />
+          </div>
+          {part.additional_thumbnail_url.trim() ? (
+            <div className="mb-6">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={part.additional_thumbnail_url}
+                alt="Additional listening thumbnail preview"
+                className="max-h-40 comic-border rounded-lg object-cover"
+              />
+            </div>
+          ) : null}
+        </>
       ) : null}
 
       <label className="flex items-center gap-2 mb-6 font-bold text-[var(--comic-dark)]">

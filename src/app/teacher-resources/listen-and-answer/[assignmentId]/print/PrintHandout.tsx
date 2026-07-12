@@ -8,6 +8,7 @@ import TotalTimeDisplay, {
   hasTotalTimeContent,
 } from '../../../../../components/listen-and-answer/TotalTimeDisplay';
 import ScantronAnswerSheet from '../../../../../components/listen-and-answer/ScantronAnswerSheet';
+import PartThumbnailBlock from '../../../../../components/listen-and-answer/PartThumbnailBlock';
 import type { ListenAssignmentWithParts } from '@/lib/listen-and-answer/types';
 import {
   QUESTION_TYPE_LABELS,
@@ -193,23 +194,11 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
             return (
               <section key={part.id} className="mb-6">
                 <div className="flex flex-wrap gap-4 items-start mb-4">
-                  {part.thumbnail_url.trim() ? (
-                    <div className="shrink-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={part.thumbnail_url}
-                        alt=""
-                        className="block h-32 w-auto comic-border object-cover"
-                      />
-                      <ComicText className="font-bold text-xl text-[var(--comic-secondary)] mt-1">
-                        {part.title || `Part ${partIndex + 1}`}
-                      </ComicText>
-                    </div>
-                  ) : (
-                    <ComicText className="font-bold text-xl text-[var(--comic-secondary)]">
-                      {part.title || `Part ${partIndex + 1}`}
-                    </ComicText>
-                  )}
+                  <PartThumbnailBlock
+                    part={part}
+                    partIndex={partIndex}
+                    imageHeightClass="h-32"
+                  />
                   {part.qr_enabled && qrCodes[part.id] ? (
                     <div className="shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}

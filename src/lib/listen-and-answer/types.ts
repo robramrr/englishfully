@@ -57,6 +57,8 @@ export interface ListeningPart {
   sort_order: number;
   audio_url: string;
   thumbnail_url: string;
+  additional_thumbnail_enabled: boolean;
+  additional_thumbnail_url: string;
   qr_enabled: boolean;
   transcript: string;
   transcript_source: TranscriptSource;
@@ -120,6 +122,8 @@ export interface SaveListeningPartPayload {
   title: string;
   audio_url: string;
   thumbnail_url: string;
+  additional_thumbnail_enabled: boolean;
+  additional_thumbnail_url: string;
   qr_enabled: boolean;
   transcript: string;
   transcript_source: TranscriptSource;
@@ -156,6 +160,8 @@ export function createEmptyPart(sortOrder: number): SaveListeningPartPayload {
     title: `Part ${sortOrder + 1}`,
     audio_url: '',
     thumbnail_url: '',
+    additional_thumbnail_enabled: false,
+    additional_thumbnail_url: '',
     qr_enabled: false,
     transcript: '',
     transcript_source: 'auto',
@@ -205,6 +211,15 @@ export function createEmptyQuestion(sortOrder: number): SaveQuestionPayload {
 
 export function getPrintableQuestions(part: ListeningPart): ListenQuestion[] {
   return part.questions.filter((q) => q.keep_question);
+}
+
+export function shouldShowAdditionalThumbnail(part: {
+  additional_thumbnail_enabled: boolean;
+  additional_thumbnail_url: string;
+}): boolean {
+  return (
+    part.additional_thumbnail_enabled && part.additional_thumbnail_url.trim().length > 0
+  );
 }
 
 export function formatQuestionLabel(index: number): string {

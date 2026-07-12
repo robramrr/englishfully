@@ -118,6 +118,14 @@ export async function ensureSchema(): Promise<void> {
         ALTER TABLE listen_parts
         ADD COLUMN IF NOT EXISTS time_unit TEXT NOT NULL DEFAULT 'minutes'
       `;
+      await sql`
+        ALTER TABLE listen_parts
+        ADD COLUMN IF NOT EXISTS additional_thumbnail_enabled BOOLEAN NOT NULL DEFAULT false
+      `;
+      await sql`
+        ALTER TABLE listen_parts
+        ADD COLUMN IF NOT EXISTS additional_thumbnail_url TEXT NOT NULL DEFAULT ''
+      `;
     })();
   }
   await schemaReady;
@@ -171,6 +179,8 @@ function rowToPart(row: Record<string, unknown>, questions: ListenQuestion[]): L
     sort_order: row.sort_order as number,
     audio_url: row.audio_url as string,
     thumbnail_url: row.thumbnail_url as string,
+    additional_thumbnail_enabled: Boolean(row.additional_thumbnail_enabled),
+    additional_thumbnail_url: (row.additional_thumbnail_url as string) ?? '',
     qr_enabled: Boolean(row.qr_enabled),
     transcript: row.transcript as string,
     transcript_source: (row.transcript_source as TranscriptSource) ?? 'auto',
@@ -271,6 +281,7 @@ async function replaceAssignmentParts(
     await sql`
       INSERT INTO listen_parts (
         id, assignment_id, title, sort_order, audio_url, thumbnail_url,
+        additional_thumbnail_enabled, additional_thumbnail_url,
         qr_enabled, transcript, transcript_source, question_framework, cefr_levels,
         instructions, total_questions, time_amount, time_unit
       )
@@ -281,6 +292,8 @@ async function replaceAssignmentParts(
         ${partIndex},
         ${part.audio_url.trim()},
         ${part.thumbnail_url.trim()},
+        ${Boolean(part.additional_thumbnail_enabled)},
+        ${part.additional_thumbnail_url.trim()},
         ${Boolean(part.qr_enabled)},
         ${part.transcript},
         ${part.transcript_source},
@@ -381,6 +394,8 @@ export async function duplicateAssignment(
       title: part.title,
       audio_url: part.audio_url,
       thumbnail_url: part.thumbnail_url,
+      additional_thumbnail_enabled: part.additional_thumbnail_enabled,
+      additional_thumbnail_url: part.additional_thumbnail_url,
       qr_enabled: part.qr_enabled,
       transcript: part.transcript,
       transcript_source: part.transcript_source,
