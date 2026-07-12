@@ -215,7 +215,7 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                   {printableQuestions.map((question, questionIndex) => (
                     <li
                       key={question.id}
-                      className="print-question-block border-b-4 border-[var(--comic-black)] pb-4 space-y-2"
+                      className="print-question-block space-y-2"
                     >
                       <ComicText className="font-bold text-base leading-relaxed">
                         {formatQuestionLabel(questionIndex)}. {question.question_text}
@@ -246,6 +246,7 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                       ) : (
                         <div className="border-b-4 border-[var(--comic-black)] h-10" />
                       )}
+                      <ListenMetaDivider className="mt-3 mb-4" />
                     </li>
                   ))}
                 </ol>

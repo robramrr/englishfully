@@ -180,7 +180,7 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
                 {printableQuestions.map((question, questionIndex) => (
                   <li
                     key={question.id}
-                    className="print-question-block border-b-4 border-[var(--comic-black)] pb-4 space-y-2"
+                    className="print-question-block space-y-2"
                   >
                     <ComicText className="font-bold text-base">
                       {formatQuestionLabel(questionIndex)}. {question.question_text}
@@ -211,6 +211,7 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
                     ) : (
                       <div className="border-b-4 border-[var(--comic-black)] h-8" />
                     )}
+                    <ListenMetaDivider className="mt-3 mb-4" />
                   </li>
                 ))}
               </ol>

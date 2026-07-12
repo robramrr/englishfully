@@ -9,8 +9,8 @@ interface TotalTimeDisplayProps {
   className?: string;
 }
 
-export function ListenMetaDivider() {
-  return <hr className="border-0 border-t my-1" style={{ borderColor: '#cccccc' }} />;
+export function ListenMetaDivider({ className = 'my-1' }: { className?: string }) {
+  return <hr className={`border-0 border-t ${className}`} style={{ borderColor: '#cccccc' }} />;
 }
 
 export function hasTotalTimeContent(
@@ -25,21 +25,21 @@ export default function TotalTimeDisplay({
   totalQuestions,
   timeAmount,
   timeUnit,
-  className = 'font-bold mb-4',
+  className = 'font-bold',
 }: TotalTimeDisplayProps) {
   const totalLine = formatTotalQuestionsLine(totalQuestions);
   const timeLine = formatTimeLine(timeAmount, timeUnit);
   if (!totalLine && !timeLine) return null;
 
   return (
-    <>
-      <ListenMetaDivider />
+    <div className="mb-4">
       <ComicText className={className}>
         <span className="inline-flex flex-wrap gap-x-4 gap-y-1">
           {totalLine ? <span>{totalLine}</span> : null}
           {timeLine ? <span>{timeLine}</span> : null}
         </span>
       </ComicText>
-    </>
+      <ListenMetaDivider className="mt-1 mb-0" />
+    </div>
   );
 }
