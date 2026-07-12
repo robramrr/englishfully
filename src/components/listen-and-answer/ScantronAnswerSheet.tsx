@@ -33,7 +33,6 @@ function formatDueDate(value: string | null): string {
 
 interface ScantronGridProps {
   rows: ScantronQuestionRow[];
-  maxBubbleCount: number;
   columnLetters: string[];
   gridKey: string;
   answers: ScantronAnswers;
@@ -43,7 +42,6 @@ interface ScantronGridProps {
 
 function ScantronGrid({
   rows,
-  maxBubbleCount,
   columnLetters,
   gridKey,
   answers,
@@ -51,19 +49,18 @@ function ScantronGrid({
   onSelectAnswer,
 }: ScantronGridProps) {
   return (
-    <div
-      className="scantron-grid"
-      style={{ ['--scantron-columns' as string]: String(maxBubbleCount) }}
-    >
-      <div />
-      {columnLetters.map((letter) => (
-        <div key={`header-${gridKey}-${letter}`} className="scantron-grid-header">
-          {letter}
-        </div>
-      ))}
+    <div className="scantron-grid">
+      <div className="scantron-answer-row scantron-answer-header">
+        <div className="scantron-question-label" />
+        {columnLetters.map((letter) => (
+          <div key={`header-${gridKey}-${letter}`} className="scantron-grid-header">
+            {letter}
+          </div>
+        ))}
+      </div>
 
       {rows.map((row) => (
-        <div key={row.question.id} className="scantron-grid-row">
+        <div key={row.question.id} className="scantron-answer-row">
           <div className="scantron-question-label">
             {formatQuestionLabel(row.questionIndex)}
           </div>
@@ -72,7 +69,7 @@ function ScantronGrid({
             const isSelected = answers[row.question.id] === letter;
 
             if (!isActive) {
-              return <div key={`${row.question.id}-${letter}`} />;
+              return <div key={`${row.question.id}-${letter}`} className="scantron-bubble-spacer" />;
             }
 
             return (
@@ -140,59 +137,89 @@ export default function ScantronAnswerSheet({
     String.fromCharCode(65 + index)
   );
 
+  const leftSections = sections.slice(0, 2);
+  const rightSections = sections.slice(2);
+  const useTwoColumnLayout = rightSections.length > 0;
+
+  function renderPartSection(section: (typeof sections)[number]) {
+    return (
+      <div key={`scantron-${section.part.id}`} className="scantron-part-block">
+        {sections.length > 1 ? (
+          <ComicText className="text-base font-semibold text-[var(--comic-secondary)] mb-2">
+            {section.part.title || `Part ${section.partIndex + 1}`}
+          </ComicText>
+        ) : null}
+        <ScantronGrid
+          rows={section.rows}
+          columnLetters={columnLetters}
+          gridKey={section.part.id}
+          answers={answers}
+          interactive={interactive}
+          onSelectAnswer={selectAnswer}
+        />
+      </div>
+    );
+  }
+
   return (
     <section className={`scantron-answer-sheet ${pageClassName}`.trim()}>
-      <style jsx>{`
+      <style jsx global>{`
         .scantron-answer-sheet {
           color: var(--comic-dark);
         }
-        .scantron-page-columns {
+        .scantron-answer-sheet .scantron-page-columns {
           display: grid;
-          grid-template-columns: minmax(0, max-content) minmax(0, max-content);
+          grid-template-columns: max-content max-content;
           gap: 2rem 3rem;
           align-items: start;
         }
-        .scantron-page-column {
-          min-width: 0;
+        .scantron-answer-sheet .scantron-page-column {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
         }
-        .scantron-part-block {
+        .scantron-answer-sheet .scantron-part-block {
           break-inside: avoid;
           page-break-inside: avoid;
         }
-        .scantron-grid {
-          display: grid;
-          grid-template-columns: 6.25rem repeat(var(--scantron-columns), 1.25rem);
-          column-gap: 0.125rem;
-          row-gap: 0.2rem;
-          align-items: center;
+        .scantron-answer-sheet .scantron-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 0.2rem;
           width: max-content;
-          max-width: 100%;
         }
-        .scantron-grid-header {
+        .scantron-answer-sheet .scantron-answer-row {
+          display: grid;
+          grid-template-columns: 6.25rem repeat(var(--scantron-columns, 4), 1.25rem);
+          column-gap: 0.125rem;
+          align-items: center;
+        }
+        .scantron-answer-sheet .scantron-answer-header {
+          margin-bottom: 0.1rem;
+        }
+        .scantron-answer-sheet .scantron-grid-header {
           font-size: 0.7rem;
           font-weight: 700;
           text-align: center;
           color: var(--comic-secondary);
           line-height: 1;
         }
-        .scantron-grid-row {
-          display: contents;
-        }
-        .scantron-question-label {
+        .scantron-answer-sheet .scantron-question-label {
           font-size: 0.8125rem;
           font-weight: 600;
           white-space: nowrap;
           padding-right: 0.25rem;
         }
-        .scantron-bubble-cell {
+        .scantron-answer-sheet .scantron-bubble-cell,
+        .scantron-answer-sheet .scantron-bubble-spacer {
+          width: 1.25rem;
+          height: 1.25rem;
           display: flex;
           justify-content: center;
           align-items: center;
-          width: 1.25rem;
         }
-        .scantron-bubble-button {
+        .scantron-answer-sheet .scantron-bubble-button {
           display: inline-flex;
-          flex-direction: column;
           align-items: center;
           justify-content: center;
           border: none;
@@ -200,21 +227,21 @@ export default function ScantronAnswerSheet({
           padding: 0;
           margin: 0;
           cursor: default;
-          line-height: 0;
         }
-        .scantron-bubble-button.interactive {
+        .scantron-answer-sheet .scantron-bubble-button.interactive {
           cursor: pointer;
         }
-        .scantron-bubble {
+        .scantron-answer-sheet .scantron-bubble {
+          display: block;
           width: 0.9rem;
           height: 0.9rem;
           border: 1.5px solid var(--comic-black);
           border-radius: 50%;
           background: #fff;
-          transition: background-color 0.15s ease;
+          box-sizing: border-box;
           flex-shrink: 0;
         }
-        .scantron-bubble.selected {
+        .scantron-answer-sheet .scantron-bubble.selected {
           background: var(--comic-black);
         }
         @media print {
@@ -222,108 +249,78 @@ export default function ScantronAnswerSheet({
             break-inside: avoid;
             page-break-inside: avoid;
           }
-          .scantron-page-columns {
+          .scantron-answer-sheet .scantron-page-columns {
             gap: 1.25rem 2.5rem;
           }
-          .scantron-grid {
-            column-gap: 0.1rem;
-            row-gap: 0.12rem;
-          }
-          .scantron-bubble {
+          .scantron-answer-sheet .scantron-bubble {
             width: 0.8rem;
             height: 0.8rem;
             border-width: 1px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
-          .scantron-bubble.selected {
+          .scantron-answer-sheet .scantron-bubble.selected {
             background: #fff !important;
           }
         }
       `}</style>
 
-      <div className="grid grid-cols-3 items-center gap-3 mb-6 border-b-4 border-[var(--comic-black)] pb-3 print-part-header-block">
-        <ComicText className="font-bold text-xl text-left">
-          {assignment.teacher_name || 'Teacher'}
-        </ComicText>
-        <ComicText className="font-bold text-xl text-center">
-          {assignment.title || 'Listening Assignment'}
-        </ComicText>
-        <ComicText className="font-bold text-xl text-right">
-          <span className="inline-flex flex-wrap justify-end gap-x-4 gap-y-1">
-            <span>Class: {assignment.class_name || '—'}</span>
-            {assignment.due_date ? (
-              <span>Due: {formatDueDate(assignment.due_date)}</span>
-            ) : null}
-            {assignment.points.trim() ? (
-              <span>Points: {assignment.points.trim()}</span>
-            ) : null}
-          </span>
-        </ComicText>
-      </div>
-
-      <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 items-end font-bold mb-4 text-center print-part-header-block">
-        <span>
-          Name:{' '}
-          <span className="inline-block border-b-2 border-[var(--comic-black)] w-40 align-bottom" />
-        </span>
-        <span>
-          Student # / ID:{' '}
-          <span className="inline-block border-b-2 border-[var(--comic-black)] w-6 align-bottom" /> /{' '}
-          <span className="inline-block border-b-2 border-[var(--comic-black)] w-6 align-bottom" />
-        </span>
-        <span>
-          Date:{' '}
-          <span className="inline-block border-b-2 border-[var(--comic-black)] w-24 align-bottom" />
-        </span>
-      </div>
-
-      <ComicTitle level={3} className="mb-1 text-[var(--comic-primary)]">
-        Answer Sheet
-      </ComicTitle>
-      <p className="text-sm text-[var(--comic-dark)] mb-4">
-        Fill in one bubble per question.
-      </p>
-
-      {(() => {
-        const leftSections = sections.slice(0, 2);
-        const rightSections = sections.slice(2);
-        const useTwoColumnLayout = rightSections.length > 0;
-
-        function renderPartSection(section: (typeof sections)[number]) {
-          return (
-            <div key={`scantron-${section.part.id}`} className="scantron-part-block mb-4">
-              {sections.length > 1 ? (
-                <ComicText className="text-base font-semibold text-[var(--comic-secondary)] mb-2">
-                  {section.part.title || `Part ${section.partIndex + 1}`}
-                </ComicText>
+      <div
+        className="scantron-answer-sheet-layout"
+        style={{ ['--scantron-columns' as string]: String(maxBubbleCount) }}
+      >
+        <div className="grid grid-cols-3 items-center gap-3 mb-6 border-b-4 border-[var(--comic-black)] pb-3 print-part-header-block">
+          <ComicText className="font-bold text-xl text-left">
+            {assignment.teacher_name || 'Teacher'}
+          </ComicText>
+          <ComicText className="font-bold text-xl text-center">
+            {assignment.title || 'Listening Assignment'}
+          </ComicText>
+          <ComicText className="font-bold text-xl text-right">
+            <span className="inline-flex flex-wrap justify-end gap-x-4 gap-y-1">
+              <span>Class: {assignment.class_name || '—'}</span>
+              {assignment.due_date ? (
+                <span>Due: {formatDueDate(assignment.due_date)}</span>
               ) : null}
-              <ScantronGrid
-                rows={section.rows}
-                maxBubbleCount={maxBubbleCount}
-                columnLetters={columnLetters}
-                gridKey={section.part.id}
-                answers={answers}
-                interactive={interactive}
-                onSelectAnswer={selectAnswer}
-              />
-            </div>
-          );
-        }
+              {assignment.points.trim() ? (
+                <span>Points: {assignment.points.trim()}</span>
+              ) : null}
+            </span>
+          </ComicText>
+        </div>
 
-        if (!useTwoColumnLayout) {
-          return <div className="scantron-single-column">{leftSections.map(renderPartSection)}</div>;
-        }
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 items-end font-bold mb-4 text-center print-part-header-block">
+          <span>
+            Name:{' '}
+            <span className="inline-block border-b-2 border-[var(--comic-black)] w-40 align-bottom" />
+          </span>
+          <span>
+            Student # / ID:{' '}
+            <span className="inline-block border-b-2 border-[var(--comic-black)] w-6 align-bottom" /> /{' '}
+            <span className="inline-block border-b-2 border-[var(--comic-black)] w-6 align-bottom" />
+          </span>
+          <span>
+            Date:{' '}
+            <span className="inline-block border-b-2 border-[var(--comic-black)] w-24 align-bottom" />
+          </span>
+        </div>
 
-        return (
+        <ComicTitle level={3} className="mb-1 text-[var(--comic-primary)]">
+          Answer Sheet
+        </ComicTitle>
+        <p className="text-sm text-[var(--comic-dark)] mb-4">
+          Fill in one bubble per question.
+        </p>
+
+        {useTwoColumnLayout ? (
           <div className="scantron-page-columns">
-            <div className="scantron-page-column">
-              {leftSections.map(renderPartSection)}
-            </div>
-            <div className="scantron-page-column">
-              {rightSections.map(renderPartSection)}
-            </div>
+            <div className="scantron-page-column">{leftSections.map(renderPartSection)}</div>
+            <div className="scantron-page-column">{rightSections.map(renderPartSection)}</div>
           </div>
-        );
-      })()}
+        ) : (
+          <div className="scantron-single-column">{leftSections.map(renderPartSection)}</div>
+        )}
+      </div>
     </section>
   );
 }
