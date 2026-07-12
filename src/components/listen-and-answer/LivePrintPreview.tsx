@@ -96,8 +96,8 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
               </span>
             </div>
           ) : null}
-          <ComicTitle level={4} className="!text-xl !mb-0 py-2 text-[var(--comic-primary)]">
-            👂 Listen &amp; Answer
+          <ComicTitle level={6} className="!text-xl text-[var(--comic-primary)] py-2">
+            🔊 Listen &amp; Answer
           </ComicTitle>
         </div>
 
