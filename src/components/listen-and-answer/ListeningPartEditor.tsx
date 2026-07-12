@@ -160,6 +160,7 @@ export default function ListeningPartEditor({
         keep_question: true,
         is_ai_generated: true,
         ai_part: aiPart,
+        show_question_type: false,
         clientId: crypto.randomUUID(),
       }));
 

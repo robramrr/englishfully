@@ -87,7 +87,19 @@ export default function QuestionEditor({
       ) : null}
 
       <div>
-        <ComicText className="font-bold mb-1 text-sm">Question Type</ComicText>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
+          <ComicText className="font-bold text-sm">Question Type</ComicText>
+          <label className="flex items-center gap-2 text-sm font-bold text-[var(--comic-dark)]">
+            <input
+              type="checkbox"
+              checked={question.show_question_type}
+              onChange={(event) =>
+                onChange(question.clientId, { show_question_type: event.target.checked })
+              }
+            />
+            Show type on worksheet
+          </label>
+        </div>
         <select
           className="w-full comic-input"
           value={question.question_type}

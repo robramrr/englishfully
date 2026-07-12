@@ -44,6 +44,7 @@ function toClientParts(assignment: ListenAssignmentWithParts): ClientListeningPa
       keep_question: question.keep_question,
       is_ai_generated: question.is_ai_generated,
       ai_part: question.ai_part,
+      show_question_type: question.show_question_type ?? false,
     })),
   }));
 }
@@ -90,6 +91,7 @@ function buildPayload(
         keep_question: question.keep_question,
         is_ai_generated: question.is_ai_generated,
         ai_part: question.ai_part,
+        show_question_type: question.show_question_type,
       })),
     })),
   };
@@ -295,6 +297,7 @@ export default function AssignmentEditor({
         keep_question: question.keep_question,
         is_ai_generated: question.is_ai_generated,
         ai_part: question.ai_part,
+        show_question_type: question.show_question_type,
       })),
     })),
   };

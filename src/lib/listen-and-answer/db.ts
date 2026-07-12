@@ -81,6 +81,10 @@ export async function ensureSchema(): Promise<void> {
         ALTER TABLE listen_parts
         ADD COLUMN IF NOT EXISTS instructions TEXT NOT NULL DEFAULT ''
       `;
+      await sql`
+        ALTER TABLE listen_questions
+        ADD COLUMN IF NOT EXISTS show_question_type BOOLEAN NOT NULL DEFAULT false
+      `;
     })();
   }
   await schemaReady;
@@ -117,6 +121,7 @@ function rowToQuestion(row: Record<string, unknown>): ListenQuestion {
     keep_question: Boolean(row.keep_question),
     is_ai_generated: Boolean(row.is_ai_generated),
     ai_part: (row.ai_part as AiQuestionPart | null) ?? null,
+    show_question_type: Boolean(row.show_question_type),
   };
 }
 
@@ -250,7 +255,7 @@ async function replaceAssignmentParts(
       await sql`
         INSERT INTO listen_questions (
           id, part_id, sort_order, question_type, question_text, choices,
-          correct_answer, keep_question, is_ai_generated, ai_part
+          correct_answer, keep_question, is_ai_generated, ai_part, show_question_type
         )
         VALUES (
           ${questionId},
@@ -262,7 +267,8 @@ async function replaceAssignmentParts(
           ${question.correct_answer},
           ${Boolean(question.keep_question)},
           ${Boolean(question.is_ai_generated)},
-          ${question.ai_part}
+          ${question.ai_part},
+          ${Boolean(question.show_question_type)}
         )
       `;
     }
@@ -337,6 +343,7 @@ export async function duplicateAssignment(
         keep_question: q.keep_question,
         is_ai_generated: q.is_ai_generated,
         ai_part: q.ai_part,
+        show_question_type: q.show_question_type,
       })),
     })),
   };

@@ -191,9 +191,11 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                       <ComicText className="font-bold text-base leading-relaxed">
                         {formatQuestionLabel(questionIndex)}. {question.question_text}
                       </ComicText>
-                      <ComicText className="text-xs text-[var(--comic-secondary)] font-bold">
-                        {QUESTION_TYPE_LABELS[question.question_type]}
-                      </ComicText>
+                      {question.show_question_type ? (
+                        <ComicText className="text-xs text-[var(--comic-secondary)] font-bold">
+                          {QUESTION_TYPE_LABELS[question.question_type]}
+                        </ComicText>
+                      ) : null}
                       {question.choices.length > 0 ? (
                         question.question_type === 'multiple_choice' ? (
                           <div className="space-y-1 text-sm font-bold">

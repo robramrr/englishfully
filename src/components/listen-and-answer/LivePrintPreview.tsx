@@ -156,9 +156,11 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
                     <ComicText className="font-bold text-base">
                       {formatQuestionLabel(questionIndex)}. {question.question_text}
                     </ComicText>
-                    <ComicText className="text-xs text-[var(--comic-secondary)]">
-                      {QUESTION_TYPE_LABELS[question.question_type]}
-                    </ComicText>
+                    {question.show_question_type ? (
+                      <ComicText className="text-xs text-[var(--comic-secondary)]">
+                        {QUESTION_TYPE_LABELS[question.question_type]}
+                      </ComicText>
+                    ) : null}
                     {question.choices.length > 0 ? (
                       question.question_type === 'multiple_choice' ? (
                         <div className="space-y-1 text-sm">

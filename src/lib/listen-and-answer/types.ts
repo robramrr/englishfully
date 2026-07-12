@@ -41,6 +41,7 @@ export interface ListenQuestion {
   keep_question: boolean;
   is_ai_generated: boolean;
   ai_part: AiQuestionPart | null;
+  show_question_type: boolean;
 }
 
 export interface ListeningPart {
@@ -120,6 +121,7 @@ export interface SaveQuestionPayload {
   keep_question: boolean;
   is_ai_generated: boolean;
   ai_part: AiQuestionPart | null;
+  show_question_type: boolean;
 }
 
 export interface GeneratedQuestionDraft {
@@ -153,6 +155,7 @@ export function createEmptyQuestion(sortOrder: number): SaveQuestionPayload {
     keep_question: true,
     is_ai_generated: false,
     ai_part: null,
+    show_question_type: false,
   };
 }
 
