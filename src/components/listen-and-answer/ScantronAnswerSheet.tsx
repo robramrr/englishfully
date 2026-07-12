@@ -74,49 +74,58 @@ export default function ScantronAnswerSheet({
         }
         .scantron-grid {
           display: grid;
-          grid-template-columns: minmax(7rem, 1fr) repeat(var(--scantron-columns), minmax(2.5rem, 1fr));
-          gap: 0.35rem 0.5rem;
+          grid-template-columns: 6.25rem repeat(var(--scantron-columns), 1.25rem);
+          column-gap: 0.125rem;
+          row-gap: 0.2rem;
           align-items: center;
+          width: max-content;
+          max-width: 100%;
         }
         .scantron-grid-header {
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           font-weight: 700;
           text-align: center;
           color: var(--comic-secondary);
+          line-height: 1;
         }
         .scantron-grid-row {
           display: contents;
         }
         .scantron-question-label {
-          font-size: 0.875rem;
+          font-size: 0.8125rem;
           font-weight: 600;
           white-space: nowrap;
+          padding-right: 0.25rem;
         }
         .scantron-bubble-cell {
           display: flex;
           justify-content: center;
           align-items: center;
+          width: 1.25rem;
         }
         .scantron-bubble-button {
           display: inline-flex;
           flex-direction: column;
           align-items: center;
-          gap: 0.15rem;
+          justify-content: center;
           border: none;
           background: transparent;
-          padding: 0.15rem;
+          padding: 0;
+          margin: 0;
           cursor: default;
+          line-height: 0;
         }
         .scantron-bubble-button.interactive {
           cursor: pointer;
         }
         .scantron-bubble {
-          width: 1.35rem;
-          height: 1.35rem;
-          border: 2px solid var(--comic-black);
+          width: 0.9rem;
+          height: 0.9rem;
+          border: 1.5px solid var(--comic-black);
           border-radius: 50%;
           background: #fff;
           transition: background-color 0.15s ease;
+          flex-shrink: 0;
         }
         .scantron-bubble.selected {
           background: var(--comic-black);
@@ -128,10 +137,14 @@ export default function ScantronAnswerSheet({
           line-height: 1;
         }
         @media print {
+          .scantron-grid {
+            column-gap: 0.1rem;
+            row-gap: 0.15rem;
+          }
           .scantron-bubble {
-            width: 1.15rem;
-            height: 1.15rem;
-            border-width: 1.5px;
+            width: 0.8rem;
+            height: 0.8rem;
+            border-width: 1px;
           }
           .scantron-bubble.selected {
             background: #fff !important;
