@@ -65,7 +65,20 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
         Live Print Preview
       </ComicTitle>
 
-      <div className="print-page min-w-[720px] bg-white text-[var(--comic-dark)] border-4 border-[var(--comic-black)] p-8">
+      <div className="listen-and-answer-page print-page min-w-[720px] bg-white text-[var(--comic-dark)] border-4 border-[var(--comic-black)] p-8">
+        <style jsx global>{`
+          .listen-and-answer-page .print-question-block .listen-print-choices,
+          .listen-and-answer-page .print-question-block .listen-print-choices li {
+            font-size: 0.875rem;
+            font-weight: 400;
+            line-height: 1.625;
+          }
+          .listen-and-answer-page .print-question-block .listen-print-question-type {
+            font-size: 0.75rem;
+            font-weight: 400;
+            line-height: 1.5;
+          }
+        `}</style>
         <div className="grid grid-cols-3 items-center gap-3 mb-6 border-b-4 border-[var(--comic-black)] pb-4">
           <ComicText className="font-bold text-lg text-left">{assignment.teacher_name || 'Teacher'}</ComicText>
           <ComicText className="font-bold text-lg text-center">{assignment.title || 'Listening Assignment'}</ComicText>
@@ -189,13 +202,13 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
                       {formatQuestionLabel(questionIndex)}. {question.question_text}
                     </p>
                     {question.show_question_type ? (
-                      <p className="text-xs text-[var(--comic-secondary)]">
+                      <p className="listen-print-question-type text-xs text-[var(--comic-secondary)]">
                         {QUESTION_TYPE_LABELS[question.question_type]}
                       </p>
                     ) : null}
                     {question.choices.length > 0 ? (
                       question.question_type === 'multiple_choice' ? (
-                        <div className="space-y-0.5 text-sm font-normal leading-relaxed pl-1 text-[var(--comic-dark)]">
+                        <div className="listen-print-choices space-y-0.5 text-sm font-normal leading-relaxed pl-1 text-[var(--comic-dark)]">
                           {question.choices
                             .filter((choice) => choice.trim())
                             .map((choice) => (
@@ -203,7 +216,7 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
                             ))}
                         </div>
                       ) : (
-                        <ul className="list-disc pl-5 space-y-0.5 text-sm font-normal leading-relaxed text-[var(--comic-dark)]">
+                        <ul className="listen-print-choices list-disc pl-5 space-y-0.5 text-sm font-normal leading-relaxed text-[var(--comic-dark)]">
                           {question.choices
                             .filter((choice) => choice.trim())
                             .map((choice) => (

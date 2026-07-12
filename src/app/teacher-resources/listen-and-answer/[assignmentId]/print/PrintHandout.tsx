@@ -82,6 +82,17 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
             break-inside: avoid;
             page-break-inside: avoid;
           }
+          .listen-and-answer-page .print-question-block .listen-print-choices,
+          .listen-and-answer-page .print-question-block .listen-print-choices li {
+            font-size: 0.875rem;
+            font-weight: 400;
+            line-height: 1.625;
+          }
+          .listen-and-answer-page .print-question-block .listen-print-question-type {
+            font-size: 0.75rem;
+            font-weight: 400;
+            line-height: 1.5;
+          }
         }
       `}</style>
 
@@ -224,13 +235,13 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                         {formatQuestionLabel(questionIndex)}. {question.question_text}
                       </p>
                       {question.show_question_type ? (
-                        <p className="text-xs text-[var(--comic-secondary)]">
+                        <p className="listen-print-question-type text-xs text-[var(--comic-secondary)]">
                           {QUESTION_TYPE_LABELS[question.question_type]}
                         </p>
                       ) : null}
                       {question.choices.length > 0 ? (
                         question.question_type === 'multiple_choice' ? (
-                          <div className="space-y-0.5 text-sm font-normal leading-relaxed pl-1 text-[var(--comic-dark)]">
+                          <div className="listen-print-choices space-y-0.5 text-sm font-normal leading-relaxed pl-1 text-[var(--comic-dark)]">
                             {question.choices
                               .filter((choice) => choice.trim())
                               .map((choice) => (
@@ -238,7 +249,7 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                               ))}
                           </div>
                         ) : (
-                          <ul className="list-disc pl-5 space-y-0.5 text-sm font-normal leading-relaxed text-[var(--comic-dark)]">
+                          <ul className="listen-print-choices list-disc pl-5 space-y-0.5 text-sm font-normal leading-relaxed text-[var(--comic-dark)]">
                             {question.choices
                               .filter((choice) => choice.trim())
                               .map((choice) => (
