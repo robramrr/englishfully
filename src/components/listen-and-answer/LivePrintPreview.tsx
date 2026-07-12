@@ -22,7 +22,6 @@ function formatDueDate(value: string | null): string {
   return date.toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
-    year: 'numeric',
   });
 }
 
@@ -67,12 +66,17 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
           <ComicText className="font-bold text-lg text-left">{assignment.teacher_name || 'Teacher'}</ComicText>
           <ComicText className="font-bold text-lg text-center">{assignment.title || 'Listening Assignment'}</ComicText>
           <ComicText className="font-bold text-lg text-right">
-            Class: {assignment.class_name || '—'}
+            <span className="inline-flex flex-wrap justify-end gap-x-4 gap-y-1">
+              <span>Class: {assignment.class_name || '—'}</span>
+              {assignment.due_date ? (
+                <span>Due: {formatDueDate(assignment.due_date)}</span>
+              ) : null}
+            </span>
           </ComicText>
         </div>
 
-        <div className="mb-4 space-y-2">
-          <div className="flex flex-wrap gap-6 items-end font-bold text-lg">
+        <div className="mb-4">
+          <div className="flex flex-wrap gap-6 items-end font-bold mb-4">
             <span>
               Nickname: <span className="inline-block border-b-2 border-[var(--comic-black)] w-40 align-bottom" />
             </span>
@@ -86,9 +90,6 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
               <span className="inline-block border-b-2 border-[var(--comic-black)] w-10 align-bottom" />
             </span>
           </div>
-          {assignment.due_date ? (
-            <ComicText className="font-bold">Due: {formatDueDate(assignment.due_date)}</ComicText>
-          ) : null}
           <ComicTitle level={4} className="!text-xl !mb-0 text-[var(--comic-primary)]">
             👂 Listen &amp; Answer
           </ComicTitle>

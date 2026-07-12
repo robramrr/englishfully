@@ -21,7 +21,6 @@ function formatDueDate(value: string | null): string {
   return date.toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
-    year: 'numeric',
   });
 }
 
@@ -102,12 +101,17 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
               {assignment.title || 'Listening Assignment'}
             </ComicText>
             <ComicText className="font-bold text-xl text-right">
-              Class: {assignment.class_name || '—'}
+              <span className="inline-flex flex-wrap justify-end gap-x-4 gap-y-1">
+                <span>Class: {assignment.class_name || '—'}</span>
+                {assignment.due_date ? (
+                  <span>Due: {formatDueDate(assignment.due_date)}</span>
+                ) : null}
+              </span>
             </ComicText>
           </div>
 
           <section className="mb-4">
-            <div className="flex flex-wrap gap-6 items-end font-bold text-lg mb-4">
+            <div className="flex flex-wrap gap-6 items-end font-bold mb-4">
               <span>
                 Nickname:{' '}
                 <span className="inline-block border-b-2 border-[var(--comic-black)] w-40 align-bottom" />
@@ -124,9 +128,6 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                 <span className="inline-block border-b-2 border-[var(--comic-black)] w-10 align-bottom" />
               </span>
             </div>
-            {assignment.due_date ? (
-              <ComicText className="font-bold mb-3">Due: {formatDueDate(assignment.due_date)}</ComicText>
-            ) : null}
             <ComicTitle level={6} className="!text-xl !mb-0 text-[var(--comic-primary)]">
               👂 Listen &amp; Answer
             </ComicTitle>
