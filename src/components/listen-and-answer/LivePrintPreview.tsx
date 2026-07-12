@@ -118,9 +118,9 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
           </ComicTitle>
           {assignment.instructions.trim() ? (
             <>
-              <ComicText className="font-bold mb-1">
+              <p className="text-sm font-bold leading-relaxed text-[var(--comic-dark)] mb-1">
                 Instructions: {assignment.instructions.trim()}
-              </ComicText>
+              </p>
               {!hasTotalTimeContent(
                 assignment.total_questions,
                 assignment.time_amount,

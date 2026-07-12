@@ -1,4 +1,3 @@
-import ComicText from '../ComicText';
 import type { TimeUnit } from '@/lib/listen-and-answer/types';
 import { formatTimeLine, formatTotalQuestionsLine } from '@/lib/listen-and-answer/types';
 
@@ -35,7 +34,7 @@ export default function TotalTimeDisplay({
 
   const textClassName =
     className ??
-    (variant === 'part' ? 'text-sm leading-relaxed' : 'font-bold');
+    (variant === 'part' ? 'text-sm leading-relaxed' : 'text-sm font-bold leading-relaxed');
 
   const content = (
     <span className="inline-flex flex-wrap gap-x-4 gap-y-1">
@@ -49,7 +48,7 @@ export default function TotalTimeDisplay({
       {variant === 'part' ? (
         <p className="text-sm leading-relaxed text-[var(--comic-dark)]">{content}</p>
       ) : (
-        <ComicText className={textClassName}>{content}</ComicText>
+        <p className={`${textClassName} text-[var(--comic-dark)]`}>{content}</p>
       )}
       <ListenMetaDivider className="mt-1 mb-0" />
     </div>

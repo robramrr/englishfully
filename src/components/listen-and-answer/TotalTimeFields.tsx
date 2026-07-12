@@ -11,7 +11,6 @@ interface TotalTimeFieldsProps {
   onTotalQuestionsChange: (value: string) => void;
   onTimeAmountChange: (value: string) => void;
   onTimeUnitChange: (value: TimeUnit) => void;
-  compact?: boolean;
 }
 
 export default function TotalTimeFields({
@@ -21,23 +20,13 @@ export default function TotalTimeFields({
   onTotalQuestionsChange,
   onTimeAmountChange,
   onTimeUnitChange,
-  compact = false,
 }: TotalTimeFieldsProps) {
-  const labelClassName = compact
-    ? 'block font-bold mb-1 text-xs text-[var(--comic-dark)]'
-    : 'font-bold mb-1 text-sm';
-  const fieldClassName = compact ? 'text-sm' : '';
-
   return (
     <div className="grid md:grid-cols-2 gap-4">
       <div>
-        {compact ? (
-          <label className={labelClassName}>Total Questions</label>
-        ) : (
-          <ComicText className={labelClassName}>Total Questions</ComicText>
-        )}
+        <ComicText className="font-bold mb-1 text-sm">Total Questions</ComicText>
         <input
-          className={`w-full comic-input ${fieldClassName}`}
+          className="w-full comic-input"
           value={totalQuestions}
           onChange={(event) => onTotalQuestionsChange(event.target.value)}
           placeholder="10"
@@ -45,21 +34,17 @@ export default function TotalTimeFields({
         />
       </div>
       <div>
-        {compact ? (
-          <label className={labelClassName}>Time</label>
-        ) : (
-          <ComicText className={labelClassName}>Time</ComicText>
-        )}
+        <ComicText className="font-bold mb-1 text-sm">Time</ComicText>
         <div className="flex gap-2">
           <input
-            className={`w-full comic-input ${fieldClassName}`}
+            className="w-full comic-input"
             value={timeAmount}
             onChange={(event) => onTimeAmountChange(event.target.value)}
             placeholder="30"
             inputMode="numeric"
           />
           <select
-            className={`comic-input shrink-0 ${fieldClassName}`}
+            className="comic-input shrink-0"
             value={timeUnit}
             onChange={(event) => onTimeUnitChange(event.target.value as TimeUnit)}
           >
