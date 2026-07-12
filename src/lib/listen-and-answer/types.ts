@@ -10,6 +10,10 @@ export type TranscriptSource = 'auto' | 'manual';
 
 export type CefrLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 
+export type TimeUnit = 'minutes' | 'hours';
+
+export const TIME_UNITS: TimeUnit[] = ['minutes', 'hours'];
+
 export type AiQuestionPart = 'A' | 'B';
 
 export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
@@ -57,6 +61,9 @@ export interface ListeningPart {
   question_framework: string;
   cefr_levels: CefrLevel[];
   instructions: string;
+  total_questions: string;
+  time_amount: string;
+  time_unit: TimeUnit;
   questions: ListenQuestion[];
 }
 
@@ -71,6 +78,9 @@ export interface ListenAssignment {
   include_answer_key: boolean;
   include_student_info_line: boolean;
   instructions: string;
+  total_questions: string;
+  time_amount: string;
+  time_unit: TimeUnit;
   status: 'draft' | 'published';
   created_at: string;
   updated_at: string;
@@ -94,6 +104,9 @@ export interface SaveAssignmentPayload {
   include_answer_key: boolean;
   include_student_info_line: boolean;
   instructions: string;
+  total_questions: string;
+  time_amount: string;
+  time_unit: TimeUnit;
   status: 'draft' | 'published';
   parts: SaveListeningPartPayload[];
 }
@@ -109,6 +122,9 @@ export interface SaveListeningPartPayload {
   question_framework: string;
   cefr_levels: CefrLevel[];
   instructions: string;
+  total_questions: string;
+  time_amount: string;
+  time_unit: TimeUnit;
   questions: SaveQuestionPayload[];
 }
 
@@ -142,8 +158,32 @@ export function createEmptyPart(sortOrder: number): SaveListeningPartPayload {
     question_framework: DEFAULT_QUESTION_FRAMEWORK,
     cefr_levels: [...DEFAULT_CEFR_LEVELS],
     instructions: '',
+    total_questions: '',
+    time_amount: '',
+    time_unit: 'minutes',
     questions: [],
   };
+}
+
+export function formatTotalQuestionsLine(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return `Total: ${trimmed} questions`;
+}
+
+export function formatTimeLine(amount: string, unit: TimeUnit): string | null {
+  const trimmed = amount.trim();
+  if (!trimmed) return null;
+  const numeric = Number(trimmed);
+  const unitLabel =
+    unit === 'hours'
+      ? numeric === 1
+        ? 'hour'
+        : 'hours'
+      : numeric === 1
+        ? 'minute'
+        : 'minutes';
+  return `Time: ${trimmed} ${unitLabel}`;
 }
 
 export function createEmptyQuestion(sortOrder: number): SaveQuestionPayload {

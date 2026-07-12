@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
+import TotalTimeDisplay from './TotalTimeDisplay';
 import type { ListenAssignmentWithParts } from '@/lib/listen-and-answer/types';
 import {
   QUESTION_TYPE_LABELS,
@@ -104,6 +105,11 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
               Instructions: {assignment.instructions.trim()}
             </ComicText>
           ) : null}
+          <TotalTimeDisplay
+            totalQuestions={assignment.total_questions}
+            timeAmount={assignment.time_amount}
+            timeUnit={assignment.time_unit}
+          />
         </div>
 
         {assignment.parts.map((part, partIndex) => {
@@ -146,6 +152,12 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
               {part.instructions.trim() ? (
                 <ComicText className="font-bold mb-4">{part.instructions.trim()}</ComicText>
               ) : null}
+
+              <TotalTimeDisplay
+                totalQuestions={part.total_questions}
+                timeAmount={part.time_amount}
+                timeUnit={part.time_unit}
+              />
 
               <ol className="space-y-3">
                 {printableQuestions.map((question, questionIndex) => (

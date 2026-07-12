@@ -10,10 +10,15 @@ import type {
   CefrLevel,
   TranscriptSource,
   QuestionType,
+  TimeUnit,
   AiQuestionPart,
 } from './types';
 
 const DEFAULT_TEACHER_ID = 'default';
+
+function normalizeTimeUnit(value: unknown): TimeUnit {
+  return value === 'hours' ? 'hours' : 'minutes';
+}
 
 let schemaReady: Promise<void> | null = null;
 
@@ -85,6 +90,30 @@ export async function ensureSchema(): Promise<void> {
         ALTER TABLE listen_questions
         ADD COLUMN IF NOT EXISTS show_question_type BOOLEAN NOT NULL DEFAULT false
       `;
+      await sql`
+        ALTER TABLE listen_assignments
+        ADD COLUMN IF NOT EXISTS total_questions TEXT NOT NULL DEFAULT ''
+      `;
+      await sql`
+        ALTER TABLE listen_assignments
+        ADD COLUMN IF NOT EXISTS time_amount TEXT NOT NULL DEFAULT ''
+      `;
+      await sql`
+        ALTER TABLE listen_assignments
+        ADD COLUMN IF NOT EXISTS time_unit TEXT NOT NULL DEFAULT 'minutes'
+      `;
+      await sql`
+        ALTER TABLE listen_parts
+        ADD COLUMN IF NOT EXISTS total_questions TEXT NOT NULL DEFAULT ''
+      `;
+      await sql`
+        ALTER TABLE listen_parts
+        ADD COLUMN IF NOT EXISTS time_amount TEXT NOT NULL DEFAULT ''
+      `;
+      await sql`
+        ALTER TABLE listen_parts
+        ADD COLUMN IF NOT EXISTS time_unit TEXT NOT NULL DEFAULT 'minutes'
+      `;
     })();
   }
   await schemaReady;
@@ -102,6 +131,9 @@ function rowToAssignment(row: Record<string, unknown>): ListenAssignment {
     include_answer_key: Boolean(row.include_answer_key),
     include_student_info_line: Boolean(row.include_student_info_line),
     instructions: (row.instructions as string) ?? '',
+    total_questions: (row.total_questions as string) ?? '',
+    time_amount: (row.time_amount as string) ?? '',
+    time_unit: normalizeTimeUnit(row.time_unit),
     status: (row.status as 'draft' | 'published') ?? 'draft',
     created_at: new Date(row.created_at as string).toISOString(),
     updated_at: new Date(row.updated_at as string).toISOString(),
@@ -140,6 +172,9 @@ function rowToPart(row: Record<string, unknown>, questions: ListenQuestion[]): L
     question_framework: row.question_framework as string,
     cefr_levels: Array.isArray(cefrLevels) ? (cefrLevels as CefrLevel[]) : ['A2', 'B1'],
     instructions: (row.instructions as string) ?? '',
+    total_questions: (row.total_questions as string) ?? '',
+    time_amount: (row.time_amount as string) ?? '',
+    time_unit: normalizeTimeUnit(row.time_unit),
     questions,
   };
 }
@@ -231,7 +266,8 @@ async function replaceAssignmentParts(
     await sql`
       INSERT INTO listen_parts (
         id, assignment_id, title, sort_order, audio_url, thumbnail_url,
-        qr_enabled, transcript, transcript_source, question_framework, cefr_levels, instructions
+        qr_enabled, transcript, transcript_source, question_framework, cefr_levels,
+        instructions, total_questions, time_amount, time_unit
       )
       VALUES (
         ${partId},
@@ -245,7 +281,10 @@ async function replaceAssignmentParts(
         ${part.transcript_source},
         ${part.question_framework.trim() || 'American English File'},
         ${JSON.stringify(part.cefr_levels)},
-        ${part.instructions}
+        ${part.instructions},
+        ${part.total_questions.trim()},
+        ${part.time_amount.trim()},
+        ${normalizeTimeUnit(part.time_unit)}
       )
     `;
 
@@ -296,6 +335,9 @@ export async function saveAssignment(
       include_answer_key = ${Boolean(payload.include_answer_key)},
       include_student_info_line = ${Boolean(payload.include_student_info_line)},
       instructions = ${payload.instructions.trim()},
+      total_questions = ${payload.total_questions.trim()},
+      time_amount = ${payload.time_amount.trim()},
+      time_unit = ${normalizeTimeUnit(payload.time_unit)},
       status = ${payload.status},
       updated_at = NOW()
     WHERE id = ${assignmentId} AND teacher_id = ${teacherId}
@@ -324,6 +366,9 @@ export async function duplicateAssignment(
     include_answer_key: source.include_answer_key,
     include_student_info_line: source.include_student_info_line,
     instructions: source.instructions,
+    total_questions: source.total_questions,
+    time_amount: source.time_amount,
+    time_unit: source.time_unit,
     status: 'draft',
     parts: source.parts.map((part) => ({
       title: part.title,
@@ -335,6 +380,9 @@ export async function duplicateAssignment(
       question_framework: part.question_framework,
       cefr_levels: part.cefr_levels,
       instructions: part.instructions,
+      total_questions: part.total_questions,
+      time_amount: part.time_amount,
+      time_unit: part.time_unit,
       questions: part.questions.map((q) => ({
         question_type: q.question_type,
         question_text: q.question_text,

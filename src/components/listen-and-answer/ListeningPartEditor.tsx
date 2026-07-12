@@ -7,6 +7,7 @@ import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import DragHandle from './DragHandle';
 import QuestionEditor from './QuestionEditor';
+import TotalTimeFields from './TotalTimeFields';
 import type {
   CefrLevel,
   SaveListeningPartPayload,
@@ -263,6 +264,17 @@ export default function ListeningPartEditor({
           value={part.instructions}
           onChange={(event) => onChange(part.clientId, { instructions: event.target.value })}
           placeholder={DEFAULT_PART_INSTRUCTIONS_PLACEHOLDER}
+        />
+      </div>
+
+      <div className="mb-6">
+        <TotalTimeFields
+          totalQuestions={part.total_questions}
+          timeAmount={part.time_amount}
+          timeUnit={part.time_unit}
+          onTotalQuestionsChange={(value) => onChange(part.clientId, { total_questions: value })}
+          onTimeAmountChange={(value) => onChange(part.clientId, { time_amount: value })}
+          onTimeUnitChange={(value) => onChange(part.clientId, { time_unit: value })}
         />
       </div>
 

@@ -9,10 +9,12 @@ import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import ListeningPartEditor, { type ClientListeningPart } from './ListeningPartEditor';
 import LivePrintPreview from './LivePrintPreview';
+import TotalTimeFields from './TotalTimeFields';
 import { useAutoSave } from './useAutoSave';
 import type {
   ListenAssignmentWithParts,
   SaveAssignmentPayload,
+  TimeUnit,
 } from '@/lib/listen-and-answer/types';
 import { createEmptyPart } from '@/lib/listen-and-answer/types';
 
@@ -34,6 +36,9 @@ function toClientParts(assignment: ListenAssignmentWithParts): ClientListeningPa
     question_framework: part.question_framework,
     cefr_levels: part.cefr_levels,
     instructions: part.instructions ?? '',
+    total_questions: part.total_questions ?? '',
+    time_amount: part.time_amount ?? '',
+    time_unit: part.time_unit ?? 'minutes',
     questions: part.questions.map((question) => ({
       clientId: question.id,
       id: question.id,
@@ -56,6 +61,9 @@ function buildPayload(
   dueDate: string,
   points: string,
   instructions: string,
+  totalQuestions: string,
+  timeAmount: string,
+  timeUnit: TimeUnit,
   includeAnswerKey: boolean,
   includeStudentInfoLine: boolean,
   status: 'draft' | 'published',
@@ -70,6 +78,9 @@ function buildPayload(
     include_answer_key: includeAnswerKey,
     include_student_info_line: includeStudentInfoLine,
     instructions,
+    total_questions: totalQuestions,
+    time_amount: timeAmount,
+    time_unit: timeUnit,
     status,
     parts: parts.map((part) => ({
       id: part.id,
@@ -82,6 +93,9 @@ function buildPayload(
       question_framework: part.question_framework,
       cefr_levels: part.cefr_levels,
       instructions: part.instructions,
+      total_questions: part.total_questions,
+      time_amount: part.time_amount,
+      time_unit: part.time_unit,
       questions: part.questions.map((question) => ({
         id: question.id,
         question_type: question.question_type,
@@ -108,6 +122,9 @@ export default function AssignmentEditor({
   const [dueDate, setDueDate] = useState(initialAssignment.due_date ?? '');
   const [points, setPoints] = useState(initialAssignment.points ?? '');
   const [instructions, setInstructions] = useState(initialAssignment.instructions ?? '');
+  const [totalQuestions, setTotalQuestions] = useState(initialAssignment.total_questions ?? '');
+  const [timeAmount, setTimeAmount] = useState(initialAssignment.time_amount ?? '');
+  const [timeUnit, setTimeUnit] = useState<TimeUnit>(initialAssignment.time_unit ?? 'minutes');
   const [includeAnswerKey, setIncludeAnswerKey] = useState(initialAssignment.include_answer_key);
   const [includeStudentInfoLine, setIncludeStudentInfoLine] = useState(
     initialAssignment.include_student_info_line ?? false
@@ -128,12 +145,28 @@ export default function AssignmentEditor({
         dueDate,
         points,
         instructions,
+        totalQuestions,
+        timeAmount,
+        timeUnit,
         includeAnswerKey,
         includeStudentInfoLine,
         'draft',
         parts
       ),
-    [teacherName, title, className, dueDate, points, instructions, includeAnswerKey, includeStudentInfoLine, parts]
+    [
+      teacherName,
+      title,
+      className,
+      dueDate,
+      points,
+      instructions,
+      totalQuestions,
+      timeAmount,
+      timeUnit,
+      includeAnswerKey,
+      includeStudentInfoLine,
+      parts,
+    ]
   );
 
   const saveAssignment = useCallback(
@@ -273,6 +306,9 @@ export default function AssignmentEditor({
     include_answer_key: includeAnswerKey,
     include_student_info_line: includeStudentInfoLine,
     instructions,
+    total_questions: totalQuestions,
+    time_amount: timeAmount,
+    time_unit: timeUnit,
     parts: payload.parts.map((part, partIndex) => ({
       id: part.id || `preview-part-${partIndex}`,
       assignment_id: assignmentId,
@@ -286,6 +322,9 @@ export default function AssignmentEditor({
       question_framework: part.question_framework,
       cefr_levels: part.cefr_levels,
       instructions: part.instructions,
+      total_questions: part.total_questions,
+      time_amount: part.time_amount,
+      time_unit: part.time_unit,
       questions: part.questions.map((question, questionIndex) => ({
         id: question.id || `preview-q-${partIndex}-${questionIndex}`,
         part_id: part.id || `preview-part-${partIndex}`,
@@ -380,6 +419,17 @@ export default function AssignmentEditor({
             value={instructions}
             onChange={(event) => setInstructions(event.target.value)}
             placeholder="Instructions for the entire assignment"
+          />
+        </div>
+
+        <div className="mt-4">
+          <TotalTimeFields
+            totalQuestions={totalQuestions}
+            timeAmount={timeAmount}
+            timeUnit={timeUnit}
+            onTotalQuestionsChange={setTotalQuestions}
+            onTimeAmountChange={setTimeAmount}
+            onTimeUnitChange={setTimeUnit}
           />
         </div>
 

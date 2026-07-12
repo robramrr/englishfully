@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import ComicText from '../../../../../components/ComicText';
 import ComicTitle from '../../../../../components/ComicTitle';
+import TotalTimeDisplay from '../../../../../components/listen-and-answer/TotalTimeDisplay';
 import type { ListenAssignmentWithParts } from '@/lib/listen-and-answer/types';
 import {
   QUESTION_TYPE_LABELS,
@@ -139,6 +140,11 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                 Instructions: {assignment.instructions.trim()}
               </ComicText>
             ) : null}
+            <TotalTimeDisplay
+              totalQuestions={assignment.total_questions}
+              timeAmount={assignment.time_amount}
+              timeUnit={assignment.time_unit}
+            />
           </section>
 
           {assignment.parts.map((part, partIndex) => {
@@ -181,6 +187,12 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                 {part.instructions.trim() ? (
                   <ComicText className="font-bold mb-4">{part.instructions.trim()}</ComicText>
                 ) : null}
+
+                <TotalTimeDisplay
+                  totalQuestions={part.total_questions}
+                  timeAmount={part.time_amount}
+                  timeUnit={part.time_unit}
+                />
 
                 <ol className="space-y-3">
                   {printableQuestions.map((question, questionIndex) => (
