@@ -413,9 +413,11 @@ export default function AssignmentEditor({
         </div>
 
         <div className="mt-4">
-          <ComicText className="font-bold mb-1 text-sm">Instructions</ComicText>
+          <label className="block font-bold mb-1 text-xs text-[var(--comic-dark)]">
+            Instructions
+          </label>
           <textarea
-            className="w-full comic-input min-h-[80px]"
+            className="w-full comic-input text-sm min-h-[80px]"
             value={instructions}
             onChange={(event) => setInstructions(event.target.value)}
             placeholder="Instructions for the entire assignment"
@@ -424,6 +426,7 @@ export default function AssignmentEditor({
 
         <div className="mt-4">
           <TotalTimeFields
+            compact
             totalQuestions={totalQuestions}
             timeAmount={timeAmount}
             timeUnit={timeUnit}
