@@ -74,16 +74,19 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
         <div className="mb-6 space-y-2">
           <div className="flex flex-wrap gap-6 items-end font-bold text-lg">
             <span>
-              Nickname: <span className="inline-block border-b-4 border-[var(--comic-black)] w-16 align-bottom" />
+              Nickname: <span className="inline-block border-b-4 border-[var(--comic-black)] w-40 align-bottom" />
             </span>
             <span>
               Student # / ID: <span className="inline-block border-b-4 border-[var(--comic-black)] w-10 align-bottom" /> /{' '}
-              <span className="inline-block border-b-4 border-[var(--comic-black)] w-8 align-bottom text-center">A</span>
+              <span className="inline-block border-b-4 border-[var(--comic-black)] w-8 align-bottom" />
             </span>
           </div>
           {assignment.due_date ? (
             <ComicText className="font-bold">Due: {formatDueDate(assignment.due_date)}</ComicText>
           ) : null}
+          <ComicTitle level={4} className="!text-xl text-[var(--comic-primary)] pt-2">
+            👂 Listen &amp; Answer
+          </ComicTitle>
         </div>
 
         {assignment.parts.map((part, partIndex) => {

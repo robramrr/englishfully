@@ -103,25 +103,23 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
           </div>
 
           <section className="mb-8">
-            <ComicTitle level={6} className="!text-xl text-[var(--comic-primary)] mb-4">
-              👂 Listen &amp; Answer
-            </ComicTitle>
             <div className="flex flex-wrap gap-6 items-end font-bold text-lg mb-4">
               <span>
                 Nickname:{' '}
-                <span className="inline-block border-b-4 border-[var(--comic-black)] w-16 align-bottom" />
+                <span className="inline-block border-b-4 border-[var(--comic-black)] w-40 align-bottom" />
               </span>
               <span>
                 Student # / ID:{' '}
                 <span className="inline-block border-b-4 border-[var(--comic-black)] w-10 align-bottom" /> /{' '}
-                <span className="inline-block border-b-4 border-[var(--comic-black)] w-8 align-bottom text-center">
-                  A
-                </span>
+                <span className="inline-block border-b-4 border-[var(--comic-black)] w-8 align-bottom" />
               </span>
             </div>
             {assignment.due_date ? (
               <ComicText className="font-bold mb-4">Due: {formatDueDate(assignment.due_date)}</ComicText>
             ) : null}
+            <ComicTitle level={6} className="!text-xl text-[var(--comic-primary)]">
+              👂 Listen &amp; Answer
+            </ComicTitle>
           </section>
 
           {assignment.parts.map((part, partIndex) => {
