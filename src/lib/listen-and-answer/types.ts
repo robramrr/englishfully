@@ -27,6 +27,9 @@ export const DEFAULT_CEFR_LEVELS: CefrLevel[] = ['A2', 'B1'];
 
 export const DEFAULT_QUESTION_FRAMEWORK = 'American English File';
 
+export const DEFAULT_PART_INSTRUCTIONS_PLACEHOLDER =
+  'Listen carefully. Then answer the questions below.';
+
 export interface ListenQuestion {
   id: string;
   part_id: string;
@@ -52,6 +55,7 @@ export interface ListeningPart {
   transcript_source: TranscriptSource;
   question_framework: string;
   cefr_levels: CefrLevel[];
+  instructions: string;
   questions: ListenQuestion[];
 }
 
@@ -65,6 +69,7 @@ export interface ListenAssignment {
   points: string;
   include_answer_key: boolean;
   include_student_info_line: boolean;
+  instructions: string;
   status: 'draft' | 'published';
   created_at: string;
   updated_at: string;
@@ -87,6 +92,7 @@ export interface SaveAssignmentPayload {
   points: string;
   include_answer_key: boolean;
   include_student_info_line: boolean;
+  instructions: string;
   status: 'draft' | 'published';
   parts: SaveListeningPartPayload[];
 }
@@ -101,6 +107,7 @@ export interface SaveListeningPartPayload {
   transcript_source: TranscriptSource;
   question_framework: string;
   cefr_levels: CefrLevel[];
+  instructions: string;
   questions: SaveQuestionPayload[];
 }
 
@@ -132,6 +139,7 @@ export function createEmptyPart(sortOrder: number): SaveListeningPartPayload {
     transcript_source: 'auto',
     question_framework: DEFAULT_QUESTION_FRAMEWORK,
     cefr_levels: [...DEFAULT_CEFR_LEVELS],
+    instructions: '',
     questions: [],
   };
 }

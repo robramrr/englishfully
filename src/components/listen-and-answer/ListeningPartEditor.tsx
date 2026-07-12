@@ -15,6 +15,7 @@ import type {
 } from '@/lib/listen-and-answer/types';
 import {
   CEFR_LEVELS,
+  DEFAULT_PART_INSTRUCTIONS_PLACEHOLDER,
   DEFAULT_QUESTION_FRAMEWORK,
   createEmptyQuestion,
 } from '@/lib/listen-and-answer/types';
@@ -253,6 +254,16 @@ export default function ListeningPartEditor({
           <img src={qrPreview} alt="Audio QR preview" width={140} height={140} />
         </div>
       ) : null}
+
+      <div className="mb-6">
+        <ComicText className="font-bold mb-1 text-sm">Instructions</ComicText>
+        <textarea
+          className="w-full comic-input min-h-[72px]"
+          value={part.instructions}
+          onChange={(event) => onChange(part.clientId, { instructions: event.target.value })}
+          placeholder={DEFAULT_PART_INSTRUCTIONS_PLACEHOLDER}
+        />
+      </div>
 
       <div className="mb-8 space-y-4">
         <ComicTitle level={4} className="text-[var(--comic-secondary)]">

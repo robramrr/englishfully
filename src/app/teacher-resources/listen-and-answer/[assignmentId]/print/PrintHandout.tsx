@@ -134,6 +134,11 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
             <ComicTitle level={6} className="!text-xl text-[var(--comic-primary)] py-2">
               🔊 Listen &amp; Answer
             </ComicTitle>
+            {assignment.instructions.trim() ? (
+              <ComicText className="font-bold mb-4">
+                Instructions: {assignment.instructions.trim()}
+              </ComicText>
+            ) : null}
           </section>
 
           {assignment.parts.map((part, partIndex) => {
@@ -173,9 +178,9 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                   ) : null}
                 </div>
 
-                <ComicText className="font-bold mb-4">
-                  Listen carefully. Then answer the questions below.
-                </ComicText>
+                {part.instructions.trim() ? (
+                  <ComicText className="font-bold mb-4">{part.instructions.trim()}</ComicText>
+                ) : null}
 
                 <ol className="space-y-3">
                   {printableQuestions.map((question, questionIndex) => (

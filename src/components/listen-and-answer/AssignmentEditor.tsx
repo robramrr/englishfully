@@ -33,6 +33,7 @@ function toClientParts(assignment: ListenAssignmentWithParts): ClientListeningPa
     transcript_source: part.transcript_source,
     question_framework: part.question_framework,
     cefr_levels: part.cefr_levels,
+    instructions: part.instructions ?? '',
     questions: part.questions.map((question) => ({
       clientId: question.id,
       id: question.id,
@@ -53,6 +54,7 @@ function buildPayload(
   className: string,
   dueDate: string,
   points: string,
+  instructions: string,
   includeAnswerKey: boolean,
   includeStudentInfoLine: boolean,
   status: 'draft' | 'published',
@@ -66,6 +68,7 @@ function buildPayload(
     points,
     include_answer_key: includeAnswerKey,
     include_student_info_line: includeStudentInfoLine,
+    instructions,
     status,
     parts: parts.map((part) => ({
       id: part.id,
@@ -77,6 +80,7 @@ function buildPayload(
       transcript_source: part.transcript_source,
       question_framework: part.question_framework,
       cefr_levels: part.cefr_levels,
+      instructions: part.instructions,
       questions: part.questions.map((question) => ({
         id: question.id,
         question_type: question.question_type,
@@ -101,6 +105,7 @@ export default function AssignmentEditor({
   const [className, setClassName] = useState(initialAssignment.class_name);
   const [dueDate, setDueDate] = useState(initialAssignment.due_date ?? '');
   const [points, setPoints] = useState(initialAssignment.points ?? '');
+  const [instructions, setInstructions] = useState(initialAssignment.instructions ?? '');
   const [includeAnswerKey, setIncludeAnswerKey] = useState(initialAssignment.include_answer_key);
   const [includeStudentInfoLine, setIncludeStudentInfoLine] = useState(
     initialAssignment.include_student_info_line ?? false
@@ -120,12 +125,13 @@ export default function AssignmentEditor({
         className,
         dueDate,
         points,
+        instructions,
         includeAnswerKey,
         includeStudentInfoLine,
         'draft',
         parts
       ),
-    [teacherName, title, className, dueDate, points, includeAnswerKey, includeStudentInfoLine, parts]
+    [teacherName, title, className, dueDate, points, instructions, includeAnswerKey, includeStudentInfoLine, parts]
   );
 
   const saveAssignment = useCallback(
@@ -264,6 +270,7 @@ export default function AssignmentEditor({
     points,
     include_answer_key: includeAnswerKey,
     include_student_info_line: includeStudentInfoLine,
+    instructions,
     parts: payload.parts.map((part, partIndex) => ({
       id: part.id || `preview-part-${partIndex}`,
       assignment_id: assignmentId,
@@ -276,6 +283,7 @@ export default function AssignmentEditor({
       transcript_source: part.transcript_source,
       question_framework: part.question_framework,
       cefr_levels: part.cefr_levels,
+      instructions: part.instructions,
       questions: part.questions.map((question, questionIndex) => ({
         id: question.id || `preview-q-${partIndex}-${questionIndex}`,
         part_id: part.id || `preview-part-${partIndex}`,
@@ -360,6 +368,16 @@ export default function AssignmentEditor({
               inputMode="numeric"
             />
           </div>
+        </div>
+
+        <div className="mt-4">
+          <ComicText className="font-bold mb-1 text-sm">Instructions</ComicText>
+          <textarea
+            className="w-full comic-input min-h-[80px]"
+            value={instructions}
+            onChange={(event) => setInstructions(event.target.value)}
+            placeholder="Instructions for the entire assignment"
+          />
         </div>
 
         <label className="flex items-center gap-2 mt-6 font-bold text-[var(--comic-dark)]">

@@ -73,6 +73,14 @@ export async function ensureSchema(): Promise<void> {
         ALTER TABLE listen_assignments
         ADD COLUMN IF NOT EXISTS points TEXT NOT NULL DEFAULT ''
       `;
+      await sql`
+        ALTER TABLE listen_assignments
+        ADD COLUMN IF NOT EXISTS instructions TEXT NOT NULL DEFAULT ''
+      `;
+      await sql`
+        ALTER TABLE listen_parts
+        ADD COLUMN IF NOT EXISTS instructions TEXT NOT NULL DEFAULT ''
+      `;
     })();
   }
   await schemaReady;
@@ -89,6 +97,7 @@ function rowToAssignment(row: Record<string, unknown>): ListenAssignment {
     points: (row.points as string) ?? '',
     include_answer_key: Boolean(row.include_answer_key),
     include_student_info_line: Boolean(row.include_student_info_line),
+    instructions: (row.instructions as string) ?? '',
     status: (row.status as 'draft' | 'published') ?? 'draft',
     created_at: new Date(row.created_at as string).toISOString(),
     updated_at: new Date(row.updated_at as string).toISOString(),
@@ -125,6 +134,7 @@ function rowToPart(row: Record<string, unknown>, questions: ListenQuestion[]): L
     transcript_source: (row.transcript_source as TranscriptSource) ?? 'auto',
     question_framework: row.question_framework as string,
     cefr_levels: Array.isArray(cefrLevels) ? (cefrLevels as CefrLevel[]) : ['A2', 'B1'],
+    instructions: (row.instructions as string) ?? '',
     questions,
   };
 }
@@ -216,7 +226,7 @@ async function replaceAssignmentParts(
     await sql`
       INSERT INTO listen_parts (
         id, assignment_id, title, sort_order, audio_url, thumbnail_url,
-        qr_enabled, transcript, transcript_source, question_framework, cefr_levels
+        qr_enabled, transcript, transcript_source, question_framework, cefr_levels, instructions
       )
       VALUES (
         ${partId},
@@ -229,7 +239,8 @@ async function replaceAssignmentParts(
         ${part.transcript},
         ${part.transcript_source},
         ${part.question_framework.trim() || 'American English File'},
-        ${JSON.stringify(part.cefr_levels)}
+        ${JSON.stringify(part.cefr_levels)},
+        ${part.instructions}
       )
     `;
 
@@ -278,6 +289,7 @@ export async function saveAssignment(
       points = ${payload.points.trim()},
       include_answer_key = ${Boolean(payload.include_answer_key)},
       include_student_info_line = ${Boolean(payload.include_student_info_line)},
+      instructions = ${payload.instructions.trim()},
       status = ${payload.status},
       updated_at = NOW()
     WHERE id = ${assignmentId} AND teacher_id = ${teacherId}
@@ -305,6 +317,7 @@ export async function duplicateAssignment(
     points: source.points,
     include_answer_key: source.include_answer_key,
     include_student_info_line: source.include_student_info_line,
+    instructions: source.instructions,
     status: 'draft',
     parts: source.parts.map((part) => ({
       title: part.title,
@@ -315,6 +328,7 @@ export async function duplicateAssignment(
       transcript_source: part.transcript_source,
       question_framework: part.question_framework,
       cefr_levels: part.cefr_levels,
+      instructions: part.instructions,
       questions: part.questions.map((q) => ({
         question_type: q.question_type,
         question_text: q.question_text,
