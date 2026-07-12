@@ -80,7 +80,7 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
 
         <div className="mb-4">
           {assignment.include_student_info_line ? (
-            <div className="flex flex-wrap gap-x-4 gap-y-2 items-end font-bold mb-4">
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 items-end font-bold mb-4 text-center">
               <span>
                 Name:{' '}
                 <span className="inline-block border-b-2 border-[var(--comic-black)] w-40 align-bottom" />
