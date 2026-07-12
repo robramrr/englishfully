@@ -192,7 +192,7 @@ export default function ScantronAnswerSheet({
         Answer Sheet
       </ComicTitle>
       <p className="text-sm text-[var(--comic-dark)] mb-6">
-        Fill in one bubble per question. For true/false questions, use A for True and B for False.
+        Fill in one bubble per question.
       </p>
 
       {sections.map((section) => (
