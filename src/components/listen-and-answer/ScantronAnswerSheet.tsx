@@ -62,7 +62,7 @@ function ScantronGrid({
       {rows.map((row) => (
         <div key={row.question.id} className="scantron-answer-row">
           <div className="scantron-question-label">
-            {formatQuestionLabel(row.questionIndex)}
+            {formatQuestionLabel(row.questionIndex, 0)}
           </div>
           {columnLetters.map((letter, columnIndex) => {
             const isActive = columnIndex < row.letters.length;

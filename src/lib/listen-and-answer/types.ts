@@ -222,8 +222,16 @@ export function shouldShowAdditionalThumbnail(part: {
   );
 }
 
-export function formatQuestionLabel(index: number): string {
-  return `Question ${index + 1}`;
+export function formatQuestionLabel(index: number, sequenceStart = 0): string {
+  return `Question ${sequenceStart + index + 1}`;
+}
+
+export function getQuestionSequenceStart(parts: ListeningPart[], partIndex: number): number {
+  let count = 0;
+  for (let index = 0; index < partIndex; index += 1) {
+    count += getPrintableQuestions(parts[index]).length;
+  }
+  return count;
 }
 
 export function formatPrintChoiceLine(
@@ -277,17 +285,25 @@ export function getScantronBubbleLetters(question: ListenQuestion): string[] {
 export function getScantronPartSections(assignment: ListenAssignmentWithParts): ScantronPartSection[] {
   return assignment.parts
     .map((part, partIndex) => {
-      const printableQuestions = getPrintableQuestions(part).filter((question) =>
+      const printableQuestions = getPrintableQuestions(part);
+      const sequenceStart = getQuestionSequenceStart(assignment.parts, partIndex);
+      const scantronQuestions = printableQuestions.filter((question) =>
         isScantronQuestionType(question.question_type)
       );
+
       return {
         part,
         partIndex,
-        rows: printableQuestions.map((question, questionIndex) => ({
-          question,
-          questionIndex,
-          letters: getScantronBubbleLetters(question),
-        })),
+        rows: scantronQuestions.map((question) => {
+          const questionIndexInPart = printableQuestions.findIndex(
+            (item) => item.id === question.id
+          );
+          return {
+            question,
+            questionIndex: sequenceStart + questionIndexInPart,
+            letters: getScantronBubbleLetters(question),
+          };
+        }),
       };
     })
     .filter((section) => section.rows.length > 0);

@@ -17,6 +17,7 @@ import {
   formatPrintChoiceLine,
   formatQuestionLabel,
   getPrintableQuestions,
+  getQuestionSequenceStart,
 } from '@/lib/listen-and-answer/types';
 
 interface LivePrintPreviewProps {
@@ -153,6 +154,7 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
 
         {assignment.parts.map((part, partIndex) => {
           const printableQuestions = getPrintableQuestions(part);
+          const sequenceStart = getQuestionSequenceStart(assignment.parts, partIndex);
           return (
             <section key={part.id} className="mb-6 print-part-section">
               <div className="print-part-header-block flex flex-wrap gap-4 items-start mb-4">
@@ -202,7 +204,7 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
                     className="print-question-block space-y-1.5"
                   >
                     <p className="text-sm font-semibold leading-snug text-[var(--comic-dark)]">
-                      {formatQuestionLabel(questionIndex)}. {question.question_text}
+                      {formatQuestionLabel(questionIndex, sequenceStart)}. {question.question_text}
                     </p>
                     {question.show_question_type ? (
                       <p className="listen-print-question-type text-xs text-[var(--comic-secondary)]">
@@ -252,6 +254,7 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
             {assignment.parts.map((part, partIndex) => {
               const printableQuestions = getPrintableQuestions(part);
               if (printableQuestions.length === 0) return null;
+              const sequenceStart = getQuestionSequenceStart(assignment.parts, partIndex);
               return (
                 <div key={`answer-${part.id}`} className="mb-4">
                   <ComicText className="text-base font-semibold text-[var(--comic-secondary)] mb-2">
@@ -260,7 +263,7 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
                   <ol className="space-y-1 text-sm leading-relaxed">
                     {printableQuestions.map((question, questionIndex) => (
                       <li key={question.id}>
-                        {formatQuestionLabel(questionIndex)}: {formatAnswerKeyAnswer(question)}
+                        {formatQuestionLabel(questionIndex, sequenceStart)}: {formatAnswerKeyAnswer(question)}
                       </li>
                     ))}
                   </ol>
