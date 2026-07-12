@@ -20,7 +20,11 @@ function ListenAndAnswerContent() {
 
   const loadAssignments = useCallback(async () => {
     const response = await fetch('/api/listen-and-answer/assignments');
-    if (!response.ok) return;
+    if (!response.ok) {
+      setLoaded(true);
+      setAssignments([]);
+      return;
+    }
     const data = await response.json();
     setAssignments(data.assignments || []);
     setLoaded(true);

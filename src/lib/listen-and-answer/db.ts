@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres';
+import { sql, type VercelPoolClient } from '@vercel/postgres';
 import { nanoid } from 'nanoid';
 import type {
   AssignmentListItem,
@@ -18,6 +18,32 @@ const DEFAULT_TEACHER_ID = 'default';
 
 function normalizeTimeUnit(value: unknown): TimeUnit {
   return value === 'hours' ? 'hours' : 'minutes';
+}
+
+function safeTrim(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function countAssignmentQuestions(parts: SaveAssignmentPayload['parts']): number {
+  return parts.reduce((sum, part) => sum + part.questions.length, 0);
+}
+
+function validateSavePayload(
+  existing: ListenAssignmentWithParts,
+  payload: SaveAssignmentPayload
+): void {
+  const existingPartCount = existing.parts.length;
+  const incomingPartCount = payload.parts.length;
+  const existingQuestionCount = countAssignmentQuestions(existing.parts);
+  const incomingQuestionCount = countAssignmentQuestions(payload.parts);
+
+  if (existingPartCount > 0 && incomingPartCount === 0) {
+    throw new Error('Save rejected: listening parts cannot be removed entirely.');
+  }
+
+  if (existingQuestionCount > 0 && incomingQuestionCount === 0) {
+    throw new Error('Save rejected: questions cannot be removed entirely.');
+  }
 }
 
 let schemaReady: Promise<void> | null = null;
@@ -270,15 +296,16 @@ export async function createAssignment(
 
 async function replaceAssignmentParts(
   assignmentId: string,
-  parts: SaveAssignmentPayload['parts']
+  parts: SaveAssignmentPayload['parts'],
+  client: VercelPoolClient
 ): Promise<void> {
-  await sql`DELETE FROM listen_parts WHERE assignment_id = ${assignmentId}`;
+  await client.sql`DELETE FROM listen_parts WHERE assignment_id = ${assignmentId}`;
 
   for (let partIndex = 0; partIndex < parts.length; partIndex += 1) {
     const part = parts[partIndex];
     const partId = part.id || nanoid(21);
 
-    await sql`
+    await client.sql`
       INSERT INTO listen_parts (
         id, assignment_id, title, sort_order, audio_url, thumbnail_url,
         additional_thumbnail_enabled, additional_thumbnail_url,
@@ -288,20 +315,20 @@ async function replaceAssignmentParts(
       VALUES (
         ${partId},
         ${assignmentId},
-        ${part.title.trim() || `Part ${partIndex + 1}`},
+        ${safeTrim(part.title) || `Part ${partIndex + 1}`},
         ${partIndex},
-        ${part.audio_url.trim()},
-        ${part.thumbnail_url.trim()},
+        ${safeTrim(part.audio_url)},
+        ${safeTrim(part.thumbnail_url)},
         ${Boolean(part.additional_thumbnail_enabled)},
-        ${part.additional_thumbnail_url.trim()},
+        ${safeTrim(part.additional_thumbnail_url)},
         ${Boolean(part.qr_enabled)},
-        ${part.transcript},
+        ${part.transcript ?? ''},
         ${part.transcript_source},
-        ${part.question_framework.trim() || 'American English File'},
+        ${safeTrim(part.question_framework) || 'American English File'},
         ${JSON.stringify(part.cefr_levels)},
-        ${part.instructions},
-        ${part.total_questions.trim()},
-        ${part.time_amount.trim()},
+        ${part.instructions ?? ''},
+        ${safeTrim(part.total_questions)},
+        ${safeTrim(part.time_amount)},
         ${normalizeTimeUnit(part.time_unit)}
       )
     `;
@@ -309,7 +336,7 @@ async function replaceAssignmentParts(
     for (let questionIndex = 0; questionIndex < part.questions.length; questionIndex += 1) {
       const question = part.questions[questionIndex];
       const questionId = question.id || nanoid(21);
-      await sql`
+      await client.sql`
         INSERT INTO listen_questions (
           id, part_id, sort_order, question_type, question_text, choices,
           correct_answer, keep_question, is_ai_generated, ai_part, show_question_type
@@ -319,9 +346,9 @@ async function replaceAssignmentParts(
           ${partId},
           ${questionIndex},
           ${question.question_type},
-          ${question.question_text},
-          ${JSON.stringify(question.choices)},
-          ${question.correct_answer},
+          ${question.question_text ?? ''},
+          ${JSON.stringify(question.choices ?? [])},
+          ${question.correct_answer ?? ''},
           ${Boolean(question.keep_question)},
           ${Boolean(question.is_ai_generated)},
           ${question.ai_part},
@@ -342,27 +369,41 @@ export async function saveAssignment(
   const existing = await getAssignmentById(assignmentId);
   if (!existing) throw new Error('Assignment not found');
 
-  await sql`
-    UPDATE listen_assignments
-    SET
-      teacher_name = ${payload.teacher_name.trim()},
-      title = ${payload.title.trim() || 'Untitled Listening Assignment'},
-      class_name = ${payload.class_name.trim()},
-      due_date = ${payload.due_date},
-      points = ${payload.points.trim()},
-      include_answer_key = ${Boolean(payload.include_answer_key)},
-      include_scantron_sheet = ${Boolean(payload.include_scantron_sheet)},
-      include_student_info_line = ${Boolean(payload.include_student_info_line)},
-      instructions = ${payload.instructions.trim()},
-      total_questions = ${payload.total_questions.trim()},
-      time_amount = ${payload.time_amount.trim()},
-      time_unit = ${normalizeTimeUnit(payload.time_unit)},
-      status = ${payload.status},
-      updated_at = NOW()
-    WHERE id = ${assignmentId} AND teacher_id = ${teacherId}
-  `;
+  validateSavePayload(existing, payload);
 
-  await replaceAssignmentParts(assignmentId, payload.parts);
+  const client = await sql.connect();
+  try {
+    await client.sql`BEGIN`;
+
+    await client.sql`
+      UPDATE listen_assignments
+      SET
+        teacher_name = ${safeTrim(payload.teacher_name)},
+        title = ${safeTrim(payload.title) || 'Untitled Listening Assignment'},
+        class_name = ${safeTrim(payload.class_name)},
+        due_date = ${payload.due_date},
+        points = ${safeTrim(payload.points)},
+        include_answer_key = ${Boolean(payload.include_answer_key)},
+        include_scantron_sheet = ${Boolean(payload.include_scantron_sheet)},
+        include_student_info_line = ${Boolean(payload.include_student_info_line)},
+        instructions = ${safeTrim(payload.instructions)},
+        total_questions = ${safeTrim(payload.total_questions)},
+        time_amount = ${safeTrim(payload.time_amount)},
+        time_unit = ${normalizeTimeUnit(payload.time_unit)},
+        status = ${payload.status},
+        updated_at = NOW()
+      WHERE id = ${assignmentId} AND teacher_id = ${teacherId}
+    `;
+
+    await replaceAssignmentParts(assignmentId, payload.parts, client);
+
+    await client.sql`COMMIT`;
+  } catch (error) {
+    await client.sql`ROLLBACK`;
+    throw error;
+  } finally {
+    client.release();
+  }
 
   const saved = await getAssignmentById(assignmentId);
   if (!saved) throw new Error('Failed to load saved assignment');

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ComicButton from '../ComicButton';
@@ -91,8 +91,8 @@ function buildPayload(
       title: part.title,
       audio_url: part.audio_url,
       thumbnail_url: part.thumbnail_url,
-      additional_thumbnail_enabled: part.additional_thumbnail_enabled,
-      additional_thumbnail_url: part.additional_thumbnail_url,
+      additional_thumbnail_enabled: part.additional_thumbnail_enabled ?? false,
+      additional_thumbnail_url: part.additional_thumbnail_url ?? '',
       qr_enabled: part.qr_enabled,
       transcript: part.transcript,
       transcript_source: part.transcript_source,
@@ -144,6 +144,10 @@ export default function AssignmentEditor({
   const [error, setError] = useState('');
   const [showPreview, setShowPreview] = useState(true);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const savedPartCountRef = useRef(initialAssignment.parts.length);
+  const savedQuestionCountRef = useRef(
+    initialAssignment.parts.reduce((sum, part) => sum + part.questions.length, 0)
+  );
 
   const payload = useMemo(
     () =>
@@ -192,13 +196,45 @@ export default function AssignmentEditor({
         throw new Error(result.error || 'Failed to save assignment');
       }
       setParts(toClientParts(result.assignment));
+      savedPartCountRef.current = result.assignment.parts.length;
+      savedQuestionCountRef.current = result.assignment.parts.reduce(
+        (sum: number, part: { questions: unknown[] }) => sum + part.questions.length,
+        0
+      );
       setSaveMessage(status === 'published' ? 'Assignment updated.' : 'Draft saved.');
       setError('');
     },
     [assignmentId]
   );
 
-  useAutoSave(payload, (data) => saveAssignment(data, 'draft'), autoSaveEnabled);
+  const saveAssignmentDraft = useCallback(
+    async (data: SaveAssignmentPayload) => {
+      const incomingPartCount = data.parts.length;
+      const incomingQuestionCount = data.parts.reduce(
+        (sum, part) => sum + part.questions.length,
+        0
+      );
+
+      if (savedPartCountRef.current > 0 && incomingPartCount === 0) {
+        setError('Auto-save blocked to protect your assignment: no listening parts to save.');
+        return;
+      }
+
+      if (savedQuestionCountRef.current > 0 && incomingQuestionCount === 0) {
+        setError('Auto-save blocked to protect your assignment: no questions to save.');
+        return;
+      }
+
+      try {
+        await saveAssignment(data, 'draft');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Auto-save failed');
+      }
+    },
+    [saveAssignment]
+  );
+
+  useAutoSave(payload, saveAssignmentDraft, autoSaveEnabled);
 
   useEffect(() => {
     fetch('/api/speak-and-submit/settings')
@@ -328,8 +364,8 @@ export default function AssignmentEditor({
       title: part.title,
       audio_url: part.audio_url,
       thumbnail_url: part.thumbnail_url,
-      additional_thumbnail_enabled: part.additional_thumbnail_enabled,
-      additional_thumbnail_url: part.additional_thumbnail_url,
+      additional_thumbnail_enabled: part.additional_thumbnail_enabled ?? false,
+      additional_thumbnail_url: part.additional_thumbnail_url ?? '',
       qr_enabled: part.qr_enabled,
       transcript: part.transcript,
       transcript_source: part.transcript_source,
