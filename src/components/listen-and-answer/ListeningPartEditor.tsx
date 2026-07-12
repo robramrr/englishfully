@@ -19,6 +19,7 @@ import {
   DEFAULT_PART_INSTRUCTIONS_PLACEHOLDER,
   DEFAULT_QUESTION_FRAMEWORK,
   createEmptyQuestion,
+  type AiGeneratedQuestionType,
 } from '@/lib/listen-and-answer/types';
 
 export interface ClientListeningPart extends SaveListeningPartPayload {
@@ -47,6 +48,7 @@ export default function ListeningPartEditor({
 }: ListeningPartEditorProps) {
   const [generatingTranscript, setGeneratingTranscript] = useState(false);
   const [generatingPart, setGeneratingPart] = useState<'A' | 'B' | null>(null);
+  const [aiQuestionType, setAiQuestionType] = useState<AiGeneratedQuestionType>('multiple_choice');
   const [error, setError] = useState('');
   const [qrPreview, setQrPreview] = useState('');
 
@@ -151,6 +153,7 @@ export default function ListeningPartEditor({
           framework: part.question_framework,
           cefr_levels: part.cefr_levels,
           part: aiPart,
+          question_type: aiQuestionType,
         }),
       });
       const data = await response.json();
@@ -362,6 +365,33 @@ export default function ListeningPartEditor({
               </label>
             ))}
           </div>
+        </div>
+
+        <div>
+          <ComicText className="font-bold mb-2 text-sm">AI Question Type</ComicText>
+          <div className="flex flex-wrap gap-4">
+            <label className="flex items-center gap-2 font-bold text-[var(--comic-dark)]">
+              <input
+                type="radio"
+                name={`ai-question-type-${part.clientId}`}
+                checked={aiQuestionType === 'multiple_choice'}
+                onChange={() => setAiQuestionType('multiple_choice')}
+              />
+              Multiple Choice
+            </label>
+            <label className="flex items-center gap-2 font-bold text-[var(--comic-dark)]">
+              <input
+                type="radio"
+                name={`ai-question-type-${part.clientId}`}
+                checked={aiQuestionType === 'true_false'}
+                onChange={() => setAiQuestionType('true_false')}
+              />
+              True / False
+            </label>
+          </div>
+          <ComicText className="text-xs text-[var(--comic-dark)] mt-2">
+            Short answer, fill-in-blank, matching, and ordering must be added manually with + Add Question.
+          </ComicText>
         </div>
 
         <div className="flex flex-wrap gap-3">

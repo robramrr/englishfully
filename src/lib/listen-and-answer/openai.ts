@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import type { AiQuestionPart, CefrLevel, GeneratedQuestionDraft } from './types';
+import type { AiQuestionPart, AiGeneratedQuestionType, CefrLevel, GeneratedQuestionDraft, QuestionType } from './types';
 import { buildQuestionGenerationPrompt } from './prompts';
 
 function getOpenAIClient(): OpenAI {
@@ -52,7 +52,10 @@ export async function transcribeAudioFromUrl(audioUrl: string): Promise<string> 
   return text;
 }
 
-function parseGeneratedQuestions(raw: string): GeneratedQuestionDraft[] {
+function parseGeneratedQuestions(
+  raw: string,
+  questionType: AiGeneratedQuestionType
+): GeneratedQuestionDraft[] {
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     throw new Error('AI response did not contain valid JSON');
@@ -72,13 +75,26 @@ function parseGeneratedQuestions(raw: string): GeneratedQuestionDraft[] {
   }
 
   return parsed.questions.slice(0, 5).map((item) => {
+    const questionText = String(item.question_text ?? '').trim();
+    const correctAnswer = String(item.correct_answer ?? '').trim();
+
+    if (questionType === 'true_false') {
+      const normalizedAnswer = correctAnswer.toLowerCase() === 'false' ? 'False' : 'True';
+      return {
+        question_text: questionText,
+        question_type: 'true_false' as QuestionType,
+        choices: ['True', 'False'],
+        correct_answer: normalizedAnswer,
+      };
+    }
+
     const choices = (item.choices ?? []).map((c) => String(c).trim()).filter(Boolean);
     while (choices.length < 4) choices.push('');
     return {
-      question_text: String(item.question_text ?? '').trim(),
-      question_type: 'multiple_choice',
+      question_text: questionText,
+      question_type: 'multiple_choice' as QuestionType,
       choices: choices.slice(0, 4),
-      correct_answer: String(item.correct_answer ?? '').trim(),
+      correct_answer: correctAnswer,
     };
   });
 }
@@ -88,6 +104,7 @@ export async function generateListeningQuestions(params: {
   framework: string;
   cefrLevels: CefrLevel[];
   part: AiQuestionPart;
+  questionType: AiGeneratedQuestionType;
 }): Promise<GeneratedQuestionDraft[]> {
   if (!params.transcript.trim()) {
     throw new Error('A transcript is required before generating questions');
@@ -116,5 +133,5 @@ export async function generateListeningQuestions(params: {
     throw new Error('AI did not return question content');
   }
 
-  return parseGeneratedQuestions(content);
+  return parseGeneratedQuestions(content, params.questionType);
 }

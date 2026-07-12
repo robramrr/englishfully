@@ -16,6 +16,8 @@ export const TIME_UNITS: TimeUnit[] = ['minutes', 'hours'];
 
 export type AiQuestionPart = 'A' | 'B';
 
+export type AiGeneratedQuestionType = 'multiple_choice' | 'true_false';
+
 export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   multiple_choice: 'Multiple Choice',
   true_false: 'True / False',
