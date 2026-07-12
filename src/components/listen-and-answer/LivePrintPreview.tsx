@@ -92,9 +92,7 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
               </span>
               <span>
                 Date:{' '}
-                <span className="inline-block border-b-2 border-[var(--comic-black)] w-6 align-bottom" /> /{' '}
-                <span className="inline-block border-b-2 border-[var(--comic-black)] w-6 align-bottom" /> /{' '}
-                <span className="inline-block border-b-2 border-[var(--comic-black)] w-6 align-bottom" />
+                <span className="inline-block border-b-2 border-[var(--comic-black)] w-24 align-bottom" />
               </span>
             </div>
           ) : null}
