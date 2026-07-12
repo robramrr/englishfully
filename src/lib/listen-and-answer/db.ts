@@ -69,6 +69,10 @@ export async function ensureSchema(): Promise<void> {
         ALTER TABLE listen_assignments
         ADD COLUMN IF NOT EXISTS include_student_info_line BOOLEAN NOT NULL DEFAULT false
       `;
+      await sql`
+        ALTER TABLE listen_assignments
+        ADD COLUMN IF NOT EXISTS points TEXT NOT NULL DEFAULT ''
+      `;
     })();
   }
   await schemaReady;
@@ -82,6 +86,7 @@ function rowToAssignment(row: Record<string, unknown>): ListenAssignment {
     title: row.title as string,
     class_name: row.class_name as string,
     due_date: (row.due_date as string | null) ?? null,
+    points: (row.points as string) ?? '',
     include_answer_key: Boolean(row.include_answer_key),
     include_student_info_line: Boolean(row.include_student_info_line),
     status: (row.status as 'draft' | 'published') ?? 'draft',
@@ -270,6 +275,7 @@ export async function saveAssignment(
       title = ${payload.title.trim() || 'Untitled Listening Assignment'},
       class_name = ${payload.class_name.trim()},
       due_date = ${payload.due_date},
+      points = ${payload.points.trim()},
       include_answer_key = ${Boolean(payload.include_answer_key)},
       include_student_info_line = ${Boolean(payload.include_student_info_line)},
       status = ${payload.status},
@@ -296,6 +302,7 @@ export async function duplicateAssignment(
     title: `${source.title} (Copy)`,
     class_name: source.class_name,
     due_date: source.due_date,
+    points: source.points,
     include_answer_key: source.include_answer_key,
     include_student_info_line: source.include_student_info_line,
     status: 'draft',

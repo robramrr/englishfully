@@ -71,6 +71,9 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
               {assignment.due_date ? (
                 <span>Due: {formatDueDate(assignment.due_date)}</span>
               ) : null}
+              {assignment.points.trim() ? (
+                <span>Points: {assignment.points.trim()}</span>
+              ) : null}
             </span>
           </ComicText>
         </div>

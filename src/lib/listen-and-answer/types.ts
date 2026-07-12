@@ -62,6 +62,7 @@ export interface ListenAssignment {
   title: string;
   class_name: string;
   due_date: string | null;
+  points: string;
   include_answer_key: boolean;
   include_student_info_line: boolean;
   status: 'draft' | 'published';
@@ -83,6 +84,7 @@ export interface SaveAssignmentPayload {
   title: string;
   class_name: string;
   due_date: string | null;
+  points: string;
   include_answer_key: boolean;
   include_student_info_line: boolean;
   status: 'draft' | 'published';

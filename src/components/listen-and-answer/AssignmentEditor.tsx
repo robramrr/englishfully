@@ -52,6 +52,7 @@ function buildPayload(
   title: string,
   className: string,
   dueDate: string,
+  points: string,
   includeAnswerKey: boolean,
   includeStudentInfoLine: boolean,
   status: 'draft' | 'published',
@@ -62,6 +63,7 @@ function buildPayload(
     title,
     class_name: className,
     due_date: dueDate || null,
+    points,
     include_answer_key: includeAnswerKey,
     include_student_info_line: includeStudentInfoLine,
     status,
@@ -98,6 +100,7 @@ export default function AssignmentEditor({
   const [title, setTitle] = useState(initialAssignment.title);
   const [className, setClassName] = useState(initialAssignment.class_name);
   const [dueDate, setDueDate] = useState(initialAssignment.due_date ?? '');
+  const [points, setPoints] = useState(initialAssignment.points ?? '');
   const [includeAnswerKey, setIncludeAnswerKey] = useState(initialAssignment.include_answer_key);
   const [includeStudentInfoLine, setIncludeStudentInfoLine] = useState(
     initialAssignment.include_student_info_line ?? false
@@ -116,12 +119,13 @@ export default function AssignmentEditor({
         title,
         className,
         dueDate,
+        points,
         includeAnswerKey,
         includeStudentInfoLine,
         'draft',
         parts
       ),
-    [teacherName, title, className, dueDate, includeAnswerKey, includeStudentInfoLine, parts]
+    [teacherName, title, className, dueDate, points, includeAnswerKey, includeStudentInfoLine, parts]
   );
 
   const saveAssignment = useCallback(
@@ -257,6 +261,7 @@ export default function AssignmentEditor({
     title,
     class_name: className,
     due_date: dueDate || null,
+    points,
     include_answer_key: includeAnswerKey,
     include_student_info_line: includeStudentInfoLine,
     parts: payload.parts.map((part, partIndex) => ({
@@ -343,6 +348,16 @@ export default function AssignmentEditor({
               className="w-full comic-input"
               value={dueDate}
               onChange={(event) => setDueDate(event.target.value)}
+            />
+          </div>
+          <div>
+            <ComicText className="font-bold mb-1 text-sm">Points</ComicText>
+            <input
+              className="w-full comic-input"
+              value={points}
+              onChange={(event) => setPoints(event.target.value)}
+              placeholder="10"
+              inputMode="numeric"
             />
           </div>
         </div>
