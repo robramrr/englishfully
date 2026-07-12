@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
-import TotalTimeDisplay from './TotalTimeDisplay';
+import TotalTimeDisplay, {
+  ListenMetaDivider,
+  hasTotalTimeContent,
+} from './TotalTimeDisplay';
 import type { ListenAssignmentWithParts } from '@/lib/listen-and-answer/types';
 import {
   QUESTION_TYPE_LABELS,
@@ -101,9 +104,18 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
             🔊 Listen &amp; Answer
           </ComicTitle>
           {assignment.instructions.trim() ? (
-            <ComicText className="font-bold mb-4">
-              Instructions: {assignment.instructions.trim()}
-            </ComicText>
+            <>
+              <ComicText className="font-bold mb-1">
+                Instructions: {assignment.instructions.trim()}
+              </ComicText>
+              {!hasTotalTimeContent(
+                assignment.total_questions,
+                assignment.time_amount,
+                assignment.time_unit
+              ) ? (
+                <ListenMetaDivider />
+              ) : null}
+            </>
           ) : null}
           <TotalTimeDisplay
             totalQuestions={assignment.total_questions}
@@ -150,7 +162,12 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
               </div>
 
               {part.instructions.trim() ? (
-                <ComicText className="font-bold mb-4">{part.instructions.trim()}</ComicText>
+                <>
+                  <ComicText className="font-bold mb-1">{part.instructions.trim()}</ComicText>
+                  {!hasTotalTimeContent(part.total_questions, part.time_amount, part.time_unit) ? (
+                    <ListenMetaDivider />
+                  ) : null}
+                </>
               ) : null}
 
               <TotalTimeDisplay
