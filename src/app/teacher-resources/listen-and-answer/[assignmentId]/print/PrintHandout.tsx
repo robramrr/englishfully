@@ -38,7 +38,7 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
           .map(async (part) => {
             const dataUrl = await QRCode.toDataURL(part.audio_url.trim(), {
               errorCorrectionLevel: 'M',
-              margin: 2,
+              margin: 0,
               width: 160,
               color: { dark: '#001a48', light: '#ffffff' },
             });
@@ -117,6 +117,12 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                 <span className="inline-block border-b-4 border-[var(--comic-black)] w-10 align-bottom" /> /{' '}
                 <span className="inline-block border-b-4 border-[var(--comic-black)] w-10 align-bottom" />
               </span>
+              <span>
+                Date:{' '}
+                <span className="inline-block border-b-4 border-[var(--comic-black)] w-8 align-bottom" /> /{' '}
+                <span className="inline-block border-b-4 border-[var(--comic-black)] w-8 align-bottom" /> /{' '}
+                <span className="inline-block border-b-4 border-[var(--comic-black)] w-10 align-bottom" />
+              </span>
             </div>
             {assignment.due_date ? (
               <ComicText className="font-bold mb-3">Due: {formatDueDate(assignment.due_date)}</ComicText>
@@ -130,27 +136,35 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
             const printableQuestions = getPrintableQuestions(part);
             return (
               <section key={part.id} className="mb-6">
-                <ComicText className="font-bold text-xl text-[var(--comic-secondary)] mb-4">
-                  {part.title || `Part ${partIndex + 1}`}
-                </ComicText>
-
-                <div className="flex flex-wrap gap-4 mb-4 items-start">
+                <div className="flex flex-wrap gap-4 items-start mb-4">
                   {part.thumbnail_url.trim() ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={part.thumbnail_url}
                       alt=""
-                      className="max-h-32 comic-border object-cover"
+                      className="block max-h-32 comic-border object-cover"
                     />
                   ) : null}
                   {part.qr_enabled && qrCodes[part.id] ? (
-                    <div className="text-center">
+                    <div className="shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={qrCodes[part.id]} alt="Audio QR code" width={160} height={160} />
-                      <ComicText className="text-xs font-bold mt-1">Scan to listen</ComicText>
+                      <img
+                        src={qrCodes[part.id]}
+                        alt="Audio QR code"
+                        width={160}
+                        height={160}
+                        className="block"
+                      />
+                      <ComicText className="text-xs font-bold mt-1 text-center">
+                        Scan to listen
+                      </ComicText>
                     </div>
                   ) : null}
                 </div>
+
+                <ComicText className="font-bold text-xl text-[var(--comic-secondary)] mb-4">
+                  {part.title || `Part ${partIndex + 1}`}
+                </ComicText>
 
                 <ComicText className="font-bold mb-4">
                   Listen carefully. Then answer the questions below.
