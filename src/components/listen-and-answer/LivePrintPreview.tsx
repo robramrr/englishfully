@@ -71,20 +71,20 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
           </ComicText>
         </div>
 
-        <div className="mb-6 space-y-2">
+        <div className="mb-4 space-y-2">
           <div className="flex flex-wrap gap-6 items-end font-bold text-lg">
             <span>
               Nickname: <span className="inline-block border-b-4 border-[var(--comic-black)] w-40 align-bottom" />
             </span>
             <span>
               Student # / ID: <span className="inline-block border-b-4 border-[var(--comic-black)] w-10 align-bottom" /> /{' '}
-              <span className="inline-block border-b-4 border-[var(--comic-black)] w-8 align-bottom" />
+              <span className="inline-block border-b-4 border-[var(--comic-black)] w-10 align-bottom" />
             </span>
           </div>
           {assignment.due_date ? (
             <ComicText className="font-bold">Due: {formatDueDate(assignment.due_date)}</ComicText>
           ) : null}
-          <ComicTitle level={4} className="!text-xl text-[var(--comic-primary)] pt-2">
+          <ComicTitle level={4} className="!text-xl !mb-0 text-[var(--comic-primary)]">
             👂 Listen &amp; Answer
           </ComicTitle>
         </div>
@@ -92,7 +92,7 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
         {assignment.parts.map((part, partIndex) => {
           const printableQuestions = getPrintableQuestions(part);
           return (
-            <section key={part.id} className="mb-8">
+            <section key={part.id} className="mb-6">
               <ComicTitle level={4} className="mb-4 text-[var(--comic-primary)]">
                 {part.title || `Part ${partIndex + 1}`}
               </ComicTitle>
@@ -116,20 +116,20 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
                 Listen carefully. Then answer the questions below.
               </ComicText>
 
-              <ol className="space-y-4">
+              <ol className="space-y-3">
                 {printableQuestions.map((question, questionIndex) => (
                   <li
                     key={question.id}
-                    className="border-4 border-[var(--comic-black)] p-4 space-y-2"
+                    className="print-question-block border-b-4 border-[var(--comic-black)] pb-4 space-y-2"
                   >
-                    <ComicText className="font-bold">
+                    <ComicText className="font-bold text-base">
                       {formatQuestionLabel(questionIndex)}. {question.question_text}
                     </ComicText>
-                    <ComicText className="text-sm text-[var(--comic-secondary)]">
+                    <ComicText className="text-xs text-[var(--comic-secondary)]">
                       {QUESTION_TYPE_LABELS[question.question_type]}
                     </ComicText>
                     {question.choices.length > 0 ? (
-                      <ul className="list-disc pl-6 space-y-1">
+                      <ul className="list-disc pl-6 space-y-1 text-sm">
                         {question.choices
                           .filter((choice) => choice.trim())
                           .map((choice) => (

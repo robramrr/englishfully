@@ -75,6 +75,10 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
             break-before: page;
             page-break-before: always;
           }
+          .listen-and-answer-page .print-question-block {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
         }
       `}</style>
 
@@ -102,7 +106,7 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
             </ComicText>
           </div>
 
-          <section className="mb-8">
+          <section className="mb-4">
             <div className="flex flex-wrap gap-6 items-end font-bold text-lg mb-4">
               <span>
                 Nickname:{' '}
@@ -111,13 +115,13 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
               <span>
                 Student # / ID:{' '}
                 <span className="inline-block border-b-4 border-[var(--comic-black)] w-10 align-bottom" /> /{' '}
-                <span className="inline-block border-b-4 border-[var(--comic-black)] w-8 align-bottom" />
+                <span className="inline-block border-b-4 border-[var(--comic-black)] w-10 align-bottom" />
               </span>
             </div>
             {assignment.due_date ? (
-              <ComicText className="font-bold mb-4">Due: {formatDueDate(assignment.due_date)}</ComicText>
+              <ComicText className="font-bold mb-3">Due: {formatDueDate(assignment.due_date)}</ComicText>
             ) : null}
-            <ComicTitle level={6} className="!text-xl text-[var(--comic-primary)]">
+            <ComicTitle level={6} className="!text-xl !mb-0 text-[var(--comic-primary)]">
               👂 Listen &amp; Answer
             </ComicTitle>
           </section>
@@ -125,7 +129,7 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
           {assignment.parts.map((part, partIndex) => {
             const printableQuestions = getPrintableQuestions(part);
             return (
-              <section key={part.id} className="mb-8">
+              <section key={part.id} className="mb-6">
                 <ComicText className="font-bold text-xl text-[var(--comic-secondary)] mb-4">
                   {part.title || `Part ${partIndex + 1}`}
                 </ComicText>
@@ -152,20 +156,20 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                   Listen carefully. Then answer the questions below.
                 </ComicText>
 
-                <ol className="space-y-4">
+                <ol className="space-y-3">
                   {printableQuestions.map((question, questionIndex) => (
                     <li
                       key={question.id}
-                      className="border-4 border-[var(--comic-black)] p-4 space-y-2"
+                      className="print-question-block border-b-4 border-[var(--comic-black)] pb-4 space-y-2"
                     >
-                      <ComicText className="font-bold text-lg leading-relaxed">
+                      <ComicText className="font-bold text-base leading-relaxed">
                         {formatQuestionLabel(questionIndex)}. {question.question_text}
                       </ComicText>
-                      <ComicText className="text-sm text-[var(--comic-secondary)] font-bold">
+                      <ComicText className="text-xs text-[var(--comic-secondary)] font-bold">
                         {QUESTION_TYPE_LABELS[question.question_type]}
                       </ComicText>
                       {question.choices.length > 0 ? (
-                        <ul className="list-disc pl-6 space-y-1 font-bold">
+                        <ul className="list-disc pl-6 space-y-1 text-sm font-bold">
                           {question.choices
                             .filter((choice) => choice.trim())
                             .map((choice) => (
