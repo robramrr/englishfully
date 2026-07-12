@@ -8,6 +8,7 @@ import TotalTimeDisplay, {
   ListenMetaDivider,
   hasTotalTimeContent,
 } from './TotalTimeDisplay';
+import ScantronAnswerSheet from './ScantronAnswerSheet';
 import type { ListenAssignmentWithParts } from '@/lib/listen-and-answer/types';
 import {
   QUESTION_TYPE_LABELS,
@@ -236,6 +237,12 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
             </section>
           );
         })}
+
+        {assignment.include_scantron_sheet ? (
+          <section className="mt-10 pt-8 border-t-4 border-dashed border-[var(--comic-black)]">
+            <ScantronAnswerSheet assignment={assignment} interactive />
+          </section>
+        ) : null}
 
         {assignment.include_answer_key ? (
           <section className="mt-10 pt-8 border-t-4 border-dashed border-[var(--comic-black)]">

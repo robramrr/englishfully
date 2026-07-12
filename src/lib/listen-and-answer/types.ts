@@ -78,6 +78,7 @@ export interface ListenAssignment {
   due_date: string | null;
   points: string;
   include_answer_key: boolean;
+  include_scantron_sheet: boolean;
   include_student_info_line: boolean;
   instructions: string;
   total_questions: string;
@@ -104,6 +105,7 @@ export interface SaveAssignmentPayload {
   due_date: string | null;
   points: string;
   include_answer_key: boolean;
+  include_scantron_sheet: boolean;
   include_student_info_line: boolean;
   instructions: string;
   total_questions: string;
@@ -223,6 +225,61 @@ export function formatPrintChoiceLine(
   }
 
   return trimmed;
+}
+
+export type ScantronAnswers = Record<string, string>;
+
+export interface ScantronQuestionRow {
+  question: ListenQuestion;
+  questionIndex: number;
+  letters: string[];
+}
+
+export interface ScantronPartSection {
+  part: ListeningPart;
+  partIndex: number;
+  rows: ScantronQuestionRow[];
+}
+
+const SCANTRON_QUESTION_TYPES: QuestionType[] = ['multiple_choice', 'true_false'];
+
+export function isScantronQuestionType(questionType: QuestionType): boolean {
+  return SCANTRON_QUESTION_TYPES.includes(questionType);
+}
+
+export function getScantronBubbleLetters(question: ListenQuestion): string[] {
+  if (question.question_type === 'true_false') {
+    return ['A', 'B'];
+  }
+
+  const filledChoiceCount = question.choices.filter((choice) => choice.trim()).length;
+  const bubbleCount = filledChoiceCount > 0 ? Math.min(filledChoiceCount, 4) : 4;
+  return Array.from({ length: bubbleCount }, (_, index) =>
+    String.fromCharCode(65 + index)
+  );
+}
+
+export function getScantronPartSections(assignment: ListenAssignmentWithParts): ScantronPartSection[] {
+  return assignment.parts
+    .map((part, partIndex) => {
+      const printableQuestions = getPrintableQuestions(part).filter((question) =>
+        isScantronQuestionType(question.question_type)
+      );
+      return {
+        part,
+        partIndex,
+        rows: printableQuestions.map((question, questionIndex) => ({
+          question,
+          questionIndex,
+          letters: getScantronBubbleLetters(question),
+        })),
+      };
+    })
+    .filter((section) => section.rows.length > 0);
+}
+
+export function hasScantronQuestions(assignment: ListenAssignmentWithParts): boolean {
+  return getScantronPartSections(assignment).length > 0;
 }
 
 export function formatAnswerKeyAnswer(question: {

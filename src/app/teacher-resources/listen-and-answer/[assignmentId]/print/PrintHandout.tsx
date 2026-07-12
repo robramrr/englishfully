@@ -7,6 +7,7 @@ import TotalTimeDisplay, {
   ListenMetaDivider,
   hasTotalTimeContent,
 } from '../../../../../components/listen-and-answer/TotalTimeDisplay';
+import ScantronAnswerSheet from '../../../../../components/listen-and-answer/ScantronAnswerSheet';
 import type { ListenAssignmentWithParts } from '@/lib/listen-and-answer/types';
 import {
   QUESTION_TYPE_LABELS,
@@ -77,6 +78,10 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
             padding: 0 !important;
           }
           .answer-key-page {
+            break-before: page;
+            page-break-before: always;
+          }
+          .scantron-page {
             break-before: page;
             page-break-before: always;
           }
@@ -281,6 +286,12 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
             );
           })}
         </main>
+
+        {assignment.include_scantron_sheet ? (
+          <main className="scantron-page print-page max-w-3xl mx-auto px-8 py-10 bg-white text-[var(--comic-dark)]">
+            <ScantronAnswerSheet assignment={assignment} />
+          </main>
+        ) : null}
 
         {assignment.include_answer_key ? (
           <main className="answer-key-page print-page max-w-3xl mx-auto px-8 py-10 bg-white text-[var(--comic-dark)]">

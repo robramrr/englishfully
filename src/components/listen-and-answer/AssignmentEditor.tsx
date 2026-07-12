@@ -65,6 +65,7 @@ function buildPayload(
   timeAmount: string,
   timeUnit: TimeUnit,
   includeAnswerKey: boolean,
+  includeScantronSheet: boolean,
   includeStudentInfoLine: boolean,
   status: 'draft' | 'published',
   parts: ClientListeningPart[]
@@ -76,6 +77,7 @@ function buildPayload(
     due_date: dueDate || null,
     points,
     include_answer_key: includeAnswerKey,
+    include_scantron_sheet: includeScantronSheet,
     include_student_info_line: includeStudentInfoLine,
     instructions,
     total_questions: totalQuestions,
@@ -126,6 +128,9 @@ export default function AssignmentEditor({
   const [timeAmount, setTimeAmount] = useState(initialAssignment.time_amount ?? '');
   const [timeUnit, setTimeUnit] = useState<TimeUnit>(initialAssignment.time_unit ?? 'minutes');
   const [includeAnswerKey, setIncludeAnswerKey] = useState(initialAssignment.include_answer_key);
+  const [includeScantronSheet, setIncludeScantronSheet] = useState(
+    initialAssignment.include_scantron_sheet ?? false
+  );
   const [includeStudentInfoLine, setIncludeStudentInfoLine] = useState(
     initialAssignment.include_student_info_line ?? false
   );
@@ -149,6 +154,7 @@ export default function AssignmentEditor({
         timeAmount,
         timeUnit,
         includeAnswerKey,
+        includeScantronSheet,
         includeStudentInfoLine,
         'draft',
         parts
@@ -164,6 +170,7 @@ export default function AssignmentEditor({
       timeAmount,
       timeUnit,
       includeAnswerKey,
+      includeScantronSheet,
       includeStudentInfoLine,
       parts,
     ]
@@ -304,6 +311,7 @@ export default function AssignmentEditor({
     due_date: dueDate || null,
     points,
     include_answer_key: includeAnswerKey,
+    include_scantron_sheet: includeScantronSheet,
     include_student_info_line: includeStudentInfoLine,
     instructions,
     total_questions: totalQuestions,
@@ -440,6 +448,15 @@ export default function AssignmentEditor({
             onChange={(event) => setIncludeAnswerKey(event.target.checked)}
           />
           Create Answer Key (prints on a separate page)
+        </label>
+
+        <label className="flex items-center gap-2 mt-3 font-bold text-[var(--comic-dark)]">
+          <input
+            type="checkbox"
+            checked={includeScantronSheet}
+            onChange={(event) => setIncludeScantronSheet(event.target.checked)}
+          />
+          Create Scantron Answer Sheet (prints on a separate page; includes Name / Student # / Date)
         </label>
 
         <label className="flex items-center gap-2 mt-3 font-bold text-[var(--comic-dark)]">

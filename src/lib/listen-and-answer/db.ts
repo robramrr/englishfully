@@ -76,6 +76,10 @@ export async function ensureSchema(): Promise<void> {
       `;
       await sql`
         ALTER TABLE listen_assignments
+        ADD COLUMN IF NOT EXISTS include_scantron_sheet BOOLEAN NOT NULL DEFAULT false
+      `;
+      await sql`
+        ALTER TABLE listen_assignments
         ADD COLUMN IF NOT EXISTS points TEXT NOT NULL DEFAULT ''
       `;
       await sql`
@@ -129,6 +133,7 @@ function rowToAssignment(row: Record<string, unknown>): ListenAssignment {
     due_date: (row.due_date as string | null) ?? null,
     points: (row.points as string) ?? '',
     include_answer_key: Boolean(row.include_answer_key),
+    include_scantron_sheet: Boolean(row.include_scantron_sheet),
     include_student_info_line: Boolean(row.include_student_info_line),
     instructions: (row.instructions as string) ?? '',
     total_questions: (row.total_questions as string) ?? '',
@@ -333,6 +338,7 @@ export async function saveAssignment(
       due_date = ${payload.due_date},
       points = ${payload.points.trim()},
       include_answer_key = ${Boolean(payload.include_answer_key)},
+      include_scantron_sheet = ${Boolean(payload.include_scantron_sheet)},
       include_student_info_line = ${Boolean(payload.include_student_info_line)},
       instructions = ${payload.instructions.trim()},
       total_questions = ${payload.total_questions.trim()},
@@ -364,6 +370,7 @@ export async function duplicateAssignment(
     due_date: source.due_date,
     points: source.points,
     include_answer_key: source.include_answer_key,
+    include_scantron_sheet: source.include_scantron_sheet,
     include_student_info_line: source.include_student_info_line,
     instructions: source.instructions,
     total_questions: source.total_questions,
