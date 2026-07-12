@@ -42,14 +42,14 @@ export default function PartThumbnailBlock({
       : 'font-bold text-xl text-[var(--comic-secondary)] mt-1';
 
   return (
-    <div className="shrink-0">
+    <div className="shrink-0 print-part-thumbnail-block">
       <div className="flex items-start gap-2">
         {hasPrimaryThumbnail ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={part.thumbnail_url}
             alt=""
-            className={`block ${imageHeightClass} w-auto comic-border object-cover`}
+            className={`print-thumbnail-img block w-auto max-w-full comic-border object-contain ${imageHeightClass}`}
           />
         ) : null}
         {hasAdditionalThumbnail ? (
@@ -57,7 +57,7 @@ export default function PartThumbnailBlock({
           <img
             src={part.additional_thumbnail_url}
             alt=""
-            className={`block ${imageHeightClass} w-auto comic-border object-cover`}
+            className={`print-thumbnail-img block w-auto max-w-full comic-border object-contain ${imageHeightClass}`}
           />
         ) : null}
       </div>

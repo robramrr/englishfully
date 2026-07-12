@@ -71,6 +71,16 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
 
       <div className="listen-and-answer-page print-page min-w-[720px] bg-white text-[var(--comic-dark)] border-4 border-[var(--comic-black)] p-8">
         <style jsx global>{`
+          .listen-and-answer-page .print-part-header-block,
+          .listen-and-answer-page .print-part-thumbnail-block,
+          .listen-and-answer-page .print-qr-block {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+          .listen-and-answer-page .print-thumbnail-img,
+          .listen-and-answer-page .print-qr-img {
+            object-fit: contain !important;
+          }
           .listen-and-answer-page .print-question-block .listen-print-choices,
           .listen-and-answer-page .print-question-block .listen-print-choices > div {
             font-size: 0.875rem !important;
@@ -144,21 +154,21 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
         {assignment.parts.map((part, partIndex) => {
           const printableQuestions = getPrintableQuestions(part);
           return (
-            <section key={part.id} className="mb-6">
-              <div className="flex flex-wrap gap-4 items-start mb-4">
+            <section key={part.id} className="mb-6 print-part-section">
+              <div className="print-part-header-block flex flex-wrap gap-4 items-start mb-4">
                 <PartThumbnailBlock
                   part={part}
                   partIndex={partIndex}
-                  imageHeightClass="h-28"
+                  imageHeightClass="max-h-28"
                   titleComponent="title"
                 />
                 {part.qr_enabled && qrCodes[part.id] ? (
-                  <div className="shrink-0">
+                  <div className="print-qr-block shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={qrCodes[part.id]}
                       alt="Audio QR code"
-                      className="block h-28 w-28"
+                      className="print-qr-img block h-28 w-28 object-contain"
                     />
                     <ComicText className="text-xs font-bold mt-1 text-center">
                       Scan to listen

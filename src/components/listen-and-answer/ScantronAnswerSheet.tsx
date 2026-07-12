@@ -3,11 +3,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
-import type { ListenAssignmentWithParts, ScantronAnswers } from '@/lib/listen-and-answer/types';
+import type {
+  ListenAssignmentWithParts,
+  ScantronAnswers,
+  ScantronQuestionRow,
+} from '@/lib/listen-and-answer/types';
 import {
   formatQuestionLabel,
   getScantronPartSections,
   hasScantronQuestions,
+  splitScantronRows,
 } from '@/lib/listen-and-answer/types';
 
 interface ScantronAnswerSheetProps {
@@ -25,6 +30,76 @@ function formatDueDate(value: string | null): string {
     month: 'long',
     day: 'numeric',
   });
+}
+
+interface ScantronGridProps {
+  rows: ScantronQuestionRow[];
+  maxBubbleCount: number;
+  columnLetters: string[];
+  gridKey: string;
+  answers: ScantronAnswers;
+  interactive: boolean;
+  onSelectAnswer: (questionId: string, letter: string) => void;
+}
+
+function ScantronGrid({
+  rows,
+  maxBubbleCount,
+  columnLetters,
+  gridKey,
+  answers,
+  interactive,
+  onSelectAnswer,
+}: ScantronGridProps) {
+  return (
+    <div
+      className="scantron-grid"
+      style={{ ['--scantron-columns' as string]: String(maxBubbleCount) }}
+    >
+      <div />
+      {columnLetters.map((letter) => (
+        <div key={`header-${gridKey}-${letter}`} className="scantron-grid-header">
+          {letter}
+        </div>
+      ))}
+
+      {rows.map((row) => (
+        <div key={row.question.id} className="scantron-grid-row">
+          <div className="scantron-question-label">
+            {formatQuestionLabel(row.questionIndex)}
+          </div>
+          {columnLetters.map((letter, columnIndex) => {
+            const isActive = columnIndex < row.letters.length;
+            const isSelected = answers[row.question.id] === letter;
+
+            if (!isActive) {
+              return <div key={`${row.question.id}-${letter}`} />;
+            }
+
+            return (
+              <div key={`${row.question.id}-${letter}`} className="scantron-bubble-cell">
+                {interactive ? (
+                  <button
+                    type="button"
+                    className="scantron-bubble-button interactive"
+                    aria-label={`${formatQuestionLabel(row.questionIndex)} answer ${letter}`}
+                    aria-pressed={isSelected}
+                    onClick={() => onSelectAnswer(row.question.id, letter)}
+                  >
+                    <span className={`scantron-bubble${isSelected ? ' selected' : ''}`} />
+                  </button>
+                ) : (
+                  <span className="scantron-bubble-button" aria-hidden="true">
+                    <span className="scantron-bubble" />
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function ScantronAnswerSheet({
@@ -71,6 +146,15 @@ export default function ScantronAnswerSheet({
       <style jsx>{`
         .scantron-answer-sheet {
           color: var(--comic-dark);
+        }
+        .scantron-columns-layout {
+          display: grid;
+          grid-template-columns: repeat(var(--scantron-layout-columns), minmax(0, max-content));
+          gap: 1.5rem 2.5rem;
+          align-items: start;
+        }
+        .scantron-column {
+          min-width: 0;
         }
         .scantron-grid {
           display: grid;
@@ -130,16 +214,17 @@ export default function ScantronAnswerSheet({
         .scantron-bubble.selected {
           background: var(--comic-black);
         }
-        .scantron-bubble-letter {
-          font-size: 0.65rem;
-          font-weight: 700;
-          color: var(--comic-secondary);
-          line-height: 1;
-        }
         @media print {
+          .scantron-answer-sheet {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+          .scantron-columns-layout {
+            gap: 1rem 2rem;
+          }
           .scantron-grid {
             column-gap: 0.1rem;
-            row-gap: 0.15rem;
+            row-gap: 0.12rem;
           }
           .scantron-bubble {
             width: 0.8rem;
@@ -152,7 +237,7 @@ export default function ScantronAnswerSheet({
         }
       `}</style>
 
-      <div className="grid grid-cols-3 items-center gap-3 mb-8 border-b-4 border-[var(--comic-black)] pb-4">
+      <div className="grid grid-cols-3 items-center gap-3 mb-6 border-b-4 border-[var(--comic-black)] pb-3 print-part-header-block">
         <ComicText className="font-bold text-xl text-left">
           {assignment.teacher_name || 'Teacher'}
         </ComicText>
@@ -172,7 +257,7 @@ export default function ScantronAnswerSheet({
         </ComicText>
       </div>
 
-      <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 items-end font-bold mb-6 text-center">
+      <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 items-end font-bold mb-4 text-center print-part-header-block">
         <span>
           Name:{' '}
           <span className="inline-block border-b-2 border-[var(--comic-black)] w-40 align-bottom" />
@@ -188,72 +273,46 @@ export default function ScantronAnswerSheet({
         </span>
       </div>
 
-      <ComicTitle level={3} className="mb-2 text-[var(--comic-primary)]">
+      <ComicTitle level={3} className="mb-1 text-[var(--comic-primary)]">
         Answer Sheet
       </ComicTitle>
-      <p className="text-sm text-[var(--comic-dark)] mb-6">
+      <p className="text-sm text-[var(--comic-dark)] mb-4">
         Fill in one bubble per question.
       </p>
 
-      {sections.map((section) => (
-        <div key={`scantron-${section.part.id}`} className="mb-8">
-          {sections.length > 1 ? (
-            <ComicText className="text-base font-semibold text-[var(--comic-secondary)] mb-3">
-              {section.part.title || `Part ${section.partIndex + 1}`}
-            </ComicText>
-          ) : null}
+      {sections.map((section) => {
+        const columnCount = section.rows.length > 18 ? 3 : 2;
+        const rowColumns = splitScantronRows(section.rows, columnCount);
 
-          <div
-            className="scantron-grid"
-            style={{ ['--scantron-columns' as string]: String(maxBubbleCount) }}
-          >
-            <div />
-            {columnLetters.map((letter) => (
-              <div key={`header-${section.part.id}-${letter}`} className="scantron-grid-header">
-                {letter}
-              </div>
-            ))}
+        return (
+          <div key={`scantron-${section.part.id}`} className="mb-4">
+            {sections.length > 1 ? (
+              <ComicText className="text-base font-semibold text-[var(--comic-secondary)] mb-2">
+                {section.part.title || `Part ${section.partIndex + 1}`}
+              </ComicText>
+            ) : null}
 
-            {section.rows.map((row) => (
-              <div key={row.question.id} className="scantron-grid-row">
-                <div className="scantron-question-label">
-                  {formatQuestionLabel(row.questionIndex)}
+            <div
+              className="scantron-columns-layout"
+              style={{ ['--scantron-layout-columns' as string]: String(columnCount) }}
+            >
+              {rowColumns.map((columnRows, columnIndex) => (
+                <div key={`${section.part.id}-column-${columnIndex}`} className="scantron-column">
+                  <ScantronGrid
+                    rows={columnRows}
+                    maxBubbleCount={maxBubbleCount}
+                    columnLetters={columnLetters}
+                    gridKey={`${section.part.id}-${columnIndex}`}
+                    answers={answers}
+                    interactive={interactive}
+                    onSelectAnswer={selectAnswer}
+                  />
                 </div>
-                {columnLetters.map((letter, columnIndex) => {
-                  const isActive = columnIndex < row.letters.length;
-                  const isSelected = answers[row.question.id] === letter;
-
-                  if (!isActive) {
-                    return <div key={`${row.question.id}-${letter}`} />;
-                  }
-
-                  return (
-                    <div key={`${row.question.id}-${letter}`} className="scantron-bubble-cell">
-                      {interactive ? (
-                        <button
-                          type="button"
-                          className="scantron-bubble-button interactive"
-                          aria-label={`${formatQuestionLabel(row.questionIndex)} answer ${letter}`}
-                          aria-pressed={isSelected}
-                          onClick={() => selectAnswer(row.question.id, letter)}
-                        >
-                          <span
-                            className={`scantron-bubble${isSelected ? ' selected' : ''}`}
-                          />
-                        </button>
-                      ) : (
-                        <span className="scantron-bubble-button" aria-hidden="true">
-                          <span className="scantron-bubble" />
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </section>
   );
 }

@@ -86,6 +86,20 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
             break-before: page;
             page-break-before: always;
           }
+          .listen-and-answer-page .print-part-header-block,
+          .listen-and-answer-page .print-part-thumbnail-block,
+          .listen-and-answer-page .print-qr-block,
+          .listen-and-answer-page .print-assignment-intro {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+          .listen-and-answer-page .print-thumbnail-img,
+          .listen-and-answer-page .print-qr-img {
+            break-inside: avoid;
+            page-break-inside: avoid;
+            object-fit: contain !important;
+            overflow: visible !important;
+          }
           .listen-and-answer-page .print-question-block {
             break-inside: avoid;
             page-break-inside: avoid;
@@ -147,7 +161,7 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
             </ComicText>
           </div>
 
-          <section className="mb-4">
+          <section className="mb-4 print-assignment-intro">
             {assignment.include_student_info_line ? (
               <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 items-end font-bold mb-4 text-center">
                 <span>
@@ -192,20 +206,20 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
           {assignment.parts.map((part, partIndex) => {
             const printableQuestions = getPrintableQuestions(part);
             return (
-              <section key={part.id} className="mb-6">
-                <div className="flex flex-wrap gap-4 items-start mb-4">
+              <section key={part.id} className="mb-6 print-part-section">
+                <div className="print-part-header-block flex flex-wrap gap-4 items-start mb-4">
                   <PartThumbnailBlock
                     part={part}
                     partIndex={partIndex}
-                    imageHeightClass="h-32"
+                    imageHeightClass="max-h-32"
                   />
                   {part.qr_enabled && qrCodes[part.id] ? (
-                    <div className="shrink-0">
+                    <div className="print-qr-block shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={qrCodes[part.id]}
                         alt="Audio QR code"
-                        className="block h-32 w-32"
+                        className="print-qr-img block h-32 w-32 object-contain"
                       />
                       <ComicText className="text-xs font-bold mt-1 text-center">
                         Scan to listen
@@ -277,7 +291,7 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
         </main>
 
         {assignment.include_scantron_sheet ? (
-          <main className="scantron-page print-page max-w-3xl mx-auto px-8 py-10 bg-white text-[var(--comic-dark)]">
+          <main className="scantron-page print-page max-w-3xl mx-auto px-8 py-6 bg-white text-[var(--comic-dark)]">
             <ScantronAnswerSheet assignment={assignment} />
           </main>
         ) : null}
