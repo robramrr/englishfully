@@ -179,6 +179,10 @@ body::before {
   text-shadow: none;
 }
 
+.listen-and-answer-page .comic-title {
+  text-shadow: none;
+}
+
 .speak-page .speak-identity-title {
   font-size: 1.1875rem;
   letter-spacing: 0.02em;

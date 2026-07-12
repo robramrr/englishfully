@@ -64,7 +64,7 @@ export default function TeacherAuthGate({ children }: TeacherAuthGateProps) {
             🔐 Teacher Access
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold mb-6">
-            Enter your teacher password to manage Speak &amp; Submit tasks and view student recordings.
+            Enter your teacher password to manage Speak &amp; Submit and Listen &amp; Answer tools.
           </ComicText>
           <form onSubmit={handleLogin} className="space-y-4">
             <input

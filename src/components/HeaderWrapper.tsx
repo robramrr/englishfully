@@ -25,7 +25,8 @@ export default function HeaderWrapper() {
   const pathname = usePathname();
   const hideHeader =
     pathname.startsWith('/speak/') ||
-    pathname.includes('/speak-and-submit/') && pathname.endsWith('/print');
+    (pathname.includes('/speak-and-submit/') && pathname.endsWith('/print')) ||
+    (pathname.includes('/listen-and-answer/') && pathname.endsWith('/print'));
 
   if (hideHeader) return null;
 

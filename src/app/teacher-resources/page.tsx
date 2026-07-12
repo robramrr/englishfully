@@ -50,7 +50,7 @@ function ResourceCategoriesSection() {
   return (
     <section className="max-w-6xl mx-auto py-24 px-4">
       <div className="text-center mb-16">
-        <ComicTitle level={2} className="mb-8 text-[var(--comic-primary)]">
+        <ComicTitle level={2} className="comic-title-no-shadow mb-8 text-[var(--comic-primary)]">
           {t.teacherResources.categoriesTitle}
         </ComicTitle>
         <ComicText size="lg" className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto">
@@ -60,7 +60,7 @@ function ResourceCategoriesSection() {
       
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
         <ComicCard className="comic-shadow-xl text-center flex flex-col">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-primary)]">
+          <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-primary)]">
             {t.teacherResources.lessonPlansTitle}
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
@@ -81,7 +81,7 @@ function ResourceCategoriesSection() {
         </ComicCard>
         
         <ComicCard className="comic-shadow-xl text-center flex flex-col">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-secondary)]">
+          <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-secondary)]">
             {t.teacherResources.worksheetsTitle}
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
@@ -91,23 +91,25 @@ function ResourceCategoriesSection() {
             <li>• {t.teacherResources.worksheetsItem1}</li>
             <li>• {t.teacherResources.worksheetsItem2}</li>
             <li>• {t.teacherResources.worksheetsItem3}</li>
-            <li>
-              •{' '}
-              <Link href="/teacher-resources/speak-and-submit" className="underline font-bold text-[var(--comic-secondary)]">
-                {t.teacherResources.speakAndSubmitLink}
-              </Link>
-            </li>
+            <li>• {t.teacherResources.worksheetsItem4}</li>
             <li>• {t.teacherResources.worksheetsItem5}</li>
           </ul>
-          <Link href="/teacher-resources/speak-and-submit">
-            <ComicButton variant="secondary" size="sm">
-              {t.teacherResources.openSpeakAndSubmit}
-            </ComicButton>
-          </Link>
+          <div className="flex flex-col gap-3 items-center">
+            <Link href="/teacher-resources/speak-and-submit">
+              <ComicButton variant="secondary" size="sm">
+                {t.teacherResources.openSpeakAndSubmit}
+              </ComicButton>
+            </Link>
+            <Link href="/teacher-resources/listen-and-answer">
+              <ComicButton variant="primary" size="sm">
+                {t.teacherResources.listenAndAnswerButton}
+              </ComicButton>
+            </Link>
+          </div>
         </ComicCard>
         
         <ComicCard className="comic-shadow-xl text-center flex flex-col">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-success)]">
+          <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-success)]">
             {t.teacherResources.audioVideoTitle}
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
