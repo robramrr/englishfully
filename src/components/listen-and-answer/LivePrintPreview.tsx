@@ -68,15 +68,15 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
       <div className="listen-and-answer-page print-page min-w-[720px] bg-white text-[var(--comic-dark)] border-4 border-[var(--comic-black)] p-8">
         <style jsx global>{`
           .listen-and-answer-page .print-question-block .listen-print-choices,
-          .listen-and-answer-page .print-question-block .listen-print-choices li {
-            font-size: 0.875rem;
-            font-weight: 400;
-            line-height: 1.625;
+          .listen-and-answer-page .print-question-block .listen-print-choices > div {
+            font-size: 0.875rem !important;
+            font-weight: 400 !important;
+            line-height: 1.625 !important;
           }
           .listen-and-answer-page .print-question-block .listen-print-question-type {
-            font-size: 0.75rem;
-            font-weight: 400;
-            line-height: 1.5;
+            font-size: 0.75rem !important;
+            font-weight: 400 !important;
+            line-height: 1.5 !important;
           }
         `}</style>
         <div className="grid grid-cols-3 items-center gap-3 mb-6 border-b-4 border-[var(--comic-black)] pb-4">
@@ -207,23 +207,13 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
                       </p>
                     ) : null}
                     {question.choices.length > 0 ? (
-                      question.question_type === 'multiple_choice' ? (
-                        <div className="listen-print-choices space-y-0.5 text-sm font-normal leading-relaxed pl-1 text-[var(--comic-dark)]">
-                          {question.choices
-                            .filter((choice) => choice.trim())
-                            .map((choice) => (
-                              <div key={choice}>{choice}</div>
-                            ))}
-                        </div>
-                      ) : (
-                        <ul className="listen-print-choices list-disc pl-5 space-y-0.5 text-sm font-normal leading-relaxed text-[var(--comic-dark)]">
-                          {question.choices
-                            .filter((choice) => choice.trim())
-                            .map((choice) => (
-                              <li key={choice}>{choice}</li>
-                            ))}
-                        </ul>
-                      )
+                      <div className="listen-print-choices space-y-0.5 text-sm font-normal leading-relaxed pl-1 text-[var(--comic-dark)]">
+                        {question.choices
+                          .filter((choice) => choice.trim())
+                          .map((choice) => (
+                            <div key={choice}>{choice}</div>
+                          ))}
+                      </div>
                     ) : (
                       <div
                         className="h-8"
