@@ -155,13 +155,23 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
                       {QUESTION_TYPE_LABELS[question.question_type]}
                     </ComicText>
                     {question.choices.length > 0 ? (
-                      <ul className="list-disc pl-6 space-y-1 text-sm">
-                        {question.choices
-                          .filter((choice) => choice.trim())
-                          .map((choice) => (
-                            <li key={choice}>{choice}</li>
-                          ))}
-                      </ul>
+                      question.question_type === 'multiple_choice' ? (
+                        <div className="space-y-1 text-sm">
+                          {question.choices
+                            .filter((choice) => choice.trim())
+                            .map((choice) => (
+                              <div key={choice}>{choice}</div>
+                            ))}
+                        </div>
+                      ) : (
+                        <ul className="list-disc pl-6 space-y-1 text-sm">
+                          {question.choices
+                            .filter((choice) => choice.trim())
+                            .map((choice) => (
+                              <li key={choice}>{choice}</li>
+                            ))}
+                        </ul>
+                      )
                     ) : (
                       <div className="border-b-4 border-[var(--comic-black)] h-8" />
                     )}
