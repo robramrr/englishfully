@@ -7,6 +7,7 @@ interface TotalTimeDisplayProps {
   timeAmount: string;
   timeUnit: TimeUnit;
   className?: string;
+  variant?: 'assignment' | 'part';
 }
 
 export function ListenMetaDivider({ className = 'my-1' }: { className?: string }) {
@@ -25,20 +26,31 @@ export default function TotalTimeDisplay({
   totalQuestions,
   timeAmount,
   timeUnit,
-  className = 'font-bold',
+  className,
+  variant = 'assignment',
 }: TotalTimeDisplayProps) {
   const totalLine = formatTotalQuestionsLine(totalQuestions);
   const timeLine = formatTimeLine(timeAmount, timeUnit);
   if (!totalLine && !timeLine) return null;
 
+  const textClassName =
+    className ??
+    (variant === 'part' ? 'text-sm leading-relaxed' : 'font-bold');
+
+  const content = (
+    <span className="inline-flex flex-wrap gap-x-4 gap-y-1">
+      {totalLine ? <span>{totalLine}</span> : null}
+      {timeLine ? <span>{timeLine}</span> : null}
+    </span>
+  );
+
   return (
-    <div className="mb-4">
-      <ComicText className={className}>
-        <span className="inline-flex flex-wrap gap-x-4 gap-y-1">
-          {totalLine ? <span>{totalLine}</span> : null}
-          {timeLine ? <span>{timeLine}</span> : null}
-        </span>
-      </ComicText>
+    <div className={variant === 'part' ? 'mb-3' : 'mb-4'}>
+      {variant === 'part' ? (
+        <p className="text-sm leading-relaxed text-[var(--comic-dark)]">{content}</p>
+      ) : (
+        <ComicText className={textClassName}>{content}</ComicText>
+      )}
       <ListenMetaDivider className="mt-1 mb-0" />
     </div>
   );

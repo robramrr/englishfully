@@ -198,7 +198,9 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
 
                 {part.instructions.trim() ? (
                   <>
-                    <ComicText className="font-bold mb-1">{part.instructions.trim()}</ComicText>
+                    <p className="text-sm font-medium leading-relaxed text-[var(--comic-dark)] mb-1">
+                      {part.instructions.trim()}
+                    </p>
                     {!hasTotalTimeContent(part.total_questions, part.time_amount, part.time_unit) ? (
                       <ListenMetaDivider />
                     ) : null}
@@ -209,25 +211,26 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                   totalQuestions={part.total_questions}
                   timeAmount={part.time_amount}
                   timeUnit={part.time_unit}
+                  variant="part"
                 />
 
-                <ol className="space-y-3">
+                <ol className="space-y-2">
                   {printableQuestions.map((question, questionIndex) => (
                     <li
                       key={question.id}
-                      className="print-question-block space-y-2"
+                      className="print-question-block space-y-1.5"
                     >
-                      <ComicText className="font-bold text-base leading-relaxed">
+                      <p className="text-sm font-semibold leading-snug text-[var(--comic-dark)]">
                         {formatQuestionLabel(questionIndex)}. {question.question_text}
-                      </ComicText>
+                      </p>
                       {question.show_question_type ? (
-                        <ComicText className="text-xs text-[var(--comic-secondary)] font-bold">
+                        <p className="text-xs text-[var(--comic-secondary)]">
                           {QUESTION_TYPE_LABELS[question.question_type]}
-                        </ComicText>
+                        </p>
                       ) : null}
                       {question.choices.length > 0 ? (
                         question.question_type === 'multiple_choice' ? (
-                          <div className="space-y-1 text-sm font-bold">
+                          <div className="space-y-0.5 text-sm font-normal leading-relaxed pl-1 text-[var(--comic-dark)]">
                             {question.choices
                               .filter((choice) => choice.trim())
                               .map((choice) => (
@@ -235,7 +238,7 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                               ))}
                           </div>
                         ) : (
-                          <ul className="list-disc pl-6 space-y-1 text-sm font-bold">
+                          <ul className="list-disc pl-5 space-y-0.5 text-sm font-normal leading-relaxed text-[var(--comic-dark)]">
                             {question.choices
                               .filter((choice) => choice.trim())
                               .map((choice) => (
@@ -244,7 +247,10 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
                           </ul>
                         )
                       ) : (
-                        <div className="border-b-4 border-[var(--comic-black)] h-10" />
+                        <div
+                          className="h-8"
+                          style={{ borderBottom: '1px solid #cccccc' }}
+                        />
                       )}
                       <ListenMetaDivider className="mt-3 mb-4" />
                     </li>
@@ -265,10 +271,10 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
               if (printableQuestions.length === 0) return null;
               return (
                 <section key={`answers-${part.id}`} className="mb-6">
-                  <ComicText className="font-bold text-xl text-[var(--comic-secondary)] mb-3">
+                  <ComicText className="text-base font-semibold text-[var(--comic-secondary)] mb-2">
                     {part.title || `Part ${partIndex + 1}`}
                   </ComicText>
-                  <ol className="space-y-2 font-bold text-lg">
+                  <ol className="space-y-1 text-sm leading-relaxed">
                     {printableQuestions.map((question, questionIndex) => (
                       <li key={question.id}>
                         {formatQuestionLabel(questionIndex)}: {question.correct_answer || '—'}
