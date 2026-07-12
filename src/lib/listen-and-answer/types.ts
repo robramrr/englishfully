@@ -222,20 +222,6 @@ export function shouldShowAdditionalThumbnail(part: {
   );
 }
 
-export function splitScantronRows<T>(rows: T[], columnCount = 2): T[][] {
-  if (rows.length === 0) return [];
-  const safeColumnCount = Math.max(2, columnCount);
-  const perColumn = Math.ceil(rows.length / safeColumnCount);
-  const chunks: T[][] = [];
-
-  for (let index = 0; index < safeColumnCount; index += 1) {
-    const chunk = rows.slice(index * perColumn, (index + 1) * perColumn);
-    if (chunk.length > 0) chunks.push(chunk);
-  }
-
-  return chunks;
-}
-
 export function formatQuestionLabel(index: number): string {
   return `Question ${index + 1}`;
 }

@@ -12,7 +12,6 @@ import {
   formatQuestionLabel,
   getScantronPartSections,
   hasScantronQuestions,
-  splitScantronRows,
 } from '@/lib/listen-and-answer/types';
 
 interface ScantronAnswerSheetProps {
@@ -147,14 +146,18 @@ export default function ScantronAnswerSheet({
         .scantron-answer-sheet {
           color: var(--comic-dark);
         }
-        .scantron-columns-layout {
+        .scantron-page-columns {
           display: grid;
-          grid-template-columns: repeat(var(--scantron-layout-columns), minmax(0, max-content));
-          gap: 1.5rem 2.5rem;
+          grid-template-columns: minmax(0, max-content) minmax(0, max-content);
+          gap: 2rem 3rem;
           align-items: start;
         }
-        .scantron-column {
+        .scantron-page-column {
           min-width: 0;
+        }
+        .scantron-part-block {
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
         .scantron-grid {
           display: grid;
@@ -219,8 +222,8 @@ export default function ScantronAnswerSheet({
             break-inside: avoid;
             page-break-inside: avoid;
           }
-          .scantron-columns-layout {
-            gap: 1rem 2rem;
+          .scantron-page-columns {
+            gap: 1.25rem 2.5rem;
           }
           .scantron-grid {
             column-gap: 0.1rem;
@@ -280,39 +283,47 @@ export default function ScantronAnswerSheet({
         Fill in one bubble per question.
       </p>
 
-      {sections.map((section) => {
-        const columnCount = section.rows.length > 18 ? 3 : 2;
-        const rowColumns = splitScantronRows(section.rows, columnCount);
+      {(() => {
+        const leftSections = sections.slice(0, 2);
+        const rightSections = sections.slice(2);
+        const useTwoColumnLayout = rightSections.length > 0;
+
+        function renderPartSection(section: (typeof sections)[number]) {
+          return (
+            <div key={`scantron-${section.part.id}`} className="scantron-part-block mb-4">
+              {sections.length > 1 ? (
+                <ComicText className="text-base font-semibold text-[var(--comic-secondary)] mb-2">
+                  {section.part.title || `Part ${section.partIndex + 1}`}
+                </ComicText>
+              ) : null}
+              <ScantronGrid
+                rows={section.rows}
+                maxBubbleCount={maxBubbleCount}
+                columnLetters={columnLetters}
+                gridKey={section.part.id}
+                answers={answers}
+                interactive={interactive}
+                onSelectAnswer={selectAnswer}
+              />
+            </div>
+          );
+        }
+
+        if (!useTwoColumnLayout) {
+          return <div className="scantron-single-column">{leftSections.map(renderPartSection)}</div>;
+        }
 
         return (
-          <div key={`scantron-${section.part.id}`} className="mb-4">
-            {sections.length > 1 ? (
-              <ComicText className="text-base font-semibold text-[var(--comic-secondary)] mb-2">
-                {section.part.title || `Part ${section.partIndex + 1}`}
-              </ComicText>
-            ) : null}
-
-            <div
-              className="scantron-columns-layout"
-              style={{ ['--scantron-layout-columns' as string]: String(columnCount) }}
-            >
-              {rowColumns.map((columnRows, columnIndex) => (
-                <div key={`${section.part.id}-column-${columnIndex}`} className="scantron-column">
-                  <ScantronGrid
-                    rows={columnRows}
-                    maxBubbleCount={maxBubbleCount}
-                    columnLetters={columnLetters}
-                    gridKey={`${section.part.id}-${columnIndex}`}
-                    answers={answers}
-                    interactive={interactive}
-                    onSelectAnswer={selectAnswer}
-                  />
-                </div>
-              ))}
+          <div className="scantron-page-columns">
+            <div className="scantron-page-column">
+              {leftSections.map(renderPartSection)}
+            </div>
+            <div className="scantron-page-column">
+              {rightSections.map(renderPartSection)}
             </div>
           </div>
         );
-      })}
+      })()}
     </section>
   );
 }
