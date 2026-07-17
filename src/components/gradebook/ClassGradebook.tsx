@@ -53,6 +53,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
   const [selectedTaskId, setSelectedTaskId] = useState('');
   const [maxPoints, setMaxPoints] = useState(String(DEFAULT_MAX_POINTS));
   const [passPercent, setPassPercent] = useState(String(LISTEN_PASS_PERCENT));
+  const [applyingCutoff, setApplyingCutoff] = useState(false);
   const [draftScores, setDraftScores] = useState<Record<string, string>>({});
   const [draftCorrect, setDraftCorrect] = useState<Record<string, string>>({});
   const [draftTotal, setDraftTotal] = useState<Record<string, string>>({});
@@ -306,6 +307,88 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
     }
   }
 
+  async function applyCutoffToSavedScores(nextCutoffRaw?: string) {
+    if (!selectedTask || !settings || !isListen) return;
+
+    const cutoff = clampPassPercent(nextCutoffRaw ?? passPercent);
+    setPassPercent(String(cutoff));
+
+    const max = Number(maxPoints) || DEFAULT_MAX_POINTS;
+    const toUpdate = seats.filter((seat) => {
+      const entry = seat.entries_by_task[activeTaskKey];
+      return (
+        entry &&
+        entry.test_correct != null &&
+        entry.test_total != null &&
+        entry.test_total > 0
+      );
+    });
+
+    if (toUpdate.length === 0) {
+      setMessage(
+        `Pass cutoff set to ${cutoff}%. Enter or update test scores to apply it — no saved Listen scores to recalculate yet.`
+      );
+      return;
+    }
+
+    setApplyingCutoff(true);
+    setError('');
+    let updated = 0;
+    let changed = 0;
+
+    try {
+      for (const seat of toUpdate) {
+        const entry = seat.entries_by_task[activeTaskKey];
+        if (!entry || entry.test_correct == null || entry.test_total == null) continue;
+
+        const nextPoints = gradePointsFromTestScore(
+          entry.test_correct,
+          entry.test_total,
+          max,
+          cutoff
+        );
+        updated += 1;
+        if (nextPoints === entry.points && entry.max_points === max) continue;
+        changed += 1;
+
+        const response = await fetch('/api/gradebook/entries', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            school_year: schoolYear || settings.school_year,
+            semester,
+            class_id: classId,
+            class_label: classLabel,
+            student_number: seat.student_number,
+            tool,
+            task_id: selectedTask.id,
+            task_title: selectedTask.title,
+            points: nextPoints,
+            max_points: max,
+            test_correct: entry.test_correct,
+            test_total: entry.test_total,
+            pass_percent: cutoff,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || `Failed to update #${seat.student_number}`);
+        }
+      }
+
+      await loadClass();
+      setMessage(
+        changed > 0
+          ? `Applied ${cutoff}% cutoff: updated ${changed} of ${updated} saved test scores.`
+          : `Pass cutoff is ${cutoff}%. All ${updated} saved scores already matched.`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to apply cutoff');
+    } finally {
+      setApplyingCutoff(false);
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap gap-3">
@@ -403,13 +486,31 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
           {isListen ? (
             <div>
               <ComicText className="font-bold mb-1 text-sm">Pass cutoff (%)</ComicText>
-              <input
-                className="w-full comic-input"
-                value={passPercent}
-                onChange={(event) => setPassPercent(event.target.value)}
-                inputMode="numeric"
-                placeholder={String(LISTEN_PASS_PERCENT)}
-              />
+              <div className="flex gap-2 items-center">
+                <input
+                  className="w-full comic-input"
+                  value={passPercent}
+                  onChange={(event) => setPassPercent(event.target.value)}
+                  onBlur={() => void applyCutoffToSavedScores()}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.currentTarget.blur();
+                    }
+                  }}
+                  inputMode="numeric"
+                  placeholder={String(LISTEN_PASS_PERCENT)}
+                  disabled={applyingCutoff}
+                />
+                <ComicButton
+                  type="button"
+                  variant="success"
+                  size="sm"
+                  disabled={applyingCutoff || !selectedTask}
+                  onClick={() => void applyCutoffToSavedScores()}
+                >
+                  {applyingCutoff ? 'Applying…' : 'Apply'}
+                </ComicButton>
+              </div>
             </div>
           ) : null}
         </div>
@@ -437,8 +538,9 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
             calculated automatically. If the score is {activePassPercent}% or higher,{' '}
             <strong>Grade Points</strong> become {maxPoints || DEFAULT_MAX_POINTS}/
             {maxPoints || DEFAULT_MAX_POINTS}; otherwise 0/
-            {maxPoints || DEFAULT_MAX_POINTS}. Default cutoff is {LISTEN_PASS_PERCENT}% — change{' '}
-            <strong>Pass cutoff (%)</strong> above if needed.
+            {maxPoints || DEFAULT_MAX_POINTS}. Change <strong>Pass cutoff (%)</strong>, then press{' '}
+            <strong>Apply</strong> (or leave the field) to recalculate all saved scores for this
+            task. Default cutoff is {LISTEN_PASS_PERCENT}%.
             {defaultTestTotal
               ? ` This task defaults to ${defaultTestTotal} questions.`
               : ' Set the total questions if needed.'}
