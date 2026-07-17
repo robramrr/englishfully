@@ -7,6 +7,11 @@ import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import SegmentAudioPlayer from './SegmentAudioPlayer';
 import type { PublicLearnAssignment, LearnSubmission } from '@/lib/listen-and-learn/types';
+import {
+  STUDENT_LETTER_OPTIONS,
+  getDefaultEntryConfig,
+  sortSpeakClassOptions,
+} from '@/lib/speak-and-submit/types';
 
 interface StudentAssessmentProps {
   assignmentId: string;
@@ -14,16 +19,28 @@ interface StudentAssessmentProps {
 
 type Step = 'loading' | 'identity' | 'assessment' | 'result' | 'error';
 
+function formatStudentNumber(number: string, letter: string): string {
+  return letter ? `${number}${letter.toUpperCase()}` : number;
+}
+
 export default function StudentAssessment({ assignmentId }: StudentAssessmentProps) {
   const [step, setStep] = useState<Step>('loading');
   const [assignment, setAssignment] = useState<PublicLearnAssignment | null>(null);
   const [error, setError] = useState('');
-  const [studentName, setStudentName] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [studentNumber, setStudentNumber] = useState('');
-  const [classNumber, setClassNumber] = useState('');
+  const [studentLetter, setStudentLetter] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState('');
+  const [manualClassNumber, setManualClassNumber] = useState('');
+  const [resolvedStudentName, setResolvedStudentName] = useState('');
+  const [resolvedStudentNumber, setResolvedStudentNumber] = useState('');
+  const [resolvedClassNumber, setResolvedClassNumber] = useState('');
   const [attemptsRemaining, setAttemptsRemaining] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [checkingIdentity, setCheckingIdentity] = useState(false);
   const [result, setResult] = useState<LearnSubmission | null>(null);
   const [startedAt, setStartedAt] = useState<number | null>(null);
 
@@ -36,9 +53,18 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
           setStep('error');
           return;
         }
-        setAssignment(data.assignment);
-        setClassNumber(data.assignment.class_name || '');
-        setAttemptsRemaining(data.attempts_remaining ?? data.assignment.attempts_allowed);
+        const nextAssignment = {
+          ...data.assignment,
+          entry_config: data.assignment.entry_config ?? getDefaultEntryConfig(),
+        } as PublicLearnAssignment;
+        setAssignment(nextAssignment);
+        const classes = sortSpeakClassOptions(nextAssignment.entry_config.classes);
+        if (classes.length > 0) {
+          setSelectedClassId(classes[0].id);
+        } else if (nextAssignment.class_name) {
+          setManualClassNumber(nextAssignment.class_name);
+        }
+        setAttemptsRemaining(data.attempts_remaining ?? nextAssignment.attempts_allowed);
         setStep('identity');
       })
       .catch(() => {
@@ -48,52 +74,99 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
   }, [assignmentId]);
 
   const questions = useMemo(() => assignment?.questions ?? [], [assignment]);
-
-  async function refreshAttempts() {
-    if (!assignment || !studentNumber.trim() || !classNumber.trim()) return;
-    const params = new URLSearchParams({
-      student_number: studentNumber.trim(),
-      class_number: classNumber.trim(),
-    });
-    const response = await fetch(
-      `/api/listen-and-learn/public/${assignmentId}?${params.toString()}`,
-      { cache: 'no-store' }
-    );
-    const data = await response.json();
-    if (response.ok) {
-      setAttemptsRemaining(data.attempts_remaining ?? 0);
-    }
-  }
+  const entryConfig = assignment?.entry_config ?? getDefaultEntryConfig();
+  const sortedClasses = useMemo(
+    () => sortSpeakClassOptions(entryConfig.classes),
+    [entryConfig.classes]
+  );
+  const usesClassDropdown = sortedClasses.length > 0;
+  const usesStudentLetter = entryConfig.student_letter_enabled;
+  const selectedClass = useMemo(
+    () => sortedClasses.find((item) => item.id === selectedClassId) ?? null,
+    [sortedClasses, selectedClassId]
+  );
+  const maxStudentNumber = selectedClass?.max_student_number ?? 35;
+  const studentNumberOptions = useMemo(
+    () => Array.from({ length: maxStudentNumber }, (_, index) => String(index + 1)),
+    [maxStudentNumber]
+  );
 
   async function handleStart() {
+    if (!assignment) return;
     setError('');
-    if (!studentName.trim() || !studentNumber.trim() || !classNumber.trim()) {
-      setError('Enter your name, student number, and class to continue.');
+
+    const resolvedName =
+      entryConfig.name_mode === 'first_last'
+        ? `${firstName.trim()} ${lastName.trim()}`.trim()
+        : nickname.trim();
+
+    const resolvedClass = usesClassDropdown
+      ? selectedClass?.label ?? ''
+      : manualClassNumber.trim();
+
+    if (entryConfig.name_mode === 'first_last') {
+      if (!firstName.trim() || !lastName.trim()) {
+        setError('Please enter your first and last name.');
+        return;
+      }
+    } else if (!nickname.trim()) {
+      setError('Please enter your nickname.');
       return;
     }
-    await refreshAttempts();
-    const params = new URLSearchParams({
-      student_number: studentNumber.trim(),
-      class_number: classNumber.trim(),
-    });
-    const response = await fetch(
-      `/api/listen-and-learn/public/${assignmentId}?${params.toString()}`,
-      { cache: 'no-store' }
-    );
-    const data = await response.json();
-    if (!response.ok || !data.assignment) {
-      setError(data.error || 'Could not start assessment.');
+
+    if (!studentNumber) {
+      setError('Please select your student number.');
       return;
     }
-    if ((data.attempts_remaining ?? 0) <= 0) {
-      setError('No attempts remaining for this assessment.');
+
+    if (usesStudentLetter && !studentLetter) {
+      setError('Please select your student ID (A or B).');
       return;
     }
-    setAssignment(data.assignment);
-    setAttemptsRemaining(data.attempts_remaining);
-    setAnswers({});
-    setStartedAt(Date.now());
-    setStep('assessment');
+
+    if (!resolvedClass) {
+      setError(usesClassDropdown ? 'Please select your class.' : 'Please enter your class.');
+      return;
+    }
+
+    const formattedNumber = formatStudentNumber(studentNumber, studentLetter);
+    setCheckingIdentity(true);
+
+    try {
+      const params = new URLSearchParams({
+        student_number: formattedNumber,
+        class_number: resolvedClass,
+      });
+      const response = await fetch(
+        `/api/listen-and-learn/public/${assignmentId}?${params.toString()}`,
+        { cache: 'no-store' }
+      );
+      const data = await response.json();
+      if (!response.ok || !data.assignment) {
+        setError(data.error || 'Could not start assessment.');
+        return;
+      }
+      if ((data.attempts_remaining ?? 0) <= 0) {
+        setError('No attempts remaining for this assessment.');
+        return;
+      }
+
+      setAssignment({
+        ...data.assignment,
+        entry_config: data.assignment.entry_config ?? entryConfig,
+      });
+      setResolvedStudentName(resolvedName);
+      setResolvedStudentNumber(formattedNumber);
+      setResolvedClassNumber(resolvedClass);
+      setAttemptsRemaining(data.attempts_remaining);
+      setAnswers({});
+      setStartedAt(Date.now());
+      setStep('assessment');
+    } catch {
+      setError('Could not start assessment.');
+    } finally {
+      setCheckingIdentity(false);
+    }
   }
 
   async function handleSubmit() {
@@ -107,9 +180,9 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          student_name: studentName.trim(),
-          student_number: studentNumber.trim(),
-          class_number: classNumber.trim(),
+          student_name: resolvedStudentName,
+          student_number: resolvedStudentNumber,
+          class_number: resolvedClassNumber,
           duration_seconds: durationSeconds,
           answers: questions.map((question) => ({
             question_id: question.id,
@@ -131,7 +204,7 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
 
   if (step === 'loading') {
     return (
-      <ComicCard className="comic-shadow-xl text-center">
+      <ComicCard className="text-center">
         <ComicText className="text-[var(--comic-dark)] font-bold">Loading assessment…</ComicText>
       </ComicCard>
     );
@@ -139,7 +212,7 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
 
   if (step === 'error' || !assignment) {
     return (
-      <ComicCard className="comic-shadow-xl text-center">
+      <ComicCard className="text-center">
         <ComicTitle level={3} className="mb-4 text-[var(--comic-danger)]">
           Assessment unavailable
         </ComicTitle>
@@ -151,7 +224,7 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
   if (step === 'result' && result) {
     const passed = result.percent >= assignment.passing_score;
     return (
-      <ComicCard className="comic-shadow-xl text-center space-y-4">
+      <ComicCard className="text-center space-y-4">
         <ComicTitle level={2} className="text-[var(--comic-primary)]">
           Assessment complete
         </ComicTitle>
@@ -182,8 +255,8 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
 
   if (step === 'identity') {
     return (
-      <ComicCard className="comic-shadow-xl space-y-4 max-w-xl mx-auto">
-        <ComicTitle level={3} className="text-[var(--comic-primary)]">
+      <ComicCard className="space-y-4 max-w-xl mx-auto">
+        <ComicTitle level={3} className="text-[var(--comic-primary)] text-center">
           {assignment.title}
         </ComicTitle>
         {assignment.thumbnail_url?.trim() ? (
@@ -194,55 +267,131 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
             className="w-full max-h-56 object-cover comic-border rounded-lg"
           />
         ) : null}
-        <ComicText className="text-[var(--comic-dark)] font-bold">
+        <ComicText className="text-[var(--comic-dark)] font-bold text-center">
           {assignment.teacher_name ? `Teacher: ${assignment.teacher_name}` : null}
-          {assignment.class_name ? ` · Class: ${assignment.class_name}` : null}
+          {assignment.class_name ? ` · ${assignment.class_name}` : null}
         </ComicText>
-        <ComicText className="text-[var(--comic-dark)] font-bold">
+        <ComicText className="text-[var(--comic-dark)] font-bold text-sm text-center">
           {questions.length} question{questions.length === 1 ? '' : 's'} ·{' '}
           {assignment.attempts_allowed} attempt
           {assignment.attempts_allowed === 1 ? '' : 's'} allowed
         </ComicText>
 
-        <label className="space-y-1 block">
-          <ComicText className="font-black">Your name</ComicText>
-          <input
-            value={studentName}
-            onChange={(event) => setStudentName(event.target.value)}
-            className="w-full comic-border-thick rounded-md p-3 font-bold"
-          />
-        </label>
-        <label className="space-y-1 block">
-          <ComicText className="font-black">Student number</ComicText>
-          <input
-            value={studentNumber}
-            onChange={(event) => setStudentNumber(event.target.value)}
-            className="w-full comic-border-thick rounded-md p-3 font-bold"
-          />
-        </label>
-        <label className="space-y-1 block">
-          <ComicText className="font-black">Class</ComicText>
-          <input
-            value={classNumber}
-            onChange={(event) => setClassNumber(event.target.value)}
-            className="w-full comic-border-thick rounded-md p-3 font-bold"
-          />
-        </label>
+        <ComicTitle level={6} className="speak-identity-title text-[var(--comic-primary)] text-center">
+          👋 Who are you?
+        </ComicTitle>
+        <ComicText className="text-[var(--comic-dark)] font-bold mb-2 text-sm text-center">
+          Same student ID as Speak &amp; Submit — used for your gradebook
+        </ComicText>
 
-        {error ? (
-          <ComicText className="text-[var(--comic-danger)] font-bold">{error}</ComicText>
-        ) : null}
+        <div className="space-y-4">
+          {entryConfig.name_mode === 'first_last' ? (
+            <>
+              <input
+                className="w-full comic-input text-lg py-4"
+                placeholder="First name"
+                value={firstName}
+                onChange={(event) => setFirstName(event.target.value)}
+                autoComplete="given-name"
+                required
+              />
+              <input
+                className="w-full comic-input text-lg py-4"
+                placeholder="Last name"
+                value={lastName}
+                onChange={(event) => setLastName(event.target.value)}
+                autoComplete="family-name"
+                required
+              />
+            </>
+          ) : (
+            <input
+              className="w-full comic-input text-lg py-4"
+              placeholder="Nickname"
+              value={nickname}
+              onChange={(event) => setNickname(event.target.value)}
+              autoComplete="nickname"
+              required
+            />
+          )}
 
-        <ComicButton variant="secondary" size="md" onClick={() => void handleStart()}>
-          Start assessment
-        </ComicButton>
+          {usesClassDropdown ? (
+            <select
+              className="w-full comic-input text-lg py-4"
+              value={selectedClassId}
+              onChange={(event) => setSelectedClassId(event.target.value)}
+              required
+            >
+              <option value="">Select class</option>
+              {sortedClasses.map((classOption) => (
+                <option key={classOption.id} value={classOption.id}>
+                  {classOption.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              className="w-full comic-input text-lg py-4"
+              placeholder="Class"
+              value={manualClassNumber}
+              onChange={(event) => setManualClassNumber(event.target.value)}
+              required
+            />
+          )}
+
+          <div className={`grid gap-3 ${usesStudentLetter ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            <select
+              className="w-full comic-input text-lg py-4"
+              value={studentNumber}
+              onChange={(event) => setStudentNumber(event.target.value)}
+              required
+            >
+              <option value="">#</option>
+              {studentNumberOptions.map((number) => (
+                <option key={number} value={number}>
+                  {number}
+                </option>
+              ))}
+            </select>
+
+            {usesStudentLetter ? (
+              <select
+                className="w-full comic-input text-lg py-4"
+                value={studentLetter}
+                onChange={(event) => setStudentLetter(event.target.value.toUpperCase())}
+                required
+              >
+                <option value="">ID</option>
+                {STUDENT_LETTER_OPTIONS.map((letter) => (
+                  <option key={letter} value={letter}>
+                    {letter}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+          </div>
+
+          {error ? (
+            <ComicText className="text-[var(--comic-danger)] font-bold">{error}</ComicText>
+          ) : null}
+
+          <ComicButton
+            variant="primary"
+            size="lg"
+            className="w-full"
+            disabled={checkingIdentity}
+            onClick={() => void handleStart()}
+          >
+            {checkingIdentity ? 'Checking…' : 'Start assessment'}
+          </ComicButton>
+        </div>
       </ComicCard>
     );
   }
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      <ComicCard className="comic-shadow-xl space-y-3">
+      <ComicCard className="space-y-3">
         <ComicTitle level={3} className="text-[var(--comic-primary)]">
           {assignment.title}
         </ComicTitle>
@@ -260,7 +409,7 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
       </ComicCard>
 
       {questions.map((question, index) => (
-        <ComicCard key={question.id} className="comic-shadow-xl space-y-4">
+        <ComicCard key={question.id} className="space-y-4">
           <ComicTitle level={4} className="text-[var(--comic-secondary)]">
             Question {index + 1}
           </ComicTitle>
@@ -288,7 +437,7 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
                   }
                   className={`w-full text-left comic-border-thick rounded-md p-3 font-bold transition-colors ${
                     selected
-                      ? 'bg-[var(--comic-primary)] text-white'
+                      ? 'comic-bg-header-stripes text-[var(--comic-dark)]'
                       : 'bg-white text-[var(--comic-dark)] hover:bg-[var(--comic-light)]'
                   }`}
                 >

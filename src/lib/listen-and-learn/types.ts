@@ -1,6 +1,8 @@
 import type { CefrLevel } from '@/lib/listen-and-answer/types';
+import type { SpeakEntryConfig } from '@/lib/speak-and-submit/types';
 
 export type { CefrLevel };
+export type { SpeakEntryConfig };
 export { CEFR_LEVELS, DEFAULT_QUESTION_FRAMEWORK } from '@/lib/listen-and-answer/types';
 
 export type LearnTranscriptSource = 'auto' | 'manual';
@@ -161,6 +163,8 @@ export interface PublicLearnAssignment {
   max_replays: number;
   randomize_questions: boolean;
   randomize_answers: boolean;
+  /** Same student entry settings as Speak & Submit (nickname/class/ID). */
+  entry_config: SpeakEntryConfig;
   questions: Array<{
     id: string;
     question_text: string;

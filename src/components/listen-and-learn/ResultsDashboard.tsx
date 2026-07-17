@@ -97,8 +97,8 @@ export default function ResultsDashboard({
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="bg-[var(--comic-primary)] text-white">
-                <th className="p-3 font-black">Student</th>
-                <th className="p-3 font-black">#</th>
+                <th className="p-3 font-black">Nickname</th>
+                <th className="p-3 font-black">ID</th>
                 <th className="p-3 font-black">Class</th>
                 <th className="p-3 font-black">Score</th>
                 <th className="p-3 font-black">%</th>

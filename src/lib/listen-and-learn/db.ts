@@ -1,7 +1,8 @@
 import { sql } from '@vercel/postgres';
 import { nanoid } from 'nanoid';
 import type { CefrLevel } from '@/lib/listen-and-answer/types';
-import { normalizeStudentNumber } from '@/lib/speak-and-submit/types';
+import { getEntryConfig } from '@/lib/speak-and-submit/settings';
+import { getDefaultEntryConfig, normalizeStudentNumber } from '@/lib/speak-and-submit/types';
 import type {
   LearnAssignment,
   LearnAssignmentListItem,
@@ -366,6 +367,13 @@ export async function getPublicLearnAssignment(
     questions = shuffleArray(questions);
   }
 
+  let entryConfig = getDefaultEntryConfig();
+  try {
+    entryConfig = await getEntryConfig(assignment.teacher_id || DEFAULT_TEACHER_ID);
+  } catch (error) {
+    console.error('Listen & Learn entry config fallback:', error);
+  }
+
   return {
     id: assignment.id,
     title: assignment.title,
@@ -379,6 +387,7 @@ export async function getPublicLearnAssignment(
     max_replays: assignment.max_replays,
     randomize_questions: assignment.randomize_questions,
     randomize_answers: assignment.randomize_answers,
+    entry_config: entryConfig,
     questions: questions.map((question) => {
       const segment = question.segment_id ? segmentById.get(question.segment_id) : null;
       let choices = [...question.choices];

@@ -183,6 +183,12 @@ body::before {
   text-shadow: none;
 }
 
+/* Listen & Learn — drop heading text-shadow except white hero titles */
+.listen-and-learn-page .comic-title:not(.comic-text-white),
+.listen-and-learn-student .comic-title:not(.comic-text-white) {
+  text-shadow: none;
+}
+
 .speak-page .speak-identity-title {
   font-size: 1.1875rem;
   letter-spacing: 0.02em;
