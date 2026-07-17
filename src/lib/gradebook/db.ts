@@ -24,6 +24,7 @@ import {
   gradePointsFromTestScore,
   parseSemester,
   taskKey,
+  clampPassPercent,
 } from './types';
 
 const DEFAULT_TEACHER_ID = 'default';
@@ -432,7 +433,8 @@ export async function upsertGradeEntry(
     testTotal !== null &&
     testTotal > 0
   ) {
-    points = gradePointsFromTestScore(testCorrect, testTotal, maxPoints);
+    const passPercent = clampPassPercent(payload.pass_percent);
+    points = gradePointsFromTestScore(testCorrect, testTotal, maxPoints, passPercent);
   }
 
   const studentNumber = normalizeStudentNumber(payload.student_number);

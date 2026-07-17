@@ -86,6 +86,7 @@ export interface UpsertGradeEntryPayload {
   max_points: number;
   test_correct?: number | null;
   test_total?: number | null;
+  pass_percent?: number;
   notes?: string;
 }
 
@@ -132,6 +133,12 @@ export function clampPoints(value: unknown, maxPoints: number): number {
   const numeric = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(numeric)) return 0;
   return Math.min(Math.max(0, numeric), Math.max(0, maxPoints));
+}
+
+export function clampPassPercent(value: unknown): number {
+  const numeric = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(numeric)) return LISTEN_PASS_PERCENT;
+  return Math.min(100, Math.max(0, numeric));
 }
 
 export function formatPercent(earned: number, possible: number): string {

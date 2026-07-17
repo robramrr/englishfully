@@ -25,6 +25,7 @@ import {
   gradePointsFromTestScore,
   parseSemester,
   taskKey,
+  clampPassPercent,
 } from '@/lib/gradebook/types';
 
 interface ClassGradebookProps {
@@ -51,6 +52,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
   const [tool, setTool] = useState<GradebookTool>('speak_and_submit');
   const [selectedTaskId, setSelectedTaskId] = useState('');
   const [maxPoints, setMaxPoints] = useState(String(DEFAULT_MAX_POINTS));
+  const [passPercent, setPassPercent] = useState(String(LISTEN_PASS_PERCENT));
   const [draftScores, setDraftScores] = useState<Record<string, string>>({});
   const [draftCorrect, setDraftCorrect] = useState<Record<string, string>>({});
   const [draftTotal, setDraftTotal] = useState<Record<string, string>>({});
@@ -65,6 +67,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
   const activeTaskKey = selectedTask ? taskKey(tool, selectedTask.id) : '';
   const defaultTestTotal = selectedTask?.question_count ?? null;
   const isListen = tool === 'listen_and_answer';
+  const activePassPercent = clampPassPercent(passPercent);
 
   const loadClass = useCallback(async () => {
     const params = new URLSearchParams();
@@ -249,7 +252,8 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
     }
 
     const max = Number(maxPoints) || DEFAULT_MAX_POINTS;
-    const autoPoints = gradePointsFromTestScore(correct, total, max);
+    const cutoff = clampPassPercent(passPercent);
+    const autoPoints = gradePointsFromTestScore(correct, total, max, cutoff);
     const percent = getTestPercent(correct, total);
 
     setSavingNumber(studentNumber);
@@ -271,6 +275,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
           max_points: max,
           test_correct: correct,
           test_total: total,
+          pass_percent: cutoff,
         }),
       });
       const data = await response.json();
@@ -280,7 +285,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
         [studentNumber]: String(data.entry.points),
       }));
       setMessage(
-        `Saved #${studentNumber}: test ${correct}/${total} (${Math.round(percent ?? 0)}%) → grade points ${data.entry.points}/${data.entry.max_points}`
+        `Saved #${studentNumber}: test ${correct}/${total} (${Math.round(percent ?? 0)}%) → grade points ${data.entry.points}/${data.entry.max_points} (pass ≥${cutoff}%)`
       );
       await loadClass();
     } catch (err) {
@@ -353,7 +358,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
         <ComicTitle level={3} className="mb-4 text-[var(--comic-secondary)]">
           Enter Grades
         </ComicTitle>
-        <div className="grid md:grid-cols-3 gap-4 mb-4">
+        <div className={`grid gap-4 mb-4 ${isListen ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
           <div>
             <ComicText className="font-bold mb-1 text-sm">Tool</ComicText>
             <select
@@ -395,6 +400,18 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
               inputMode="numeric"
             />
           </div>
+          {isListen ? (
+            <div>
+              <ComicText className="font-bold mb-1 text-sm">Pass cutoff (%)</ComicText>
+              <input
+                className="w-full comic-input"
+                value={passPercent}
+                onChange={(event) => setPassPercent(event.target.value)}
+                inputMode="numeric"
+                placeholder={String(LISTEN_PASS_PERCENT)}
+              />
+            </div>
+          ) : null}
         </div>
 
         {tool === 'speak_and_submit' ? (
@@ -417,10 +434,11 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
         {isListen ? (
           <ComicText className="text-sm mb-4 text-[var(--comic-dark)]">
             Enter <strong>Test Score</strong> as correct / total (example 18/25). Percentage is
-            calculated automatically. If the score is {LISTEN_PASS_PERCENT}% or higher,{' '}
+            calculated automatically. If the score is {activePassPercent}% or higher,{' '}
             <strong>Grade Points</strong> become {maxPoints || DEFAULT_MAX_POINTS}/
             {maxPoints || DEFAULT_MAX_POINTS}; otherwise 0/
-            {maxPoints || DEFAULT_MAX_POINTS}.
+            {maxPoints || DEFAULT_MAX_POINTS}. Default cutoff is {LISTEN_PASS_PERCENT}% — change{' '}
+            <strong>Pass cutoff (%)</strong> above if needed.
             {defaultTestTotal
               ? ` This task defaults to ${defaultTestTotal} questions.`
               : ' Set the total questions if needed.'}
@@ -478,7 +496,8 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                           gradePointsFromTestScore(
                             correctNum,
                             totalNum,
-                            Number(maxPoints) || DEFAULT_MAX_POINTS
+                            Number(maxPoints) || DEFAULT_MAX_POINTS,
+                            activePassPercent
                           )
                         );
 
