@@ -44,6 +44,7 @@ export interface LearnAssignment {
   class_name: string;
   due_date: string | null;
   audio_url: string;
+  thumbnail_url: string;
   transcript: string;
   transcript_source: LearnTranscriptSource;
   cefr_level: CefrLevel;
@@ -59,6 +60,9 @@ export interface LearnAssignment {
   created_at: string;
   updated_at: string;
 }
+
+/** Minimum listening-segment duration for workable comprehension questions. */
+export const MIN_SEGMENT_SECONDS = 5;
 
 export interface LearnAssignmentWithDetails extends LearnAssignment {
   segments: LearnSegment[];
@@ -99,6 +103,7 @@ export interface SaveLearnAssignmentPayload {
   class_name: string;
   due_date: string | null;
   audio_url: string;
+  thumbnail_url: string;
   transcript: string;
   transcript_source: LearnTranscriptSource;
   cefr_level: CefrLevel;
@@ -150,6 +155,7 @@ export interface PublicLearnAssignment {
   class_name: string;
   due_date: string | null;
   audio_url: string;
+  thumbnail_url: string;
   attempts_allowed: number;
   passing_score: number;
   max_replays: number;
@@ -207,6 +213,62 @@ export function splitIntoSentences(text: string): string[] {
     .split(/(?<=[.!?])\s+/)
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+/**
+ * Merge adjacent segments until each is at least `minSeconds` long,
+ * so clips are long enough for a complete thought / workable question.
+ */
+export function mergeShortSegments(
+  segments: TranscriptSegmentDraft[],
+  minSeconds: number = MIN_SEGMENT_SECONDS
+): TranscriptSegmentDraft[] {
+  if (segments.length === 0) return [];
+
+  const merged: TranscriptSegmentDraft[] = [];
+  let current: TranscriptSegmentDraft = { ...segments[0] };
+
+  for (let index = 1; index < segments.length; index += 1) {
+    const duration = segmentDuration(current.start_seconds, current.end_seconds);
+    if (duration < minSeconds) {
+      current = {
+        sentence_text: `${current.sentence_text} ${segments[index].sentence_text}`.replace(/\s+/g, ' ').trim(),
+        start_seconds: current.start_seconds,
+        end_seconds: segments[index].end_seconds,
+      };
+    } else {
+      merged.push(current);
+      current = { ...segments[index] };
+    }
+  }
+
+  const lastDuration = segmentDuration(current.start_seconds, current.end_seconds);
+  if (merged.length > 0 && lastDuration < minSeconds) {
+    const previous = merged[merged.length - 1];
+    merged[merged.length - 1] = {
+      sentence_text: `${previous.sentence_text} ${current.sentence_text}`.replace(/\s+/g, ' ').trim(),
+      start_seconds: previous.start_seconds,
+      end_seconds: current.end_seconds,
+    };
+  } else {
+    // Pad a lone short clip so playback lasts at least minSeconds.
+    if (lastDuration < minSeconds) {
+      current = {
+        ...current,
+        end_seconds: Number((current.start_seconds + minSeconds).toFixed(2)),
+      };
+    }
+    merged.push(current);
+  }
+
+  return merged.map((segment) => {
+    const duration = segmentDuration(segment.start_seconds, segment.end_seconds);
+    if (duration >= minSeconds) return segment;
+    return {
+      ...segment,
+      end_seconds: Number((segment.start_seconds + minSeconds).toFixed(2)),
+    };
+  });
 }
 
 export function getKeepQuestions(assignment: LearnAssignmentWithDetails): LearnQuestion[] {

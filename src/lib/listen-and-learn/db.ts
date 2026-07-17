@@ -110,6 +110,10 @@ export async function ensureLearnSchema(): Promise<void> {
           is_correct BOOLEAN NOT NULL DEFAULT false
         )
       `;
+      await sql`
+        ALTER TABLE learn_assignments
+        ADD COLUMN IF NOT EXISTS thumbnail_url TEXT NOT NULL DEFAULT ''
+      `;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_segments_assignment ON learn_segments(assignment_id, sort_order)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_questions_assignment ON learn_questions(assignment_id, sort_order)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_submissions_assignment ON learn_submissions(assignment_id, submitted_at DESC)`;
@@ -127,6 +131,7 @@ function rowToAssignment(row: Record<string, unknown>): LearnAssignment {
     class_name: (row.class_name as string) ?? '',
     due_date: (row.due_date as string | null) ?? null,
     audio_url: (row.audio_url as string) ?? '',
+    thumbnail_url: (row.thumbnail_url as string) ?? '',
     transcript: (row.transcript as string) ?? '',
     transcript_source: ((row.transcript_source as LearnTranscriptSource) ?? 'auto'),
     cefr_level: parseCefr(row.cefr_level),
@@ -319,6 +324,7 @@ export async function saveLearnAssignment(
       class_name = ${safeTrim(payload.class_name)},
       due_date = ${payload.due_date},
       audio_url = ${safeTrim(payload.audio_url)},
+      thumbnail_url = ${safeTrim(payload.thumbnail_url)},
       transcript = ${payload.transcript ?? ''},
       transcript_source = ${payload.transcript_source === 'manual' ? 'manual' : 'auto'},
       cefr_level = ${parseCefr(payload.cefr_level)},
@@ -367,6 +373,7 @@ export async function getPublicLearnAssignment(
     class_name: assignment.class_name,
     due_date: assignment.due_date,
     audio_url: assignment.audio_url,
+    thumbnail_url: assignment.thumbnail_url,
     attempts_allowed: assignment.attempts_allowed,
     passing_score: assignment.passing_score,
     max_replays: assignment.max_replays,

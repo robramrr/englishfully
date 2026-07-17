@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ComicButton from '../ComicButton';
@@ -75,6 +75,7 @@ function buildPayload(
     className: string;
     dueDate: string;
     audioUrl: string;
+    thumbnailUrl: string;
     transcript: string;
     transcriptSource: LearnTranscriptSource;
     cefrLevel: CefrLevel;
@@ -97,6 +98,7 @@ function buildPayload(
     class_name: values.className,
     due_date: values.dueDate || null,
     audio_url: values.audioUrl,
+    thumbnail_url: values.thumbnailUrl,
     transcript: values.transcript,
     transcript_source: values.transcriptSource,
     cefr_level: values.cefrLevel,
@@ -149,6 +151,7 @@ export default function AssignmentEditor({
   const [className, setClassName] = useState(initialAssignment.class_name);
   const [dueDate, setDueDate] = useState(initialAssignment.due_date ?? '');
   const [audioUrl, setAudioUrl] = useState(initialAssignment.audio_url);
+  const [thumbnailUrl, setThumbnailUrl] = useState(initialAssignment.thumbnail_url ?? '');
   const [transcript, setTranscript] = useState(initialAssignment.transcript);
   const [transcriptSource, setTranscriptSource] = useState<LearnTranscriptSource>(
     initialAssignment.transcript_source
@@ -183,6 +186,12 @@ export default function AssignmentEditor({
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const [qrPreview, setQrPreview] = useState('');
   const [studentUrl, setStudentUrl] = useState('');
+  const statusRef = useRef(status);
+  const skipAutoSaveRef = useRef(false);
+
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
 
   const formValues = useMemo(
     () => ({
@@ -191,6 +200,7 @@ export default function AssignmentEditor({
       className,
       dueDate,
       audioUrl,
+      thumbnailUrl,
       transcript,
       transcriptSource,
       cefrLevel,
@@ -210,6 +220,7 @@ export default function AssignmentEditor({
       className,
       dueDate,
       audioUrl,
+      thumbnailUrl,
       transcript,
       transcriptSource,
       cefrLevel,
@@ -230,43 +241,54 @@ export default function AssignmentEditor({
     [formValues, segments, questions]
   );
 
-  const applySavedAssignment = useCallback((assignment: LearnAssignmentWithDetails) => {
+  const applySavedChildren = useCallback((assignment: LearnAssignmentWithDetails) => {
     setSegments(toClientSegments(assignment));
     setQuestions(toClientQuestions(assignment));
-    setStatus(assignment.status);
+    setThumbnailUrl(assignment.thumbnail_url ?? '');
   }, []);
 
   const saveAssignment = useCallback(
     async (data: SaveLearnAssignmentPayload, nextStatus?: 'draft' | 'published') => {
+      const resolvedStatus = nextStatus ?? data.status;
       const response = await fetch(`/api/listen-and-learn/assignments/${assignmentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, status: nextStatus ?? data.status }),
+        body: JSON.stringify({ ...data, status: resolvedStatus }),
       });
       const result = await response.json();
       if (!response.ok) {
         throw new Error(result.error || 'Failed to save assessment');
       }
-      applySavedAssignment(result.assignment);
       return result.assignment as LearnAssignmentWithDetails;
     },
-    [assignmentId, applySavedAssignment]
+    [assignmentId]
   );
 
   const handleAutoSave = useCallback(
     async (data: SaveLearnAssignmentPayload) => {
+      if (skipAutoSaveRef.current) return;
       try {
         setSaving(true);
-        await saveAssignment({ ...data, status: 'draft' }, 'draft');
+        // Preserve current publish status — never silently downgrade to draft.
+        const preservedStatus = statusRef.current;
+        const saved = await saveAssignment({ ...data, status: preservedStatus }, preservedStatus);
+        skipAutoSaveRef.current = true;
+        applySavedChildren(saved);
+        statusRef.current = saved.status;
+        setStatus(saved.status);
         setSaveMessage(`Auto-saved ${new Date().toLocaleTimeString()}`);
         setError('');
+        // Allow the remapped children to settle without immediately re-triggering save.
+        window.setTimeout(() => {
+          skipAutoSaveRef.current = false;
+        }, 500);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Auto-save failed');
       } finally {
         setSaving(false);
       }
     },
-    [saveAssignment]
+    [saveAssignment, applySavedChildren]
   );
 
   useAutoSave(payload, handleAutoSave, autoSaveEnabled);
@@ -279,28 +301,54 @@ export default function AssignmentEditor({
       setQrPreview('');
       return;
     }
-    void generateQrDataUrl(url).then(setQrPreview);
+    let cancelled = false;
+    void generateQrDataUrl(url).then((dataUrl) => {
+      if (!cancelled) setQrPreview(dataUrl);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [assignmentId, status]);
 
   async function handleManualSave(nextStatus: 'draft' | 'published' = status) {
     setSaving(true);
     setError('');
+    skipAutoSaveRef.current = true;
+    statusRef.current = nextStatus;
+    setStatus(nextStatus);
     try {
-      await saveAssignment(payload, nextStatus);
-      setStatus(nextStatus);
+      const saved = await saveAssignment({ ...payload, status: nextStatus }, nextStatus);
+      applySavedChildren(saved);
+      statusRef.current = saved.status;
+      setStatus(saved.status);
       setSaveMessage(
-        nextStatus === 'published'
+        saved.status === 'published'
           ? 'Published. Students can access the assessment via the link/QR.'
           : `Saved ${new Date().toLocaleTimeString()}`
       );
+      if (saved.status === 'published' && typeof window !== 'undefined') {
+        const url = getStudentLearnUrl(assignmentId, window.location.origin);
+        setStudentUrl(url);
+        const dataUrl = await generateQrDataUrl(url);
+        setQrPreview(dataUrl);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');
     } finally {
       setSaving(false);
+      window.setTimeout(() => {
+        skipAutoSaveRef.current = false;
+      }, 800);
     }
   }
 
-  async function handleGenerateSegments() {
+  async function handleGenerateSegments(forceAuto = false) {
+    const useManual = !forceAuto && transcriptSource === 'manual' && transcript.trim().length > 0;
+    if (!useManual && !audioUrl.trim()) {
+      setError('Enter an audio URL before auto-transcribing.');
+      return;
+    }
+
     setGeneratingSegments(true);
     setError('');
     try {
@@ -309,7 +357,7 @@ export default function AssignmentEditor({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           audio_url: audioUrl.trim(),
-          transcript: transcriptSource === 'manual' ? transcript : '',
+          transcript: useManual ? transcript : '',
         }),
       });
       const data = await response.json();
@@ -329,11 +377,20 @@ export default function AssignmentEditor({
       setTranscriptSource(data.source === 'manual' ? 'manual' : 'auto');
       setSegments(nextSegments);
       setQuestions([]);
-      setSaveMessage('Listening segments ready for review.');
+      setSaveMessage(
+        `Created ${nextSegments.length} listening segment${nextSegments.length === 1 ? '' : 's'} (min ~5s each). Review and select which to use.`
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to process transcript');
     } finally {
       setGeneratingSegments(false);
+    }
+  }
+
+  function handleSelectAutoTranscribe() {
+    setTranscriptSource('auto');
+    if (audioUrl.trim()) {
+      void handleGenerateSegments(true);
     }
   }
 
@@ -538,15 +595,37 @@ export default function AssignmentEditor({
         <ComicTitle level={3} className="text-[var(--comic-secondary)]">
           Audio &amp; transcript
         </ComicTitle>
-        <label className="space-y-1 block">
-          <ComicText className="font-black">Audio URL</ComicText>
-          <input
-            value={audioUrl}
-            onChange={(event) => setAudioUrl(event.target.value)}
-            placeholder="https://..."
-            className="w-full comic-border-thick rounded-md p-3 font-bold"
-          />
-        </label>
+        <div className="grid lg:grid-cols-2 gap-4">
+          <label className="space-y-1 block">
+            <ComicText className="font-black">Audio URL</ComicText>
+            <input
+              value={audioUrl}
+              onChange={(event) => setAudioUrl(event.target.value)}
+              placeholder="https://..."
+              className="w-full comic-border-thick rounded-md p-3 font-bold"
+            />
+          </label>
+          <label className="space-y-1 block">
+            <ComicText className="font-black">Thumbnail URL</ComicText>
+            <input
+              value={thumbnailUrl}
+              onChange={(event) => setThumbnailUrl(event.target.value)}
+              placeholder="https://..."
+              className="w-full comic-border-thick rounded-md p-3 font-bold"
+            />
+          </label>
+        </div>
+
+        {thumbnailUrl.trim() ? (
+          <div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={thumbnailUrl.trim()}
+              alt="Assessment thumbnail preview"
+              className="max-h-40 comic-border rounded-lg object-cover"
+            />
+          </div>
+        ) : null}
 
         <div className="grid md:grid-cols-3 gap-4">
           <label className="space-y-1">
@@ -604,9 +683,12 @@ export default function AssignmentEditor({
           <ComicButton
             variant={transcriptSource === 'auto' ? 'secondary' : 'accent'}
             size="sm"
-            onClick={() => setTranscriptSource('auto')}
+            disabled={generatingSegments}
+            onClick={handleSelectAutoTranscribe}
           >
-            ○ Auto-transcribe from audio
+            {generatingSegments && transcriptSource === 'auto'
+              ? 'Transcribing…'
+              : '● Auto-transcribe from audio'}
           </ComicButton>
           <ComicButton
             variant={transcriptSource === 'manual' ? 'secondary' : 'accent'}
@@ -616,12 +698,16 @@ export default function AssignmentEditor({
             ○ Enter transcript manually
           </ComicButton>
         </div>
+        <ComicText className="text-[var(--comic-dark)] text-sm font-bold">
+          Auto-transcribe downloads the audio, runs Whisper with timestamps, then builds segments of
+          at least ~5 seconds each. Click the button above (with an audio URL set) to start.
+        </ComicText>
 
         <label className="space-y-1 block">
           <ComicText className="font-black">
             {transcriptSource === 'manual'
-              ? 'Manual transcript (optional override)'
-              : 'Transcript (filled after auto-transcribe)'}
+              ? 'Manual transcript'
+              : 'Transcript (filled by auto-transcribe)'}
           </ComicText>
           <textarea
             value={transcript}
@@ -631,7 +717,7 @@ export default function AssignmentEditor({
             }}
             rows={5}
             className="w-full comic-border-thick rounded-md p-3 font-bold"
-            placeholder="Paste transcript here, or leave blank to auto-transcribe from the audio URL."
+            placeholder="Paste a transcript to split manually, or use Auto-transcribe from audio."
           />
         </label>
 
@@ -639,7 +725,7 @@ export default function AssignmentEditor({
           variant="primary"
           size="sm"
           disabled={generatingSegments}
-          onClick={() => void handleGenerateSegments()}
+          onClick={() => void handleGenerateSegments(false)}
         >
           {generatingSegments
             ? 'Processing segments…'
@@ -800,24 +886,37 @@ export default function AssignmentEditor({
           Publish &amp; QR code
         </ComicTitle>
         <ComicText className="text-[var(--comic-dark)] font-bold">
-          Status: <span className="uppercase">{status}</span>
+          Status:{' '}
+          <span
+            className={`uppercase ${
+              status === 'published' ? 'text-[var(--comic-success)]' : 'text-[var(--comic-warning)]'
+            }`}
+          >
+            {status}
+          </span>
         </ComicText>
-        {status === 'published' && studentUrl ? (
+        {status === 'published' ? (
           <div className="space-y-3">
             <ComicText className="text-[var(--comic-dark)] font-bold break-all">
-              Student link: {studentUrl}
+              Student link: {studentUrl || getStudentLearnUrl(assignmentId)}
             </ComicText>
             {qrPreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={qrPreview}
                 alt="Student assessment QR code"
                 className="w-48 h-48 comic-border-thick rounded-md bg-white"
               />
-            ) : null}
+            ) : (
+              <ComicText className="text-[var(--comic-dark)] font-bold">
+                Generating QR code…
+              </ComicText>
+            )}
           </div>
         ) : (
           <ComicText className="text-[var(--comic-dark)] font-bold">
-            Publish to generate the student link and QR code.
+            Publish to generate the student link and QR code. Auto-save will keep the published
+            status once live.
           </ComicText>
         )}
 
@@ -836,8 +935,18 @@ export default function AssignmentEditor({
             disabled={saving}
             onClick={() => void handleManualSave('published')}
           >
-            {saving ? 'Publishing…' : 'Publish assessment'}
+            {saving ? 'Publishing…' : status === 'published' ? 'Update published' : 'Publish assessment'}
           </ComicButton>
+          {status === 'published' ? (
+            <ComicButton
+              variant="warning"
+              size="sm"
+              disabled={saving}
+              onClick={() => void handleManualSave('draft')}
+            >
+              Unpublish
+            </ComicButton>
+          ) : null}
           <ComicButton variant="danger" size="sm" onClick={() => void handleDelete()}>
             Delete
           </ComicButton>

@@ -186,6 +186,14 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
         <ComicTitle level={3} className="text-[var(--comic-primary)]">
           {assignment.title}
         </ComicTitle>
+        {assignment.thumbnail_url?.trim() ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={assignment.thumbnail_url.trim()}
+            alt=""
+            className="w-full max-h-56 object-cover comic-border rounded-lg"
+          />
+        ) : null}
         <ComicText className="text-[var(--comic-dark)] font-bold">
           {assignment.teacher_name ? `Teacher: ${assignment.teacher_name}` : null}
           {assignment.class_name ? ` · Class: ${assignment.class_name}` : null}
@@ -234,10 +242,18 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      <ComicCard className="comic-shadow-xl">
-        <ComicTitle level={3} className="mb-2 text-[var(--comic-primary)]">
+      <ComicCard className="comic-shadow-xl space-y-3">
+        <ComicTitle level={3} className="text-[var(--comic-primary)]">
           {assignment.title}
         </ComicTitle>
+        {assignment.thumbnail_url?.trim() ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={assignment.thumbnail_url.trim()}
+            alt=""
+            className="w-full max-h-48 object-cover comic-border rounded-lg"
+          />
+        ) : null}
         <ComicText className="text-[var(--comic-dark)] font-bold">
           Listen to each short audio clip, then choose the best answer. Transcripts are not shown.
         </ComicText>

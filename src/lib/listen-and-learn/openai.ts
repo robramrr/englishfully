@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import type { CefrLevel, GeneratedLearnQuestion, LearnDifficulty, TranscriptSegmentDraft } from './types';
-import { splitIntoSentences } from './types';
+import { mergeShortSegments, splitIntoSentences } from './types';
 import { buildSegmentQuestionPrompt } from './prompts';
 
 function getOpenAIClient(): OpenAI {
@@ -105,7 +105,7 @@ export async function transcribeAudioWithSegments(
     segments.push(...distributeSentenceTimestamps(sentences, 0, Math.max(8, sentences.length * 3)));
   }
 
-  return { transcript, segments };
+  return { transcript, segments: mergeShortSegments(segments) };
 }
 
 export function buildSegmentsFromManualTranscript(
@@ -114,7 +114,9 @@ export function buildSegmentsFromManualTranscript(
 ): TranscriptSegmentDraft[] {
   const sentences = splitIntoSentences(transcript);
   if (sentences.length === 0) return [];
-  return distributeSentenceTimestamps(sentences, 0, Math.max(totalSeconds, sentences.length * 2.5));
+  return mergeShortSegments(
+    distributeSentenceTimestamps(sentences, 0, Math.max(totalSeconds, sentences.length * 5))
+  );
 }
 
 export async function generateQuestionForSegment(params: {
