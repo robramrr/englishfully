@@ -27,13 +27,14 @@ Requirements:
 - Match CEFR ${params.cefrLevel} and ${params.difficulty} difficulty
 - Include a short teacher explanation
 - Use clear classroom-appropriate English
-- Label choices with A., B., C., D. prefixes
+- Do NOT prefix choices with A., B., C., D. (or A) B) etc.) — the interface adds letters already
+- choices must be plain answer text only, e.g. "They watched a DVD"
 
 Return valid JSON only:
 {
   "question_text": "string",
-  "choices": ["A. ...", "B. ...", "C. ...", "D. ..."],
-  "correct_answer": "exact text of one choice",
+  "choices": ["plain choice text", "plain choice text", "plain choice text", "plain choice text"],
+  "correct_answer": "exact text of one choice (no letter prefix)",
   "explanation": "string"
 }`;
 }

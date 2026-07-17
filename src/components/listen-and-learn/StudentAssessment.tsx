@@ -7,6 +7,7 @@ import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import SegmentAudioPlayer from './SegmentAudioPlayer';
 import type { PublicLearnAssignment, LearnSubmission } from '@/lib/listen-and-learn/types';
+import { stripChoiceLetterPrefix } from '@/lib/listen-and-learn/types';
 import {
   STUDENT_LETTER_OPTIONS,
   getDefaultEntryConfig,
@@ -424,6 +425,7 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
             {question.choices.map((choice, choiceIndex) => {
               if (!choice.trim()) return null;
               const letter = String.fromCharCode(65 + choiceIndex);
+              const label = stripChoiceLetterPrefix(choice);
               const selected = answers[question.id] === choice;
               return (
                 <button
@@ -438,7 +440,7 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
                       : 'bg-white text-[var(--comic-dark)] hover:bg-[var(--comic-light)]'
                   }`}
                 >
-                  {letter}. {choice}
+                  {letter}. {label}
                 </button>
               );
             })}

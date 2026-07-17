@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import type { CefrLevel, GeneratedLearnQuestion, LearnDifficulty, TranscriptSegmentDraft } from './types';
-import { mergeShortSegments, splitIntoSentences } from './types';
+import { mergeShortSegments, splitIntoSentences, stripChoiceLetterPrefix } from './types';
 import { buildSegmentQuestionPrompt } from './prompts';
 
 function getOpenAIClient(): OpenAI {
@@ -161,14 +161,25 @@ export async function generateQuestionForSegment(params: {
     explanation?: string;
   };
 
-  const choices = (parsed.choices ?? []).map((choice) => String(choice).trim()).filter(Boolean);
+  const choices = (parsed.choices ?? [])
+    .map((choice) => stripChoiceLetterPrefix(String(choice ?? '')))
+    .filter(Boolean);
   while (choices.length < 4) choices.push('');
+
+  const correctAnswer = stripChoiceLetterPrefix(String(parsed.correct_answer ?? ''));
+  // Prefer the matching cleaned choice so grading compares equal strings.
+  const matchedChoice =
+    choices.find((choice) => choice.toLowerCase() === correctAnswer.toLowerCase()) ||
+    choices.find((choice) =>
+      correctAnswer.toLowerCase().includes(choice.toLowerCase())
+    ) ||
+    correctAnswer;
 
   return {
     segment_index: params.segmentIndex,
     question_text: String(parsed.question_text ?? '').trim(),
     choices: choices.slice(0, 4),
-    correct_answer: String(parsed.correct_answer ?? '').trim(),
+    correct_answer: matchedChoice,
     explanation: String(parsed.explanation ?? '').trim(),
   };
 }

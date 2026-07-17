@@ -185,6 +185,14 @@ export interface SubmitLearnPayload {
   }>;
 }
 
+/** Strip leading "A." / "B)" / "C :" style labels — the UI already shows letters. */
+export function stripChoiceLetterPrefix(value: string): string {
+  return value
+    .trim()
+    .replace(/^[A-Da-d](?:\s*[.\)\:\-–—]\s*|\s+)/, '')
+    .trim();
+}
+
 export function formatTimestamp(seconds: number): string {
   const safe = Math.max(0, seconds);
   const mins = Math.floor(safe / 60);

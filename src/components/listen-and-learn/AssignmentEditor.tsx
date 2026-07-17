@@ -23,6 +23,7 @@ import {
   DEFAULT_QUESTION_FRAMEWORK,
   LEARN_DIFFICULTIES,
   LEARN_DIFFICULTY_LABELS,
+  stripChoiceLetterPrefix,
 } from '@/lib/listen-and-learn/types';
 import type { CefrLevel } from '@/lib/listen-and-answer/types';
 
@@ -55,17 +56,28 @@ function toClientSegments(assignment: LearnAssignmentWithDetails): ClientLearnSe
 }
 
 function toClientQuestions(assignment: LearnAssignmentWithDetails): ClientLearnQuestion[] {
-  return assignment.questions.map((question) => ({
-    clientId: question.id,
-    id: question.id,
-    segment_id: question.segment_id,
-    segmentClientId: question.segment_id,
-    question_text: question.question_text,
-    choices: question.choices.length >= 4 ? question.choices.slice(0, 4) : [...question.choices, '', '', '', ''].slice(0, 4),
-    correct_answer: question.correct_answer,
-    explanation: question.explanation,
-    keep_question: question.keep_question,
-  }));
+  return assignment.questions.map((question) => {
+    const choices = (
+      question.choices.length >= 4
+        ? question.choices.slice(0, 4)
+        : [...question.choices, '', '', '', ''].slice(0, 4)
+    ).map((choice) => stripChoiceLetterPrefix(choice));
+    const correctAnswer = stripChoiceLetterPrefix(question.correct_answer);
+    const matched =
+      choices.find((choice) => choice.toLowerCase() === correctAnswer.toLowerCase()) ||
+      correctAnswer;
+    return {
+      clientId: question.id,
+      id: question.id,
+      segment_id: question.segment_id,
+      segmentClientId: question.segment_id,
+      question_text: question.question_text,
+      choices,
+      correct_answer: matched,
+      explanation: question.explanation,
+      keep_question: question.keep_question,
+    };
+  });
 }
 
 function buildPayload(
@@ -426,16 +438,22 @@ export default function AssignmentEditor({
       const generated = (data.questions || []) as GeneratedLearnQuestion[];
       const nextQuestions: ClientLearnQuestion[] = generated.map((question, index) => {
         const segment = selected[question.segment_index] ?? selected[index];
+        const choices = (
+          question.choices.length >= 4
+            ? question.choices.slice(0, 4)
+            : [...question.choices, '', '', '', ''].slice(0, 4)
+        ).map((choice) => stripChoiceLetterPrefix(choice));
+        const correctAnswer = stripChoiceLetterPrefix(question.correct_answer);
+        const matched =
+          choices.find((choice) => choice.toLowerCase() === correctAnswer.toLowerCase()) ||
+          correctAnswer;
         return {
           clientId: crypto.randomUUID(),
           segmentClientId: segment?.clientId ?? null,
           segment_id: segment?.id ?? null,
           question_text: question.question_text,
-          choices:
-            question.choices.length >= 4
-              ? question.choices.slice(0, 4)
-              : [...question.choices, '', '', '', ''].slice(0, 4),
-          correct_answer: question.correct_answer,
+          choices,
+          correct_answer: matched,
           explanation: question.explanation,
           keep_question: true,
         };

@@ -16,7 +16,7 @@ import type {
   SaveLearnAssignmentPayload,
   SubmitLearnPayload,
 } from './types';
-import { shuffleArray } from './types';
+import { shuffleArray, stripChoiceLetterPrefix } from './types';
 
 const DEFAULT_TEACHER_ID = 'default';
 
@@ -390,9 +390,11 @@ export async function getPublicLearnAssignment(
     entry_config: entryConfig,
     questions: questions.map((question) => {
       const segment = question.segment_id ? segmentById.get(question.segment_id) : null;
-      let choices = [...question.choices];
+      let choices = question.choices
+        .map((choice) => stripChoiceLetterPrefix(choice))
+        .filter((choice) => choice.trim());
       if (assignment.randomize_answers) {
-        choices = shuffleArray(choices.filter((choice) => choice.trim()));
+        choices = shuffleArray(choices);
       }
       return {
         id: question.id,
@@ -452,7 +454,9 @@ export async function submitLearnAssignment(
   let score = 0;
   const gradedAnswers = keepQuestions.map((question) => {
     const selected = answerByQuestion.get(question.id) ?? '';
-    const isCorrect = selected === question.correct_answer.trim();
+    const isCorrect =
+      stripChoiceLetterPrefix(selected).toLowerCase() ===
+      stripChoiceLetterPrefix(question.correct_answer).toLowerCase();
     if (isCorrect) score += 1;
     return {
       question_id: question.id,
