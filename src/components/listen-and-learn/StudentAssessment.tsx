@@ -280,9 +280,6 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
         <ComicTitle level={6} className="speak-identity-title text-[var(--comic-primary)] text-center">
           👋 Who are you?
         </ComicTitle>
-        <ComicText className="text-[var(--comic-dark)] font-bold mb-2 text-sm text-center">
-          Same student ID as Speak &amp; Submit — used for your gradebook
-        </ComicText>
 
         <div className="space-y-4">
           {entryConfig.name_mode === 'first_last' ? (
