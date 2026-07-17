@@ -105,6 +105,11 @@ function ResourceCategoriesSection() {
                 {t.teacherResources.listenAndAnswerButton}
               </ComicButton>
             </Link>
+            <Link href="/teacher-resources/listen-and-learn">
+              <ComicButton variant="warning" size="sm">
+                {t.teacherResources.listenAndLearnButton}
+              </ComicButton>
+            </Link>
             <Link href="/teacher-resources/gradebook">
               <ComicButton variant="success" size="sm">
                 {t.teacherResources.openGradebook}
