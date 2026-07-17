@@ -18,7 +18,11 @@ import type {
 import {
   DEFAULT_MAX_POINTS,
   GRADEBOOK_TOOL_LABELS,
+  LISTEN_PASS_PERCENT,
   formatPercent,
+  formatTestScore,
+  getTestPercent,
+  gradePointsFromTestScore,
   parseSemester,
   taskKey,
 } from '@/lib/gradebook/types';
@@ -48,6 +52,8 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
   const [selectedTaskId, setSelectedTaskId] = useState('');
   const [maxPoints, setMaxPoints] = useState(String(DEFAULT_MAX_POINTS));
   const [draftScores, setDraftScores] = useState<Record<string, string>>({});
+  const [draftCorrect, setDraftCorrect] = useState<Record<string, string>>({});
+  const [draftTotal, setDraftTotal] = useState<Record<string, string>>({});
   const [submittedNumbers, setSubmittedNumbers] = useState<Set<string>>(new Set());
 
   const filteredTasks = useMemo(
@@ -57,6 +63,8 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
 
   const selectedTask = filteredTasks.find((task) => task.id === selectedTaskId) || null;
   const activeTaskKey = selectedTask ? taskKey(tool, selectedTask.id) : '';
+  const defaultTestTotal = selectedTask?.question_count ?? null;
+  const isListen = tool === 'listen_and_answer';
 
   const loadClass = useCallback(async () => {
     const params = new URLSearchParams();
@@ -98,16 +106,30 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
   useEffect(() => {
     if (!selectedTask) {
       setDraftScores({});
+      setDraftCorrect({});
+      setDraftTotal({});
       setSubmittedNumbers(new Set());
       return;
     }
 
     const nextDrafts: Record<string, string> = {};
+    const nextCorrect: Record<string, string> = {};
+    const nextTotal: Record<string, string> = {};
     for (const seat of seats) {
       const existing = seat.entries_by_task[taskKey(tool, selectedTask.id)];
       nextDrafts[seat.student_number] = existing ? String(existing.points) : '';
+      nextCorrect[seat.student_number] =
+        existing?.test_correct != null ? String(existing.test_correct) : '';
+      nextTotal[seat.student_number] =
+        existing?.test_total != null
+          ? String(existing.test_total)
+          : selectedTask.question_count
+            ? String(selectedTask.question_count)
+            : '';
     }
     setDraftScores(nextDrafts);
+    setDraftCorrect(nextCorrect);
+    setDraftTotal(nextTotal);
 
     const column = taskColumns.find(
       (item) => item.tool === tool && item.task_id === selectedTask.id
@@ -131,30 +153,43 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
     }
   }, [selectedTask, seats, taskColumns, tool, classLabel]);
 
+  async function clearEntry(studentNumber: string) {
+    if (!selectedTask) return;
+    const existing = seats.find((seat) => seat.student_number === studentNumber)?.entries_by_task[
+      activeTaskKey
+    ];
+    if (!existing) {
+      setDraftScores((prev) => ({ ...prev, [studentNumber]: '' }));
+      setDraftCorrect((prev) => ({ ...prev, [studentNumber]: '' }));
+      setDraftTotal((prev) => ({
+        ...prev,
+        [studentNumber]: defaultTestTotal ? String(defaultTestTotal) : '',
+      }));
+      return;
+    }
+    setSavingNumber(studentNumber);
+    try {
+      const response = await fetch(`/api/gradebook/entries?id=${existing.id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to clear grade');
+      }
+      setMessage(`Cleared grade for #${studentNumber}`);
+      await loadClass();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to clear grade');
+    } finally {
+      setSavingNumber(null);
+    }
+  }
+
   async function saveScore(studentNumber: string, rawValue: string) {
-    if (!selectedTask || !settings) return;
+    if (!selectedTask || !settings || isListen) return;
     const trimmed = rawValue.trim();
     if (trimmed === '') {
-      const existing = seats.find((seat) => seat.student_number === studentNumber)?.entries_by_task[
-        activeTaskKey
-      ];
-      if (!existing) return;
-      setSavingNumber(studentNumber);
-      try {
-        const response = await fetch(`/api/gradebook/entries?id=${existing.id}`, {
-          method: 'DELETE',
-        });
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Failed to clear grade');
-        }
-        setMessage(`Cleared grade for #${studentNumber}`);
-        await loadClass();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to clear grade');
-      } finally {
-        setSavingNumber(null);
-      }
+      await clearEntry(studentNumber);
       return;
     }
 
@@ -181,11 +216,72 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
           task_title: selectedTask.title,
           points,
           max_points: Number(maxPoints) || DEFAULT_MAX_POINTS,
+          test_correct: null,
+          test_total: null,
         }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to save grade');
       setMessage(`Saved #${studentNumber}: ${data.entry.points}/${data.entry.max_points}`);
+      await loadClass();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save grade');
+    } finally {
+      setSavingNumber(null);
+    }
+  }
+
+  async function saveListenTestScore(studentNumber: string) {
+    if (!selectedTask || !settings || !isListen) return;
+    const correctRaw = (draftCorrect[studentNumber] ?? '').trim();
+    const totalRaw = (draftTotal[studentNumber] ?? '').trim();
+
+    if (correctRaw === '' && totalRaw === '') {
+      await clearEntry(studentNumber);
+      return;
+    }
+
+    const correct = Number(correctRaw);
+    const total = Number(totalRaw || defaultTestTotal || 0);
+    if (!Number.isFinite(correct) || !Number.isFinite(total) || total <= 0) {
+      setError('Enter correct answers and a valid test total (e.g. 18 / 25).');
+      return;
+    }
+
+    const max = Number(maxPoints) || DEFAULT_MAX_POINTS;
+    const autoPoints = gradePointsFromTestScore(correct, total, max);
+    const percent = getTestPercent(correct, total);
+
+    setSavingNumber(studentNumber);
+    setError('');
+    try {
+      const response = await fetch('/api/gradebook/entries', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          school_year: schoolYear || settings.school_year,
+          semester,
+          class_id: classId,
+          class_label: classLabel,
+          student_number: studentNumber,
+          tool,
+          task_id: selectedTask.id,
+          task_title: selectedTask.title,
+          points: autoPoints,
+          max_points: max,
+          test_correct: correct,
+          test_total: total,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to save grade');
+      setDraftScores((prev) => ({
+        ...prev,
+        [studentNumber]: String(data.entry.points),
+      }));
+      setMessage(
+        `Saved #${studentNumber}: test ${correct}/${total} (${Math.round(percent ?? 0)}%) → grade points ${data.entry.points}/${data.entry.max_points}`
+      );
       await loadClass();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save grade');
@@ -289,7 +385,9 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
             </select>
           </div>
           <div>
-            <ComicText className="font-bold mb-1 text-sm">Max Points</ComicText>
+            <ComicText className="font-bold mb-1 text-sm">
+              {isListen ? 'Grade Points (max)' : 'Max Points'}
+            </ComicText>
             <input
               className="w-full comic-input"
               value={maxPoints}
@@ -316,16 +414,29 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
           </div>
         ) : null}
 
-        <ComicText className="text-sm mb-4 text-[var(--comic-dark)]">
-          Enter a score and press Enter or leave the field to save. Clear the field and leave it to
-          remove a grade. In-person Speak completions can be graded here even without a recording.
-        </ComicText>
+        {isListen ? (
+          <ComicText className="text-sm mb-4 text-[var(--comic-dark)]">
+            Enter <strong>Test Score</strong> as correct / total (example 18/25). Percentage is
+            calculated automatically. If the score is {LISTEN_PASS_PERCENT}% or higher,{' '}
+            <strong>Grade Points</strong> become {maxPoints || DEFAULT_MAX_POINTS}/
+            {maxPoints || DEFAULT_MAX_POINTS}; otherwise 0/
+            {maxPoints || DEFAULT_MAX_POINTS}.
+            {defaultTestTotal
+              ? ` This task defaults to ${defaultTestTotal} questions.`
+              : ' Set the total questions if needed.'}
+          </ComicText>
+        ) : (
+          <ComicText className="text-sm mb-4 text-[var(--comic-dark)]">
+            Enter a score and press Enter or leave the field to save. Clear the field and leave it to
+            remove a grade. In-person Speak completions can be graded here even without a recording.
+          </ComicText>
+        )}
 
         {!loaded ? (
           <ComicText className="font-bold">Loading roster…</ComicText>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] border-collapse">
+            <table className="w-full min-w-[720px] border-collapse">
               <thead>
                 <tr className="border-b-4 border-[var(--comic-black)] text-left">
                   <th className="py-2 pr-3">#</th>
@@ -333,13 +444,44 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                   {tool === 'speak_and_submit' ? (
                     <th className="py-2 pr-3">Recording</th>
                   ) : null}
-                  <th className="py-2 pr-3">Score</th>
+                  {isListen ? (
+                    <>
+                      <th className="py-2 pr-3">Test Score</th>
+                      <th className="py-2 pr-3">%</th>
+                      <th className="py-2 pr-3">Grade Points</th>
+                    </>
+                  ) : (
+                    <th className="py-2 pr-3">Score</th>
+                  )}
                   <th className="py-2">Running total</th>
                 </tr>
               </thead>
               <tbody>
                 {seats.map((seat) => {
                   const hasRecording = submittedNumbers.has(seat.student_number);
+                  const correctNum = Number(draftCorrect[seat.student_number]);
+                  const totalNum = Number(
+                    draftTotal[seat.student_number] || defaultTestTotal || 0
+                  );
+                  const livePercent =
+                    isListen &&
+                    Number.isFinite(correctNum) &&
+                    Number.isFinite(totalNum) &&
+                    totalNum > 0 &&
+                    (draftCorrect[seat.student_number] ?? '').trim() !== ''
+                      ? getTestPercent(correctNum, totalNum)
+                      : null;
+                  const liveGradePoints =
+                    livePercent === null
+                      ? draftScores[seat.student_number] || '—'
+                      : String(
+                          gradePointsFromTestScore(
+                            correctNum,
+                            totalNum,
+                            Number(maxPoints) || DEFAULT_MAX_POINTS
+                          )
+                        );
+
                   return (
                     <tr
                       key={seat.student_number}
@@ -356,32 +498,88 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                           )}
                         </td>
                       ) : null}
-                      <td className="py-2 pr-3">
-                        <div className="flex items-center gap-2">
-                          <input
-                            className="comic-input w-20"
-                            value={draftScores[seat.student_number] ?? ''}
-                            disabled={!selectedTask || savingNumber === seat.student_number}
-                            onChange={(event) =>
-                              setDraftScores((prev) => ({
-                                ...prev,
-                                [seat.student_number]: event.target.value,
-                              }))
-                            }
-                            onBlur={(event) =>
-                              void saveScore(seat.student_number, event.target.value)
-                            }
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter') {
-                                event.currentTarget.blur();
+                      {isListen ? (
+                        <>
+                          <td className="py-2 pr-3">
+                            <div className="flex items-center gap-1">
+                              <input
+                                className="comic-input w-16"
+                                value={draftCorrect[seat.student_number] ?? ''}
+                                disabled={!selectedTask || savingNumber === seat.student_number}
+                                onChange={(event) =>
+                                  setDraftCorrect((prev) => ({
+                                    ...prev,
+                                    [seat.student_number]: event.target.value,
+                                  }))
+                                }
+                                onBlur={() => void saveListenTestScore(seat.student_number)}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') event.currentTarget.blur();
+                                }}
+                                inputMode="numeric"
+                                placeholder="18"
+                                aria-label={`Test correct answers for ${seat.student_number}`}
+                              />
+                              <span>/</span>
+                              <input
+                                className="comic-input w-16"
+                                value={draftTotal[seat.student_number] ?? ''}
+                                disabled={!selectedTask || savingNumber === seat.student_number}
+                                onChange={(event) =>
+                                  setDraftTotal((prev) => ({
+                                    ...prev,
+                                    [seat.student_number]: event.target.value,
+                                  }))
+                                }
+                                onBlur={() => void saveListenTestScore(seat.student_number)}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') event.currentTarget.blur();
+                                }}
+                                inputMode="numeric"
+                                placeholder={defaultTestTotal ? String(defaultTestTotal) : '25'}
+                                aria-label={`Test total questions for ${seat.student_number}`}
+                              />
+                            </div>
+                          </td>
+                          <td className="py-2 pr-3 font-bold">
+                            {livePercent === null ? '—' : `${Math.round(livePercent)}%`}
+                          </td>
+                          <td className="py-2 pr-3 font-bold">
+                            {liveGradePoints}
+                            <span className="font-normal text-sm">
+                              {' '}
+                              / {maxPoints || DEFAULT_MAX_POINTS}
+                            </span>
+                          </td>
+                        </>
+                      ) : (
+                        <td className="py-2 pr-3">
+                          <div className="flex items-center gap-2">
+                            <input
+                              className="comic-input w-20"
+                              value={draftScores[seat.student_number] ?? ''}
+                              disabled={!selectedTask || savingNumber === seat.student_number}
+                              onChange={(event) =>
+                                setDraftScores((prev) => ({
+                                  ...prev,
+                                  [seat.student_number]: event.target.value,
+                                }))
                               }
-                            }}
-                            inputMode="decimal"
-                            placeholder="—"
-                          />
-                          <span className="text-sm">/ {maxPoints || DEFAULT_MAX_POINTS}</span>
-                        </div>
-                      </td>
+                              onBlur={(event) =>
+                                void saveScore(seat.student_number, event.target.value)
+                              }
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                  event.currentTarget.blur();
+                                }
+                              }}
+                              inputMode="decimal"
+                              placeholder="—"
+                            />
+                            <span className="text-sm">/ {maxPoints || DEFAULT_MAX_POINTS}</span>
+                          </div>
+                        </td>
+                      )}
                       <td className="py-2 font-bold">
                         {seat.total_possible > 0
                           ? `${seat.total_earned}/${seat.total_possible} (${formatPercent(
@@ -430,9 +628,27 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                   <td className="py-2 pr-2 font-bold">{seat.student_number}</td>
                   {taskColumns.map((column) => {
                     const entry = seat.entries_by_task[column.task_key];
+                    if (!entry) {
+                      return (
+                        <td key={`${seat.student_number}-${column.task_key}`} className="py-2 pr-2">
+                          —
+                        </td>
+                      );
+                    }
                     return (
                       <td key={`${seat.student_number}-${column.task_key}`} className="py-2 pr-2">
-                        {entry ? `${entry.points}/${entry.max_points}` : '—'}
+                        {column.tool === 'listen_and_answer' &&
+                        entry.test_correct != null &&
+                        entry.test_total != null ? (
+                          <div>
+                            <div>{formatTestScore(entry.test_correct, entry.test_total)}</div>
+                            <div className="text-xs">
+                              Grade pts {entry.points}/{entry.max_points}
+                            </div>
+                          </div>
+                        ) : (
+                          `${entry.points}/${entry.max_points}`
+                        )}
                       </td>
                     );
                   })}

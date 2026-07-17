@@ -9,6 +9,7 @@ export const GRADEBOOK_TOOL_LABELS: Record<GradebookTool, string> = {
 };
 
 export const DEFAULT_MAX_POINTS = 10;
+export const LISTEN_PASS_PERCENT = 70;
 
 export interface GradebookSettings {
   teacher_id: string;
@@ -30,6 +31,8 @@ export interface GradebookEntry {
   task_title: string;
   points: number;
   max_points: number;
+  test_correct: number | null;
+  test_total: number | null;
   notes: string;
   updated_at: string;
 }
@@ -39,6 +42,7 @@ export interface GradebookTaskOption {
   title: string;
   tool: GradebookTool;
   class_name: string;
+  question_count: number | null;
 }
 
 export interface GradebookClassSummary {
@@ -80,6 +84,8 @@ export interface UpsertGradeEntryPayload {
   task_title: string;
   points: number;
   max_points: number;
+  test_correct?: number | null;
+  test_total?: number | null;
   notes?: string;
 }
 
@@ -131,4 +137,32 @@ export function clampPoints(value: unknown, maxPoints: number): number {
 export function formatPercent(earned: number, possible: number): string {
   if (possible <= 0) return '—';
   return `${Math.round((earned / possible) * 100)}%`;
+}
+
+export function getTestPercent(correct: number, total: number): number | null {
+  if (!Number.isFinite(correct) || !Number.isFinite(total) || total <= 0) return null;
+  return (correct / total) * 100;
+}
+
+/** Convert a Listen & Answer test score into gradebook points (10-point system). */
+export function gradePointsFromTestScore(
+  correct: number,
+  total: number,
+  maxPoints: number = DEFAULT_MAX_POINTS,
+  passPercent: number = LISTEN_PASS_PERCENT
+): number {
+  const percent = getTestPercent(correct, total);
+  if (percent === null) return 0;
+  return percent >= passPercent ? maxPoints : 0;
+}
+
+export function formatTestScore(
+  correct: number | null | undefined,
+  total: number | null | undefined
+): string {
+  if (correct == null || total == null || total <= 0) return '—';
+  const percent = getTestPercent(correct, total);
+  return percent === null
+    ? `${correct}/${total}`
+    : `${correct}/${total} (${Math.round(percent)}%)`;
 }

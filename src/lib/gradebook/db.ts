@@ -21,6 +21,7 @@ import {
   buildStudentRoster,
   clampPoints,
   getCurrentSchoolYear,
+  gradePointsFromTestScore,
   parseSemester,
   taskKey,
 } from './types';
@@ -67,6 +68,14 @@ export async function ensureGradebookSchema(): Promise<void> {
         CREATE INDEX IF NOT EXISTS idx_gradebook_entries_task
         ON gradebook_entries(teacher_id, tool, task_id)
       `;
+      await sql`
+        ALTER TABLE gradebook_entries
+        ADD COLUMN IF NOT EXISTS test_correct DOUBLE PRECISION
+      `;
+      await sql`
+        ALTER TABLE gradebook_entries
+        ADD COLUMN IF NOT EXISTS test_total DOUBLE PRECISION
+      `;
     })();
   }
   await schemaReady;
@@ -95,6 +104,12 @@ function rowToEntry(row: Record<string, unknown>): GradebookEntry {
     task_title: row.task_title as string,
     points: Number(row.points ?? 0),
     max_points: Number(row.max_points ?? DEFAULT_MAX_POINTS),
+    test_correct:
+      row.test_correct === null || row.test_correct === undefined
+        ? null
+        : Number(row.test_correct),
+    test_total:
+      row.test_total === null || row.test_total === undefined ? null : Number(row.test_total),
     notes: (row.notes as string) ?? '',
     updated_at: new Date(row.updated_at as string).toISOString(),
   };
@@ -155,14 +170,25 @@ export async function listGradebookTasks(): Promise<GradebookTaskOption[]> {
     title: task.title,
     tool: 'speak_and_submit',
     class_name: task.class_name,
+    question_count: null,
   }));
 
-  const listenOptions: GradebookTaskOption[] = listenAssignments.map((assignment) => ({
-    id: assignment.id,
-    title: assignment.title,
-    tool: 'listen_and_answer',
-    class_name: assignment.class_name,
-  }));
+  const listenOptions: GradebookTaskOption[] = listenAssignments.map((assignment) => {
+    const declaredTotal = Number.parseInt(String(assignment.total_questions ?? '').trim(), 10);
+    const questionCount =
+      Number.isFinite(declaredTotal) && declaredTotal > 0
+        ? declaredTotal
+        : assignment.question_count > 0
+          ? assignment.question_count
+          : null;
+    return {
+      id: assignment.id,
+      title: assignment.title,
+      tool: 'listen_and_answer' as const,
+      class_name: assignment.class_name,
+      question_count: questionCount,
+    };
+  });
 
   return [...speakOptions, ...listenOptions];
 }
@@ -380,7 +406,35 @@ export async function upsertGradeEntry(
   }
 
   const maxPoints = Math.max(0, Number(payload.max_points) || DEFAULT_MAX_POINTS);
-  const points = clampPoints(payload.points, maxPoints);
+  let points = clampPoints(payload.points, maxPoints);
+  let testCorrect: number | null =
+    payload.test_correct === null || payload.test_correct === undefined
+      ? null
+      : Number(payload.test_correct);
+  let testTotal: number | null =
+    payload.test_total === null || payload.test_total === undefined
+      ? null
+      : Number(payload.test_total);
+
+  if (testCorrect !== null && !Number.isFinite(testCorrect)) testCorrect = null;
+  if (testTotal !== null && !Number.isFinite(testTotal)) testTotal = null;
+  if (testCorrect !== null) testCorrect = Math.max(0, testCorrect);
+  if (testTotal !== null) testTotal = Math.max(0, testTotal);
+  if (testCorrect !== null && testTotal !== null && testCorrect > testTotal) {
+    testCorrect = testTotal;
+  }
+
+  // Listen & Answer: if a test score is provided, derive the 10-point grade automatically
+  // unless the client already sent an explicit points value with no test fields.
+  if (
+    payload.tool === 'listen_and_answer' &&
+    testCorrect !== null &&
+    testTotal !== null &&
+    testTotal > 0
+  ) {
+    points = gradePointsFromTestScore(testCorrect, testTotal, maxPoints);
+  }
+
   const studentNumber = normalizeStudentNumber(payload.student_number);
   const semester = parseSemester(payload.semester);
   const schoolYear = payload.school_year.trim() || getCurrentSchoolYear();
@@ -410,7 +464,8 @@ export async function upsertGradeEntry(
   await sql`
     INSERT INTO gradebook_entries (
       id, teacher_id, school_year, semester, class_id, class_label,
-      student_number, tool, task_id, task_title, points, max_points, notes, updated_at
+      student_number, tool, task_id, task_title, points, max_points,
+      test_correct, test_total, notes, updated_at
     )
     VALUES (
       ${id},
@@ -425,6 +480,8 @@ export async function upsertGradeEntry(
       ${taskTitle},
       ${points},
       ${maxPoints},
+      ${testCorrect},
+      ${testTotal},
       ${notes},
       NOW()
     )
@@ -434,6 +491,8 @@ export async function upsertGradeEntry(
       task_title = EXCLUDED.task_title,
       points = EXCLUDED.points,
       max_points = EXCLUDED.max_points,
+      test_correct = EXCLUDED.test_correct,
+      test_total = EXCLUDED.test_total,
       notes = EXCLUDED.notes,
       updated_at = NOW()
   `;
