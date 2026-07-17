@@ -240,22 +240,47 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
     const correctRaw = (draftCorrect[studentNumber] ?? '').trim();
     const totalRaw = (draftTotal[studentNumber] ?? '').trim();
 
-    if (correctRaw === '' && totalRaw === '') {
+    // Empty correct field means "no score" — never coerce "" to 0 via Number('').
+    // (Total often still has the default 25, which previously caused accidental 0/25 saves.)
+    if (correctRaw === '') {
       await clearEntry(studentNumber);
+      return;
+    }
+
+    if (!/^\d+(\.\d+)?$/.test(correctRaw)) {
+      setError('Enter a valid number of correct answers (or clear the field to remove the score).');
       return;
     }
 
     const correct = Number(correctRaw);
     const total = Number(totalRaw || defaultTestTotal || 0);
-    if (!Number.isFinite(correct) || !Number.isFinite(total) || total <= 0) {
-      setError('Enter correct answers and a valid test total (e.g. 18 / 25).');
+    if (!Number.isFinite(correct) || correct < 0) {
+      setError('Enter a valid number of correct answers.');
+      return;
+    }
+    if (!Number.isFinite(total) || total <= 0) {
+      setError('Enter a valid test total (e.g. 25).');
       return;
     }
 
+    const existing = seats.find((seat) => seat.student_number === studentNumber)?.entries_by_task[
+      activeTaskKey
+    ];
     const max = Number(maxPoints) || DEFAULT_MAX_POINTS;
     const cutoff = clampPassPercent(passPercent);
     const autoPoints = gradePointsFromTestScore(correct, total, max, cutoff);
     const percent = getTestPercent(correct, total);
+
+    // Skip no-op saves so clearing/editing isn't fought by a reload loop
+    if (
+      existing &&
+      existing.test_correct === correct &&
+      existing.test_total === total &&
+      existing.points === autoPoints &&
+      existing.max_points === max
+    ) {
+      return;
+    }
 
     setSavingNumber(studentNumber);
     setError('');
