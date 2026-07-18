@@ -237,18 +237,22 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
             passed ? 'text-[var(--comic-success)]' : 'text-[var(--comic-danger)]'
           }`}
         >
-          {passed ? 'Passed' : 'Not passed'} · Passing score {assignment.passing_score}%
+          {passed ? 'Passed' : 'Not passed'}
         </ComicText>
-        <ComicText className="text-[var(--comic-dark)] font-bold">
-          Attempt {result.attempt_number} ·{' '}
-          {attemptsRemaining > 0
-            ? `${attemptsRemaining} attempt${attemptsRemaining === 1 ? '' : 's'} remaining`
-            : 'No attempts remaining'}
-        </ComicText>
-        {attemptsRemaining > 0 ? (
-          <ComicButton variant="secondary" size="sm" onClick={() => setStep('identity')}>
-            Try again
-          </ComicButton>
+        {!passed ? (
+          <>
+            <ComicText className="text-[var(--comic-dark)] font-bold">
+              Attempt {result.attempt_number} ·{' '}
+              {attemptsRemaining > 0
+                ? `${attemptsRemaining} attempt${attemptsRemaining === 1 ? '' : 's'} remaining`
+                : 'No attempts remaining'}
+            </ComicText>
+            {attemptsRemaining > 0 ? (
+              <ComicButton variant="secondary" size="sm" onClick={() => setStep('identity')}>
+                Try again
+              </ComicButton>
+            ) : null}
+          </>
         ) : null}
       </ComicCard>
     );
