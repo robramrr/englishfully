@@ -234,10 +234,10 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
         </ComicText>
         <ComicText
           className={`font-black text-lg ${
-            passed ? 'text-[var(--comic-success)]' : 'text-[var(--comic-danger)]'
+            passed ? 'text-green-600' : 'text-[var(--comic-danger)]'
           }`}
         >
-          {passed ? 'Passed' : 'Not passed'}
+          {passed ? '✅ Passed' : 'Not passed'}
         </ComicText>
         {!passed ? (
           <>
