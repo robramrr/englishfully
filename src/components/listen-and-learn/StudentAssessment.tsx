@@ -436,7 +436,7 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
                   }
                   className={`w-full text-left comic-border-thick rounded-md p-3 font-bold transition-colors ${
                     selected
-                      ? 'comic-bg-header-stripes text-[var(--comic-dark)]'
+                      ? 'comic-bg-selection-stripes text-[var(--comic-dark)]'
                       : 'bg-white text-[var(--comic-dark)] hover:bg-[var(--comic-light)]'
                   }`}
                 >

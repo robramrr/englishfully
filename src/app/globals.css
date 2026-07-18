@@ -383,6 +383,18 @@ ol {
   );
 }
 
+/* Listen & Learn selected answer — same diagonal pattern, darker for visibility */
+.comic-bg-selection-stripes {
+  background-color: var(--brand-white);
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(0, 26, 72, 0.28) 10px,
+    rgba(0, 26, 72, 0.28) 20px
+  );
+}
+
 .comic-pattern-zigzag {
   background-image: 
     linear-gradient(45deg, var(--comic-black) 25%, transparent 25%),
