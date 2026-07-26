@@ -146,6 +146,15 @@ export function formatPercent(earned: number, possible: number): string {
   return `${Math.round((earned / possible) * 100)}%`;
 }
 
+/** Yellow when full points earned; red when short of the possible total. */
+export function runningTotalHighlightClass(earned: number, possible: number): string {
+  if (!(possible > 0)) return '';
+  if (earned >= possible) {
+    return 'gradebook-total-complete';
+  }
+  return 'gradebook-total-incomplete';
+}
+
 export function getTestPercent(correct: number, total: number): number | null {
   if (!Number.isFinite(correct) || !Number.isFinite(total) || total <= 0) return null;
   return (correct / total) * 100;

@@ -194,6 +194,33 @@ body::before {
   text-shadow: none;
 }
 
+/* Running total highlighters */
+.gradebook-total-complete {
+  display: inline-block;
+  background-color: #fde047;
+  color: var(--brand-navy);
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  font-weight: 700;
+}
+
+.gradebook-total-incomplete {
+  display: inline-block;
+  background-color: #fca5a5;
+  color: var(--brand-navy);
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  font-weight: 700;
+}
+
+@media print {
+  .gradebook-total-complete,
+  .gradebook-total-incomplete {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
 .speak-page .speak-identity-title {
   font-size: 1.1875rem;
   letter-spacing: 0.02em;
