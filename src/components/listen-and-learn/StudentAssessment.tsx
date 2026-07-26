@@ -410,6 +410,42 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
         </ComicText>
       </ComicCard>
 
+      {(assignment.vocabulary?.length ?? 0) > 0 ? (
+        <ComicCard className="space-y-4">
+          <ComicTitle level={4} className="text-[var(--comic-primary)]">
+            Vocabulary
+          </ComicTitle>
+          <ComicText className="text-[var(--comic-dark)] font-bold">
+            Play each word, then read the definition.
+          </ComicText>
+          <div className="space-y-4">
+            {assignment.vocabulary.map((item) => (
+              <div
+                key={item.id}
+                className="comic-border-thick rounded-lg p-3 bg-white space-y-2"
+              >
+                <ComicText className="font-black text-lg text-[var(--comic-secondary)]">
+                  {item.word}
+                </ComicText>
+                {item.end_seconds > item.start_seconds ? (
+                  <SegmentAudioPlayer
+                    audioUrl={assignment.audio_url}
+                    startSeconds={item.start_seconds}
+                    endSeconds={item.end_seconds}
+                    maxReplays={null}
+                    label="▶ Play word"
+                    compact
+                  />
+                ) : null}
+                <ComicText className="text-[var(--comic-dark)] font-bold">
+                  {item.definition}
+                </ComicText>
+              </div>
+            ))}
+          </div>
+        </ComicCard>
+      ) : null}
+
       {questions.map((question, index) => (
         <ComicCard key={question.id} className="space-y-4">
           <ComicTitle level={4} className="text-[var(--comic-secondary)]">

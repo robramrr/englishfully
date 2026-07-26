@@ -12,6 +12,7 @@ import type {
   LearnSegment,
   LearnSubmission,
   LearnTranscriptSource,
+  LearnVocabularyItem,
   PublicLearnAssignment,
   SaveLearnAssignmentPayload,
   SubmitLearnPayload,
@@ -115,8 +116,21 @@ export async function ensureLearnSchema(): Promise<void> {
         ALTER TABLE learn_assignments
         ADD COLUMN IF NOT EXISTS thumbnail_url TEXT NOT NULL DEFAULT ''
       `;
+      await sql`
+        CREATE TABLE IF NOT EXISTS learn_vocabulary (
+          id TEXT PRIMARY KEY,
+          assignment_id TEXT NOT NULL REFERENCES learn_assignments(id) ON DELETE CASCADE,
+          sort_order INTEGER NOT NULL DEFAULT 0,
+          word TEXT NOT NULL DEFAULT '',
+          definition TEXT NOT NULL DEFAULT '',
+          start_seconds DOUBLE PRECISION NOT NULL DEFAULT 0,
+          end_seconds DOUBLE PRECISION NOT NULL DEFAULT 0,
+          keep_word BOOLEAN NOT NULL DEFAULT true
+        )
+      `;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_segments_assignment ON learn_segments(assignment_id, sort_order)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_questions_assignment ON learn_questions(assignment_id, sort_order)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_learn_vocabulary_assignment ON learn_vocabulary(assignment_id, sort_order)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_submissions_assignment ON learn_submissions(assignment_id, submitted_at DESC)`;
     })();
   }
@@ -159,6 +173,19 @@ function rowToSegment(row: Record<string, unknown>): LearnSegment {
     start_seconds: Number(row.start_seconds ?? 0),
     end_seconds: Number(row.end_seconds ?? 0),
     selected: Boolean(row.selected),
+  };
+}
+
+function rowToVocabulary(row: Record<string, unknown>): LearnVocabularyItem {
+  return {
+    id: row.id as string,
+    assignment_id: row.assignment_id as string,
+    sort_order: Number(row.sort_order ?? 0),
+    word: (row.word as string) ?? '',
+    definition: (row.definition as string) ?? '',
+    start_seconds: Number(row.start_seconds ?? 0),
+    end_seconds: Number(row.end_seconds ?? 0),
+    keep_word: row.keep_word === undefined ? true : Boolean(row.keep_word),
   };
 }
 
@@ -214,6 +241,11 @@ export async function getLearnAssignmentById(
   if (rows.length === 0) return null;
 
   const assignment = rowToAssignment(rows[0]);
+  const { rows: vocabularyRows } = await sql`
+    SELECT * FROM learn_vocabulary
+    WHERE assignment_id = ${assignmentId}
+    ORDER BY sort_order ASC
+  `;
   const { rows: segmentRows } = await sql`
     SELECT * FROM learn_segments
     WHERE assignment_id = ${assignmentId}
@@ -227,6 +259,7 @@ export async function getLearnAssignmentById(
 
   return {
     ...assignment,
+    vocabulary: vocabularyRows.map(rowToVocabulary),
     segments: segmentRows.map(rowToSegment),
     questions: questionRows.map(rowToQuestion),
   };
@@ -251,6 +284,7 @@ async function replaceLearnChildren(
   payload: SaveLearnAssignmentPayload
 ): Promise<void> {
   await sql`DELETE FROM learn_questions WHERE assignment_id = ${assignmentId}`;
+  await sql`DELETE FROM learn_vocabulary WHERE assignment_id = ${assignmentId}`;
   await sql`DELETE FROM learn_segments WHERE assignment_id = ${assignmentId}`;
 
   const segmentIdMap = new Map<number, string>();
@@ -273,6 +307,27 @@ async function replaceLearnChildren(
         ${Number(segment.start_seconds) || 0},
         ${Number(segment.end_seconds) || 0},
         ${Boolean(segment.selected)}
+      )
+    `;
+  }
+
+  const vocabulary = Array.isArray(payload.vocabulary) ? payload.vocabulary : [];
+  for (let index = 0; index < vocabulary.length; index += 1) {
+    const item = vocabulary[index];
+    const vocabId = item.id || nanoid(21);
+    await sql`
+      INSERT INTO learn_vocabulary (
+        id, assignment_id, sort_order, word, definition, start_seconds, end_seconds, keep_word
+      )
+      VALUES (
+        ${vocabId},
+        ${assignmentId},
+        ${index},
+        ${safeTrim(item.word)},
+        ${safeTrim(item.definition)},
+        ${Number(item.start_seconds) || 0},
+        ${Number(item.end_seconds) || 0},
+        ${item.keep_word !== false}
       )
     `;
   }
@@ -388,6 +443,15 @@ export async function getPublicLearnAssignment(
     randomize_questions: assignment.randomize_questions,
     randomize_answers: assignment.randomize_answers,
     entry_config: entryConfig,
+    vocabulary: assignment.vocabulary
+      .filter((item) => item.keep_word && item.word.trim())
+      .map((item) => ({
+        id: item.id,
+        word: item.word,
+        definition: item.definition,
+        start_seconds: item.start_seconds,
+        end_seconds: item.end_seconds,
+      })),
     questions: questions.map((question) => {
       const segment = question.segment_id ? segmentById.get(question.segment_id) : null;
       let choices = question.choices

@@ -38,6 +38,24 @@ export interface LearnQuestion {
   keep_question: boolean;
 }
 
+export interface LearnVocabularyItem {
+  id: string;
+  assignment_id: string;
+  sort_order: number;
+  word: string;
+  definition: string;
+  start_seconds: number;
+  end_seconds: number;
+  keep_word: boolean;
+}
+
+export interface GeneratedVocabularyItem {
+  word: string;
+  definition: string;
+  start_seconds: number;
+  end_seconds: number;
+}
+
 export interface LearnAssignment {
   id: string;
   teacher_id: string;
@@ -67,6 +85,7 @@ export interface LearnAssignment {
 export const MIN_SEGMENT_SECONDS = 5;
 
 export interface LearnAssignmentWithDetails extends LearnAssignment {
+  vocabulary: LearnVocabularyItem[];
   segments: LearnSegment[];
   questions: LearnQuestion[];
 }
@@ -118,6 +137,14 @@ export interface SaveLearnAssignmentPayload {
   randomize_questions: boolean;
   randomize_answers: boolean;
   status: 'draft' | 'published';
+  vocabulary: Array<{
+    id?: string;
+    word: string;
+    definition: string;
+    start_seconds: number;
+    end_seconds: number;
+    keep_word: boolean;
+  }>;
   segments: Array<{
     id?: string;
     sentence_text: string;
@@ -165,6 +192,13 @@ export interface PublicLearnAssignment {
   randomize_answers: boolean;
   /** Same student entry settings as Speak & Submit (nickname/class/ID). */
   entry_config: SpeakEntryConfig;
+  vocabulary: Array<{
+    id: string;
+    word: string;
+    definition: string;
+    start_seconds: number;
+    end_seconds: number;
+  }>;
   questions: Array<{
     id: string;
     question_text: string;

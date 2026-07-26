@@ -38,3 +38,37 @@ Return valid JSON only:
   "explanation": "string"
 }`;
 }
+
+export function buildVocabularyPrompt(params: {
+  framework: string;
+  cefrLevel: CefrLevel;
+  transcript: string;
+  count: number;
+}): string {
+  return `You are an expert English vocabulary teacher creating materials in the style of "${params.framework}".
+
+CEFR level: ${params.cefrLevel}
+
+From this listening transcript, choose the ${params.count} most useful vocabulary words for learners at CEFR ${params.cefrLevel}.
+
+Transcript:
+"""
+${params.transcript}
+"""
+
+Requirements:
+- Exactly ${params.count} words (or fewer only if the transcript is very short)
+- Prefer content words that appear in the transcript (nouns, verbs, adjectives, useful phrases of 1–2 words)
+- Avoid ultra-basic function words (the, and, is, a, to) unless they are part of a useful chunk
+- Each word must appear in the transcript (same spelling, ignoring capitalization)
+- Give a clear, simple classroom definition suitable for CEFR ${params.cefrLevel}
+- Definition should be one short sentence in plain English
+- Do NOT invent words that are not in the transcript
+
+Return valid JSON only:
+{
+  "vocabulary": [
+    { "word": "example", "definition": "a clear short definition" }
+  ]
+}`;
+}

@@ -1,7 +1,19 @@
 import OpenAI from 'openai';
-import type { CefrLevel, GeneratedLearnQuestion, LearnDifficulty, TranscriptSegmentDraft } from './types';
+import type {
+  CefrLevel,
+  GeneratedLearnQuestion,
+  GeneratedVocabularyItem,
+  LearnDifficulty,
+  TranscriptSegmentDraft,
+} from './types';
 import { mergeShortSegments, splitIntoSentences, stripChoiceLetterPrefix } from './types';
-import { buildSegmentQuestionPrompt } from './prompts';
+import { buildSegmentQuestionPrompt, buildVocabularyPrompt } from './prompts';
+
+interface WhisperWordStamp {
+  word: string;
+  start: number;
+  end: number;
+}
 
 function getOpenAIClient(): OpenAI {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -208,4 +220,173 @@ export async function generateQuestionsForSegments(params: {
   }
 
   return results;
+}
+
+function normalizeVocabToken(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9'\-]/g, '')
+    .trim();
+}
+
+async function getWhisperWordTimestamps(audioUrl: string): Promise<WhisperWordStamp[]> {
+  const file = await downloadAudioFile(audioUrl);
+  const openai = getOpenAIClient();
+  const result = await openai.audio.transcriptions.create({
+    file,
+    model: 'whisper-1',
+    language: 'en',
+    response_format: 'verbose_json',
+    timestamp_granularities: ['word'],
+  });
+
+  const words = Array.isArray((result as { words?: unknown[] }).words)
+    ? ((result as { words: Array<{ word?: string; start?: number; end?: number }> }).words)
+    : [];
+
+  return words
+    .map((item) => ({
+      word: String(item.word ?? '').trim(),
+      start: Number(item.start ?? 0),
+      end: Number(item.end ?? item.start ?? 0),
+    }))
+    .filter((item) => item.word && Number.isFinite(item.start) && Number.isFinite(item.end));
+}
+
+function locateWordClip(
+  target: string,
+  wordStamps: WhisperWordStamp[],
+  segments: TranscriptSegmentDraft[]
+): { start_seconds: number; end_seconds: number } {
+  const tokens = target
+    .split(/\s+/)
+    .map(normalizeVocabToken)
+    .filter(Boolean);
+  if (tokens.length === 0) {
+    return { start_seconds: 0, end_seconds: 0.8 };
+  }
+
+  if (wordStamps.length > 0) {
+    const normalizedStamps = wordStamps.map((stamp) => ({
+      ...stamp,
+      normalized: normalizeVocabToken(stamp.word),
+    }));
+
+    for (let index = 0; index < normalizedStamps.length; index += 1) {
+      let matches = true;
+      for (let offset = 0; offset < tokens.length; offset += 1) {
+        if (normalizedStamps[index + offset]?.normalized !== tokens[offset]) {
+          matches = false;
+          break;
+        }
+      }
+      if (!matches) continue;
+      const start = Math.max(0, normalizedStamps[index].start - 0.12);
+      const endStamp = normalizedStamps[index + tokens.length - 1];
+      const end = Math.max(start + 0.45, endStamp.end + 0.18);
+      return {
+        start_seconds: Number(start.toFixed(2)),
+        end_seconds: Number(end.toFixed(2)),
+      };
+    }
+  }
+
+  const needle = tokens.join(' ');
+  for (const segment of segments) {
+    const haystack = normalizeVocabToken(segment.sentence_text);
+    if (haystack.includes(needle.replace(/\s+/g, ''))) {
+      const duration = Math.max(0.6, segment.end_seconds - segment.start_seconds);
+      const clip = Math.min(1.4, duration);
+      const mid = (segment.start_seconds + segment.end_seconds) / 2;
+      return {
+        start_seconds: Number(Math.max(0, mid - clip / 2).toFixed(2)),
+        end_seconds: Number((mid + clip / 2).toFixed(2)),
+      };
+    }
+  }
+
+  return { start_seconds: 0, end_seconds: 0.8 };
+}
+
+export async function generateVocabularyFromTranscript(params: {
+  framework: string;
+  cefrLevel: CefrLevel;
+  transcript: string;
+  audioUrl?: string;
+  segments?: TranscriptSegmentDraft[];
+  count?: number;
+}): Promise<GeneratedVocabularyItem[]> {
+  const count = Math.max(1, Math.min(8, params.count ?? 5));
+  const transcript = params.transcript.trim();
+  if (!transcript) {
+    throw new Error('Transcript is required to generate vocabulary');
+  }
+
+  const openai = getOpenAIClient();
+  const completion = await openai.chat.completions.create({
+    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    temperature: 0.35,
+    response_format: { type: 'json_object' },
+    messages: [
+      {
+        role: 'system',
+        content:
+          'You select useful English vocabulary from listening transcripts for teachers. Always return valid JSON.',
+      },
+      {
+        role: 'user',
+        content: buildVocabularyPrompt({
+          framework: params.framework,
+          cefrLevel: params.cefrLevel,
+          transcript,
+          count,
+        }),
+      },
+    ],
+  });
+
+  const content = completion.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error('AI did not return vocabulary content');
+  }
+
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error('AI response did not contain valid JSON');
+  }
+
+  const parsed = JSON.parse(jsonMatch[0]) as {
+    vocabulary?: Array<{ word?: string; definition?: string }>;
+  };
+  const drafts = (parsed.vocabulary ?? [])
+    .map((item) => ({
+      word: String(item.word ?? '').trim(),
+      definition: String(item.definition ?? '').trim(),
+    }))
+    .filter((item) => item.word && item.definition)
+    .slice(0, count);
+
+  if (drafts.length === 0) {
+    throw new Error('AI did not return any vocabulary words');
+  }
+
+  let wordStamps: WhisperWordStamp[] = [];
+  if (params.audioUrl?.trim()) {
+    try {
+      wordStamps = await getWhisperWordTimestamps(params.audioUrl.trim());
+    } catch (error) {
+      console.error('Word-level timestamps unavailable for vocabulary:', error);
+    }
+  }
+
+  const segments = params.segments ?? [];
+  return drafts.map((item) => {
+    const clip = locateWordClip(item.word, wordStamps, segments);
+    return {
+      word: item.word,
+      definition: item.definition,
+      start_seconds: clip.start_seconds,
+      end_seconds: clip.end_seconds,
+    };
+  });
 }

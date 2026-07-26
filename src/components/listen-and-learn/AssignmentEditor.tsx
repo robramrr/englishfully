@@ -10,9 +10,11 @@ import ComicTitle from '../ComicTitle';
 import { useAutoSave } from '../listen-and-answer/useAutoSave';
 import SegmentReviewTable, { type ClientLearnSegment } from './SegmentReviewTable';
 import SegmentAudioPlayer from './SegmentAudioPlayer';
+import VocabularyReview, { type ClientLearnVocabulary } from './VocabularyReview';
 import { generateQrDataUrl, getStudentLearnUrl } from '@/lib/listen-and-learn/qr';
 import type {
   GeneratedLearnQuestion,
+  GeneratedVocabularyItem,
   LearnAssignmentWithDetails,
   LearnDifficulty,
   LearnTranscriptSource,
@@ -52,6 +54,18 @@ function toClientSegments(assignment: LearnAssignmentWithDetails): ClientLearnSe
     start_seconds: segment.start_seconds,
     end_seconds: segment.end_seconds,
     selected: segment.selected,
+  }));
+}
+
+function toClientVocabulary(assignment: LearnAssignmentWithDetails): ClientLearnVocabulary[] {
+  return (assignment.vocabulary ?? []).map((item) => ({
+    clientId: item.id,
+    id: item.id,
+    word: item.word,
+    definition: item.definition,
+    start_seconds: item.start_seconds,
+    end_seconds: item.end_seconds,
+    keep_word: item.keep_word,
   }));
 }
 
@@ -101,6 +115,7 @@ function buildPayload(
     randomizeAnswers: boolean;
     status: 'draft' | 'published';
   },
+  vocabulary: ClientLearnVocabulary[],
   segments: ClientLearnSegment[],
   questions: ClientLearnQuestion[]
 ): SaveLearnAssignmentPayload {
@@ -123,6 +138,14 @@ function buildPayload(
     randomize_questions: values.randomizeQuestions,
     randomize_answers: values.randomizeAnswers,
     status: values.status,
+    vocabulary: vocabulary.map((item) => ({
+      id: item.id || item.clientId,
+      word: item.word,
+      definition: item.definition,
+      start_seconds: item.start_seconds,
+      end_seconds: item.end_seconds,
+      keep_word: item.keep_word,
+    })),
     segments: segments.map((segment) => ({
       // Prefer persisted id; otherwise keep the client id so questions can link before first save.
       id: segment.id || segment.clientId,
@@ -184,6 +207,9 @@ export default function AssignmentEditor({
   );
   const [randomizeAnswers, setRandomizeAnswers] = useState(initialAssignment.randomize_answers);
   const [status, setStatus] = useState<'draft' | 'published'>(initialAssignment.status);
+  const [vocabulary, setVocabulary] = useState<ClientLearnVocabulary[]>(() =>
+    toClientVocabulary(initialAssignment)
+  );
   const [segments, setSegments] = useState<ClientLearnSegment[]>(() =>
     toClientSegments(initialAssignment)
   );
@@ -194,6 +220,7 @@ export default function AssignmentEditor({
   const [saveMessage, setSaveMessage] = useState('');
   const [error, setError] = useState('');
   const [generatingSegments, setGeneratingSegments] = useState(false);
+  const [generatingVocabulary, setGeneratingVocabulary] = useState(false);
   const [generatingQuestions, setGeneratingQuestions] = useState(false);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const [qrPreview, setQrPreview] = useState('');
@@ -249,11 +276,12 @@ export default function AssignmentEditor({
   );
 
   const payload = useMemo(
-    () => buildPayload(formValues, segments, questions),
-    [formValues, segments, questions]
+    () => buildPayload(formValues, vocabulary, segments, questions),
+    [formValues, vocabulary, segments, questions]
   );
 
   const applySavedChildren = useCallback((assignment: LearnAssignmentWithDetails) => {
+    setVocabulary(toClientVocabulary(assignment));
     setSegments(toClientSegments(assignment));
     setQuestions(toClientQuestions(assignment));
     setThumbnailUrl(assignment.thumbnail_url ?? '');
@@ -403,6 +431,52 @@ export default function AssignmentEditor({
     setTranscriptSource('auto');
     if (audioUrl.trim()) {
       void handleGenerateSegments(true);
+    }
+  }
+
+  async function handleGenerateVocabulary() {
+    if (!transcript.trim()) {
+      setError('Generate or enter a transcript before creating vocabulary.');
+      return;
+    }
+    setGeneratingVocabulary(true);
+    setError('');
+    try {
+      const response = await fetch('/api/listen-and-learn/generate-vocabulary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          framework: questionFramework,
+          cefr_level: cefrLevel,
+          transcript,
+          audio_url: audioUrl.trim(),
+          count: 5,
+          segments: segments.map((segment) => ({
+            sentence_text: segment.sentence_text,
+            start_seconds: segment.start_seconds,
+            end_seconds: segment.end_seconds,
+          })),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Vocabulary generation failed');
+
+      const generated = (data.vocabulary || []) as GeneratedVocabularyItem[];
+      setVocabulary(
+        generated.map((item) => ({
+          clientId: crypto.randomUUID(),
+          word: item.word,
+          definition: item.definition,
+          start_seconds: item.start_seconds,
+          end_seconds: item.end_seconds,
+          keep_word: true,
+        }))
+      );
+      setSaveMessage(`Generated ${generated.length} vocabulary word(s). Review before publishing.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Vocabulary generation failed');
+    } finally {
+      setGeneratingVocabulary(false);
     }
   }
 
@@ -751,6 +825,20 @@ export default function AssignmentEditor({
               ? 'Split transcript into listening segments'
               : 'Transcribe audio & create segments'}
         </ComicButton>
+      </ComicCard>
+
+      <ComicCard className="comic-shadow-xl space-y-4">
+        <ComicTitle level={3} className="text-[var(--comic-primary)]">
+          Vocabulary from the audio
+        </ComicTitle>
+        <VocabularyReview
+          audioUrl={audioUrl}
+          vocabulary={vocabulary}
+          onChange={setVocabulary}
+          onGenerate={() => void handleGenerateVocabulary()}
+          generating={generatingVocabulary}
+          canGenerate={Boolean(transcript.trim())}
+        />
       </ComicCard>
 
       <ComicCard className="comic-shadow-xl space-y-4">
