@@ -252,19 +252,12 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
                         </td>
                       )}
                       <td className="py-1.5 font-bold">
-                        {seat.total_possible > 0 ? (
-                          <span
-                            className={runningTotalHighlightClass(
+                        {seat.total_possible > 0
+                          ? `${seat.total_earned}/${seat.total_possible} (${formatPercent(
                               seat.total_earned,
                               seat.total_possible
-                            )}
-                          >
-                            {seat.total_earned}/{seat.total_possible} (
-                            {formatPercent(seat.total_earned, seat.total_possible)})
-                          </span>
-                        ) : (
-                          '—'
-                        )}
+                            )})`
+                          : '—'}
                       </td>
                     </tr>
                   );
