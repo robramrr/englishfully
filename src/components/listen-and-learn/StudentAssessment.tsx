@@ -57,6 +57,7 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
         const nextAssignment = {
           ...data.assignment,
           entry_config: data.assignment.entry_config ?? getDefaultEntryConfig(),
+          vocabulary: data.assignment.vocabulary ?? [],
         } as PublicLearnAssignment;
         setAssignment(nextAssignment);
         const classes = sortSpeakClassOptions(nextAssignment.entry_config.classes);
@@ -155,6 +156,7 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
       setAssignment({
         ...data.assignment,
         entry_config: data.assignment.entry_config ?? entryConfig,
+        vocabulary: data.assignment.vocabulary ?? [],
       });
       setResolvedStudentName(resolvedName);
       setResolvedStudentNumber(formattedNumber);

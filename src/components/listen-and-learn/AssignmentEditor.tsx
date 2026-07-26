@@ -229,6 +229,10 @@ export default function AssignmentEditor({
   const [studentUrl, setStudentUrl] = useState('');
   const statusRef = useRef(status);
   const skipAutoSaveRef = useRef(false);
+  const payloadRef = useRef<SaveLearnAssignmentPayload | null>(null);
+  const saveChainRef = useRef(Promise.resolve<LearnAssignmentWithDetails | null>(null));
+  const saveRequestedRef = useRef(false);
+  const pendingStatusRef = useRef<'draft' | 'published' | null>(null);
 
   useEffect(() => {
     statusRef.current = status;
@@ -282,6 +286,10 @@ export default function AssignmentEditor({
     [formValues, vocabulary, segments, questions]
   );
 
+  useEffect(() => {
+    payloadRef.current = payload;
+  }, [payload]);
+
   const applySavedChildren = useCallback((assignment: LearnAssignmentWithDetails) => {
     setVocabulary(toClientVocabulary(assignment));
     setSegments(toClientSegments(assignment));
@@ -306,31 +314,71 @@ export default function AssignmentEditor({
     [assignmentId]
   );
 
-  const handleAutoSave = useCallback(
-    async (data: SaveLearnAssignmentPayload) => {
-      if (skipAutoSaveRef.current) return;
-      try {
+  // Serialize + coalesce writes so an older in-flight autosave cannot overwrite
+  // newer vocabulary images/timestamps in the database.
+  const flushSave = useCallback(
+    async (nextStatus?: 'draft' | 'published') => {
+      if (nextStatus) {
+        pendingStatusRef.current = nextStatus;
+        statusRef.current = nextStatus;
+      }
+      saveRequestedRef.current = true;
+
+      const run = async (): Promise<LearnAssignmentWithDetails | null> => {
+        let lastSaved: LearnAssignmentWithDetails | null = null;
         setSaving(true);
-        // Preserve current publish status — never silently downgrade to draft.
-        const preservedStatus = statusRef.current;
-        const saved = await saveAssignment({ ...data, status: preservedStatus }, preservedStatus);
-        skipAutoSaveRef.current = true;
-        applySavedChildren(saved);
-        statusRef.current = saved.status;
-        setStatus(saved.status);
+        setError('');
+        try {
+          while (saveRequestedRef.current) {
+            saveRequestedRef.current = false;
+            const latest = payloadRef.current;
+            if (!latest) return lastSaved;
+            const resolvedStatus = pendingStatusRef.current ?? statusRef.current;
+            pendingStatusRef.current = null;
+            const saved = await saveAssignment(
+              { ...latest, status: resolvedStatus },
+              resolvedStatus
+            );
+            lastSaved = saved;
+            statusRef.current = saved.status;
+            setStatus(saved.status);
+          }
+          return lastSaved;
+        } finally {
+          setSaving(false);
+          window.setTimeout(() => {
+            skipAutoSaveRef.current = false;
+          }, 800);
+        }
+      };
+
+      const chained = saveChainRef.current.then(run, run);
+      saveChainRef.current = chained.then(
+        () => null,
+        () => null
+      );
+      return chained;
+    },
+    [saveAssignment]
+  );
+
+  const handleAutoSave = useCallback(
+    async (_data: SaveLearnAssignmentPayload) => {
+      if (skipAutoSaveRef.current) return;
+      // Always flush payloadRef (kept in sync from React state). Do not write the
+      // autosave snapshot into the ref — it can be stale relative to a just-completed
+      // vocabulary image/timestamp persist and would wipe those fields on the next loop.
+      try {
+        await flushSave();
         setSaveMessage(`Auto-saved ${new Date().toLocaleTimeString()}`);
         setError('');
-        // Allow the remapped children to settle without immediately re-triggering save.
-        window.setTimeout(() => {
-          skipAutoSaveRef.current = false;
-        }, 500);
+        // Do NOT applySavedChildren here — remapping local state mid-edit was dropping
+        // freshly generated images and edited vocab audio clips.
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Auto-save failed');
-      } finally {
-        setSaving(false);
       }
     },
-    [saveAssignment, applySavedChildren]
+    [flushSave]
   );
 
   useAutoSave(payload, handleAutoSave, autoSaveEnabled);
@@ -353,19 +401,16 @@ export default function AssignmentEditor({
   }, [assignmentId, status]);
 
   async function handleManualSave(nextStatus: 'draft' | 'published' = status) {
-    setSaving(true);
-    setError('');
-    skipAutoSaveRef.current = true;
     statusRef.current = nextStatus;
     setStatus(nextStatus);
+    skipAutoSaveRef.current = true;
     try {
-      const saved = await saveAssignment({ ...payload, status: nextStatus }, nextStatus);
+      const saved = await flushSave(nextStatus);
+      if (!saved) return;
       applySavedChildren(saved);
-      statusRef.current = saved.status;
-      setStatus(saved.status);
       setSaveMessage(
         saved.status === 'published'
-          ? 'Published. Students can access the assessment via the link/QR.'
+          ? 'Published. Students can access the assessment via the link/QR. Open the student link in a fresh tab to see the latest vocabulary images and audio.'
           : `Saved ${new Date().toLocaleTimeString()}`
       );
       if (saved.status === 'published' && typeof window !== 'undefined') {
@@ -376,11 +421,32 @@ export default function AssignmentEditor({
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');
-    } finally {
-      setSaving(false);
-      window.setTimeout(() => {
-        skipAutoSaveRef.current = false;
-      }, 800);
+    }
+  }
+
+  async function handlePersistVocabulary(nextVocabulary: ClientLearnVocabulary[]) {
+    const base = payloadRef.current;
+    if (!base) return;
+    const data: SaveLearnAssignmentPayload = {
+      ...base,
+      status: statusRef.current,
+      vocabulary: nextVocabulary.map((item) => ({
+        id: item.id || item.clientId,
+        word: item.word,
+        definition: item.definition,
+        image_url: item.image_url ?? '',
+        start_seconds: item.start_seconds,
+        end_seconds: item.end_seconds,
+        keep_word: item.keep_word,
+      })),
+    };
+    payloadRef.current = data;
+    skipAutoSaveRef.current = true;
+    try {
+      await flushSave();
+      setSaveMessage(`Vocabulary saved ${new Date().toLocaleTimeString()}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save vocabulary');
     }
   }
 
@@ -839,6 +905,7 @@ export default function AssignmentEditor({
           audioUrl={audioUrl}
           vocabulary={vocabulary}
           onChange={setVocabulary}
+          onPersistVocabulary={(next) => void handlePersistVocabulary(next)}
           onGenerate={() => void handleGenerateVocabulary()}
           generating={generatingVocabulary}
           canGenerate={Boolean(transcript.trim())}

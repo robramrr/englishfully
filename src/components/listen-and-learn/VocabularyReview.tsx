@@ -22,6 +22,7 @@ interface VocabularyReviewProps {
   audioUrl: string;
   vocabulary: ClientLearnVocabulary[];
   onChange: (vocabulary: ClientLearnVocabulary[]) => void;
+  onPersistVocabulary?: (vocabulary: ClientLearnVocabulary[]) => void | Promise<void>;
   onGenerate: () => void;
   generating: boolean;
   canGenerate: boolean;
@@ -32,6 +33,7 @@ export default function VocabularyReview({
   audioUrl,
   vocabulary,
   onChange,
+  onPersistVocabulary,
   onGenerate,
   generating,
   canGenerate,
@@ -42,9 +44,11 @@ export default function VocabularyReview({
   const [imageError, setImageError] = useState('');
 
   function updateItem(clientId: string, updates: Partial<ClientLearnVocabulary>) {
-    onChange(
-      vocabulary.map((item) => (item.clientId === clientId ? { ...item, ...updates } : item))
+    const next = vocabulary.map((item) =>
+      item.clientId === clientId ? { ...item, ...updates } : item
     );
+    onChange(next);
+    return next;
   }
 
   function removeItem(clientId: string) {
@@ -85,7 +89,8 @@ export default function VocabularyReview({
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Image generation failed');
-      updateItem(item.clientId, { image_url: String(data.image_url || '') });
+      const next = updateItem(item.clientId, { image_url: String(data.image_url || '') });
+      if (onPersistVocabulary) await onPersistVocabulary(next);
     } catch (err) {
       setImageError(err instanceof Error ? err.message : 'Image generation failed');
     } finally {
@@ -108,7 +113,8 @@ export default function VocabularyReview({
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Image upload failed');
-      updateItem(item.clientId, { image_url: String(data.image_url || '') });
+      const next = updateItem(item.clientId, { image_url: String(data.image_url || '') });
+      if (onPersistVocabulary) await onPersistVocabulary(next);
     } catch (err) {
       setImageError(err instanceof Error ? err.message : 'Image upload failed');
     } finally {
@@ -254,7 +260,10 @@ export default function VocabularyReview({
                     <ComicButton
                       variant="danger"
                       size="sm"
-                      onClick={() => updateItem(item.clientId, { image_url: '' })}
+                      onClick={() => {
+                        const next = updateItem(item.clientId, { image_url: '' });
+                        if (onPersistVocabulary) void onPersistVocabulary(next);
+                      }}
                     >
                       Clear image
                     </ComicButton>
@@ -280,6 +289,12 @@ export default function VocabularyReview({
                     onChange={(event) =>
                       updateItem(item.clientId, { image_url: event.target.value })
                     }
+                    onBlur={(event) => {
+                      const next = updateItem(item.clientId, {
+                        image_url: event.target.value,
+                      });
+                      if (onPersistVocabulary) void onPersistVocabulary(next);
+                    }}
                     className="w-full comic-border-thick rounded-md p-2 font-bold bg-white"
                     placeholder="https://..."
                   />
@@ -305,6 +320,12 @@ export default function VocabularyReview({
                         start_seconds: parseTimestamp(event.target.value),
                       })
                     }
+                    onBlur={(event) => {
+                      const next = updateItem(item.clientId, {
+                        start_seconds: parseTimestamp(event.target.value),
+                      });
+                      if (onPersistVocabulary) void onPersistVocabulary(next);
+                    }}
                     className="w-full comic-border-thick rounded-md p-2 font-bold"
                   />
                 </label>
@@ -318,6 +339,12 @@ export default function VocabularyReview({
                         end_seconds: parseTimestamp(event.target.value),
                       })
                     }
+                    onBlur={(event) => {
+                      const next = updateItem(item.clientId, {
+                        end_seconds: parseTimestamp(event.target.value),
+                      });
+                      if (onPersistVocabulary) void onPersistVocabulary(next);
+                    }}
                     className="w-full comic-border-thick rounded-md p-2 font-bold"
                   />
                 </label>

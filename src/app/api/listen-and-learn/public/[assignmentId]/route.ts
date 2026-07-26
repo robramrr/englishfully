@@ -20,11 +20,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       attemptsUsed = await countLearnAttempts(params.assignmentId, studentNumber, classNumber);
     }
 
-    return NextResponse.json({
-      assignment,
-      attempts_used: attemptsUsed,
-      attempts_remaining: Math.max(0, assignment.attempts_allowed - attemptsUsed),
-    });
+    return NextResponse.json(
+      {
+        assignment,
+        attempts_used: attemptsUsed,
+        attempts_remaining: Math.max(0, assignment.attempts_allowed - attemptsUsed),
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
+    );
   } catch (error) {
     console.error('Public listen-and-learn error:', error);
     return jsonError('Failed to load assessment', 500);
