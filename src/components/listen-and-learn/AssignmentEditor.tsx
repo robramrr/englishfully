@@ -474,7 +474,11 @@ export default function AssignmentEditor({
     setVocabulary(nextVocabulary);
     skipAutoSaveRef.current = true;
     try {
-      await flushSave();
+      const saved = await flushSave();
+      if (saved) {
+        // Sync server ids/image_urls so student proxy paths resolve correctly.
+        applySavedChildren(saved);
+      }
       setSaveMessage(`Vocabulary saved ${new Date().toLocaleTimeString()}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save vocabulary');

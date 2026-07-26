@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isTeacherAuthenticated } from '@/lib/speak-and-submit/auth';
 import { jsonError } from '@/lib/speak-and-submit/api';
-import { setLearnVocabularyImageUrl } from '@/lib/listen-and-learn/db';
+import { upsertLearnVocabularyImage } from '@/lib/listen-and-learn/db';
 import { generateAndStoreVocabularyImage } from '@/lib/listen-and-learn/openai';
 
 export const dynamic = 'force-dynamic';
@@ -28,10 +28,14 @@ export async function POST(request: NextRequest) {
       definition,
     });
 
-    // Persist immediately on the row when it already exists (survives stale full saves).
-    if (vocabularyId) {
-      await setLearnVocabularyImageUrl(assignmentId, vocabularyId, imageUrl);
-    }
+    // Write image_url into DB immediately (by id, by word, or insert a row).
+    await upsertLearnVocabularyImage({
+      assignmentId,
+      vocabularyId: vocabularyId || word,
+      word,
+      definition,
+      imageUrl,
+    });
 
     return NextResponse.json({ image_url: imageUrl });
   } catch (error) {

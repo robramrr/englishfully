@@ -317,10 +317,15 @@ export default function VocabularyReview({
                 {item.image_url.trim() ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={item.image_url.trim()}
+                    src={`/api/listen-and-learn/public/${assignmentId}/vocabulary/${item.id || item.clientId}/image?t=${encodeURIComponent(item.image_url.trim().slice(-40))}`}
                     alt={`${item.word || 'Vocabulary'} illustration`}
                     referrerPolicy="no-referrer"
                     className="max-h-48 w-auto comic-border rounded-lg object-contain bg-white"
+                    onError={(event) => {
+                      // Fall back to the stored URL (R2/public/paste) if proxy isn't ready yet.
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = item.image_url.trim();
+                    }}
                   />
                 ) : null}
               </div>

@@ -285,6 +285,82 @@ export async function setLearnVocabularyImageUrl(
   return (result.rowCount ?? 0) > 0;
 }
 
+/** Persist a vocab image even if the row only matches by word, or create a row if needed. */
+export async function upsertLearnVocabularyImage(params: {
+  assignmentId: string;
+  vocabularyId: string;
+  word: string;
+  definition?: string;
+  imageUrl: string;
+}): Promise<void> {
+  await ensureLearnSchema();
+  const imageUrl = safeTrim(params.imageUrl);
+  const word = safeTrim(params.word);
+  const definition = safeTrim(params.definition);
+  const vocabularyId = safeTrim(params.vocabularyId) || nanoid(21);
+  if (!imageUrl || !params.assignmentId) return;
+
+  const byId = await sql`
+    UPDATE learn_vocabulary
+    SET image_url = ${imageUrl}
+    WHERE assignment_id = ${params.assignmentId} AND id = ${vocabularyId}
+    RETURNING id
+  `;
+  if (byId.rows.length > 0) return;
+
+  if (word) {
+    const byWord = await sql`
+      UPDATE learn_vocabulary
+      SET image_url = ${imageUrl}
+      WHERE assignment_id = ${params.assignmentId}
+        AND lower(trim(word)) = lower(${word})
+      RETURNING id
+    `;
+    if (byWord.rows.length > 0) return;
+  }
+
+  const { rows: sortRows } = await sql`
+    SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order
+    FROM learn_vocabulary
+    WHERE assignment_id = ${params.assignmentId}
+  `;
+  const nextOrder = Number(sortRows[0]?.next_order ?? 0) || 0;
+  try {
+    await sql`
+      INSERT INTO learn_vocabulary (
+        id, assignment_id, sort_order, word, definition, image_url,
+        start_seconds, end_seconds, keep_word
+      )
+      VALUES (
+        ${vocabularyId},
+        ${params.assignmentId},
+        ${nextOrder},
+        ${word || 'word'},
+        ${definition},
+        ${imageUrl},
+        0,
+        0,
+        true
+      )
+    `;
+  } catch {
+    // Row may have been created concurrently — force the image onto matching id/word.
+    await sql`
+      UPDATE learn_vocabulary
+      SET image_url = ${imageUrl}
+      WHERE assignment_id = ${params.assignmentId}
+        AND (id = ${vocabularyId} OR (${word} <> '' AND lower(trim(word)) = lower(${word})))
+    `;
+  }
+}
+
+export function getPublicVocabularyImagePath(
+  assignmentId: string,
+  vocabularyId: string
+): string {
+  return `/api/listen-and-learn/public/${assignmentId}/vocabulary/${vocabularyId}/image`;
+}
+
 export async function createLearnAssignment(
   teacherId: string = DEFAULT_TEACHER_ID
 ): Promise<LearnAssignmentWithDetails> {
@@ -306,13 +382,22 @@ async function replaceLearnChildren(
   // Snapshot vocabulary images BEFORE delete/reinsert so a stale client save that
   // omits image_url cannot wipe recently generated vocabulary images.
   const { rows: existingVocabularyRows } = await sql`
-    SELECT id, image_url FROM learn_vocabulary WHERE assignment_id = ${assignmentId}
+    SELECT id, word, image_url FROM learn_vocabulary WHERE assignment_id = ${assignmentId}
   `;
   const existingImageById = new Map(
     existingVocabularyRows.map((row) => [
       String(row.id),
       typeof row.image_url === 'string' ? row.image_url : '',
     ])
+  );
+  const existingImageByWord = new Map(
+    existingVocabularyRows
+      .map((row) => {
+        const word = safeTrim(row.word).toLowerCase();
+        const image = typeof row.image_url === 'string' ? row.image_url : '';
+        return word && image ? ([word, image] as const) : null;
+      })
+      .filter((entry): entry is readonly [string, string] => Boolean(entry))
   );
 
   await sql`DELETE FROM learn_questions WHERE assignment_id = ${assignmentId}`;
@@ -348,7 +433,10 @@ async function replaceLearnChildren(
     const item = vocabulary[index];
     const vocabId = item.id || nanoid(21);
     const incomingImage = safeTrim(item.image_url);
-    const previousImage = existingImageById.get(vocabId) || '';
+    const wordKey = safeTrim(item.word).toLowerCase();
+    const previousImage =
+      existingImageById.get(vocabId) ||
+      (wordKey ? existingImageByWord.get(wordKey) || '' : '');
     const imageUrl = item.clear_image
       ? ''
       : incomingImage || previousImage || '';
@@ -488,7 +576,12 @@ export async function getPublicLearnAssignment(
         id: item.id,
         word: item.word,
         definition: item.definition,
-        image_url: item.image_url ?? '',
+        // Serve via same-origin proxy so students are not blocked by private R2 URLs.
+        image_url: item.image_url?.trim()
+          ? item.image_url.startsWith('/api/')
+            ? item.image_url
+            : getPublicVocabularyImagePath(assignment.id, item.id)
+          : '',
         start_seconds: item.start_seconds,
         end_seconds: item.end_seconds,
       })),

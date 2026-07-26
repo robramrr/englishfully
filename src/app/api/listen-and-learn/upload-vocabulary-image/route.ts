@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isTeacherAuthenticated } from '@/lib/speak-and-submit/auth';
 import { jsonError } from '@/lib/speak-and-submit/api';
-import { setLearnVocabularyImageUrl } from '@/lib/listen-and-learn/db';
+import { upsertLearnVocabularyImage } from '@/lib/listen-and-learn/db';
 import { uploadVocabularyImageToR2 } from '@/lib/speak-and-submit/r2';
 
 export const dynamic = 'force-dynamic';
@@ -41,9 +41,12 @@ export async function POST(request: NextRequest) {
       contentType,
     });
 
-    if (vocabularyId) {
-      await setLearnVocabularyImageUrl(assignmentId, vocabularyId, uploaded.url);
-    }
+    await upsertLearnVocabularyImage({
+      assignmentId,
+      vocabularyId: vocabularyId || word,
+      word,
+      imageUrl: uploaded.url,
+    });
 
     return NextResponse.json({ image_url: uploaded.url });
   } catch (error) {
