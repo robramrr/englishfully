@@ -453,9 +453,19 @@ export default function AssignmentEditor({
       const saved = await flushSave(nextStatus);
       if (!saved) return;
       applySavedChildren(saved);
+      const savedVocabCount = (saved.vocabulary ?? []).filter(
+        (item) => item.keep_word !== false && item.word.trim()
+      ).length;
+      if (saved.status === 'published' && savedVocabCount === 0) {
+        setError(
+          'Published, but no vocabulary words were saved. Generate vocabulary again, wait for “saved”, then Update published.'
+        );
+      }
       setSaveMessage(
         saved.status === 'published'
-          ? 'Published. Students can access the assessment via the link/QR. Open the student link in a fresh tab to see the latest vocabulary images and audio.'
+          ? savedVocabCount > 0
+            ? `Published with ${savedVocabCount} vocabulary word(s). Open the student link in a fresh tab.`
+            : 'Published, but vocabulary is empty on the server.'
           : `Saved ${new Date().toLocaleTimeString()}`
       );
       if (saved.status === 'published' && typeof window !== 'undefined') {
@@ -565,18 +575,23 @@ export default function AssignmentEditor({
       if (!response.ok) throw new Error(data.error || 'Vocabulary generation failed');
 
       const generated = (data.vocabulary || []) as GeneratedVocabularyItem[];
-      setVocabulary(
-        generated.map((item) => ({
-          clientId: crypto.randomUUID(),
-          word: item.word,
-          definition: item.definition,
-          image_url: '',
-          start_seconds: item.start_seconds,
-          end_seconds: item.end_seconds,
-          keep_word: true,
-        }))
+      const nextVocabulary: ClientLearnVocabulary[] = generated.map((item) => ({
+        clientId: crypto.randomUUID(),
+        word: item.word,
+        definition: item.definition,
+        image_url: '',
+        start_seconds: item.start_seconds,
+        end_seconds: item.end_seconds,
+        keep_word: true,
+      }));
+      vocabularyRef.current = nextVocabulary;
+      setVocabulary(nextVocabulary);
+      skipAutoSaveRef.current = true;
+      const saved = await flushSave();
+      if (saved) applySavedChildren(saved);
+      setSaveMessage(
+        `Generated ${generated.length} vocabulary word(s) and saved. Review before publishing.`
       );
-      setSaveMessage(`Generated ${generated.length} vocabulary word(s). Review before publishing.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Vocabulary generation failed');
     } finally {
@@ -1106,7 +1121,17 @@ export default function AssignmentEditor({
           >
             {status}
           </span>
+          {' · '}
+          {vocabulary.filter((item) => item.keep_word && item.word.trim()).length} vocabulary word
+          {vocabulary.filter((item) => item.keep_word && item.word.trim()).length === 1 ? '' : 's'} in
+          editor
         </ComicText>
+        {vocabulary.filter((item) => item.keep_word && item.word.trim()).length === 0 ? (
+          <ComicText className="text-[var(--comic-danger)] font-bold">
+            No vocabulary in the editor — students will not see a Vocabulary section. Generate words
+            above before publishing.
+          </ComicText>
+        ) : null}
         {status === 'published' ? (
           <div className="space-y-3">
             <ComicText className="text-[var(--comic-dark)] font-bold break-all">

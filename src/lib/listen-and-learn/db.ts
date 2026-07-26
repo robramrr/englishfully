@@ -181,6 +181,14 @@ function rowToSegment(row: Record<string, unknown>): LearnSegment {
   };
 }
 
+function parseKeepFlag(value: unknown): boolean {
+  // Default true — null/undefined must not hide vocabulary from students.
+  if (value === false || value === 0 || value === 'f' || value === 'false' || value === 'FALSE') {
+    return false;
+  }
+  return true;
+}
+
 function rowToVocabulary(row: Record<string, unknown>): LearnVocabularyItem {
   return {
     id: row.id as string,
@@ -191,7 +199,7 @@ function rowToVocabulary(row: Record<string, unknown>): LearnVocabularyItem {
     image_url: (row.image_url as string) ?? '',
     start_seconds: Number(row.start_seconds ?? 0),
     end_seconds: Number(row.end_seconds ?? 0),
-    keep_word: row.keep_word === undefined ? true : Boolean(row.keep_word),
+    keep_word: parseKeepFlag(row.keep_word),
   };
 }
 
@@ -379,10 +387,12 @@ async function replaceLearnChildren(
   assignmentId: string,
   payload: SaveLearnAssignmentPayload
 ): Promise<void> {
-  // Snapshot vocabulary images BEFORE delete/reinsert so a stale client save that
-  // omits image_url cannot wipe recently generated vocabulary images.
+  // Snapshot full vocabulary BEFORE delete/reinsert.
+  // A stale autosave with vocabulary: [] was wiping words from published assessments.
   const { rows: existingVocabularyRows } = await sql`
-    SELECT id, word, image_url FROM learn_vocabulary WHERE assignment_id = ${assignmentId}
+    SELECT * FROM learn_vocabulary
+    WHERE assignment_id = ${assignmentId}
+    ORDER BY sort_order ASC
   `;
   const existingImageById = new Map(
     existingVocabularyRows.map((row) => [
@@ -429,34 +439,64 @@ async function replaceLearnChildren(
   }
 
   const vocabulary = Array.isArray(payload.vocabulary) ? payload.vocabulary : [];
-  for (let index = 0; index < vocabulary.length; index += 1) {
-    const item = vocabulary[index];
-    const vocabId = item.id || nanoid(21);
-    const incomingImage = safeTrim(item.image_url);
-    const wordKey = safeTrim(item.word).toLowerCase();
-    const previousImage =
-      existingImageById.get(vocabId) ||
-      (wordKey ? existingImageByWord.get(wordKey) || '' : '');
-    const imageUrl = item.clear_image
-      ? ''
-      : incomingImage || previousImage || '';
-    await sql`
-      INSERT INTO learn_vocabulary (
-        id, assignment_id, sort_order, word, definition, image_url,
-        start_seconds, end_seconds, keep_word
-      )
-      VALUES (
-        ${vocabId},
-        ${assignmentId},
-        ${index},
-        ${safeTrim(item.word)},
-        ${safeTrim(item.definition)},
-        ${imageUrl},
-        ${Number(item.start_seconds) || 0},
-        ${Number(item.end_seconds) || 0},
-        ${item.keep_word !== false}
-      )
-    `;
+  const shouldRestoreExistingVocabulary =
+    vocabulary.length === 0 && existingVocabularyRows.length > 0;
+
+  if (shouldRestoreExistingVocabulary) {
+    console.warn(
+      'Listen & Learn: ignoring empty vocabulary payload to preserve existing words',
+      assignmentId
+    );
+    for (let index = 0; index < existingVocabularyRows.length; index += 1) {
+      const row = existingVocabularyRows[index];
+      await sql`
+        INSERT INTO learn_vocabulary (
+          id, assignment_id, sort_order, word, definition, image_url,
+          start_seconds, end_seconds, keep_word
+        )
+        VALUES (
+          ${String(row.id)},
+          ${assignmentId},
+          ${Number(row.sort_order ?? index) || index},
+          ${safeTrim(row.word)},
+          ${safeTrim(row.definition)},
+          ${safeTrim(row.image_url)},
+          ${Number(row.start_seconds) || 0},
+          ${Number(row.end_seconds) || 0},
+          ${parseKeepFlag(row.keep_word)}
+        )
+      `;
+    }
+  } else {
+    for (let index = 0; index < vocabulary.length; index += 1) {
+      const item = vocabulary[index];
+      const vocabId = item.id || nanoid(21);
+      const incomingImage = safeTrim(item.image_url);
+      const wordKey = safeTrim(item.word).toLowerCase();
+      const previousImage =
+        existingImageById.get(vocabId) ||
+        (wordKey ? existingImageByWord.get(wordKey) || '' : '');
+      const imageUrl = item.clear_image
+        ? ''
+        : incomingImage || previousImage || '';
+      await sql`
+        INSERT INTO learn_vocabulary (
+          id, assignment_id, sort_order, word, definition, image_url,
+          start_seconds, end_seconds, keep_word
+        )
+        VALUES (
+          ${vocabId},
+          ${assignmentId},
+          ${index},
+          ${safeTrim(item.word)},
+          ${safeTrim(item.definition)},
+          ${imageUrl},
+          ${Number(item.start_seconds) || 0},
+          ${Number(item.end_seconds) || 0},
+          ${item.keep_word !== false}
+        )
+      `;
+    }
   }
 
   for (let index = 0; index < payload.questions.length; index += 1) {
@@ -571,7 +611,7 @@ export async function getPublicLearnAssignment(
     randomize_answers: assignment.randomize_answers,
     entry_config: entryConfig,
     vocabulary: assignment.vocabulary
-      .filter((item) => item.keep_word && item.word.trim())
+      .filter((item) => item.keep_word !== false && item.word.trim())
       .map((item) => ({
         id: item.id,
         word: item.word,
