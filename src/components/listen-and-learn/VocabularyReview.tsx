@@ -12,6 +12,8 @@ export interface ClientLearnVocabulary {
   word: string;
   definition: string;
   image_url: string;
+  /** Set when teacher clears an image so the server does not restore the previous URL. */
+  clear_image?: boolean;
   start_seconds: number;
   end_seconds: number;
   keep_word: boolean;
@@ -83,13 +85,17 @@ export default function VocabularyReview({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           assignment_id: assignmentId,
+          vocabulary_id: item.id || item.clientId,
           word: item.word.trim(),
           definition: item.definition.trim(),
         }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Image generation failed');
-      const next = updateItem(item.clientId, { image_url: String(data.image_url || '') });
+      const next = updateItem(item.clientId, {
+        image_url: String(data.image_url || ''),
+        clear_image: false,
+      });
       if (onPersistVocabulary) await onPersistVocabulary(next);
     } catch (err) {
       setImageError(err instanceof Error ? err.message : 'Image generation failed');
@@ -106,6 +112,7 @@ export default function VocabularyReview({
       const formData = new FormData();
       formData.append('file', file);
       formData.append('assignment_id', assignmentId);
+      formData.append('vocabulary_id', item.id || item.clientId);
       formData.append('word', item.word.trim() || 'word');
       const response = await fetch('/api/listen-and-learn/upload-vocabulary-image', {
         method: 'POST',
@@ -113,7 +120,10 @@ export default function VocabularyReview({
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Image upload failed');
-      const next = updateItem(item.clientId, { image_url: String(data.image_url || '') });
+      const next = updateItem(item.clientId, {
+        image_url: String(data.image_url || ''),
+        clear_image: false,
+      });
       if (onPersistVocabulary) await onPersistVocabulary(next);
     } catch (err) {
       setImageError(err instanceof Error ? err.message : 'Image upload failed');
@@ -261,7 +271,10 @@ export default function VocabularyReview({
                       variant="danger"
                       size="sm"
                       onClick={() => {
-                        const next = updateItem(item.clientId, { image_url: '' });
+                        const next = updateItem(item.clientId, {
+                          image_url: '',
+                          clear_image: true,
+                        });
                         if (onPersistVocabulary) void onPersistVocabulary(next);
                       }}
                     >
@@ -290,8 +303,10 @@ export default function VocabularyReview({
                       updateItem(item.clientId, { image_url: event.target.value })
                     }
                     onBlur={(event) => {
+                      const value = event.target.value;
                       const next = updateItem(item.clientId, {
-                        image_url: event.target.value,
+                        image_url: value,
+                        clear_image: !value.trim(),
                       });
                       if (onPersistVocabulary) void onPersistVocabulary(next);
                     }}
@@ -304,6 +319,7 @@ export default function VocabularyReview({
                   <img
                     src={item.image_url.trim()}
                     alt={`${item.word || 'Vocabulary'} illustration`}
+                    referrerPolicy="no-referrer"
                     className="max-h-48 w-auto comic-border rounded-lg object-contain bg-white"
                   />
                 ) : null}

@@ -271,6 +271,20 @@ export async function getLearnAssignmentById(
   };
 }
 
+export async function setLearnVocabularyImageUrl(
+  assignmentId: string,
+  vocabularyId: string,
+  imageUrl: string
+): Promise<boolean> {
+  await ensureLearnSchema();
+  const result = await sql`
+    UPDATE learn_vocabulary
+    SET image_url = ${safeTrim(imageUrl)}
+    WHERE assignment_id = ${assignmentId} AND id = ${vocabularyId}
+  `;
+  return (result.rowCount ?? 0) > 0;
+}
+
 export async function createLearnAssignment(
   teacherId: string = DEFAULT_TEACHER_ID
 ): Promise<LearnAssignmentWithDetails> {
@@ -289,6 +303,18 @@ async function replaceLearnChildren(
   assignmentId: string,
   payload: SaveLearnAssignmentPayload
 ): Promise<void> {
+  // Snapshot vocabulary images BEFORE delete/reinsert so a stale client save that
+  // omits image_url cannot wipe recently generated vocabulary images.
+  const { rows: existingVocabularyRows } = await sql`
+    SELECT id, image_url FROM learn_vocabulary WHERE assignment_id = ${assignmentId}
+  `;
+  const existingImageById = new Map(
+    existingVocabularyRows.map((row) => [
+      String(row.id),
+      typeof row.image_url === 'string' ? row.image_url : '',
+    ])
+  );
+
   await sql`DELETE FROM learn_questions WHERE assignment_id = ${assignmentId}`;
   await sql`DELETE FROM learn_vocabulary WHERE assignment_id = ${assignmentId}`;
   await sql`DELETE FROM learn_segments WHERE assignment_id = ${assignmentId}`;
@@ -321,6 +347,11 @@ async function replaceLearnChildren(
   for (let index = 0; index < vocabulary.length; index += 1) {
     const item = vocabulary[index];
     const vocabId = item.id || nanoid(21);
+    const incomingImage = safeTrim(item.image_url);
+    const previousImage = existingImageById.get(vocabId) || '';
+    const imageUrl = item.clear_image
+      ? ''
+      : incomingImage || previousImage || '';
     await sql`
       INSERT INTO learn_vocabulary (
         id, assignment_id, sort_order, word, definition, image_url,
@@ -332,7 +363,7 @@ async function replaceLearnChildren(
         ${index},
         ${safeTrim(item.word)},
         ${safeTrim(item.definition)},
-        ${safeTrim(item.image_url)},
+        ${imageUrl},
         ${Number(item.start_seconds) || 0},
         ${Number(item.end_seconds) || 0},
         ${item.keep_word !== false}

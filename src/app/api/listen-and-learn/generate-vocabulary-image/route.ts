@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isTeacherAuthenticated } from '@/lib/speak-and-submit/auth';
 import { jsonError } from '@/lib/speak-and-submit/api';
+import { setLearnVocabularyImageUrl } from '@/lib/listen-and-learn/db';
 import { generateAndStoreVocabularyImage } from '@/lib/listen-and-learn/openai';
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,7 @@ export async function POST(request: NextRequest) {
     const word = String(body.word ?? '').trim();
     const assignmentId = String(body.assignment_id ?? '').trim();
     const definition = String(body.definition ?? '').trim();
+    const vocabularyId = String(body.vocabulary_id ?? '').trim();
 
     if (!word) return jsonError('Word is required', 400);
     if (!assignmentId) return jsonError('Assignment id is required', 400);
@@ -25,6 +27,11 @@ export async function POST(request: NextRequest) {
       word,
       definition,
     });
+
+    // Persist immediately on the row when it already exists (survives stale full saves).
+    if (vocabularyId) {
+      await setLearnVocabularyImageUrl(assignmentId, vocabularyId, imageUrl);
+    }
 
     return NextResponse.json({ image_url: imageUrl });
   } catch (error) {

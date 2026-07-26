@@ -143,6 +143,8 @@ export interface SaveLearnAssignmentPayload {
     word: string;
     definition: string;
     image_url?: string;
+    /** When true, empty image_url must clear a previously saved image. */
+    clear_image?: boolean;
     start_seconds: number;
     end_seconds: number;
     keep_word: boolean;

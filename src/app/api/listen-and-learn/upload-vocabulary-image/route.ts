@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isTeacherAuthenticated } from '@/lib/speak-and-submit/auth';
 import { jsonError } from '@/lib/speak-and-submit/api';
+import { setLearnVocabularyImageUrl } from '@/lib/listen-and-learn/db';
 import { uploadVocabularyImageToR2 } from '@/lib/speak-and-submit/r2';
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file');
     const assignmentId = String(formData.get('assignment_id') ?? '').trim();
     const word = String(formData.get('word') ?? 'word').trim() || 'word';
+    const vocabularyId = String(formData.get('vocabulary_id') ?? '').trim();
 
     if (!assignmentId) return jsonError('Assignment id is required', 400);
     if (!file || !(file instanceof Blob)) {
@@ -38,6 +40,10 @@ export async function POST(request: NextRequest) {
       buffer,
       contentType,
     });
+
+    if (vocabularyId) {
+      await setLearnVocabularyImageUrl(assignmentId, vocabularyId, uploaded.url);
+    }
 
     return NextResponse.json({ image_url: uploaded.url });
   } catch (error) {

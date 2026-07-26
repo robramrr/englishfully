@@ -434,7 +434,8 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
                   <img
                     src={item.image_url.trim()}
                     alt=""
-                    className="max-h-48 w-auto comic-border rounded-lg object-contain"
+                    referrerPolicy="no-referrer"
+                    className="max-h-48 w-auto comic-border rounded-lg object-contain bg-white"
                   />
                 ) : null}
                 {item.end_seconds > item.start_seconds ? (

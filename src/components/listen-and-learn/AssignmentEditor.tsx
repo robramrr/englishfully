@@ -144,6 +144,7 @@ function buildPayload(
       word: item.word,
       definition: item.definition,
       image_url: item.image_url ?? '',
+      clear_image: Boolean(item.clear_image),
       start_seconds: item.start_seconds,
       end_seconds: item.end_seconds,
       keep_word: item.keep_word,
@@ -229,14 +230,32 @@ export default function AssignmentEditor({
   const [studentUrl, setStudentUrl] = useState('');
   const statusRef = useRef(status);
   const skipAutoSaveRef = useRef(false);
-  const payloadRef = useRef<SaveLearnAssignmentPayload | null>(null);
   const saveChainRef = useRef(Promise.resolve<LearnAssignmentWithDetails | null>(null));
   const saveRequestedRef = useRef(false);
   const pendingStatusRef = useRef<'draft' | 'published' | null>(null);
-
-  useEffect(() => {
-    statusRef.current = status;
-  }, [status]);
+  const vocabularyRef = useRef(vocabulary);
+  const segmentsRef = useRef(segments);
+  const questionsRef = useRef(questions);
+  const formValuesRef = useRef({
+    teacherName,
+    title,
+    className,
+    dueDate,
+    audioUrl,
+    thumbnailUrl,
+    transcript,
+    transcriptSource,
+    cefrLevel,
+    questionCountTarget,
+    difficulty,
+    questionFramework,
+    attemptsAllowed,
+    passingScore,
+    maxReplays,
+    randomizeQuestions,
+    randomizeAnswers,
+    status,
+  });
 
   const formValues = useMemo(
     () => ({
@@ -281,17 +300,46 @@ export default function AssignmentEditor({
     ]
   );
 
+  // Keep refs in sync during render so saves never read a stale useEffect snapshot.
+  statusRef.current = status;
+  vocabularyRef.current = vocabulary;
+  segmentsRef.current = segments;
+  questionsRef.current = questions;
+  formValuesRef.current = formValues;
+
   const payload = useMemo(
     () => buildPayload(formValues, vocabulary, segments, questions),
     [formValues, vocabulary, segments, questions]
   );
 
-  useEffect(() => {
-    payloadRef.current = payload;
-  }, [payload]);
+  const buildLatestPayload = useCallback((nextStatus?: 'draft' | 'published') => {
+    return buildPayload(
+      {
+        ...formValuesRef.current,
+        status: nextStatus ?? statusRef.current,
+      },
+      vocabularyRef.current,
+      segmentsRef.current,
+      questionsRef.current
+    );
+  }, []);
 
   const applySavedChildren = useCallback((assignment: LearnAssignmentWithDetails) => {
-    setVocabulary(toClientVocabulary(assignment));
+    // Keep any local image URLs if the server response is missing them (stale write).
+    setVocabulary((previous) => {
+      const fromServer = toClientVocabulary(assignment);
+      return fromServer.map((item) => {
+        if (item.image_url?.trim()) return item;
+        const local = previous.find(
+          (entry) =>
+            entry.id === item.id ||
+            entry.clientId === item.clientId ||
+            entry.word.trim().toLowerCase() === item.word.trim().toLowerCase()
+        );
+        if (!local?.image_url?.trim()) return item;
+        return { ...item, image_url: local.image_url, clear_image: false };
+      });
+    });
     setSegments(toClientSegments(assignment));
     setQuestions(toClientQuestions(assignment));
     setThumbnailUrl(assignment.thumbnail_url ?? '');
@@ -331,10 +379,10 @@ export default function AssignmentEditor({
         try {
           while (saveRequestedRef.current) {
             saveRequestedRef.current = false;
-            const latest = payloadRef.current;
-            if (!latest) return lastSaved;
             const resolvedStatus = pendingStatusRef.current ?? statusRef.current;
             pendingStatusRef.current = null;
+            // Always rebuild from live refs (not a possibly-stale payload snapshot).
+            const latest = buildLatestPayload(resolvedStatus);
             const saved = await saveAssignment(
               { ...latest, status: resolvedStatus },
               resolvedStatus
@@ -359,15 +407,12 @@ export default function AssignmentEditor({
       );
       return chained;
     },
-    [saveAssignment]
+    [buildLatestPayload, saveAssignment]
   );
 
   const handleAutoSave = useCallback(
     async (_data: SaveLearnAssignmentPayload) => {
       if (skipAutoSaveRef.current) return;
-      // Always flush payloadRef (kept in sync from React state). Do not write the
-      // autosave snapshot into the ref — it can be stale relative to a just-completed
-      // vocabulary image/timestamp persist and would wipe those fields on the next loop.
       try {
         await flushSave();
         setSaveMessage(`Auto-saved ${new Date().toLocaleTimeString()}`);
@@ -425,22 +470,8 @@ export default function AssignmentEditor({
   }
 
   async function handlePersistVocabulary(nextVocabulary: ClientLearnVocabulary[]) {
-    const base = payloadRef.current;
-    if (!base) return;
-    const data: SaveLearnAssignmentPayload = {
-      ...base,
-      status: statusRef.current,
-      vocabulary: nextVocabulary.map((item) => ({
-        id: item.id || item.clientId,
-        word: item.word,
-        definition: item.definition,
-        image_url: item.image_url ?? '',
-        start_seconds: item.start_seconds,
-        end_seconds: item.end_seconds,
-        keep_word: item.keep_word,
-      })),
-    };
-    payloadRef.current = data;
+    vocabularyRef.current = nextVocabulary;
+    setVocabulary(nextVocabulary);
     skipAutoSaveRef.current = true;
     try {
       await flushSave();
