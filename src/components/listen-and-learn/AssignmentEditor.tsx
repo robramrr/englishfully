@@ -63,6 +63,7 @@ function toClientVocabulary(assignment: LearnAssignmentWithDetails): ClientLearn
     id: item.id,
     word: item.word,
     definition: item.definition,
+    image_url: item.image_url ?? '',
     start_seconds: item.start_seconds,
     end_seconds: item.end_seconds,
     keep_word: item.keep_word,
@@ -142,6 +143,7 @@ function buildPayload(
       id: item.id || item.clientId,
       word: item.word,
       definition: item.definition,
+      image_url: item.image_url ?? '',
       start_seconds: item.start_seconds,
       end_seconds: item.end_seconds,
       keep_word: item.keep_word,
@@ -467,6 +469,7 @@ export default function AssignmentEditor({
           clientId: crypto.randomUUID(),
           word: item.word,
           definition: item.definition,
+          image_url: '',
           start_seconds: item.start_seconds,
           end_seconds: item.end_seconds,
           keep_word: true,
@@ -832,6 +835,7 @@ export default function AssignmentEditor({
           Vocabulary from the audio
         </ComicTitle>
         <VocabularyReview
+          assignmentId={assignmentId}
           audioUrl={audioUrl}
           vocabulary={vocabulary}
           onChange={setVocabulary}

@@ -44,6 +44,7 @@ export interface LearnVocabularyItem {
   sort_order: number;
   word: string;
   definition: string;
+  image_url: string;
   start_seconds: number;
   end_seconds: number;
   keep_word: boolean;
@@ -141,6 +142,7 @@ export interface SaveLearnAssignmentPayload {
     id?: string;
     word: string;
     definition: string;
+    image_url?: string;
     start_seconds: number;
     end_seconds: number;
     keep_word: boolean;
@@ -196,6 +198,7 @@ export interface PublicLearnAssignment {
     id: string;
     word: string;
     definition: string;
+    image_url: string;
     start_seconds: number;
     end_seconds: number;
   }>;

@@ -131,6 +131,49 @@ export async function uploadAudioToR2(
   };
 }
 
+function extensionForImageContentType(contentType: string): string {
+  if (contentType.includes('png')) return 'png';
+  if (contentType.includes('webp')) return 'webp';
+  if (contentType.includes('gif')) return 'gif';
+  return 'jpg';
+}
+
+export async function uploadBinaryToR2(params: {
+  key: string;
+  buffer: Buffer;
+  contentType: string;
+}): Promise<{ key: string; url: string }> {
+  const client = getR2Client();
+  await client.send(
+    new PutObjectCommand({
+      Bucket: getBucketName(),
+      Key: params.key,
+      Body: params.buffer,
+      ContentType: params.contentType,
+    })
+  );
+  return {
+    key: params.key,
+    url: buildPublicUrl(params.key),
+  };
+}
+
+export async function uploadVocabularyImageToR2(params: {
+  assignmentId: string;
+  word: string;
+  buffer: Buffer;
+  contentType: string;
+}): Promise<{ key: string; url: string }> {
+  const extension = extensionForImageContentType(params.contentType);
+  const wordPart = sanitizePathSegment(params.word || 'word', 32);
+  const key = `listen-and-learn/${sanitizePathSegment(params.assignmentId)}/vocab/${wordPart}-${Date.now()}.${extension}`;
+  return uploadBinaryToR2({
+    key,
+    buffer: params.buffer,
+    contentType: params.contentType || 'image/png',
+  });
+}
+
 export async function getAudioFromR2(key: string): Promise<Buffer> {
   const client = getR2Client();
   const response = await client.send(

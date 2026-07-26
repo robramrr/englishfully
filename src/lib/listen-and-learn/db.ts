@@ -123,10 +123,15 @@ export async function ensureLearnSchema(): Promise<void> {
           sort_order INTEGER NOT NULL DEFAULT 0,
           word TEXT NOT NULL DEFAULT '',
           definition TEXT NOT NULL DEFAULT '',
+          image_url TEXT NOT NULL DEFAULT '',
           start_seconds DOUBLE PRECISION NOT NULL DEFAULT 0,
           end_seconds DOUBLE PRECISION NOT NULL DEFAULT 0,
           keep_word BOOLEAN NOT NULL DEFAULT true
         )
+      `;
+      await sql`
+        ALTER TABLE learn_vocabulary
+        ADD COLUMN IF NOT EXISTS image_url TEXT NOT NULL DEFAULT ''
       `;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_segments_assignment ON learn_segments(assignment_id, sort_order)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_questions_assignment ON learn_questions(assignment_id, sort_order)`;
@@ -183,6 +188,7 @@ function rowToVocabulary(row: Record<string, unknown>): LearnVocabularyItem {
     sort_order: Number(row.sort_order ?? 0),
     word: (row.word as string) ?? '',
     definition: (row.definition as string) ?? '',
+    image_url: (row.image_url as string) ?? '',
     start_seconds: Number(row.start_seconds ?? 0),
     end_seconds: Number(row.end_seconds ?? 0),
     keep_word: row.keep_word === undefined ? true : Boolean(row.keep_word),
@@ -317,7 +323,8 @@ async function replaceLearnChildren(
     const vocabId = item.id || nanoid(21);
     await sql`
       INSERT INTO learn_vocabulary (
-        id, assignment_id, sort_order, word, definition, start_seconds, end_seconds, keep_word
+        id, assignment_id, sort_order, word, definition, image_url,
+        start_seconds, end_seconds, keep_word
       )
       VALUES (
         ${vocabId},
@@ -325,6 +332,7 @@ async function replaceLearnChildren(
         ${index},
         ${safeTrim(item.word)},
         ${safeTrim(item.definition)},
+        ${safeTrim(item.image_url)},
         ${Number(item.start_seconds) || 0},
         ${Number(item.end_seconds) || 0},
         ${item.keep_word !== false}
@@ -449,6 +457,7 @@ export async function getPublicLearnAssignment(
         id: item.id,
         word: item.word,
         definition: item.definition,
+        image_url: item.image_url ?? '',
         start_seconds: item.start_seconds,
         end_seconds: item.end_seconds,
       })),

@@ -8,6 +8,7 @@ import type {
 } from './types';
 import { mergeShortSegments, splitIntoSentences, stripChoiceLetterPrefix } from './types';
 import { buildSegmentQuestionPrompt, buildVocabularyPrompt } from './prompts';
+import { uploadVocabularyImageToR2 } from '@/lib/speak-and-submit/r2';
 
 interface WhisperWordStamp {
   word: string;
@@ -389,4 +390,65 @@ export async function generateVocabularyFromTranscript(params: {
       end_seconds: clip.end_seconds,
     };
   });
+}
+
+function buildVocabularyImagePrompt(word: string, definition: string): string {
+  return `Create a simple, clear educational illustration for English learners.
+Word: "${word}"
+Meaning: ${definition || 'vocabulary word'}
+Style: clean cartoon classroom flashcard image, bright colors, single clear subject, no text, no letters, no watermarks, kid-friendly and culturally neutral.`;
+}
+
+export async function generateAndStoreVocabularyImage(params: {
+  assignmentId: string;
+  word: string;
+  definition?: string;
+}): Promise<string> {
+  const word = params.word.trim();
+  if (!word) {
+    throw new Error('Word is required to generate an image');
+  }
+
+  const openai = getOpenAIClient();
+  const result = await openai.images.generate({
+    model: process.env.OPENAI_IMAGE_MODEL || 'dall-e-3',
+    prompt: buildVocabularyImagePrompt(word, params.definition?.trim() || ''),
+    size: '1024x1024',
+    n: 1,
+    quality: 'standard',
+  });
+
+  const imageData = result.data?.[0];
+  if (!imageData) {
+    throw new Error('Image generation returned no data');
+  }
+
+  let buffer: Buffer;
+  let contentType = 'image/png';
+
+  if (imageData.b64_json) {
+    buffer = Buffer.from(imageData.b64_json, 'base64');
+  } else if (imageData.url) {
+    const response = await fetch(imageData.url);
+    if (!response.ok) {
+      throw new Error('Failed to download generated image');
+    }
+    contentType = response.headers.get('content-type') || 'image/png';
+    buffer = Buffer.from(await response.arrayBuffer());
+  } else {
+    throw new Error('Image generation returned neither URL nor base64 data');
+  }
+
+  if (buffer.length === 0) {
+    throw new Error('Generated image was empty');
+  }
+
+  const uploaded = await uploadVocabularyImageToR2({
+    assignmentId: params.assignmentId,
+    word,
+    buffer,
+    contentType,
+  });
+
+  return uploaded.url;
 }

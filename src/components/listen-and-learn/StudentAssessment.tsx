@@ -427,6 +427,14 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
                 <ComicText className="font-black text-lg text-[var(--comic-secondary)]">
                   {item.word}
                 </ComicText>
+                {item.image_url?.trim() ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={item.image_url.trim()}
+                    alt=""
+                    className="max-h-48 w-auto comic-border rounded-lg object-contain"
+                  />
+                ) : null}
                 {item.end_seconds > item.start_seconds ? (
                   <SegmentAudioPlayer
                     audioUrl={assignment.audio_url}
