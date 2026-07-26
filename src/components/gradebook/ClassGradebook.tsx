@@ -54,6 +54,9 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
   const [maxPoints, setMaxPoints] = useState(String(DEFAULT_MAX_POINTS));
   const [passPercent, setPassPercent] = useState(String(LISTEN_PASS_PERCENT));
   const [applyingCutoff, setApplyingCutoff] = useState(false);
+  const [bulkCorrect, setBulkCorrect] = useState('');
+  const [bulkTotal, setBulkTotal] = useState('');
+  const [applyingTestScore, setApplyingTestScore] = useState(false);
   const [draftScores, setDraftScores] = useState<Record<string, string>>({});
   const [draftCorrect, setDraftCorrect] = useState<Record<string, string>>({});
   const [draftTotal, setDraftTotal] = useState<Record<string, string>>({});
@@ -106,6 +109,16 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
       setSelectedTaskId(filteredTasks[0]?.id || '');
     }
   }, [filteredTasks, selectedTaskId]);
+
+  useEffect(() => {
+    if (!isListen || !selectedTask) {
+      setBulkCorrect('');
+      setBulkTotal('');
+      return;
+    }
+    setBulkCorrect('');
+    setBulkTotal(selectedTask.question_count ? String(selectedTask.question_count) : '');
+  }, [isListen, selectedTask?.id, selectedTask?.question_count]);
 
   useEffect(() => {
     if (!selectedTask) {
@@ -414,6 +427,90 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
     }
   }
 
+  async function applyTestScoreToAll() {
+    if (!selectedTask || !settings || !isListen) return;
+
+    const correctRaw = bulkCorrect.trim();
+    const totalRaw = bulkTotal.trim();
+
+    if (correctRaw === '' || !/^\d+(\.\d+)?$/.test(correctRaw)) {
+      setError('Enter the correct-answers value to apply (e.g. 18).');
+      return;
+    }
+    if (totalRaw === '' || !/^\d+(\.\d+)?$/.test(totalRaw)) {
+      setError('Enter the test total to apply (e.g. 22).');
+      return;
+    }
+
+    const correct = Number(correctRaw);
+    const total = Number(totalRaw);
+    if (!Number.isFinite(correct) || correct < 0) {
+      setError('Enter a valid number of correct answers.');
+      return;
+    }
+    if (!Number.isFinite(total) || total <= 0) {
+      setError('Enter a valid test total (e.g. 22).');
+      return;
+    }
+
+    const max = Number(maxPoints) || DEFAULT_MAX_POINTS;
+    const cutoff = clampPassPercent(passPercent);
+    const autoPoints = gradePointsFromTestScore(correct, total, max, cutoff);
+    const percent = getTestPercent(correct, total);
+
+    setApplyingTestScore(true);
+    setError('');
+
+    const nextCorrect: Record<string, string> = {};
+    const nextTotal: Record<string, string> = {};
+    const nextScores: Record<string, string> = {};
+    for (const seat of seats) {
+      nextCorrect[seat.student_number] = String(correct);
+      nextTotal[seat.student_number] = String(total);
+      nextScores[seat.student_number] = String(autoPoints);
+    }
+    setDraftCorrect(nextCorrect);
+    setDraftTotal(nextTotal);
+    setDraftScores(nextScores);
+
+    try {
+      for (const seat of seats) {
+        const response = await fetch('/api/gradebook/entries', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            school_year: schoolYear || settings.school_year,
+            semester,
+            class_id: classId,
+            class_label: classLabel,
+            student_number: seat.student_number,
+            tool,
+            task_id: selectedTask.id,
+            task_title: selectedTask.title,
+            points: autoPoints,
+            max_points: max,
+            test_correct: correct,
+            test_total: total,
+            pass_percent: cutoff,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || `Failed to update #${seat.student_number}`);
+        }
+      }
+
+      await loadClass();
+      setMessage(
+        `Applied test score ${correct}/${total} (${Math.round(percent ?? 0)}%) to all ${seats.length} students → grade points ${autoPoints}/${max} (pass ≥${cutoff}%).`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to apply test score');
+    } finally {
+      setApplyingTestScore(false);
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap gap-3">
@@ -463,9 +560,24 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
       </ComicCard>
 
       <ComicCard className="comic-shadow-xl">
-        <ComicTitle level={3} className="mb-4 text-[var(--comic-secondary)]">
-          Enter Grades
-        </ComicTitle>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <ComicTitle level={3} className="comic-title-no-shadow text-[var(--comic-secondary)]">
+            Enter Grades
+          </ComicTitle>
+          {selectedTask ? (
+            <Link
+              href={`/teacher-resources/gradebook/${classId}/print?semester=${semester}&tool=${tool}&task_id=${encodeURIComponent(selectedTask.id)}&pass_percent=${encodeURIComponent(passPercent)}&max_points=${encodeURIComponent(maxPoints || String(DEFAULT_MAX_POINTS))}${
+                schoolYear || settings?.school_year
+                  ? `&school_year=${encodeURIComponent(schoolYear || settings?.school_year || '')}`
+                  : ''
+              }`}
+            >
+              <ComicButton variant="warning" size="sm">
+                Print grades
+              </ComicButton>
+            </Link>
+          ) : null}
+        </div>
         <div className={`grid gap-4 mb-4 ${isListen ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
           <div>
             <ComicText className="font-bold mb-1 text-sm">Tool</ComicText>
@@ -524,16 +636,59 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                   }}
                   inputMode="numeric"
                   placeholder={String(LISTEN_PASS_PERCENT)}
-                  disabled={applyingCutoff}
+                  disabled={applyingCutoff || applyingTestScore}
                 />
                 <ComicButton
                   type="button"
                   variant="success"
                   size="sm"
-                  disabled={applyingCutoff || !selectedTask}
+                  disabled={applyingCutoff || applyingTestScore || !selectedTask}
                   onClick={() => void applyCutoffToSavedScores()}
                 >
                   {applyingCutoff ? 'Applying…' : 'Apply'}
+                </ComicButton>
+              </div>
+            </div>
+          ) : null}
+          {isListen ? (
+            <div className="md:col-span-2 lg:col-span-4">
+              <ComicText className="font-bold mb-1 text-sm">
+                Test Score (apply to all)
+              </ComicText>
+              <div className="flex flex-wrap gap-2 items-center">
+                <input
+                  className="comic-input w-20"
+                  value={bulkCorrect}
+                  onChange={(event) => setBulkCorrect(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') void applyTestScoreToAll();
+                  }}
+                  inputMode="numeric"
+                  placeholder="18"
+                  disabled={applyingTestScore || applyingCutoff}
+                  aria-label="Correct answers to apply to all"
+                />
+                <span className="font-bold">/</span>
+                <input
+                  className="comic-input w-20"
+                  value={bulkTotal}
+                  onChange={(event) => setBulkTotal(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') void applyTestScoreToAll();
+                  }}
+                  inputMode="numeric"
+                  placeholder={defaultTestTotal ? String(defaultTestTotal) : '22'}
+                  disabled={applyingTestScore || applyingCutoff}
+                  aria-label="Test total to apply to all"
+                />
+                <ComicButton
+                  type="button"
+                  variant="success"
+                  size="sm"
+                  disabled={applyingTestScore || applyingCutoff || !selectedTask || seats.length === 0}
+                  onClick={() => void applyTestScoreToAll()}
+                >
+                  {applyingTestScore ? 'Applying…' : 'Apply'}
                 </ComicButton>
               </div>
             </div>
@@ -559,10 +714,11 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
 
         {isListen ? (
           <ComicText className="text-sm mb-4 text-[var(--comic-dark)]">
-            Enter <strong>Test Score</strong> as correct / total (example 18/25). Percentage is
-            calculated automatically. If the score is {activePassPercent}% or higher,{' '}
-            <strong>Grade Points</strong> become {maxPoints || DEFAULT_MAX_POINTS}/
-            {maxPoints || DEFAULT_MAX_POINTS}; otherwise 0/
+            Enter <strong>Test Score</strong> as correct / total (example 18/25), or use{' '}
+            <strong>Test Score (apply to all)</strong> to set the same score for every student
+            (example 18/22). Percentage is calculated automatically. If the score is{' '}
+            {activePassPercent}% or higher, <strong>Grade Points</strong> become{' '}
+            {maxPoints || DEFAULT_MAX_POINTS}/{maxPoints || DEFAULT_MAX_POINTS}; otherwise 0/
             {maxPoints || DEFAULT_MAX_POINTS}. Change <strong>Pass cutoff (%)</strong>, then press{' '}
             <strong>Apply</strong> (or leave the field) to recalculate all saved scores for this
             task. Default cutoff is {LISTEN_PASS_PERCENT}%.
@@ -752,7 +908,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
 
       {taskColumns.length > 0 ? (
         <ComicCard className="comic-shadow-xl overflow-x-auto">
-          <ComicTitle level={3} className="mb-4 text-[var(--comic-primary)]">
+          <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-primary)]">
             All Graded Tasks
           </ComicTitle>
           <table className="w-full min-w-[720px] border-collapse text-sm">

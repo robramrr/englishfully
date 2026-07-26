@@ -189,6 +189,11 @@ body::before {
   text-shadow: none;
 }
 
+/* Gradebook — flat headings except white hero titles */
+.gradebook-page .comic-title:not(.comic-text-white) {
+  text-shadow: none;
+}
+
 .speak-page .speak-identity-title {
   font-size: 1.1875rem;
   letter-spacing: 0.02em;
