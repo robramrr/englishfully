@@ -410,12 +410,16 @@ export async function generateAndStoreVocabularyImage(params: {
   }
 
   const openai = getOpenAIClient();
+  // Prefer current GPT Image models; dall-e-3 is deprecated / unavailable on many keys.
+  const imageModel = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1';
   const result = await openai.images.generate({
-    model: process.env.OPENAI_IMAGE_MODEL || 'dall-e-3',
+    model: imageModel,
     prompt: buildVocabularyImagePrompt(word, params.definition?.trim() || ''),
     size: '1024x1024',
     n: 1,
-    quality: 'standard',
+    ...(imageModel.startsWith('dall-e')
+      ? { quality: 'standard' as const }
+      : { quality: 'low' as const }),
   });
 
   const imageData = result.data?.[0];
