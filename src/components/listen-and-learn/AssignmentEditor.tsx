@@ -516,87 +516,6 @@ export default function AssignmentEditor({
     };
   }, []);
 
-  async function handleSaveIdentity() {
-    const nextTitle = title.trim();
-    const nextTeacher = teacherName.trim();
-    if (!nextTitle || nextTitle === 'Untitled Listen & Learn') {
-      setError(
-        'Type a real Assessment Title above (not “Untitled Listen & Learn”), then click Save title & teacher now.'
-      );
-      return;
-    }
-    if (!nextTeacher) {
-      setError('Type a Teacher Name above, then click Save title & teacher now.');
-      return;
-    }
-
-    // Cancel any queued full autosave so it cannot overwrite this identity write.
-    skipAutoSaveRef.current = true;
-    saveRequestedRef.current = false;
-    pendingStatusRef.current = null;
-    saveChainRef.current = Promise.resolve(null);
-
-    setSaving(true);
-    setError('');
-    try {
-      const response = await fetch(`/api/listen-and-learn/assignments/${assignmentId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          identity_only: true,
-          title: nextTitle,
-          teacher_name: nextTeacher,
-          class_name: className,
-        }),
-        cache: 'no-store',
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to save title/teacher');
-      const savedTitle = String(data.identity?.title || nextTitle).trim();
-      const savedTeacher = String(data.identity?.teacher_name || nextTeacher).trim();
-      const savedClass = String(data.identity?.class_name ?? className).trim();
-      if (savedTitle === 'Untitled Listen & Learn') {
-        throw new Error(
-          'Server still has Untitled Listen & Learn — save did not stick. Try again after refresh.'
-        );
-      }
-      setTitle(savedTitle);
-      setTeacherName(savedTeacher);
-      setClassName(savedClass);
-      formValuesRef.current = {
-        ...formValuesRef.current,
-        title: savedTitle,
-        teacherName: savedTeacher,
-        className: savedClass,
-      };
-
-      // Double-check what students will actually receive (same public API as the link).
-      const publicResponse = await fetch(
-        `/api/listen-and-learn/public/${assignmentId}?t=${Date.now()}`,
-        { cache: 'no-store' }
-      );
-      const publicData = await publicResponse.json();
-      const publicTitle = String(publicData.assignment?.title || '').trim();
-      const publicTeacher = String(publicData.assignment?.teacher_name || '').trim();
-      if (publicTitle !== savedTitle || publicTeacher !== savedTeacher) {
-        throw new Error(
-          `Saved in editor DB as “${savedTitle}” / “${savedTeacher}”, but student API still returns “${publicTitle}” / “${publicTeacher}”. Tell Rob — this is not a browser cache issue.`
-        );
-      }
-
-      setSaveMessage(
-        `Verified student API: “${publicTitle}” · Teacher: ${publicTeacher}. Open the student link in a new tab.`
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save title/teacher');
-    } finally {
-      setSaving(false);
-      window.setTimeout(() => {
-        skipAutoSaveRef.current = false;
-      }, 8000);
-    }
-  }
-
   async function handleManualSave(nextStatus: 'draft' | 'published' = status) {
     // Pin identity fields from React state at click time (don’t trust a stale autosave ref).
     formValuesRef.current = {
@@ -905,9 +824,6 @@ export default function AssignmentEditor({
         <ComicTitle level={3} className="text-[var(--comic-primary)]">
           Assessment settings
         </ComicTitle>
-        <ComicText className="text-sm font-bold text-[var(--comic-dark)] break-all">
-          Assignment ID: {assignmentId}
-        </ComicText>
         <div className="grid md:grid-cols-2 gap-4">
           <label className="space-y-1">
             <ComicText className="font-black">Assessment Title</ComicText>
@@ -945,21 +861,6 @@ export default function AssignmentEditor({
               className="w-full comic-border-thick rounded-md p-3 font-bold"
             />
           </label>
-          <div className="md:col-span-2">
-            <ComicButton
-              type="button"
-              variant="success"
-              size="sm"
-              disabled={saving}
-              onClick={() => void handleSaveIdentity()}
-            >
-              {saving ? 'Saving…' : 'Save title & teacher now'}
-            </ComicButton>
-            <ComicText className="text-xs mt-2 text-[var(--comic-dark)]">
-              Saves only Assessment Title, Teacher Name, and Class — use this if the student page
-              still shows Untitled / old teacher.
-            </ComicText>
-          </div>
           <label className="space-y-1">
             <ComicText className="font-black">Due Date</ComicText>
             <input
@@ -1452,21 +1353,6 @@ export default function AssignmentEditor({
           {vocabulary.filter((item) => item.keep_word && item.word.trim()).length === 1 ? '' : 's'} in
           editor
         </ComicText>
-        <ComicText className="text-[var(--comic-dark)] font-bold">
-          Student page will show:{' '}
-          <span className="text-[var(--comic-primary)]">
-            “{title.trim() || 'Untitled Listen & Learn'}”
-          </span>
-          {' · Teacher: '}
-          <span className="text-[var(--comic-primary)]">{teacherName.trim() || '—'}</span>
-          {className.trim() ? ` · ${className.trim()}` : ''}
-        </ComicText>
-        {(title.trim() === 'Untitled Listen & Learn' || !title.trim() || teacherName.trim() === 'T Robert') && (
-          <ComicText className="text-[var(--comic-danger)] font-bold">
-            Tip: scroll up to Assessment settings and set Assessment Title / Teacher Name, then click
-            Update published again. Those fields are what students see.
-          </ComicText>
-        )}
         {vocabulary.filter((item) => item.keep_word && item.word.trim()).length === 0 ? (
           <ComicText className="text-[var(--comic-danger)] font-bold">
             No vocabulary in the editor — students will not see a Vocabulary section. Generate words
