@@ -75,7 +75,7 @@ export default function PrintHandout({
             padding-bottom: 0.75rem !important;
           }
           .speak-and-submit-page .print-task-section {
-            margin-bottom: 1.25rem !important;
+            margin-bottom: 6px !important;
           }
           .speak-and-submit-page .print-task-heading {
             margin-bottom: 0.75rem !important;
@@ -118,6 +118,7 @@ export default function PrintHandout({
           }
           .speak-and-submit-page .print-qr-section {
             padding: 1.1rem !important;
+            margin-top: 0 !important;
           }
           .speak-and-submit-page .print-qr-row {
             margin-bottom: 0.75rem !important;
@@ -130,8 +131,8 @@ export default function PrintHandout({
             margin-bottom: 0.75rem !important;
           }
           .speak-and-submit-page .print-student-url {
-            font-size: 7px !important;
-            line-height: 1.2 !important;
+            font-size: 11px !important;
+            line-height: 1.3 !important;
           }
         }
       `}</style>
@@ -156,7 +157,7 @@ export default function PrintHandout({
             </ComicText>
           </div>
 
-          <section className="print-task-section mb-8">
+          <section className="print-task-section mb-2">
             <div className="print-task-heading mb-4">
               <ComicTitle
                 level={6}
@@ -265,7 +266,7 @@ export default function PrintHandout({
 
             <hr className="print-qr-divider border-0 border-t-4 border-[var(--comic-black)] mb-4" />
 
-            <p className="print-student-url font-bold text-[8px] leading-tight whitespace-nowrap text-center text-[var(--comic-dark)]">
+            <p className="print-student-url font-bold text-[11px] leading-tight whitespace-nowrap text-center text-[var(--comic-dark)]">
               {studentUrl}
             </p>
           </section>
