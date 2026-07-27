@@ -923,6 +923,16 @@ export async function submitLearnAssignment(
     throw new Error('No attempts remaining');
   }
 
+  const alreadyPassed = await hasPassingLearnSubmission(
+    assignmentId,
+    studentNumber,
+    classNumber,
+    assignment.passing_score
+  );
+  if (alreadyPassed) {
+    throw new Error('You already passed this assessment. Ask your teacher if you need another try.');
+  }
+
   const keepQuestions = assignment.questions.filter((question) => question.keep_question);
   const answerByQuestion = new Map(
     payload.answers.map((answer) => [answer.question_id, answer.selected_answer.trim()])
@@ -1062,4 +1072,55 @@ export async function listLearnSubmissions(assignmentId: string): Promise<LearnS
   }
 
   return submissions;
+}
+
+export async function deleteLearnSubmission(
+  assignmentId: string,
+  submissionId: string
+): Promise<boolean> {
+  await ensureLearnSchema();
+  const { rows } = await sql`
+    SELECT *
+    FROM learn_submissions
+    WHERE id = ${submissionId}
+      AND assignment_id = ${assignmentId}
+    LIMIT 1
+  `;
+  if (rows.length === 0) return false;
+
+  const submission = rows[0];
+  const studentNumber = normalizeStudentNumber(String(submission.student_number ?? ''));
+  const classNumber = String(submission.class_number ?? '').trim();
+
+  await sql`
+    DELETE FROM learn_submissions
+    WHERE id = ${submissionId}
+      AND assignment_id = ${assignmentId}
+  `;
+
+  // If this seat no longer has a passing attempt, clear any makeup gradebook credit.
+  try {
+    const assignment = await getLearnAssignmentById(assignmentId);
+    if (assignment && studentNumber && classNumber) {
+      const stillPassed = await hasPassingLearnSubmission(
+        assignmentId,
+        studentNumber,
+        classNumber,
+        assignment.passing_score
+      );
+      if (!stillPassed) {
+        const { removeListenLearnMakeupCredit } = await import('@/lib/gradebook/db');
+        await removeListenLearnMakeupCredit({
+          teacherId: assignment.teacher_id || DEFAULT_TEACHER_ID,
+          learnAssignmentId: assignmentId,
+          studentNumber,
+          classNumber,
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Failed to clear makeup credit after Learn submission delete:', error);
+  }
+
+  return true;
 }

@@ -38,12 +38,14 @@ export default function ResultsDashboard({
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState('');
 
   const loadSubmissions = useCallback(async () => {
     setError('');
     try {
       const response = await fetch(
-        `/api/listen-and-learn/assignments/${assignmentId}/submissions`
+        `/api/listen-and-learn/assignments/${assignmentId}/submissions`,
+        { cache: 'no-store' }
       );
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to load results');
@@ -59,6 +61,31 @@ export default function ResultsDashboard({
   useEffect(() => {
     void loadSubmissions();
   }, [loadSubmissions]);
+
+  async function handleDelete(submission: LearnSubmission) {
+    const label = `${submission.student_name} (${submission.student_number}, ${submission.class_number})`;
+    const confirmed = window.confirm(
+      `Delete this submission for ${label}?\n\nIf this was their only passing attempt, they can try again.`
+    );
+    if (!confirmed) return;
+
+    setDeletingId(submission.id);
+    setError('');
+    try {
+      const response = await fetch(
+        `/api/listen-and-learn/assignments/${assignmentId}/submissions/${submission.id}`,
+        { method: 'DELETE' }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Failed to delete submission');
+      setSubmissions((current) => current.filter((item) => item.id !== submission.id));
+      setExpandedId((current) => (current === submission.id ? null : current));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete submission');
+    } finally {
+      setDeletingId('');
+    }
+  }
 
   if (!loaded) {
     return (
@@ -78,6 +105,9 @@ export default function ResultsDashboard({
           {submissions.length} submission{submissions.length === 1 ? '' : 's'} · Passing score{' '}
           {passingScore}%
         </ComicText>
+        <ComicText className="text-[var(--comic-dark)] text-sm mb-4">
+          Delete a submission to let that student try again (passing locks further attempts).
+        </ComicText>
         <ComicButton variant="accent" size="sm" onClick={() => void loadSubmissions()}>
           Refresh
         </ComicButton>
@@ -94,7 +124,7 @@ export default function ResultsDashboard({
         </ComicCard>
       ) : (
         <div className="overflow-x-auto comic-border-thick rounded-lg bg-white">
-          <table className="w-full text-left border-collapse min-w-[800px]">
+          <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
               <tr className="bg-[var(--comic-primary)] text-white">
                 <th className="p-3 font-black">Nickname</th>
@@ -106,6 +136,7 @@ export default function ResultsDashboard({
                 <th className="p-3 font-black">Time</th>
                 <th className="p-3 font-black">Submitted</th>
                 <th className="p-3 font-black">Details</th>
+                <th className="p-3 font-black">Delete</th>
               </tr>
             </thead>
             <tbody>
@@ -149,10 +180,20 @@ export default function ResultsDashboard({
                           {expandedId === submission.id ? 'Hide' : 'Answers'}
                         </ComicButton>
                       </td>
+                      <td className="p-3">
+                        <ComicButton
+                          variant="danger"
+                          size="sm"
+                          disabled={deletingId === submission.id}
+                          onClick={() => void handleDelete(submission)}
+                        >
+                          {deletingId === submission.id ? 'Deleting…' : 'Delete'}
+                        </ComicButton>
+                      </td>
                     </tr>
                     {expandedId === submission.id ? (
                       <tr>
-                        <td colSpan={9} className="p-4 bg-[var(--comic-light)]">
+                        <td colSpan={10} className="p-4 bg-[var(--comic-light)]">
                           <div className="space-y-2">
                             {submission.answers.map((answer, index) => (
                               <ComicText

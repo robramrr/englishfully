@@ -1458,3 +1458,45 @@ export async function creditListenLearnMakeup(params: {
   );
   return { credited: true, reason: 'ok' };
 }
+
+/** Clear makeup gradebook points after a teacher deletes the last passing Learn submission. */
+export async function removeListenLearnMakeupCredit(params: {
+  teacherId: string;
+  learnAssignmentId: string;
+  studentNumber: string;
+  classNumber: string;
+}): Promise<number> {
+  await ensureGradebookSchema();
+  const teacherId = params.teacherId || DEFAULT_TEACHER_ID;
+  const studentNumber = normalizeStudentNumber(params.studentNumber);
+  const classLabel = params.classNumber.trim();
+  const learnAssignmentId = params.learnAssignmentId.trim();
+  if (!studentNumber || !classLabel || !learnAssignmentId) return 0;
+
+  const entryConfig = await getEntryConfig(teacherId);
+  const classOption = entryConfig.classes.find(
+    (item) => item.label.trim().toLowerCase() === classLabel.toLowerCase()
+  );
+
+  if (classOption) {
+    const { rowCount } = await sql`
+      DELETE FROM gradebook_entries
+      WHERE teacher_id = ${teacherId}
+        AND tool = 'listen_and_learn'
+        AND task_id = ${learnAssignmentId}
+        AND student_number = ${studentNumber}
+        AND class_id = ${classOption.id}
+    `;
+    return rowCount ?? 0;
+  }
+
+  const { rowCount } = await sql`
+    DELETE FROM gradebook_entries
+    WHERE teacher_id = ${teacherId}
+      AND tool = 'listen_and_learn'
+      AND task_id = ${learnAssignmentId}
+      AND student_number = ${studentNumber}
+      AND lower(trim(class_label)) = ${classLabel.toLowerCase()}
+  `;
+  return rowCount ?? 0;
+}

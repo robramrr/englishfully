@@ -149,7 +149,11 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
         return;
       }
       if ((data.attempts_remaining ?? 0) <= 0) {
-        setError('No attempts remaining for this assessment.');
+        setError(
+          data.already_passed
+            ? 'You already passed this assessment. Ask your teacher if you need another try.'
+            : 'No attempts remaining for this assessment.'
+        );
         return;
       }
 
@@ -250,6 +254,11 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
           <ComicText className="text-[var(--comic-danger)] font-bold">
             Passed here, but the makeup score was not posted yet. Check that the failing assessment
             grade is saved for this class and student, then open grades again.
+          </ComicText>
+        ) : null}
+        {passed ? (
+          <ComicText className="text-[var(--comic-dark)] font-bold">
+            You’re done — no more attempts needed.
           </ComicText>
         ) : null}
         {!passed ? (

@@ -5,6 +5,7 @@ import {
   countLearnAttempts,
   ensureLearnSchema,
   getPublicLearnAssignment,
+  hasPassingLearnSubmission,
 } from '@/lib/listen-and-learn/db';
 
 export const dynamic = 'force-dynamic';
@@ -40,15 +41,27 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const studentNumber = request.nextUrl.searchParams.get('student_number') || '';
     const classNumber = request.nextUrl.searchParams.get('class_number') || '';
     let attemptsUsed = 0;
+    let alreadyPassed = false;
     if (studentNumber && classNumber) {
       attemptsUsed = await countLearnAttempts(params.assignmentId, studentNumber, classNumber);
+      alreadyPassed = await hasPassingLearnSubmission(
+        params.assignmentId,
+        studentNumber,
+        classNumber,
+        assignment.passing_score
+      );
     }
+
+    const attemptsRemaining = alreadyPassed
+      ? 0
+      : Math.max(0, assignment.attempts_allowed - attemptsUsed);
 
     return NextResponse.json(
       {
         assignment,
         attempts_used: attemptsUsed,
-        attempts_remaining: Math.max(0, assignment.attempts_allowed - attemptsUsed),
+        attempts_remaining: attemptsRemaining,
+        already_passed: alreadyPassed,
       },
       {
         headers: {
