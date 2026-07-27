@@ -7,6 +7,7 @@ import { normalizeStudentNumber } from '@/lib/speak-and-submit/types';
 import type {
   GradebookClassSummary,
   GradebookEntry,
+  GradebookRollClaim,
   GradebookSeat,
   GradebookSemester,
   GradebookSettings,
@@ -113,9 +114,32 @@ export async function ensureGradebookSchema(): Promise<void> {
         ADD COLUMN IF NOT EXISTS school_name TEXT NOT NULL DEFAULT ''
       `;
       await sql`
+        ALTER TABLE gradebook_settings
+        ADD COLUMN IF NOT EXISTS roll_lookup_open BOOLEAN NOT NULL DEFAULT FALSE
+      `;
+      await sql`
         CREATE UNIQUE INDEX IF NOT EXISTS idx_gradebook_settings_grades_slug
         ON gradebook_settings(grades_slug)
         WHERE grades_slug <> ''
+      `;
+      await sql`
+        CREATE TABLE IF NOT EXISTS gradebook_roll_claims (
+          id TEXT PRIMARY KEY,
+          teacher_id TEXT NOT NULL DEFAULT 'default',
+          class_id TEXT NOT NULL,
+          class_label TEXT NOT NULL DEFAULT '',
+          student_number TEXT NOT NULL,
+          claimed_roll TEXT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_gradebook_roll_claims_teacher
+        ON gradebook_roll_claims(teacher_id, created_at DESC)
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_gradebook_roll_claims_seat
+        ON gradebook_roll_claims(teacher_id, class_id, student_number, created_at DESC)
       `;
     })();
   }
@@ -129,6 +153,7 @@ function rowToSettings(row: Record<string, unknown>): GradebookSettings {
     active_semester: parseSemester(row.active_semester),
     grades_slug: normalizeGradesSlug(row.grades_slug),
     school_name: String(row.school_name ?? '').trim(),
+    roll_lookup_open: Boolean(row.roll_lookup_open),
     updated_at: new Date(row.updated_at as string).toISOString(),
   };
 }
@@ -178,6 +203,7 @@ export async function getGradebookSettings(
       active_semester: 1,
       grades_slug: '',
       school_name: '',
+      roll_lookup_open: false,
       updated_at: new Date().toISOString(),
     };
   }
@@ -201,6 +227,10 @@ export async function saveGradebookSettings(
     payload.school_name !== undefined
       ? String(payload.school_name).trim().slice(0, 120)
       : current.school_name;
+  const rollLookupOpen =
+    payload.roll_lookup_open !== undefined
+      ? Boolean(payload.roll_lookup_open)
+      : current.roll_lookup_open;
 
   if (payload.grades_slug !== undefined && gradesSlug && !isValidGradesSlug(gradesSlug)) {
     throw new Error('Grades link must be at least 2 characters (letters, numbers, hyphens).');
@@ -220,10 +250,10 @@ export async function saveGradebookSettings(
   // Ensure a row exists, then UPDATE display fields explicitly (avoids stale upsert races).
   await sql`
     INSERT INTO gradebook_settings (
-      teacher_id, school_year, active_semester, grades_slug, school_name, updated_at
+      teacher_id, school_year, active_semester, grades_slug, school_name, roll_lookup_open, updated_at
     )
     VALUES (
-      ${teacherId}, ${schoolYear}, ${semester}, ${gradesSlug}, ${schoolName}, NOW()
+      ${teacherId}, ${schoolYear}, ${semester}, ${gradesSlug}, ${schoolName}, ${rollLookupOpen}, NOW()
     )
     ON CONFLICT (teacher_id) DO NOTHING
   `;
@@ -235,6 +265,7 @@ export async function saveGradebookSettings(
       active_semester = ${semester},
       grades_slug = ${gradesSlug},
       school_name = ${schoolName},
+      roll_lookup_open = ${rollLookupOpen},
       updated_at = NOW()
     WHERE teacher_id = ${teacherId}
   `;
@@ -247,6 +278,7 @@ export async function saveGradebookSettings(
     active_semester: semester,
     grades_slug: gradesSlug,
     school_name: schoolName,
+    roll_lookup_open: rollLookupOpen,
   };
 }
 
@@ -749,6 +781,9 @@ export async function lookupStudentGrades(params: {
     return null;
   }
 
+  const settings = await getGradebookSettings(teacherId);
+  const openLookup = settings.roll_lookup_open;
+
   const { rows: rosterRows } = await sql`
     SELECT roll_number, class_label
     FROM gradebook_roster
@@ -758,8 +793,12 @@ export async function lookupStudentGrades(params: {
     LIMIT 1
   `;
   const roster = rosterRows[0];
-  if (!roster || normalizeRollNumber(roster.roll_number) !== rollNumber) {
-    return null;
+  const rosterRoll = roster ? normalizeRollNumber(roster.roll_number) : '';
+
+  if (!openLookup) {
+    if (!roster || rosterRoll !== rollNumber) {
+      return null;
+    }
   }
 
   const gradebook = await getClassGradebook(
@@ -771,8 +810,25 @@ export async function lookupStudentGrades(params: {
   const seat = gradebook.seats.find((item) => item.student_number === studentNumber);
   if (!seat) return null;
 
-  const classLabel = gradebook.class_label || String(roster.class_label || '');
+  const entryConfig = await getEntryConfig(teacherId);
+  const classFromConfig = entryConfig.classes.find((item) => item.id === classId);
+  const classLabel =
+    gradebook.class_label ||
+    String(roster?.class_label || '') ||
+    classFromConfig?.label ||
+    '';
   const classLabelKey = classLabel.trim().toLowerCase();
+
+  // Temporary open mode: still require 5 digits, but log what they typed for the teacher.
+  if (openLookup) {
+    await logRollClaim({
+      teacherId,
+      classId,
+      classLabel,
+      studentNumber,
+      claimedRoll: rollNumber,
+    });
+  }
 
   type AssignedTask = {
     tool: GradebookTool;
@@ -868,6 +924,70 @@ export async function lookupStudentGrades(params: {
     total_possible: seat.total_possible,
     percent_label: formatPercent(seat.total_earned, seat.total_possible),
   };
+}
+
+function rowToRollClaim(row: Record<string, unknown>): GradebookRollClaim {
+  return {
+    id: row.id as string,
+    teacher_id: row.teacher_id as string,
+    class_id: row.class_id as string,
+    class_label: String(row.class_label ?? ''),
+    student_number: normalizeStudentNumber(String(row.student_number ?? '')),
+    claimed_roll: normalizeRollNumber(row.claimed_roll),
+    created_at: new Date(row.created_at as string).toISOString(),
+  };
+}
+
+async function logRollClaim(params: {
+  teacherId: string;
+  classId: string;
+  classLabel: string;
+  studentNumber: string;
+  claimedRoll: string;
+}): Promise<void> {
+  await ensureGradebookSchema();
+  const id = nanoid(21);
+  await sql`
+    INSERT INTO gradebook_roll_claims (
+      id, teacher_id, class_id, class_label, student_number, claimed_roll, created_at
+    )
+    VALUES (
+      ${id},
+      ${params.teacherId},
+      ${params.classId},
+      ${params.classLabel},
+      ${params.studentNumber},
+      ${params.claimedRoll},
+      NOW()
+    )
+  `;
+}
+
+export async function listRollClaims(
+  teacherId: string = DEFAULT_TEACHER_ID,
+  limit = 200
+): Promise<GradebookRollClaim[]> {
+  await ensureGradebookSchema();
+  const safeLimit = Math.min(500, Math.max(1, Math.floor(limit)));
+  const { rows } = await sql`
+    SELECT *
+    FROM gradebook_roll_claims
+    WHERE teacher_id = ${teacherId}
+    ORDER BY created_at DESC
+    LIMIT ${safeLimit}
+  `;
+  return rows.map((row) => rowToRollClaim(row));
+}
+
+export async function clearRollClaims(
+  teacherId: string = DEFAULT_TEACHER_ID
+): Promise<number> {
+  await ensureGradebookSchema();
+  const { rowCount } = await sql`
+    DELETE FROM gradebook_roll_claims
+    WHERE teacher_id = ${teacherId}
+  `;
+  return rowCount ?? 0;
 }
 
 function studentUrlForTool(tool: GradebookTool, taskId: string): string | null {

@@ -33,6 +33,7 @@ export async function PUT(request: NextRequest) {
       active_semester: parseSemester(body.active_semester),
       grades_slug: body.grades_slug,
       school_name: body.school_name,
+      roll_lookup_open: body.roll_lookup_open,
     });
     return NextResponse.json({ settings });
   } catch (error) {

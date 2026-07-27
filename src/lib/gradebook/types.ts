@@ -19,6 +19,11 @@ export interface GradebookSettings {
   grades_slug: string;
   /** Optional friendly school name shown on the grades page */
   school_name: string;
+  /**
+   * Temporary: students must still enter 5 digits, but the roll is not verified.
+   * Claimed rolls are logged for the teacher to copy into the roster later.
+   */
+  roll_lookup_open: boolean;
   updated_at: string;
 }
 
@@ -101,6 +106,18 @@ export interface SaveGradebookSettingsPayload {
   active_semester: GradebookSemester;
   grades_slug?: string;
   school_name?: string;
+  /** Temporary open lookup (still requires 5 digits; logs what students typed). */
+  roll_lookup_open?: boolean;
+}
+
+export interface GradebookRollClaim {
+  id: string;
+  teacher_id: string;
+  class_id: string;
+  class_label: string;
+  student_number: string;
+  claimed_roll: string;
+  created_at: string;
 }
 
 export interface UpsertRosterRollPayload {
