@@ -75,7 +75,11 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
     () => classes.find((item) => item.id === classId) ?? null,
     [classes, classId]
   );
-  const letterEnabled = Boolean(selectedClass?.letter_enabled);
+  // Letter/ID is a school-wide Speak setting (copied onto every class). Show ID even
+  // before a class is chosen — otherwise the empty "Class" placeholder hides it.
+  const letterEnabled =
+    Boolean(selectedClass?.letter_enabled) ||
+    classes.some((item) => item.letter_enabled);
   const maxSeat = 40;
   const numberOptions = useMemo(
     () => Array.from({ length: maxSeat }, (_, index) => String(index + 1)),
