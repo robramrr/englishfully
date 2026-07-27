@@ -880,6 +880,28 @@ export async function countLearnAttempts(
   return Number(rows[0]?.attempt_count ?? 0);
 }
 
+/** True if this seat already has a passing Learn submission (any attempt). */
+export async function hasPassingLearnSubmission(
+  assignmentId: string,
+  studentNumber: string,
+  classNumber: string,
+  passingScore: number
+): Promise<boolean> {
+  await ensureLearnSchema();
+  const normalizedNumber = normalizeStudentNumber(studentNumber);
+  const normalizedClass = classNumber.trim().toLowerCase();
+  const { rows } = await sql`
+    SELECT 1
+    FROM learn_submissions
+    WHERE assignment_id = ${assignmentId}
+      AND student_number = ${normalizedNumber}
+      AND lower(trim(class_number)) = ${normalizedClass}
+      AND percent >= ${passingScore}
+    LIMIT 1
+  `;
+  return rows.length > 0;
+}
+
 export async function submitLearnAssignment(
   assignmentId: string,
   payload: SubmitLearnPayload
@@ -959,10 +981,11 @@ export async function submitLearnAssignment(
   }
 
   const passed = percent >= assignment.passing_score;
+  let makeupCredited: boolean | null = null;
   if (assignment.makeup_enabled && passed && assignment.makeup_listen_assignment_id) {
     try {
       const { creditListenLearnMakeup } = await import('@/lib/gradebook/db');
-      await creditListenLearnMakeup({
+      const credit = await creditListenLearnMakeup({
         teacherId: assignment.teacher_id || DEFAULT_TEACHER_ID,
         learnAssignmentId: assignment.id,
         learnTitle: assignment.title,
@@ -971,7 +994,17 @@ export async function submitLearnAssignment(
         studentNumber,
         classNumber,
       });
+      makeupCredited = credit.credited;
+      if (!credit.credited) {
+        console.warn('Listen & Learn makeup not credited:', credit.reason, {
+          learnAssignmentId: assignment.id,
+          tiedId: assignment.makeup_listen_assignment_id,
+          studentNumber,
+          classNumber,
+        });
+      }
     } catch (error) {
+      makeupCredited = false;
       console.error('Listen & Learn makeup credit failed:', error);
     }
   }
@@ -989,6 +1022,7 @@ export async function submitLearnAssignment(
     duration_seconds: payload.duration_seconds ?? null,
     submitted_at: new Date().toISOString(),
     answers: gradedAnswers,
+    makeup_credited: makeupCredited,
   };
 }
 

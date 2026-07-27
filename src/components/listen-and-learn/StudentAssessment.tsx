@@ -241,6 +241,17 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
         >
           {passed ? '✅ Passed' : 'Not passed'}
         </ComicText>
+        {passed && result.makeup_credited === true ? (
+          <ComicText className="text-[var(--comic-dark)] font-bold">
+            Makeup score posted to the gradebook.
+          </ComicText>
+        ) : null}
+        {passed && result.makeup_credited === false ? (
+          <ComicText className="text-[var(--comic-danger)] font-bold">
+            Passed here, but the makeup score was not posted yet. Check that the failing assessment
+            grade is saved for this class and student, then open grades again.
+          </ComicText>
+        ) : null}
         {!passed ? (
           <>
             <ComicText className="text-[var(--comic-dark)] font-bold">

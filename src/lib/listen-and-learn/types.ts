@@ -126,6 +126,8 @@ export interface LearnSubmission {
   duration_seconds: number | null;
   submitted_at: string;
   answers: LearnSubmissionAnswer[];
+  /** Present on submit responses when this Learn is a makeup. */
+  makeup_credited?: boolean | null;
 }
 
 export interface SaveLearnAssignmentPayload {

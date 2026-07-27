@@ -514,6 +514,69 @@ export async function getClassGradebook(
 
   const rollByStudent = await getClassRollMap(classId, teacherId);
 
+  // Backfill makeup credits that passed Learn but never wrote a gradebook row.
+  try {
+    const { listPublishedMakeupAssignments } = await import('@/lib/listen-and-learn/db');
+    const makeups = await listPublishedMakeupAssignments(teacherId);
+    let creditedAny = false;
+    for (const makeup of makeups) {
+      const classKey = classOption.label.trim().toLowerCase();
+      const { rows: passers } = await sql`
+        SELECT DISTINCT student_number
+        FROM learn_submissions
+        WHERE assignment_id = ${makeup.id}
+          AND lower(trim(class_number)) = ${classKey}
+          AND percent >= ${makeup.passing_score}
+      `;
+      for (const passer of passers) {
+        const credit = await creditListenLearnMakeup({
+          teacherId,
+          learnAssignmentId: makeup.id,
+          learnTitle: makeup.title,
+          makeupListenAssignmentId: makeup.makeup_listen_assignment_id,
+          makeupClassNames: makeup.makeup_class_names,
+          studentNumber: String(passer.student_number ?? ''),
+          classNumber: classOption.label,
+        });
+        if (credit.credited) creditedAny = true;
+      }
+    }
+    if (creditedAny) {
+      const { rows: refreshedRows } = await sql`
+        SELECT * FROM gradebook_entries
+        WHERE teacher_id = ${teacherId}
+          AND school_year = ${activeYear}
+          AND semester = ${activeSemester}
+          AND class_id = ${classId}
+        ORDER BY updated_at DESC
+      `;
+      entries.length = 0;
+      entries.push(...refreshedRows.map(rowToEntry));
+      taskMap.clear();
+      for (const entry of entries) {
+        const key = taskKey(entry.tool, entry.task_id);
+        const existing = taskMap.get(key);
+        if (!existing) {
+          taskMap.set(key, {
+            task_key: key,
+            tool: entry.tool,
+            task_id: entry.task_id,
+            task_title: entry.task_title,
+            max_points: entry.max_points,
+            submitted_student_numbers: [],
+          });
+        } else {
+          existing.max_points = Math.max(existing.max_points, entry.max_points);
+          if (!existing.task_title && entry.task_title) {
+            existing.task_title = entry.task_title;
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Class gradebook makeup backfill failed:', error);
+  }
+
   const seats: GradebookSeat[] = roster.map((studentNumber) => {
     const seatEntries = entries.filter((entry) => entry.student_number === studentNumber);
     const entriesByTask: Record<string, GradebookEntry> = {};
@@ -833,6 +896,69 @@ export async function lookupStudentGrades(params: {
     '';
   const classLabelKey = classLabel.trim().toLowerCase();
 
+  // If this seat already passed a makeup Learn but credit failed earlier (silent miss),
+  // backfill the gradebook now so the next grades check shows the points.
+  try {
+    const {
+      listPublishedMakeupAssignments,
+      hasPassingLearnSubmission,
+    } = await import('@/lib/listen-and-learn/db');
+    const makeups = await listPublishedMakeupAssignments(teacherId);
+    let creditedAny = false;
+    for (const makeup of makeups) {
+      const makeupKey = taskKey('listen_and_learn', makeup.id);
+      const existing = seat.entries_by_task[makeupKey];
+      const existingPoints = Number(existing?.points ?? 0);
+      const existingMax = Math.max(
+        DEFAULT_MAX_POINTS,
+        Number(existing?.max_points ?? DEFAULT_MAX_POINTS)
+      );
+      if (existing && existingPoints >= existingMax) continue;
+
+      const passed = await hasPassingLearnSubmission(
+        makeup.id,
+        studentNumber,
+        classLabel,
+        makeup.passing_score
+      );
+      if (!passed) continue;
+
+      const credit = await creditListenLearnMakeup({
+        teacherId,
+        learnAssignmentId: makeup.id,
+        learnTitle: makeup.title,
+        makeupListenAssignmentId: makeup.makeup_listen_assignment_id,
+        makeupClassNames: makeup.makeup_class_names,
+        studentNumber,
+        classNumber: classLabel,
+      });
+      if (credit.credited) creditedAny = true;
+      else {
+        console.warn('Makeup backfill skipped:', credit.reason, {
+          makeupId: makeup.id,
+          studentNumber,
+          classLabel,
+        });
+      }
+    }
+    if (creditedAny) {
+      const refreshed = await getClassGradebook(
+        classId,
+        params.semester,
+        params.schoolYear,
+        teacherId
+      );
+      const refreshedSeat = refreshed.seats.find(
+        (item) => item.student_number === studentNumber
+      );
+      if (refreshedSeat) {
+        Object.assign(seat, refreshedSeat);
+      }
+    }
+  } catch (error) {
+    console.error('Listen & Learn makeup backfill failed:', error);
+  }
+
   // Temporary open mode: still require 5 digits, but log what they typed for the teacher.
   if (openLookup) {
     await logRollClaim({
@@ -1118,69 +1244,142 @@ function studentUrlForTool(tool: GradebookTool, taskId: string): string | null {
   return null;
 }
 
+export type MakeupCreditResult = {
+  credited: boolean;
+  reason: string;
+};
+
 /**
  * After a student passes a Listen & Learn makeup, credit a separate gradebook row
  * (original Listen & Answer fail stays as recorded).
+ *
+ * Matching is intentionally forgiving: exact tied assessment id first, then same
+ * Listen & Answer title; prefer the active semester, but credit into the semester
+ * where the failing grade actually lives.
  */
 export async function creditListenLearnMakeup(params: {
   teacherId: string;
   learnAssignmentId: string;
   learnTitle: string;
   makeupListenAssignmentId: string;
-  makeupClassNames: string[];
+  makeupClassNames?: string[];
   studentNumber: string;
   classNumber: string;
-}): Promise<boolean> {
+}): Promise<MakeupCreditResult> {
   await ensureGradebookSchema();
   const teacherId = params.teacherId || DEFAULT_TEACHER_ID;
   const studentNumber = normalizeStudentNumber(params.studentNumber);
   const classLabel = params.classNumber.trim();
-  if (!studentNumber || !classLabel) return false;
+  if (!studentNumber || !classLabel) {
+    return { credited: false, reason: 'missing_student_or_class' };
+  }
 
   const entryConfig = await getEntryConfig(teacherId);
   const classOption = entryConfig.classes.find(
     (item) => item.label.trim().toLowerCase() === classLabel.toLowerCase()
   );
-  if (!classOption) return false;
+  if (!classOption) {
+    return { credited: false, reason: `class_not_found:${classLabel}` };
+  }
 
   const settings = await getGradebookSettings(teacherId);
   const schoolYear = settings.school_year;
-  const semester = settings.active_semester;
+  const activeSemester = settings.active_semester;
+  const tiedId = params.makeupListenAssignmentId.trim();
+  if (!tiedId) {
+    return { credited: false, reason: 'missing_tied_assessment' };
+  }
 
-  // Must have failed (or scored below full points) on the tied Listen & Answer assessment.
-  const { rows: failedRows } = await sql`
-    SELECT points, max_points, task_title
+  let tiedTitle = '';
+  try {
+    const { getAssignmentById } = await import('@/lib/listen-and-answer/db');
+    const tied = await getAssignmentById(tiedId);
+    tiedTitle = tied?.title?.trim().toLowerCase() || '';
+  } catch {
+    // Title fallback unavailable — exact id match may still work.
+  }
+
+  // Find failing Listen & Answer rows for this seat in the current school year
+  // (any semester — teachers often enter grades while viewing a non-active tab).
+  const { rows: listenRows } = await sql`
+    SELECT points, max_points, task_title, task_id, semester, school_year
     FROM gradebook_entries
     WHERE teacher_id = ${teacherId}
       AND school_year = ${schoolYear}
-      AND semester = ${semester}
       AND class_id = ${classOption.id}
       AND student_number = ${studentNumber}
       AND tool = 'listen_and_answer'
-      AND task_id = ${params.makeupListenAssignmentId}
-    LIMIT 1
+    ORDER BY updated_at DESC
   `;
-  if (failedRows.length === 0) return false;
-  const failed = failedRows[0];
-  const failedPoints = Number(failed.points ?? 0);
-  const failedMax = Math.max(DEFAULT_MAX_POINTS, Number(failed.max_points ?? DEFAULT_MAX_POINTS));
-  if (failedPoints >= failedMax) return false;
+
+  type FailCandidate = {
+    points: number;
+    max_points: number;
+    task_title: string;
+    task_id: string;
+    semester: GradebookSemester;
+    school_year: string;
+  };
+
+  const failing = listenRows
+    .map((row) => {
+      const maxPoints = Math.max(
+        DEFAULT_MAX_POINTS,
+        Number(row.max_points ?? DEFAULT_MAX_POINTS)
+      );
+      return {
+        points: Number(row.points ?? 0),
+        max_points: maxPoints,
+        task_title: String(row.task_title ?? ''),
+        task_id: String(row.task_id ?? ''),
+        semester: parseSemester(row.semester),
+        school_year: String(row.school_year ?? schoolYear),
+      } satisfies FailCandidate;
+    })
+    .filter((row) => row.points < row.max_points);
+
+  const byPreference = (a: FailCandidate, b: FailCandidate) => {
+    if (a.semester === activeSemester && b.semester !== activeSemester) return -1;
+    if (b.semester === activeSemester && a.semester !== activeSemester) return 1;
+    return 0;
+  };
+
+  let failed =
+    failing.filter((row) => row.task_id === tiedId).sort(byPreference)[0] || null;
+
+  if (!failed && tiedTitle) {
+    failed =
+      failing
+        .filter((row) => row.task_title.trim().toLowerCase() === tiedTitle)
+        .sort(byPreference)[0] || null;
+  }
+
+  if (!failed) {
+    const anyTied = listenRows.find((row) => String(row.task_id ?? '') === tiedId);
+    if (anyTied) {
+      return { credited: false, reason: 'tied_assessment_already_full_points' };
+    }
+    return {
+      credited: false,
+      reason: `no_failing_tied_assessment:${tiedId}`,
+    };
+  }
 
   await upsertGradeEntry(
     {
-      school_year: schoolYear,
-      semester,
+      school_year: failed.school_year || schoolYear,
+      semester: failed.semester,
       class_id: classOption.id,
       class_label: classOption.label,
       student_number: studentNumber,
       tool: 'listen_and_learn',
       task_id: params.learnAssignmentId,
       task_title: params.learnTitle.trim() || 'Makeup',
-      points: failedMax,
-      max_points: failedMax,
-      notes: `Makeup for: ${String(failed.task_title || 'assessment')}`,
+      points: failed.max_points,
+      max_points: failed.max_points,
+      notes: `Makeup for: ${failed.task_title || 'assessment'}`,
     },
     teacherId
   );
-  return true;
+  return { credited: true, reason: 'ok' };
 }
