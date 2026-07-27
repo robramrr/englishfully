@@ -602,11 +602,16 @@ export async function saveLearnAssignment(
   const existing = await getLearnAssignmentById(assignmentId);
   if (!existing) throw new Error('Assignment not found');
 
+  // Never wipe a saved title/teacher with an empty/stale autosave payload.
+  const nextTitle =
+    safeTrim(payload.title) || existing.title.trim() || 'Untitled Listen & Learn';
+  const nextTeacherName = safeTrim(payload.teacher_name) || existing.teacher_name.trim();
+
   await sql`
     UPDATE learn_assignments
     SET
-      teacher_name = ${safeTrim(payload.teacher_name)},
-      title = ${safeTrim(payload.title) || 'Untitled Listen & Learn'},
+      teacher_name = ${nextTeacherName},
+      title = ${nextTitle},
       class_name = ${safeTrim(payload.class_name)},
       due_date = ${payload.due_date},
       audio_url = ${safeTrim(payload.audio_url)},

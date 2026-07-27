@@ -353,6 +353,10 @@ export default function AssignmentEditor({
   }, []);
 
   const applySavedChildren = useCallback((assignment: LearnAssignmentWithDetails) => {
+    // Keep display fields in sync with what the server actually stored.
+    setTitle(assignment.title || '');
+    setTeacherName(assignment.teacher_name || '');
+    setClassName(assignment.class_name || '');
     // Keep any local image URLs if the server response is missing them (stale write).
     setVocabulary((previous) => {
       const fromServer = toClientVocabulary(assignment);
@@ -534,9 +538,9 @@ export default function AssignmentEditor({
       setSaveMessage(
         saved.status === 'published'
           ? savedVocabCount > 0
-            ? `Published with ${savedVocabCount} vocabulary word(s). Open the student link in a fresh tab.`
-            : 'Published, but vocabulary is empty on the server.'
-          : `Saved ${new Date().toLocaleTimeString()}`
+            ? `Published “${saved.title}” with ${savedVocabCount} vocabulary word(s). Open the student link in a fresh tab.`
+            : `Published “${saved.title}”, but vocabulary is empty on the server.`
+          : `Saved “${saved.title}” · ${saved.teacher_name || 'no teacher name'} · ${new Date().toLocaleTimeString()}`
       );
       if (saved.status === 'published' && typeof window !== 'undefined') {
         const url = getStudentLearnUrl(assignmentId, window.location.origin);
@@ -781,7 +785,11 @@ export default function AssignmentEditor({
             <ComicText className="font-black">Assessment Title</ComicText>
             <input
               value={title}
-              onChange={(event) => setTitle(event.target.value)}
+              onChange={(event) => {
+                const next = event.target.value;
+                setTitle(next);
+                formValuesRef.current = { ...formValuesRef.current, title: next };
+              }}
               className="w-full comic-border-thick rounded-md p-3 font-bold"
             />
           </label>
@@ -789,7 +797,11 @@ export default function AssignmentEditor({
             <ComicText className="font-black">Teacher Name</ComicText>
             <input
               value={teacherName}
-              onChange={(event) => setTeacherName(event.target.value)}
+              onChange={(event) => {
+                const next = event.target.value;
+                setTeacherName(next);
+                formValuesRef.current = { ...formValuesRef.current, teacherName: next };
+              }}
               className="w-full comic-border-thick rounded-md p-3 font-bold"
             />
           </label>
@@ -797,7 +809,11 @@ export default function AssignmentEditor({
             <ComicText className="font-black">Class</ComicText>
             <input
               value={className}
-              onChange={(event) => setClassName(event.target.value)}
+              onChange={(event) => {
+                const next = event.target.value;
+                setClassName(next);
+                formValuesRef.current = { ...formValuesRef.current, className: next };
+              }}
               className="w-full comic-border-thick rounded-md p-3 font-bold"
             />
           </label>
