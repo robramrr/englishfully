@@ -444,33 +444,39 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
             {assignment.vocabulary.map((item) => (
               <div
                 key={item.id}
-                className="comic-border-thick rounded-lg p-3 bg-white space-y-2"
+                className="comic-border-thick rounded-lg p-3 bg-white"
               >
-                <ComicText className="font-black text-lg text-[var(--comic-secondary)]">
-                  {item.word}
-                </ComicText>
-                {item.image_url?.trim() ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={item.image_url.trim()}
-                    alt=""
-                    referrerPolicy="no-referrer"
-                    className="max-h-48 w-auto comic-border rounded-lg object-contain bg-white"
-                  />
-                ) : null}
-                {item.end_seconds > item.start_seconds ? (
-                  <SegmentAudioPlayer
-                    audioUrl={assignment.audio_url}
-                    startSeconds={item.start_seconds}
-                    endSeconds={item.end_seconds}
-                    maxReplays={null}
-                    label="▶ Play word"
-                    compact
-                  />
-                ) : null}
-                <ComicText className="text-[var(--comic-dark)] font-bold">
-                  {item.definition}
-                </ComicText>
+                <div className="flex flex-col md:flex-row md:items-start gap-4">
+                  <div className="flex-1 min-w-0 space-y-2 order-1">
+                    <ComicText className="font-black text-lg text-[var(--comic-secondary)]">
+                      {item.word}
+                    </ComicText>
+                    {item.end_seconds > item.start_seconds ? (
+                      <SegmentAudioPlayer
+                        audioUrl={assignment.audio_url}
+                        startSeconds={item.start_seconds}
+                        endSeconds={item.end_seconds}
+                        maxReplays={null}
+                        label="▶ Play word"
+                        compact
+                      />
+                    ) : null}
+                    <ComicText className="text-[var(--comic-dark)] font-bold">
+                      {item.definition}
+                    </ComicText>
+                  </div>
+                  {item.image_url?.trim() ? (
+                    <div className="order-2 shrink-0 md:w-48 lg:w-56 flex md:justify-end">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.image_url.trim()}
+                        alt=""
+                        referrerPolicy="no-referrer"
+                        className="max-h-48 w-full md:w-auto max-w-full comic-border rounded-lg object-contain bg-white"
+                      />
+                    </div>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>
