@@ -913,6 +913,16 @@ export async function lookupStudentGrades(params: {
       };
     });
 
+  // Include assigned-but-missing tasks in the possible total (e.g. 10/20, not 10/10).
+  let totalEarned = 0;
+  let totalPossible = 0;
+  for (const task of tasks) {
+    totalPossible += Math.max(0, task.max_points || 0);
+    if (task.status === 'graded' && task.points != null) {
+      totalEarned += task.points;
+    }
+  }
+
   return {
     class_label: classLabel,
     school_year: gradebook.settings.school_year,
@@ -920,9 +930,9 @@ export async function lookupStudentGrades(params: {
     student_number: seat.student_number,
     display_name: seat.display_name,
     tasks,
-    total_earned: seat.total_earned,
-    total_possible: seat.total_possible,
-    percent_label: formatPercent(seat.total_earned, seat.total_possible),
+    total_earned: totalEarned,
+    total_possible: totalPossible,
+    percent_label: formatPercent(totalEarned, totalPossible),
   };
 }
 
