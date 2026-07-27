@@ -129,6 +129,10 @@ export default function PrintHandout({
           .speak-and-submit-page .print-qr-divider {
             margin-bottom: 0.75rem !important;
           }
+          .speak-and-submit-page .print-student-url {
+            font-size: 7px !important;
+            line-height: 1.2 !important;
+          }
         }
       `}</style>
 
@@ -261,9 +265,9 @@ export default function PrintHandout({
 
             <hr className="print-qr-divider border-0 border-t-4 border-[var(--comic-black)] mb-4" />
 
-            <ComicText className="font-bold text-[10px] whitespace-nowrap text-center">
+            <p className="print-student-url font-bold text-[8px] leading-tight whitespace-nowrap text-center text-[var(--comic-dark)]">
               {studentUrl}
-            </ComicText>
+            </p>
           </section>
         </main>
       </div>
