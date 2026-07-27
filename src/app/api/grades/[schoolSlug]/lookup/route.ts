@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jsonError } from '@/lib/speak-and-submit/api';
-import { lookupStudentGrades } from '@/lib/gradebook/db';
+import { getGradebookSettingsBySlug, lookupStudentGrades } from '@/lib/gradebook/db';
 import { parseSemester } from '@/lib/gradebook/types';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: NextRequest) {
+interface RouteParams {
+  params: { schoolSlug: string };
+}
+
+export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    const settings = await getGradebookSettingsBySlug(params.schoolSlug);
+    if (!settings) {
+      return jsonError('School grades page not found', 404);
+    }
+
     const body = await request.json();
     const classId = String(body.class_id ?? '').trim();
     const studentNumber = String(body.student_number ?? '').trim();
@@ -25,10 +34,10 @@ export async function POST(request: NextRequest) {
       rollNumber,
       semester,
       schoolYear,
+      teacherId: settings.teacher_id,
     });
 
     if (!result) {
-      // Generic message — do not reveal whether seat or roll failed.
       return jsonError('No grades found for that class, student number, and roll number.', 404);
     }
 

@@ -22,8 +22,13 @@ interface PublicClassOption {
 const ROLL_LENGTH = 5;
 const EMPTY_ROLL_DIGITS = ['', '', '', '', ''] as const;
 
-export default function StudentGradeLookup() {
+interface StudentGradeLookupProps {
+  schoolSlug: string;
+}
+
+export default function StudentGradeLookup({ schoolSlug }: StudentGradeLookupProps) {
   const [classes, setClasses] = useState<PublicClassOption[]>([]);
+  const [schoolName, setSchoolName] = useState('');
   const [classId, setClassId] = useState('');
   const [studentNumber, setStudentNumber] = useState('');
   const [studentLetter, setStudentLetter] = useState('');
@@ -33,18 +38,31 @@ export default function StudentGradeLookup() {
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState('');
   const [grade, setGrade] = useState<StudentGradeLookupResult | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    fetch('/api/grades/classes', { cache: 'no-store' })
-      .then((response) => response.json())
-      .then((data) => {
+    setLoadingClasses(true);
+    setNotFound(false);
+    setError('');
+    fetch(`/api/grades/${encodeURIComponent(schoolSlug)}/classes`, { cache: 'no-store' })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) {
+          setNotFound(true);
+          setError(data.error || 'School grades page not found.');
+          return;
+        }
         const next = (data.classes || []) as PublicClassOption[];
         setClasses(next);
+        setSchoolName(String(data.school_name || schoolSlug));
         if (next.length > 0) setClassId(next[0].id);
       })
-      .catch(() => setError('Could not load classes.'))
+      .catch(() => {
+        setNotFound(true);
+        setError('Could not load classes.');
+      })
       .finally(() => setLoadingClasses(false));
-  }, []);
+  }, [schoolSlug]);
 
   const selectedClass = useMemo(
     () => classes.find((item) => item.id === classId) ?? null,
@@ -160,7 +178,7 @@ export default function StudentGradeLookup() {
 
     setChecking(true);
     try {
-      const response = await fetch('/api/grades/lookup', {
+      const response = await fetch(`/api/grades/${encodeURIComponent(schoolSlug)}/lookup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -187,7 +205,7 @@ export default function StudentGradeLookup() {
     <div className="space-y-6">
       <ComicCard className="comic-shadow-xl space-y-4">
         <ComicTitle level={3} className="text-[var(--comic-primary)]">
-          Check My Grades
+          {schoolName ? `${schoolName} · Check My Grades` : 'Check My Grades'}
         </ComicTitle>
         <ComicText className="text-[var(--comic-dark)] font-bold">
           Enter your class, student number{letterEnabled ? ' + letter' : ''}, and your 5-digit roll
@@ -196,6 +214,10 @@ export default function StudentGradeLookup() {
 
         {loadingClasses ? (
           <ComicText className="font-bold">Loading classes…</ComicText>
+        ) : notFound ? (
+          <ComicText className="font-bold text-[var(--comic-danger)]">
+            {error || 'This school grades link was not found. Ask your teacher for the correct link.'}
+          </ComicText>
         ) : classes.length === 0 ? (
           <ComicText className="font-bold text-[var(--comic-dark)]">
             No classes are set up yet. Ask your teacher to add classes in Speak &amp; Submit

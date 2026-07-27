@@ -1,9 +1,14 @@
 'use client';
 
-import ComicText from '../../components/ComicText';
-import ComicTitle from '../../components/ComicTitle';
+import ComicText from '../../../components/ComicText';
+import ComicTitle from '../../../components/ComicTitle';
+import StudentGradeLookup from '../../../components/gradebook/StudentGradeLookup';
 
-export default function GradesIndexPage() {
+interface SchoolGradesPageProps {
+  params: { schoolSlug: string };
+}
+
+export default function SchoolGradesPage({ params }: SchoolGradesPageProps) {
   return (
     <div className="gradebook-page min-h-screen bg-[var(--comic-light)]">
       <section className="comic-bg-secondary py-10 px-4 comic-pattern-dots text-center">
@@ -11,14 +16,11 @@ export default function GradesIndexPage() {
           📊 Check My Grades
         </ComicTitle>
         <ComicText className="comic-text-white font-bold">
-          Use the grades link from your school or teacher.
+          Look up your current gradebook total with your student number and roll number.
         </ComicText>
       </section>
       <section className="max-w-3xl mx-auto py-10 px-4">
-        <ComicText className="font-bold text-[var(--comic-dark)] text-center">
-          This page is not a grade lookup. Ask your teacher for your school link, for example{' '}
-          <span className="font-black">/grades/your-school-name</span>.
-        </ComicText>
+        <StudentGradeLookup schoolSlug={params.schoolSlug} />
       </section>
     </div>
   );

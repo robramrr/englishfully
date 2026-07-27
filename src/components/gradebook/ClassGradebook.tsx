@@ -577,11 +577,13 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
             Speak submissions
           </ComicButton>
         </Link>
-        <Link href="/grades" target="_blank">
-          <ComicButton variant="warning" size="sm">
-            Student grade lookup
-          </ComicButton>
-        </Link>
+        {settings?.grades_slug ? (
+          <Link href={`/grades/${settings.grades_slug}`} target="_blank">
+            <ComicButton variant="warning" size="sm">
+              Student grade lookup
+            </ComicButton>
+          </Link>
+        ) : null}
       </div>
 
       <ComicCard className="comic-shadow-xl">

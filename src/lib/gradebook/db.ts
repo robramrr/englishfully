@@ -25,7 +25,9 @@ import {
   formatPercent,
   getCurrentSchoolYear,
   gradePointsFromTestScore,
+  isValidGradesSlug,
   isValidRollNumber,
+  normalizeGradesSlug,
   normalizeRollNumber,
   parseSemester,
   taskKey,
@@ -102,6 +104,19 @@ export async function ensureGradebookSchema(): Promise<void> {
         CREATE INDEX IF NOT EXISTS idx_gradebook_roster_roll
         ON gradebook_roster(teacher_id, class_id, roll_number)
       `;
+      await sql`
+        ALTER TABLE gradebook_settings
+        ADD COLUMN IF NOT EXISTS grades_slug TEXT NOT NULL DEFAULT ''
+      `;
+      await sql`
+        ALTER TABLE gradebook_settings
+        ADD COLUMN IF NOT EXISTS school_name TEXT NOT NULL DEFAULT ''
+      `;
+      await sql`
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_gradebook_settings_grades_slug
+        ON gradebook_settings(grades_slug)
+        WHERE grades_slug <> ''
+      `;
     })();
   }
   await schemaReady;
@@ -112,6 +127,8 @@ function rowToSettings(row: Record<string, unknown>): GradebookSettings {
     teacher_id: row.teacher_id as string,
     school_year: (row.school_year as string) || getCurrentSchoolYear(),
     active_semester: parseSemester(row.active_semester),
+    grades_slug: normalizeGradesSlug(row.grades_slug),
+    school_name: String(row.school_name ?? '').trim(),
     updated_at: new Date(row.updated_at as string).toISOString(),
   };
 }
@@ -159,6 +176,8 @@ export async function getGradebookSettings(
       teacher_id: teacherId,
       school_year: schoolYear,
       active_semester: 1,
+      grades_slug: '',
+      school_name: '',
       updated_at: new Date().toISOString(),
     };
   }
@@ -172,16 +191,67 @@ export async function saveGradebookSettings(
   await ensureGradebookSchema();
   const schoolYear = payload.school_year.trim() || getCurrentSchoolYear();
   const semester = parseSemester(payload.active_semester);
+  const current = await getGradebookSettings(teacherId);
+
+  const gradesSlug =
+    payload.grades_slug !== undefined
+      ? normalizeGradesSlug(payload.grades_slug)
+      : current.grades_slug;
+  const schoolName =
+    payload.school_name !== undefined
+      ? String(payload.school_name).trim().slice(0, 80)
+      : current.school_name;
+
+  if (payload.grades_slug !== undefined && gradesSlug && !isValidGradesSlug(gradesSlug)) {
+    throw new Error('Grades link must be at least 2 characters (letters, numbers, hyphens).');
+  }
+
+  if (gradesSlug) {
+    const { rows: conflicts } = await sql`
+      SELECT teacher_id FROM gradebook_settings
+      WHERE grades_slug = ${gradesSlug} AND teacher_id <> ${teacherId}
+      LIMIT 1
+    `;
+    if (conflicts.length > 0) {
+      throw new Error('That grades link is already in use. Choose a different school name.');
+    }
+  }
 
   await sql`
-    INSERT INTO gradebook_settings (teacher_id, school_year, active_semester, updated_at)
-    VALUES (${teacherId}, ${schoolYear}, ${semester}, NOW())
+    INSERT INTO gradebook_settings (
+      teacher_id, school_year, active_semester, grades_slug, school_name, updated_at
+    )
+    VALUES (
+      ${teacherId}, ${schoolYear}, ${semester}, ${gradesSlug}, ${schoolName}, NOW()
+    )
     ON CONFLICT (teacher_id) DO UPDATE SET
       school_year = EXCLUDED.school_year,
       active_semester = EXCLUDED.active_semester,
+      grades_slug = EXCLUDED.grades_slug,
+      school_name = EXCLUDED.school_name,
       updated_at = NOW()
   `;
 
+  return getGradebookSettings(teacherId);
+}
+
+export async function getTeacherIdByGradesSlug(slug: string): Promise<string | null> {
+  await ensureGradebookSchema();
+  const normalized = normalizeGradesSlug(slug);
+  if (!normalized) return null;
+  const { rows } = await sql`
+    SELECT teacher_id FROM gradebook_settings
+    WHERE grades_slug = ${normalized}
+    LIMIT 1
+  `;
+  return rows.length > 0 ? String(rows[0].teacher_id) : null;
+}
+
+export async function getGradebookSettingsBySlug(
+  slug: string
+): Promise<GradebookSettings | null> {
+  const teacherId = await getTeacherIdByGradesSlug(slug);
+  if (!teacherId) return null;
   return getGradebookSettings(teacherId);
 }
 

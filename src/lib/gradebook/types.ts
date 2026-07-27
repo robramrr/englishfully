@@ -15,6 +15,10 @@ export interface GradebookSettings {
   teacher_id: string;
   school_year: string;
   active_semester: GradebookSemester;
+  /** URL path segment for /grades/{grades_slug} */
+  grades_slug: string;
+  /** Optional friendly school name shown on the grades page */
+  school_name: string;
   updated_at: string;
 }
 
@@ -95,6 +99,8 @@ export interface UpsertGradeEntryPayload {
 export interface SaveGradebookSettingsPayload {
   school_year: string;
   active_semester: GradebookSemester;
+  grades_slug?: string;
+  school_name?: string;
 }
 
 export interface UpsertRosterRollPayload {
@@ -130,6 +136,21 @@ export function normalizeRollNumber(value: unknown): string {
 
 export function isValidRollNumber(value: unknown): boolean {
   return /^\d{5}$/.test(normalizeRollNumber(value));
+}
+
+/** Lowercase slug for /grades/{slug} — letters, numbers, hyphens. */
+export function normalizeGradesSlug(value: unknown): string {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48);
+}
+
+export function isValidGradesSlug(value: unknown): boolean {
+  const slug = normalizeGradesSlug(value);
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) && slug.length >= 2;
 }
 
 export function getCurrentSchoolYear(date = new Date()): string {

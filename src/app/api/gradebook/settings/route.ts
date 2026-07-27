@@ -31,6 +31,8 @@ export async function PUT(request: NextRequest) {
     const settings = await saveGradebookSettings({
       school_year: body.school_year,
       active_semester: parseSemester(body.active_semester),
+      grades_slug: body.grades_slug,
+      school_name: body.school_name,
     });
     return NextResponse.json({ settings });
   } catch (error) {
