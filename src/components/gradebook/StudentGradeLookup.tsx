@@ -62,7 +62,7 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
         const next = (data.classes || []) as PublicClassOption[];
         setClasses(next);
         setSchoolName(String(data.school_name || schoolSlug).trim());
-        if (next.length > 0) setClassId(next[0].id);
+        setClassId('');
       })
       .catch(() => {
         setNotFound(true);
@@ -250,24 +250,23 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
               👋 Who are you?
             </ComicTitle>
 
-            <label className="block space-y-1">
-              <ComicText className="font-black text-sm">Class</ComicText>
-              <select
-                className="w-full comic-input text-lg py-4"
-                value={classId}
-                onChange={(event) => {
-                  setClassId(event.target.value);
-                  setStudentLetter('');
-                  setGrade(null);
-                }}
-              >
-                {classes.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <select
+              className="w-full comic-input text-lg py-4"
+              value={classId}
+              onChange={(event) => {
+                setClassId(event.target.value);
+                setStudentLetter('');
+                setGrade(null);
+              }}
+              aria-label="Class"
+            >
+              <option value="">Class</option>
+              {classes.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
 
             <div className={`grid gap-3 ${letterEnabled ? 'grid-cols-2' : 'grid-cols-1'}`}>
               <select
