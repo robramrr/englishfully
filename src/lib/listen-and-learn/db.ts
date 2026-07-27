@@ -39,6 +39,13 @@ function resolveLearnTitle(incoming: string, existing: string): string {
   return next || prev || DEFAULT_LEARN_TITLE;
 }
 
+function resolveLearnTeacher(incoming: string, existing: string): string {
+  const next = incoming.trim();
+  const prev = existing.trim();
+  if (next) return next;
+  return prev;
+}
+
 function parseCefr(value: unknown): CefrLevel {
   const allowed: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
   return allowed.includes(value as CefrLevel) ? (value as CefrLevel) : 'A2';
@@ -608,37 +615,53 @@ async function replaceLearnChildren(
 export async function saveLearnAssignmentIdentity(
   assignmentId: string,
   payload: { title?: string; teacher_name?: string; class_name?: string },
-  teacherId: string = DEFAULT_TEACHER_ID
+  _teacherId: string = DEFAULT_TEACHER_ID
 ): Promise<Pick<LearnAssignment, 'id' | 'title' | 'teacher_name' | 'class_name'>> {
   await ensureLearnSchema();
   const existing = await getLearnAssignmentById(assignmentId);
   if (!existing) throw new Error('Assignment not found');
 
-  const ownerId = existing.teacher_id || teacherId;
   const nextTitle = resolveLearnTitle(safeTrim(payload.title), existing.title);
-  const nextTeacherName =
-    safeTrim(payload.teacher_name) || existing.teacher_name.trim();
+  const nextTeacherName = resolveLearnTeacher(
+    safeTrim(payload.teacher_name),
+    existing.teacher_name
+  );
   const nextClassName =
     payload.class_name !== undefined ? safeTrim(payload.class_name) : existing.class_name;
 
-  const result = await sql`
+  // Match by id only — teacher_id mismatches were silently updating 0 rows.
+  await sql`
     UPDATE learn_assignments
     SET
       title = ${nextTitle},
       teacher_name = ${nextTeacherName},
       class_name = ${nextClassName},
       updated_at = NOW()
-    WHERE id = ${assignmentId} AND teacher_id = ${ownerId}
+    WHERE id = ${assignmentId}
   `;
-  if ((result.rowCount ?? 0) < 1) {
-    throw new Error('Failed to save assessment title/teacher (assignment not updated).');
+
+  const verify = await sql`
+    SELECT title, teacher_name, class_name
+    FROM learn_assignments
+    WHERE id = ${assignmentId}
+    LIMIT 1
+  `;
+  if (verify.rows.length === 0) {
+    throw new Error('Failed to save assessment title/teacher (assignment not found).');
+  }
+  const verifiedTitle = String(verify.rows[0].title ?? '').trim();
+  const verifiedTeacher = String(verify.rows[0].teacher_name ?? '').trim();
+  if (verifiedTitle !== nextTitle || verifiedTeacher !== nextTeacherName) {
+    throw new Error(
+      `Title/teacher did not save correctly (got “${verifiedTitle}” / “${verifiedTeacher}”).`
+    );
   }
 
   return {
     id: assignmentId,
-    title: nextTitle,
-    teacher_name: nextTeacherName,
-    class_name: nextClassName,
+    title: verifiedTitle,
+    teacher_name: verifiedTeacher,
+    class_name: String(verify.rows[0].class_name ?? nextClassName).trim(),
   };
 }
 
@@ -651,32 +674,12 @@ export async function saveLearnAssignment(
   const existing = await getLearnAssignmentById(assignmentId);
   if (!existing) throw new Error('Assignment not found');
 
-  const ownerId = existing.teacher_id || teacherId;
-  const nextTitle = resolveLearnTitle(safeTrim(payload.title), existing.title);
-  const nextTeacherName =
-    safeTrim(payload.teacher_name) || existing.teacher_name.trim();
   const nextClassName =
     payload.class_name !== undefined ? safeTrim(payload.class_name) : existing.class_name;
-
-  // Identity first — survives even if the larger settings/children write has issues.
-  const identityResult = await sql`
-    UPDATE learn_assignments
-    SET
-      title = ${nextTitle},
-      teacher_name = ${nextTeacherName},
-      class_name = ${nextClassName},
-      updated_at = NOW()
-    WHERE id = ${assignmentId} AND teacher_id = ${ownerId}
-  `;
-  if ((identityResult.rowCount ?? 0) < 1) {
-    throw new Error('Failed to save assessment title/teacher (assignment not updated).');
-  }
 
   const updateResult = await sql`
     UPDATE learn_assignments
     SET
-      teacher_name = ${nextTeacherName},
-      title = ${nextTitle},
       class_name = ${nextClassName},
       due_date = ${payload.due_date},
       audio_url = ${safeTrim(payload.audio_url)},
@@ -707,7 +710,7 @@ export async function saveLearnAssignment(
           : []
       )},
       updated_at = NOW()
-    WHERE id = ${assignmentId} AND teacher_id = ${ownerId}
+    WHERE id = ${assignmentId}
   `;
 
   if ((updateResult.rowCount ?? 0) < 1) {
@@ -715,13 +718,36 @@ export async function saveLearnAssignment(
   }
 
   await replaceLearnChildren(assignmentId, payload);
+
+  // Write title/teacher LAST (and re-read first) so an older in-flight autosave cannot
+  // overwrite a newer “Save title & teacher” click.
+  const latest = await getLearnAssignmentById(assignmentId);
+  if (!latest) throw new Error('Failed to load saved assignment');
+  const nextTitle = resolveLearnTitle(safeTrim(payload.title), latest.title);
+  const nextTeacherName = resolveLearnTeacher(
+    safeTrim(payload.teacher_name),
+    latest.teacher_name
+  );
+  const identityResult = await sql`
+    UPDATE learn_assignments
+    SET
+      title = ${nextTitle},
+      teacher_name = ${nextTeacherName},
+      class_name = ${nextClassName},
+      updated_at = NOW()
+    WHERE id = ${assignmentId}
+  `;
+  if ((identityResult.rowCount ?? 0) < 1) {
+    throw new Error('Failed to save assessment title/teacher (assignment not updated).');
+  }
+
   const saved = await getLearnAssignmentById(assignmentId);
   if (!saved) throw new Error('Failed to load saved assignment');
-  // Guarantee title/teacher in the response even if a read replica lags.
   return {
     ...saved,
     title: nextTitle,
     teacher_name: nextTeacherName,
+    class_name: nextClassName,
   };
 }
 

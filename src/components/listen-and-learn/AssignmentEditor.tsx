@@ -517,6 +517,20 @@ export default function AssignmentEditor({
   }, []);
 
   async function handleSaveIdentity() {
+    const nextTitle = title.trim();
+    const nextTeacher = teacherName.trim();
+    if (!nextTitle || nextTitle === 'Untitled Listen & Learn') {
+      setError(
+        'Type a real Assessment Title above (not “Untitled Listen & Learn”), then click Save title & teacher now.'
+      );
+      return;
+    }
+    if (!nextTeacher) {
+      setError('Type a Teacher Name above, then click Save title & teacher now.');
+      return;
+    }
+
+    // Block autosave long enough that an in-flight full save cannot wipe identity.
     skipAutoSaveRef.current = true;
     setSaving(true);
     setError('');
@@ -526,17 +540,22 @@ export default function AssignmentEditor({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           identity_only: true,
-          title,
-          teacher_name: teacherName,
+          title: nextTitle,
+          teacher_name: nextTeacher,
           class_name: className,
         }),
         cache: 'no-store',
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to save title/teacher');
-      const savedTitle = String(data.identity?.title || title).trim();
-      const savedTeacher = String(data.identity?.teacher_name || teacherName).trim();
+      const savedTitle = String(data.identity?.title || nextTitle).trim();
+      const savedTeacher = String(data.identity?.teacher_name || nextTeacher).trim();
       const savedClass = String(data.identity?.class_name ?? className).trim();
+      if (savedTitle === 'Untitled Listen & Learn') {
+        throw new Error(
+          'Server still has Untitled Listen & Learn — save did not stick. Try again after refresh.'
+        );
+      }
       setTitle(savedTitle);
       setTeacherName(savedTeacher);
       setClassName(savedClass);
@@ -547,7 +566,7 @@ export default function AssignmentEditor({
         className: savedClass,
       };
       setSaveMessage(
-        `Saved identity “${savedTitle}” · Teacher: ${savedTeacher || '—'} · ${new Date().toLocaleTimeString()}`
+        `Saved identity “${savedTitle}” · Teacher: ${savedTeacher || '—'} · ${new Date().toLocaleTimeString()}. Open the student link in a new tab.`
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save title/teacher');
@@ -555,7 +574,7 @@ export default function AssignmentEditor({
       setSaving(false);
       window.setTimeout(() => {
         skipAutoSaveRef.current = false;
-      }, 800);
+      }, 5000);
     }
   }
 
