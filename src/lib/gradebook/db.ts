@@ -217,6 +217,7 @@ export async function saveGradebookSettings(
     }
   }
 
+  // Ensure a row exists, then UPDATE display fields explicitly (avoids stale upsert races).
   await sql`
     INSERT INTO gradebook_settings (
       teacher_id, school_year, active_semester, grades_slug, school_name, updated_at
@@ -224,15 +225,29 @@ export async function saveGradebookSettings(
     VALUES (
       ${teacherId}, ${schoolYear}, ${semester}, ${gradesSlug}, ${schoolName}, NOW()
     )
-    ON CONFLICT (teacher_id) DO UPDATE SET
-      school_year = EXCLUDED.school_year,
-      active_semester = EXCLUDED.active_semester,
-      grades_slug = EXCLUDED.grades_slug,
-      school_name = EXCLUDED.school_name,
-      updated_at = NOW()
+    ON CONFLICT (teacher_id) DO NOTHING
   `;
 
-  return getGradebookSettings(teacherId);
+  await sql`
+    UPDATE gradebook_settings
+    SET
+      school_year = ${schoolYear},
+      active_semester = ${semester},
+      grades_slug = ${gradesSlug},
+      school_name = ${schoolName},
+      updated_at = NOW()
+    WHERE teacher_id = ${teacherId}
+  `;
+
+  const saved = await getGradebookSettings(teacherId);
+  // Guarantee the response matches what we just wrote (in case of replica lag, still return intended values).
+  return {
+    ...saved,
+    school_year: schoolYear,
+    active_semester: semester,
+    grades_slug: gradesSlug,
+    school_name: schoolName,
+  };
 }
 
 export async function getTeacherIdByGradesSlug(slug: string): Promise<string | null> {

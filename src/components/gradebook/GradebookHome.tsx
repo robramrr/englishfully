@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
@@ -24,35 +24,53 @@ export default function GradebookHome() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saveMessage, setSaveMessage] = useState('');
+  const loadGenerationRef = useRef(0);
+  const schoolNameRef = useRef(schoolName);
+  const gradesSlugRef = useRef(gradesSlug);
+  schoolNameRef.current = schoolName;
+  gradesSlugRef.current = gradesSlug;
 
   const studentGradesPath = useMemo(() => {
     const slug = normalizeGradesSlug(gradesSlug || settings?.grades_slug || '');
     return slug ? `/grades/${slug}` : '';
   }, [gradesSlug, settings?.grades_slug]);
 
-  const loadOverview = useCallback(async (nextSemester?: GradebookSemester, nextYear?: string) => {
-    const params = new URLSearchParams();
-    if (nextSemester) params.set('semester', String(nextSemester));
-    if (nextYear) params.set('school_year', nextYear);
-    const response = await fetch(`/api/gradebook/overview?${params.toString()}`, {
-      cache: 'no-store',
-    });
-    if (!response.ok) {
-      setError('Failed to load gradebook.');
+  const loadOverview = useCallback(
+    async (
+      nextSemester?: GradebookSemester,
+      nextYear?: string,
+      options?: { preserveDisplayFields?: boolean }
+    ) => {
+      const generation = ++loadGenerationRef.current;
+      const params = new URLSearchParams();
+      if (nextSemester) params.set('semester', String(nextSemester));
+      if (nextYear) params.set('school_year', nextYear);
+      const response = await fetch(`/api/gradebook/overview?${params.toString()}`, {
+        cache: 'no-store',
+      });
+      if (!response.ok) {
+        if (generation !== loadGenerationRef.current) return;
+        setError('Failed to load gradebook.');
+        setLoaded(true);
+        return;
+      }
+      const data = await response.json();
+      if (generation !== loadGenerationRef.current) return;
+
+      const nextSettings = data.settings as GradebookSettings;
+      setSettings(nextSettings);
+      setClasses(data.classes || []);
+      setSemester(nextSettings.active_semester);
+      setSchoolYear(nextSettings.school_year || '');
+      if (!options?.preserveDisplayFields) {
+        setSchoolName(nextSettings.school_name || '');
+        setGradesSlug(nextSettings.grades_slug || '');
+      }
+      setError('');
       setLoaded(true);
-      return;
-    }
-    const data = await response.json();
-    const nextSettings = data.settings as GradebookSettings;
-    setSettings(nextSettings);
-    setClasses(data.classes || []);
-    setSemester(nextSettings.active_semester);
-    setSchoolYear(nextSettings.school_year || '');
-    setSchoolName(nextSettings.school_name || '');
-    setGradesSlug(nextSettings.grades_slug || '');
-    setError('');
-    setLoaded(true);
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     void loadOverview();
@@ -62,6 +80,10 @@ export default function GradebookHome() {
     setSaving(true);
     setError('');
     setSaveMessage('');
+    // Bump generation so any in-flight overview fetch cannot overwrite this save.
+    loadGenerationRef.current += 1;
+    const nameToSave = schoolNameRef.current;
+    const slugToSave = gradesSlugRef.current;
     try {
       const response = await fetch('/api/gradebook/settings', {
         method: 'PUT',
@@ -69,8 +91,8 @@ export default function GradebookHome() {
         body: JSON.stringify({
           school_year: schoolYear,
           active_semester: semester,
-          school_name: schoolName,
-          grades_slug: gradesSlug,
+          school_name: nameToSave,
+          grades_slug: slugToSave,
         }),
         cache: 'no-store',
       });
@@ -78,16 +100,18 @@ export default function GradebookHome() {
       if (!response.ok) throw new Error(data.error || 'Failed to save settings');
 
       const saved = data.settings as GradebookSettings;
-      // Apply the saved values immediately so the form cannot snap back to stale data.
       setSettings(saved);
       setSemester(saved.active_semester);
       setSchoolYear(saved.school_year || '');
-      setSchoolName(saved.school_name || '');
-      setGradesSlug(saved.grades_slug || '');
+      setSchoolName(saved.school_name || nameToSave);
+      setGradesSlug(saved.grades_slug || slugToSave);
       setSaveMessage(
-        `Saved. Students see “${saved.school_name || 'Check My Grades'}” at /grades/${saved.grades_slug || '…'}.`
+        `Saved. Students see “${saved.school_name || nameToSave || 'Check My Grades'}” at /grades/${saved.grades_slug || slugToSave || '…'}.`
       );
-      await loadOverview(saved.active_semester, saved.school_year);
+      // Refresh class cards only — keep the display fields we just saved.
+      await loadOverview(saved.active_semester, saved.school_year, {
+        preserveDisplayFields: true,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save settings');
     } finally {
