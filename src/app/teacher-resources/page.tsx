@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHeadphones } from "@fortawesome/free-solid-svg-icons";
 import ComicButton from "../../components/ComicButton";
 import ComicCard from "../../components/ComicCard";
 import ComicTitle from "../../components/ComicTitle";
@@ -107,7 +109,10 @@ function ResourceCategoriesSection() {
             </Link>
             <Link href="/teacher-resources/listen-and-learn">
               <ComicButton variant="warning" size="sm">
-                {t.teacherResources.listenAndLearnButton}
+                <span className="inline-flex items-center gap-2">
+                  <FontAwesomeIcon icon={faHeadphones} aria-hidden />
+                  {t.teacherResources.listenAndLearnButton}
+                </span>
               </ComicButton>
             </Link>
             <Link href="/teacher-resources/gradebook">

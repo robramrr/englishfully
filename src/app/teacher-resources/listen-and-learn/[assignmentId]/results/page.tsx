@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHeadphones } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../../../../../components/ComicButton';
 import ComicCard from '../../../../../components/ComicCard';
 import ComicText from '../../../../../components/ComicText';
@@ -84,7 +86,10 @@ export default function ListenAndLearnResultsPage({ params }: ResultsPageProps) 
     <div className="listen-and-learn-page flex flex-col min-h-screen bg-[var(--comic-light)]">
       <section className="comic-bg-secondary py-12 px-4 comic-pattern-dots text-center">
         <ComicTitle level={2} className="comic-text-white mb-2">
-          🎧 Listen &amp; Learn Results
+          <span className="inline-flex items-center justify-center gap-3">
+            <FontAwesomeIcon icon={faHeadphones} aria-hidden className="text-[0.85em]" />
+            <span>Listen &amp; Learn Results</span>
+          </span>
         </ComicTitle>
         <ComicText className="comic-text-white font-bold">
           Review student scores, attempts, and responses.

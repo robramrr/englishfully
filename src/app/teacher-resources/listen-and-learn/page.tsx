@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHeadphones } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../../../components/ComicButton';
 import ComicCard from '../../../components/ComicCard';
 import ComicText from '../../../components/ComicText';
@@ -89,7 +91,10 @@ export default function ListenAndLearnPage() {
     <div className="listen-and-learn-page flex flex-col min-h-screen bg-[var(--comic-light)]">
       <section className="comic-bg-secondary py-16 px-4 comic-pattern-dots text-center">
         <ComicTitle level={1} className="comic-text-white mb-4">
-          🎧 Listen &amp; Learn
+          <span className="inline-flex items-center justify-center gap-3">
+            <FontAwesomeIcon icon={faHeadphones} aria-hidden className="text-[0.85em]" />
+            <span>Listen &amp; Learn</span>
+          </span>
         </ComicTitle>
         <ComicText size="lg" className="comic-text-white font-bold max-w-3xl mx-auto">
           Focused listening practice: short audio segments, one question each, with AI-assisted
