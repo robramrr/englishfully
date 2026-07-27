@@ -30,32 +30,31 @@ export default function PrintHandout({
     <>
       <style jsx global>{`
         .speak-and-submit-page .print-prompt-option {
-          line-height: 1.3;
-          padding: 6px 8px;
+          line-height: 1.35;
+          padding: 8px;
         }
         .speak-and-submit-page .print-prompt-title,
         .speak-and-submit-page .print-prompt-option-label {
-          font-size: 16px;
+          font-size: 17px;
           font-weight: bold;
         }
         .speak-and-submit-page .print-prompt-rules {
-          font-size: 14px;
+          font-size: 15px;
           font-weight: normal;
         }
         .speak-and-submit-page .print-prompt-example {
-          font-size: 14px;
+          font-size: 15px;
           font-weight: normal;
         }
         .speak-and-submit-page .print-choose-prompt {
-          font-size: 16px;
+          font-size: 17px;
           font-weight: bold;
-          margin-top: 6px;
+          margin-top: 10px;
         }
 
         @media print {
           @page {
-            size: A4;
-            margin: 0.4in;
+            margin: 0.5in;
           }
 
           body {
@@ -68,108 +67,67 @@ export default function PrintHandout({
             box-shadow: none !important;
             border: none !important;
             margin: 0 !important;
-            padding: 0 !important;
+            padding: 0.4rem 0.75rem !important;
             max-width: none !important;
           }
           .speak-and-submit-page .print-header {
-            margin-bottom: 0.5rem !important;
-            padding-bottom: 0.35rem !important;
-          }
-          .speak-and-submit-page .print-header p {
-            font-size: 15px !important;
+            margin-bottom: 1.25rem !important;
+            padding-bottom: 0.75rem !important;
           }
           .speak-and-submit-page .print-task-section {
-            margin-bottom: 0.6rem !important;
+            margin-bottom: 1.25rem !important;
           }
           .speak-and-submit-page .print-task-heading {
-            margin-bottom: 0.35rem !important;
-          }
-          .speak-and-submit-page .print-task-heading h6 {
-            font-size: 16px !important;
-            margin: 0 !important;
-            line-height: 1.2 !important;
-          }
-          .speak-and-submit-page .print-sections,
-          .speak-and-submit-page .print-sections > li,
-          .speak-and-submit-page .print-items {
-            margin: 0 !important;
-            gap: 0.4rem !important;
+            margin-bottom: 0.75rem !important;
           }
           .speak-and-submit-page .print-sections {
-            display: flex;
-            flex-direction: column;
-            gap: 0.45rem !important;
+            gap: 0.85rem !important;
           }
-          .speak-and-submit-page .print-sections > li {
-            display: flex;
-            flex-direction: column;
-            gap: 0.35rem !important;
-          }
+          .speak-and-submit-page .print-sections > li,
           .speak-and-submit-page .print-items {
-            display: flex;
-            flex-direction: column;
-            gap: 0.35rem !important;
+            gap: 0.85rem !important;
           }
           .speak-and-submit-page .print-item-card {
-            padding: 0.45rem 0.6rem !important;
-            font-size: 15px !important;
-            line-height: 1.3 !important;
-            border-width: 3px !important;
+            padding: 0.85rem !important;
           }
           .speak-and-submit-page .print-prompt-option {
-            padding: 5px 7px !important;
-            border-width: 3px !important;
+            padding: 6px 8px !important;
+            font-size: inherit !important;
           }
           .speak-and-submit-page .print-prompt-title,
           .speak-and-submit-page .print-prompt-option-label {
-            font-size: 15px !important;
-            line-height: 1.25 !important;
+            font-size: 17px !important;
+            line-height: 1.35 !important;
           }
           .speak-and-submit-page .print-prompt-rules {
-            font-size: 13px !important;
-            line-height: 1.25 !important;
+            font-size: 15px !important;
+            line-height: 1.35 !important;
             font-weight: normal !important;
           }
           .speak-and-submit-page .print-prompt-example {
-            font-size: 13px !important;
-            line-height: 1.25 !important;
+            font-size: 15px !important;
+            line-height: 1.35 !important;
             font-weight: normal !important;
           }
           .speak-and-submit-page .print-prompt-section {
-            gap: 0.35rem !important;
+            gap: 6px !important;
           }
           .speak-and-submit-page .print-choose-prompt {
-            font-size: 15px !important;
-            margin-top: 4px !important;
-            margin-bottom: 0 !important;
+            font-size: 17px !important;
+            margin-top: 8px !important;
           }
           .speak-and-submit-page .print-qr-section {
-            padding: 0.55rem 0.7rem !important;
-            border-width: 3px !important;
+            padding: 1.1rem !important;
           }
           .speak-and-submit-page .print-qr-row {
-            margin-bottom: 0.35rem !important;
-            gap: 0.5rem !important;
-          }
-          .speak-and-submit-page .print-qr-row h6 {
-            font-size: 15px !important;
-            margin-bottom: 0.2rem !important;
-            line-height: 1.2 !important;
-          }
-          .speak-and-submit-page .print-qr-row p {
-            font-size: 12px !important;
-            line-height: 1.35 !important;
+            margin-bottom: 0.75rem !important;
           }
           .speak-and-submit-page .print-qr-img {
-            width: 132px !important;
-            height: 132px !important;
+            width: 180px !important;
+            height: 180px !important;
           }
           .speak-and-submit-page .print-qr-divider {
-            margin-bottom: 0.3rem !important;
-            border-top-width: 3px !important;
-          }
-          .speak-and-submit-page .print-student-url {
-            font-size: 9px !important;
+            margin-bottom: 0.75rem !important;
           }
         }
       `}</style>
@@ -185,20 +143,20 @@ export default function PrintHandout({
           </button>
         </div>
 
-        <main className="print-page max-w-3xl mx-auto px-6 py-6 bg-white text-[var(--comic-dark)]">
-          <div className="print-header grid grid-cols-3 items-center gap-2 mb-5 border-b-4 border-[var(--comic-black)] pb-3">
-            <ComicText className="font-bold text-lg text-left">{teacherName}</ComicText>
-            <ComicText className="font-bold text-lg text-center">{task.title}</ComicText>
-            <ComicText className="font-bold text-lg text-right">
+        <main className="print-page max-w-3xl mx-auto px-8 py-10 bg-white text-[var(--comic-dark)]">
+          <div className="print-header grid grid-cols-3 items-center gap-3 mb-8 border-b-4 border-[var(--comic-black)] pb-4">
+            <ComicText className="font-bold text-xl text-left">{teacherName}</ComicText>
+            <ComicText className="font-bold text-xl text-center">{task.title}</ComicText>
+            <ComicText className="font-bold text-xl text-right">
               Class: {task.class_name}
             </ComicText>
           </div>
 
-          <section className="print-task-section mb-5">
-            <div className="print-task-heading mb-3">
+          <section className="print-task-section mb-8">
+            <div className="print-task-heading mb-4">
               <ComicTitle
                 level={6}
-                className="!text-lg text-[var(--comic-primary)]"
+                className="!text-xl text-[var(--comic-primary)]"
               >
                 🎙️ Speaking Task
               </ComicTitle>
@@ -208,17 +166,17 @@ export default function PrintHandout({
                 </p>
               ) : null}
             </div>
-            <ol className="print-sections space-y-3">
+            <ol className="print-sections space-y-4">
               {sections.map((section) => (
-                <li key={`section-${section.sectionIndex}`} className="space-y-3">
+                <li key={`section-${section.sectionIndex}`} className="space-y-4">
                   {hasMultipleParts ? (
-                    <ComicText className="font-bold text-lg text-[var(--comic-secondary)]">
+                    <ComicText className="font-bold text-xl text-[var(--comic-secondary)]">
                       Part {section.sectionIndex + 1}: {TASK_TYPE_LABELS[section.itemType]}
                     </ComicText>
                   ) : null}
-                  <ol className="print-items space-y-3">
+                  <ol className="print-items space-y-4">
                     {section.itemType === 'vocab_list' ? (
-                      <li className="print-item-card border-4 border-[var(--comic-black)] p-3 font-bold text-base leading-snug">
+                      <li className="print-item-card border-4 border-[var(--comic-black)] p-4 font-bold text-lg leading-relaxed">
                         <span className="flex flex-wrap justify-between gap-x-6 gap-y-2">
                           {section.items.map((item, index) => (
                             <span key={item.id}>
@@ -261,7 +219,7 @@ export default function PrintHandout({
                       section.items.map((item, index) => (
                         <li
                           key={item.id}
-                          className="print-item-card border-4 border-[var(--comic-black)] p-3 font-bold text-base leading-snug"
+                          className="print-item-card border-4 border-[var(--comic-black)] p-4 font-bold text-lg leading-relaxed"
                         >
                           {section.items.length > 1 ? `${index + 1}. ` : ''}
                           {item.content}
@@ -274,16 +232,16 @@ export default function PrintHandout({
             </ol>
           </section>
 
-          <section className="print-qr-section border-4 border-[var(--comic-black)] p-4">
-            <div className="print-qr-row flex items-start justify-between gap-2 mb-3">
+          <section className="print-qr-section border-4 border-[var(--comic-black)] p-6">
+            <div className="print-qr-row flex items-start justify-between gap-2 mb-4">
               <div className="text-left min-w-0">
                 <ComicTitle
                   level={6}
-                  className="!text-lg text-[var(--comic-secondary)] mb-1 whitespace-nowrap"
+                  className="!text-xl text-[var(--comic-secondary)] mb-2 whitespace-nowrap"
                 >
                   Scan to record &amp; submit
                 </ComicTitle>
-                <ComicText className="text-sm leading-snug">
+                <ComicText className="text-sm">
                   1. Scan QR code with your phone camera
                   <br />
                   2. Enter student name, number, and class
@@ -296,14 +254,14 @@ export default function PrintHandout({
                 src={qrCode}
                 alt="QR code"
                 className="print-qr-img shrink-0"
-                width={148}
-                height={148}
+                width={200}
+                height={200}
               />
             </div>
 
-            <hr className="print-qr-divider border-0 border-t-4 border-[var(--comic-black)] mb-3" />
+            <hr className="print-qr-divider border-0 border-t-4 border-[var(--comic-black)] mb-4" />
 
-            <ComicText className="print-student-url font-bold text-[10px] whitespace-nowrap text-center">
+            <ComicText className="font-bold text-[10px] whitespace-nowrap text-center">
               {studentUrl}
             </ComicText>
           </section>
