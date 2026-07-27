@@ -169,13 +169,12 @@ export async function ensureLearnSchema(): Promise<void> {
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_vocabulary_assignment ON learn_vocabulary(assignment_id, sort_order)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_submissions_assignment ON learn_submissions(assignment_id, submitted_at DESC)`;
 
-      // One-time repair: this published makeup assignment got stuck on create defaults
-      // after failed identity saves. Safe to re-run (only matches the stuck defaults).
+      // One-time repair: this published makeup assignment got stuck on create defaults.
       await sql`
         UPDATE learn_assignments
         SET
-          title = 'Listen & Learn',
-          teacher_name = 'Robert',
+          title = 'Listen',
+          teacher_name = 'Ro',
           updated_at = NOW()
         WHERE id = 'GPTNpBIRmjfS-GP6PSyll'
           AND (
@@ -351,8 +350,8 @@ async function repairStuckLearnIdentity(assignmentId: string): Promise<void> {
   await sql`
     UPDATE learn_assignments
     SET
-      title = 'Listen & Learn',
-      teacher_name = 'Robert',
+      title = 'Listen',
+      teacher_name = 'Ro',
       updated_at = NOW()
     WHERE id = ${assignmentId}
       AND (

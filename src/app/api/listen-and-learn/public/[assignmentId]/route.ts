@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sql } from '@vercel/postgres';
 import { jsonError } from '@/lib/speak-and-submit/api';
-import { countLearnAttempts, getPublicLearnAssignment } from '@/lib/listen-and-learn/db';
+import {
+  countLearnAttempts,
+  ensureLearnSchema,
+  getPublicLearnAssignment,
+} from '@/lib/listen-and-learn/db';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface RouteParams {
   params: { assignmentId: string };
@@ -10,6 +16,24 @@ interface RouteParams {
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
+    // Hard repair for the stuck makeup assignment — only while still on create defaults.
+    if (params.assignmentId === 'GPTNpBIRmjfS-GP6PSyll') {
+      await ensureLearnSchema();
+      await sql`
+        UPDATE learn_assignments
+        SET
+          title = 'Listen',
+          teacher_name = 'Ro',
+          updated_at = NOW()
+        WHERE id = ${params.assignmentId}
+          AND (
+            title = 'Untitled Listen & Learn'
+            OR title = ''
+            OR teacher_name = 'T Robert'
+          )
+      `;
+    }
+
     const assignment = await getPublicLearnAssignment(params.assignmentId);
     if (!assignment) return jsonError('Assignment not found', 404);
 
@@ -28,7 +52,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          Pragma: 'no-cache',
         },
       }
     );

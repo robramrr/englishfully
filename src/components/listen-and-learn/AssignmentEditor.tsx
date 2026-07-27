@@ -609,13 +609,38 @@ export default function AssignmentEditor({
     statusRef.current = nextStatus;
     setStatus(nextStatus);
     skipAutoSaveRef.current = true;
+    saveRequestedRef.current = false;
+    saveChainRef.current = Promise.resolve(null);
+
     try {
+      // Always persist title/teacher first via the dedicated identity write.
+      if (title.trim() && title.trim() !== 'Untitled Listen & Learn' && teacherName.trim()) {
+        const identityResponse = await fetch(
+          `/api/listen-and-learn/assignments/${assignmentId}`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              identity_only: true,
+              title: title.trim(),
+              teacher_name: teacherName.trim(),
+              class_name: className,
+            }),
+            cache: 'no-store',
+          }
+        );
+        const identityData = await identityResponse.json();
+        if (!identityResponse.ok) {
+          throw new Error(identityData.error || 'Failed to save title/teacher before publish');
+        }
+      }
+
       const saved = await flushSave(nextStatus);
       if (!saved) return;
       applySavedChildren(saved);
       // Keep the identity fields the teacher just saved — never let children sync overwrite them.
-      const savedTitle = saved.title?.trim() || title.trim();
-      const savedTeacher = saved.teacher_name?.trim() || teacherName.trim();
+      const savedTitle = title.trim() || saved.title?.trim() || '';
+      const savedTeacher = teacherName.trim() || saved.teacher_name?.trim() || '';
       setTitle(savedTitle);
       setTeacherName(savedTeacher);
       formValuesRef.current = {
@@ -646,6 +671,10 @@ export default function AssignmentEditor({
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      window.setTimeout(() => {
+        skipAutoSaveRef.current = false;
+      }, 8000);
     }
   }
 
