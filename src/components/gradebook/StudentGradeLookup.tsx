@@ -330,30 +330,64 @@ export default function StudentGradeLookup({ schoolSlug }: StudentGradeLookupPro
           </ComicText>
 
           {grade.tasks.length === 0 ? (
-            <ComicText className="font-bold">No graded tasks yet for this semester.</ComicText>
+            <ComicText className="font-bold">No assigned tasks yet for this semester.</ComicText>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[480px] border-collapse">
+              <table className="w-full min-w-[560px] border-collapse">
                 <thead>
                   <tr className="border-b-4 border-[var(--comic-black)] text-left">
                     <th className="py-2 pr-3">Task</th>
                     <th className="py-2 pr-3">Tool</th>
+                    <th className="py-2 pr-3">Status</th>
                     <th className="py-2 pr-3">Score</th>
                     <th className="py-2">Test</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {grade.tasks.map((task, index) => (
+                  {grade.tasks.map((task) => (
                     <tr
-                      key={`${task.tool}-${task.task_title}-${index}`}
+                      key={`${task.tool}-${task.task_id}`}
                       className="border-b border-[var(--comic-black)]/20"
                     >
-                      <td className="py-2 pr-3 font-bold">{task.task_title || 'Untitled'}</td>
+                      <td className="py-2 pr-3 font-bold">
+                        {task.student_url ? (
+                          <a
+                            href={task.student_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline text-[var(--comic-primary)] hover:opacity-80"
+                          >
+                            {task.task_title || 'Untitled'}
+                          </a>
+                        ) : (
+                          task.task_title || 'Untitled'
+                        )}
+                      </td>
                       <td className="py-2 pr-3 text-sm">
                         {GRADEBOOK_TOOL_LABELS[task.tool] || task.tool}
                       </td>
+                      <td className="py-2 pr-3 text-sm font-bold">
+                        {task.status === 'graded' ? (
+                          <span className="text-[var(--comic-success)]">Graded</span>
+                        ) : task.submitted ? (
+                          <span className="text-[var(--comic-warning)]">Submitted — awaiting grade</span>
+                        ) : task.student_url ? (
+                          <a
+                            href={task.student_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline text-[var(--comic-danger)]"
+                          >
+                            Not turned in — open task
+                          </a>
+                        ) : (
+                          <span className="text-[var(--comic-danger)]">Not turned in</span>
+                        )}
+                      </td>
                       <td className="py-2 pr-3 font-bold">
-                        {task.points}/{task.max_points}
+                        {task.status === 'graded' && task.points != null
+                          ? `${task.points}/${task.max_points}`
+                          : `—/${task.max_points}`}
                       </td>
                       <td className="py-2 text-sm">
                         {formatTestScore(task.test_correct, task.test_total)}

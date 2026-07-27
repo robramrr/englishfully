@@ -756,19 +756,94 @@ export async function lookupStudentGrades(params: {
   const seat = gradebook.seats.find((item) => item.student_number === studentNumber);
   if (!seat) return null;
 
-  const tasks = Object.values(seat.entries_by_task)
+  const classLabel = gradebook.class_label || String(roster.class_label || '');
+  const classLabelKey = classLabel.trim().toLowerCase();
+
+  type AssignedTask = {
+    tool: GradebookTool;
+    task_id: string;
+    task_title: string;
+    max_points: number;
+    student_url: string | null;
+  };
+
+  const assigned = new Map<string, AssignedTask>();
+
+  // Tasks created for this class (Speak/Listen), even if nobody has a grade yet.
+  for (const task of gradebook.available_tasks) {
+    if (task.class_name.trim().toLowerCase() !== classLabelKey) continue;
+    const key = taskKey(task.tool, task.id);
+    assigned.set(key, {
+      tool: task.tool,
+      task_id: task.id,
+      task_title: task.title || 'Untitled',
+      max_points: DEFAULT_MAX_POINTS,
+      student_url: studentUrlForTool(task.tool, task.id),
+    });
+  }
+
+  // Tasks already in this class gradebook for the semester (any student graded).
+  for (const column of gradebook.task_columns) {
+    const key = column.task_key;
+    const existing = assigned.get(key);
+    assigned.set(key, {
+      tool: column.tool,
+      task_id: column.task_id,
+      task_title: column.task_title || existing?.task_title || 'Untitled',
+      max_points: Math.max(column.max_points || 0, existing?.max_points || 0, DEFAULT_MAX_POINTS),
+      student_url: existing?.student_url ?? studentUrlForTool(column.tool, column.task_id),
+    });
+  }
+
+  // Speak submission flags for this seat (turned in vs not).
+  const submittedKeys = new Set<string>();
+  for (const item of assigned.values()) {
+    if (item.tool !== 'speak_and_submit') continue;
+    try {
+      const numbers = await getSpeakSubmissionNumbersForTask(item.task_id, classLabel);
+      if (numbers.includes(studentNumber)) {
+        submittedKeys.add(taskKey(item.tool, item.task_id));
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const tasks = Array.from(assigned.values())
     .sort((a, b) => a.task_title.localeCompare(b.task_title, undefined, { sensitivity: 'base' }))
-    .map((entry) => ({
-      tool: entry.tool,
-      task_title: entry.task_title,
-      points: entry.points,
-      max_points: entry.max_points,
-      test_correct: entry.test_correct,
-      test_total: entry.test_total,
-    }));
+    .map((item) => {
+      const key = taskKey(item.tool, item.task_id);
+      const entry = seat.entries_by_task[key];
+      if (entry) {
+        return {
+          tool: item.tool,
+          task_id: item.task_id,
+          task_title: entry.task_title || item.task_title,
+          points: entry.points,
+          max_points: entry.max_points || item.max_points,
+          test_correct: entry.test_correct,
+          test_total: entry.test_total,
+          status: 'graded' as const,
+          submitted: true,
+          student_url: item.student_url,
+        };
+      }
+      return {
+        tool: item.tool,
+        task_id: item.task_id,
+        task_title: item.task_title,
+        points: null,
+        max_points: item.max_points,
+        test_correct: null,
+        test_total: null,
+        status: 'missing' as const,
+        submitted: submittedKeys.has(key),
+        student_url: item.student_url,
+      };
+    });
 
   return {
-    class_label: gradebook.class_label || String(roster.class_label || ''),
+    class_label: classLabel,
     school_year: gradebook.settings.school_year,
     semester: gradebook.settings.active_semester,
     student_number: seat.student_number,
@@ -778,4 +853,12 @@ export async function lookupStudentGrades(params: {
     total_possible: seat.total_possible,
     percent_label: formatPercent(seat.total_earned, seat.total_possible),
   };
+}
+
+function studentUrlForTool(tool: GradebookTool, taskId: string): string | null {
+  if (tool === 'speak_and_submit') {
+    return `/speak/${taskId}`;
+  }
+  // Listen & Answer is print-based today — no student submit URL.
+  return null;
 }

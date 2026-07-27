@@ -118,11 +118,18 @@ export interface StudentGradeLookupResult {
   display_name: string | null;
   tasks: Array<{
     tool: GradebookTool;
+    task_id: string;
     task_title: string;
-    points: number;
+    points: number | null;
     max_points: number;
     test_correct: number | null;
     test_total: number | null;
+    /** graded = has gradebook entry; missing = assigned but no grade yet */
+    status: 'graded' | 'missing';
+    /** True when Speak & Submit has a recording for this seat (even if ungraded). */
+    submitted: boolean;
+    /** Student-facing assignment URL when available (e.g. /speak/...). */
+    student_url: string | null;
   }>;
   total_earned: number;
   total_possible: number;
