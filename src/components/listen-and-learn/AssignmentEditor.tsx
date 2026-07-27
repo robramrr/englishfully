@@ -906,6 +906,23 @@ export default function AssignmentEditor({
                     </option>
                   ))}
                 </select>
+                {!makeupListenAssignmentId ? (
+                  <ComicText className="text-sm mt-1 font-bold text-[var(--comic-danger)]">
+                    Required: pick the failed assessment (e.g. English Listening). Until this is
+                    set and the Learn assignment is Published, students will not see a makeup row
+                    on their grades page.
+                  </ComicText>
+                ) : status !== 'published' ? (
+                  <ComicText className="text-sm mt-1 font-bold text-[var(--comic-danger)]">
+                    Publish this Listen &amp; Learn assignment so the makeup link appears for
+                    students who failed the tied assessment.
+                  </ComicText>
+                ) : (
+                  <ComicText className="text-sm mt-1 font-bold text-[var(--comic-success)]">
+                    Makeup is active. Failers on that assessment will see this row on their grades
+                    page (after you save).
+                  </ComicText>
+                )}
               </label>
               <div className="space-y-2 md:col-span-2">
                 <ComicText className="font-black">Classes who can earn makeup</ComicText>

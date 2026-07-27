@@ -889,21 +889,32 @@ export async function lookupStudentGrades(params: {
   try {
     const { listPublishedMakeupAssignments } = await import('@/lib/listen-and-learn/db');
     const makeups = await listPublishedMakeupAssignments(teacherId);
+
+    const failedListenEntries = Object.values(seat.entries_by_task).filter((entry) => {
+      if (entry.tool !== 'listen_and_answer') return false;
+      const maxPoints = Math.max(DEFAULT_MAX_POINTS, Number(entry.max_points ?? 0));
+      return Number(entry.points ?? 0) < maxPoints;
+    });
+    const failedTaskIds = new Set(failedListenEntries.map((entry) => entry.task_id));
+
     for (const makeup of makeups) {
       const allowed = (makeup.makeup_class_names || [])
         .map((item) => item.trim().toLowerCase())
         .filter(Boolean);
       if (allowed.length > 0 && !allowed.includes(classLabelKey)) continue;
 
-      const failedKey = taskKey('listen_and_answer', makeup.makeup_listen_assignment_id);
-      const failedEntry = seat.entries_by_task[failedKey];
+      const tiedId = makeup.makeup_listen_assignment_id.trim();
+      if (!tiedId || !failedTaskIds.has(tiedId)) {
+        // Still show if this seat already earned makeup credit for this Learn task.
+        const makeupKeyOnly = taskKey('listen_and_learn', makeup.id);
+        if (!seat.entries_by_task[makeupKeyOnly]) continue;
+      }
+
+      const failedEntry =
+        failedListenEntries.find((entry) => entry.task_id === tiedId) ||
+        seat.entries_by_task[taskKey('listen_and_answer', tiedId)];
       const makeupKey = taskKey('listen_and_learn', makeup.id);
       const makeupEntry = seat.entries_by_task[makeupKey];
-      const failedAssessment =
-        failedEntry &&
-        Number(failedEntry.points ?? 0) < Math.max(DEFAULT_MAX_POINTS, Number(failedEntry.max_points ?? 0));
-
-      if (!failedAssessment && !makeupEntry) continue;
 
       const maxPoints = Math.max(
         DEFAULT_MAX_POINTS,
@@ -916,7 +927,7 @@ export async function lookupStudentGrades(params: {
         task_title: makeup.title || 'Makeup',
         max_points: maxPoints,
         student_url: studentUrlForTool('listen_and_learn', makeup.id),
-        makeup_for_task_id: makeup.makeup_listen_assignment_id,
+        makeup_for_task_id: tiedId || null,
       });
     }
   } catch (error) {

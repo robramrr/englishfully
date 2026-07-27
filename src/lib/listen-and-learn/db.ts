@@ -174,6 +174,13 @@ function parseMakeupClassNames(value: unknown): string[] {
     .filter(Boolean);
 }
 
+function parseDbBoolean(value: unknown): boolean {
+  if (value === true || value === 1) return true;
+  if (value === false || value === 0 || value == null) return false;
+  const normalized = String(value).trim().toLowerCase();
+  return normalized === 't' || normalized === 'true' || normalized === '1' || normalized === 'yes';
+}
+
 function rowToAssignment(row: Record<string, unknown>): LearnAssignment {
   return {
     id: row.id as string,
@@ -193,10 +200,10 @@ function rowToAssignment(row: Record<string, unknown>): LearnAssignment {
     attempts_allowed: Math.max(1, Number(row.attempts_allowed ?? 1)),
     passing_score: Math.min(100, Math.max(0, Number(row.passing_score ?? 70))),
     max_replays: Math.max(0, Number(row.max_replays ?? 3)),
-    randomize_questions: Boolean(row.randomize_questions),
-    randomize_answers: Boolean(row.randomize_answers),
+    randomize_questions: parseDbBoolean(row.randomize_questions),
+    randomize_answers: parseDbBoolean(row.randomize_answers),
     status: row.status === 'published' ? 'published' : 'draft',
-    makeup_enabled: Boolean(row.makeup_enabled),
+    makeup_enabled: parseDbBoolean(row.makeup_enabled),
     makeup_listen_assignment_id: String(row.makeup_listen_assignment_id ?? '').trim(),
     makeup_class_names: parseMakeupClassNames(row.makeup_class_names),
     created_at: new Date(row.created_at as string).toISOString(),
@@ -287,16 +294,20 @@ export async function listPublishedMakeupAssignments(
   teacherId: string = DEFAULT_TEACHER_ID
 ): Promise<LearnAssignment[]> {
   await ensureLearnSchema();
+  // Filter makeup flags in JS — avoids boolean-literal quirks across Postgres drivers.
   const { rows } = await sql`
     SELECT *
     FROM learn_assignments
     WHERE teacher_id = ${teacherId}
       AND status = 'published'
-      AND makeup_enabled = TRUE
-      AND makeup_listen_assignment_id <> ''
     ORDER BY updated_at DESC
   `;
-  return rows.map((row) => rowToAssignment(row));
+  return rows
+    .map((row) => rowToAssignment(row))
+    .filter(
+      (assignment) =>
+        assignment.makeup_enabled && Boolean(assignment.makeup_listen_assignment_id.trim())
+    );
 }
 
 export async function getLearnAssignmentById(
