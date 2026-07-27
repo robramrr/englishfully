@@ -219,42 +219,41 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
                 aria-hidden
                 className="h-[0.85em] w-[0.85em] shrink-0"
               />
-              <span>{schoolName.trim() || 'Check My Grades'}</span>
+              <span>Check My Grades</span>
             </span>
           </ComicTitle>
           <ComicText className="comic-text-white font-bold">
-            Look up your current gradebook total with your student number and roll number.
+            {schoolName.trim() || (loadingClasses ? '…' : schoolSlug)}
           </ComicText>
         </section>
       ) : null}
 
-      <section className={showHero ? 'max-w-3xl mx-auto py-10 px-4 space-y-6' : 'space-y-6'}>
-      <ComicCard className="comic-shadow-xl space-y-4">
-        <ComicTitle level={3} className="text-[var(--comic-primary)]">
-          Check My Grades
-        </ComicTitle>
-        <ComicText className="text-[var(--comic-dark)] font-bold">
-          Enter your class, student number{letterEnabled ? ' + letter' : ''}, and your 5-digit roll
-          number from your teacher.
-        </ComicText>
-
+      <section className={showHero ? 'max-w-xl mx-auto py-10 px-4 space-y-6' : 'space-y-6'}>
+      <ComicCard className="comic-shadow-xl">
         {loadingClasses ? (
-          <ComicText className="font-bold">Loading classes…</ComicText>
+          <ComicText className="font-bold text-center">Loading classes…</ComicText>
         ) : notFound ? (
-          <ComicText className="font-bold text-[var(--comic-danger)]">
+          <ComicText className="font-bold text-[var(--comic-danger)] text-center">
             {error || 'This school grades link was not found. Ask your teacher for the correct link.'}
           </ComicText>
         ) : classes.length === 0 ? (
-          <ComicText className="font-bold text-[var(--comic-dark)]">
+          <ComicText className="font-bold text-[var(--comic-dark)] text-center">
             No classes are set up yet. Ask your teacher to add classes in Speak &amp; Submit
             settings.
           </ComicText>
         ) : (
           <form className="space-y-4" onSubmit={(event) => void handleLookup(event)}>
+            <ComicTitle
+              level={6}
+              className="speak-identity-title mb-4 text-[var(--comic-primary)] text-center"
+            >
+              👋 Who are you?
+            </ComicTitle>
+
             <label className="block space-y-1">
               <ComicText className="font-black text-sm">Class</ComicText>
               <select
-                className="w-full comic-input"
+                className="w-full comic-input text-lg py-4"
                 value={classId}
                 onChange={(event) => {
                   setClassId(event.target.value);
@@ -271,50 +270,50 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
             </label>
 
             <div className={`grid gap-3 ${letterEnabled ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              <label className="block space-y-1">
-                <ComicText className="font-black text-sm">Student number</ComicText>
+              <select
+                className="w-full comic-input text-lg py-4"
+                value={studentNumber}
+                onChange={(event) => setStudentNumber(event.target.value)}
+                aria-label="Student number"
+              >
+                <option value="">#</option>
+                {numberOptions.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+              {letterEnabled ? (
                 <select
-                  className="w-full comic-input"
-                  value={studentNumber}
-                  onChange={(event) => setStudentNumber(event.target.value)}
+                  className="w-full comic-input text-lg py-4"
+                  value={studentLetter}
+                  onChange={(event) => setStudentLetter(event.target.value)}
+                  aria-label="Student ID letter"
                 >
-                  <option value="">Select…</option>
-                  {numberOptions.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
+                  <option value="">ID</option>
+                  {STUDENT_LETTER_OPTIONS.map((letter) => (
+                    <option key={letter} value={letter}>
+                      {letter}
                     </option>
                   ))}
                 </select>
-              </label>
-              {letterEnabled ? (
-                <label className="block space-y-1">
-                  <ComicText className="font-black text-sm">Letter</ComicText>
-                  <select
-                    className="w-full comic-input"
-                    value={studentLetter}
-                    onChange={(event) => setStudentLetter(event.target.value)}
-                  >
-                    <option value="">Select…</option>
-                    {STUDENT_LETTER_OPTIONS.map((letter) => (
-                      <option key={letter} value={letter}>
-                        {letter}
-                      </option>
-                    ))}
-                  </select>
-                </label>
               ) : null}
             </div>
 
             <div className="space-y-2">
               <ComicText className="font-black text-sm">Roll number (5 digits)</ComicText>
-              <div className="flex flex-wrap gap-2" role="group" aria-label="5-digit roll number">
+              <div
+                className="flex flex-nowrap justify-between gap-1.5 sm:gap-2"
+                role="group"
+                aria-label="5-digit roll number"
+              >
                 {rollDigits.map((digit, index) => (
                   <input
                     key={`roll-digit-${index}`}
                     ref={(element) => {
                       rollInputRefs.current[index] = element;
                     }}
-                    className="comic-input w-12 h-14 text-center text-2xl font-black"
+                    className="comic-input min-w-0 flex-1 max-w-[3rem] sm:max-w-none sm:w-12 h-11 sm:h-14 text-center text-xl sm:text-2xl font-black"
                     inputMode="numeric"
                     autoComplete={index === 0 ? 'one-time-code' : 'off'}
                     maxLength={1}
