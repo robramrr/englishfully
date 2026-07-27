@@ -353,21 +353,8 @@ export default function AssignmentEditor({
   }, []);
 
   const applySavedChildren = useCallback((assignment: LearnAssignmentWithDetails) => {
-    // Do NOT reset title/teacher/class from the server response here — a lagged read
-    // was putting “Untitled Listen & Learn” / old teacher back into the form, then
-    // autosave wrote those defaults over the real values.
-    if (assignment.title?.trim()) {
-      setTitle(assignment.title);
-      formValuesRef.current = { ...formValuesRef.current, title: assignment.title };
-    }
-    if (assignment.teacher_name?.trim()) {
-      setTeacherName(assignment.teacher_name);
-      formValuesRef.current = {
-        ...formValuesRef.current,
-        teacherName: assignment.teacher_name,
-      };
-    }
-    // Keep any local image URLs if the server response is missing them (stale write).
+    // Never sync title/teacher/class from save responses — that was resetting the form to
+    // “Untitled Listen & Learn” / “T Robert” after vocab saves, then re-publishing those defaults.
     setVocabulary((previous) => {
       const fromServer = toClientVocabulary(assignment);
       return fromServer.map((item) => {
@@ -529,7 +516,58 @@ export default function AssignmentEditor({
     };
   }, []);
 
+  async function handleSaveIdentity() {
+    skipAutoSaveRef.current = true;
+    setSaving(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/listen-and-learn/assignments/${assignmentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identity_only: true,
+          title,
+          teacher_name: teacherName,
+          class_name: className,
+        }),
+        cache: 'no-store',
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to save title/teacher');
+      const savedTitle = String(data.identity?.title || title).trim();
+      const savedTeacher = String(data.identity?.teacher_name || teacherName).trim();
+      const savedClass = String(data.identity?.class_name ?? className).trim();
+      setTitle(savedTitle);
+      setTeacherName(savedTeacher);
+      setClassName(savedClass);
+      formValuesRef.current = {
+        ...formValuesRef.current,
+        title: savedTitle,
+        teacherName: savedTeacher,
+        className: savedClass,
+      };
+      setSaveMessage(
+        `Saved identity “${savedTitle}” · Teacher: ${savedTeacher || '—'} · ${new Date().toLocaleTimeString()}`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save title/teacher');
+    } finally {
+      setSaving(false);
+      window.setTimeout(() => {
+        skipAutoSaveRef.current = false;
+      }, 800);
+    }
+  }
+
   async function handleManualSave(nextStatus: 'draft' | 'published' = status) {
+    // Pin identity fields from React state at click time (don’t trust a stale autosave ref).
+    formValuesRef.current = {
+      ...formValuesRef.current,
+      title,
+      teacherName,
+      className,
+      status: nextStatus,
+    };
     statusRef.current = nextStatus;
     setStatus(nextStatus);
     skipAutoSaveRef.current = true;
@@ -537,6 +575,16 @@ export default function AssignmentEditor({
       const saved = await flushSave(nextStatus);
       if (!saved) return;
       applySavedChildren(saved);
+      // Keep the identity fields the teacher just saved — never let children sync overwrite them.
+      const savedTitle = saved.title?.trim() || title.trim();
+      const savedTeacher = saved.teacher_name?.trim() || teacherName.trim();
+      setTitle(savedTitle);
+      setTeacherName(savedTeacher);
+      formValuesRef.current = {
+        ...formValuesRef.current,
+        title: savedTitle,
+        teacherName: savedTeacher,
+      };
       const savedVocabCount = (saved.vocabulary ?? []).filter(
         (item) => item.keep_word !== false && item.word.trim()
       ).length;
@@ -548,9 +596,9 @@ export default function AssignmentEditor({
       setSaveMessage(
         saved.status === 'published'
           ? savedVocabCount > 0
-            ? `Published “${saved.title}” with ${savedVocabCount} vocabulary word(s). Open the student link in a fresh tab.`
-            : `Published “${saved.title}”, but vocabulary is empty on the server.`
-          : `Saved “${saved.title}” · ${saved.teacher_name || 'no teacher name'} · ${new Date().toLocaleTimeString()}`
+            ? `Published “${savedTitle}” (Teacher: ${savedTeacher || '—'}) with ${savedVocabCount} vocabulary word(s). Open the student link in a fresh tab.`
+            : `Published “${savedTitle}”, but vocabulary is empty on the server.`
+          : `Saved “${savedTitle}” · ${savedTeacher || 'no teacher name'} · ${new Date().toLocaleTimeString()}`
       );
       if (saved.status === 'published' && typeof window !== 'undefined') {
         const url = getStudentLearnUrl(assignmentId, window.location.origin);
@@ -827,6 +875,21 @@ export default function AssignmentEditor({
               className="w-full comic-border-thick rounded-md p-3 font-bold"
             />
           </label>
+          <div className="md:col-span-2">
+            <ComicButton
+              type="button"
+              variant="success"
+              size="sm"
+              disabled={saving}
+              onClick={() => void handleSaveIdentity()}
+            >
+              {saving ? 'Saving…' : 'Save title & teacher now'}
+            </ComicButton>
+            <ComicText className="text-xs mt-2 text-[var(--comic-dark)]">
+              Saves only Assessment Title, Teacher Name, and Class — use this if the student page
+              still shows Untitled / old teacher.
+            </ComicText>
+          </div>
           <label className="space-y-1">
             <ComicText className="font-black">Due Date</ComicText>
             <input
@@ -1319,6 +1382,21 @@ export default function AssignmentEditor({
           {vocabulary.filter((item) => item.keep_word && item.word.trim()).length === 1 ? '' : 's'} in
           editor
         </ComicText>
+        <ComicText className="text-[var(--comic-dark)] font-bold">
+          Student page will show:{' '}
+          <span className="text-[var(--comic-primary)]">
+            “{title.trim() || 'Untitled Listen & Learn'}”
+          </span>
+          {' · Teacher: '}
+          <span className="text-[var(--comic-primary)]">{teacherName.trim() || '—'}</span>
+          {className.trim() ? ` · ${className.trim()}` : ''}
+        </ComicText>
+        {(title.trim() === 'Untitled Listen & Learn' || !title.trim() || teacherName.trim() === 'T Robert') && (
+          <ComicText className="text-[var(--comic-danger)] font-bold">
+            Tip: scroll up to Assessment settings and set Assessment Title / Teacher Name, then click
+            Update published again. Those fields are what students see.
+          </ComicText>
+        )}
         {vocabulary.filter((item) => item.keep_word && item.word.trim()).length === 0 ? (
           <ComicText className="text-[var(--comic-danger)] font-bold">
             No vocabulary in the editor — students will not see a Vocabulary section. Generate words

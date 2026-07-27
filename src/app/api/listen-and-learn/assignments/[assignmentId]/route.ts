@@ -5,6 +5,7 @@ import {
   deleteLearnAssignment,
   getLearnAssignmentById,
   saveLearnAssignment,
+  saveLearnAssignmentIdentity,
 } from '@/lib/listen-and-learn/db';
 import type { SaveLearnAssignmentPayload } from '@/lib/listen-and-learn/types';
 
@@ -33,8 +34,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     return jsonError('Unauthorized', 401);
   }
   try {
-    const body = (await request.json()) as SaveLearnAssignmentPayload;
-    const assignment = await saveLearnAssignment(params.assignmentId, body);
+    const body = await request.json();
+    if (body?.identity_only) {
+      const identity = await saveLearnAssignmentIdentity(params.assignmentId, {
+        title: body.title,
+        teacher_name: body.teacher_name,
+        class_name: body.class_name,
+      });
+      return NextResponse.json({ identity, assignment: identity });
+    }
+    const assignment = await saveLearnAssignment(
+      params.assignmentId,
+      body as SaveLearnAssignmentPayload
+    );
     return NextResponse.json({ assignment });
   } catch (error) {
     console.error('Save listen-and-learn error:', error);

@@ -605,6 +605,43 @@ async function replaceLearnChildren(
   }
 }
 
+export async function saveLearnAssignmentIdentity(
+  assignmentId: string,
+  payload: { title?: string; teacher_name?: string; class_name?: string },
+  teacherId: string = DEFAULT_TEACHER_ID
+): Promise<Pick<LearnAssignment, 'id' | 'title' | 'teacher_name' | 'class_name'>> {
+  await ensureLearnSchema();
+  const existing = await getLearnAssignmentById(assignmentId);
+  if (!existing) throw new Error('Assignment not found');
+
+  const ownerId = existing.teacher_id || teacherId;
+  const nextTitle = resolveLearnTitle(safeTrim(payload.title), existing.title);
+  const nextTeacherName =
+    safeTrim(payload.teacher_name) || existing.teacher_name.trim();
+  const nextClassName =
+    payload.class_name !== undefined ? safeTrim(payload.class_name) : existing.class_name;
+
+  const result = await sql`
+    UPDATE learn_assignments
+    SET
+      title = ${nextTitle},
+      teacher_name = ${nextTeacherName},
+      class_name = ${nextClassName},
+      updated_at = NOW()
+    WHERE id = ${assignmentId} AND teacher_id = ${ownerId}
+  `;
+  if ((result.rowCount ?? 0) < 1) {
+    throw new Error('Failed to save assessment title/teacher (assignment not updated).');
+  }
+
+  return {
+    id: assignmentId,
+    title: nextTitle,
+    teacher_name: nextTeacherName,
+    class_name: nextClassName,
+  };
+}
+
 export async function saveLearnAssignment(
   assignmentId: string,
   payload: SaveLearnAssignmentPayload,
@@ -618,13 +655,29 @@ export async function saveLearnAssignment(
   const nextTitle = resolveLearnTitle(safeTrim(payload.title), existing.title);
   const nextTeacherName =
     safeTrim(payload.teacher_name) || existing.teacher_name.trim();
+  const nextClassName =
+    payload.class_name !== undefined ? safeTrim(payload.class_name) : existing.class_name;
+
+  // Identity first — survives even if the larger settings/children write has issues.
+  const identityResult = await sql`
+    UPDATE learn_assignments
+    SET
+      title = ${nextTitle},
+      teacher_name = ${nextTeacherName},
+      class_name = ${nextClassName},
+      updated_at = NOW()
+    WHERE id = ${assignmentId} AND teacher_id = ${ownerId}
+  `;
+  if ((identityResult.rowCount ?? 0) < 1) {
+    throw new Error('Failed to save assessment title/teacher (assignment not updated).');
+  }
 
   const updateResult = await sql`
     UPDATE learn_assignments
     SET
       teacher_name = ${nextTeacherName},
       title = ${nextTitle},
-      class_name = ${safeTrim(payload.class_name)},
+      class_name = ${nextClassName},
       due_date = ${payload.due_date},
       audio_url = ${safeTrim(payload.audio_url)},
       thumbnail_url = ${safeTrim(payload.thumbnail_url)},
