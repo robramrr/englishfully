@@ -10,6 +10,9 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1079.0",
+    "@fortawesome/fontawesome-svg-core": "^7.3.1",
+    "@fortawesome/free-solid-svg-icons": "^7.3.1",
+    "@fortawesome/react-fontawesome": "^3.5.0",
     "@types/js-cookie": "^3.0.6",
     "@vercel/postgres": "^0.10.0",
     "js-cookie": "^3.0.5",

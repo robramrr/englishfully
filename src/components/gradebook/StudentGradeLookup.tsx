@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChartColumn } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
@@ -211,7 +213,10 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
       {showHero ? (
         <section className="comic-bg-secondary py-10 px-4 comic-pattern-dots text-center">
           <ComicTitle level={2} className="comic-text-white mb-2">
-            📊 {schoolName.trim() || 'Check My Grades'}
+            <span className="inline-flex items-center justify-center gap-3">
+              <FontAwesomeIcon icon={faChartColumn} aria-hidden className="text-[0.85em]" />
+              <span>{schoolName.trim() || 'Check My Grades'}</span>
+            </span>
           </ComicTitle>
           <ComicText className="comic-text-white font-bold">
             Look up your current gradebook total with your student number and roll number.
