@@ -158,6 +158,24 @@ function rowToSettings(row: Record<string, unknown>): GradebookSettings {
   };
 }
 
+/** One-time repair for the stuck /grades/spk header (same idea as Learn title repair). */
+async function repairStuckSchoolNameForSlug(slug: string): Promise<void> {
+  const normalized = normalizeGradesSlug(slug);
+  if (normalized !== 'spk') return;
+  // Exact stuck value, plus any leftover “ - English Robert” suffix on this slug.
+  await sql`
+    UPDATE gradebook_settings
+    SET
+      school_name = 'Sarakham Pittayakhom School',
+      updated_at = NOW()
+    WHERE grades_slug = ${normalized}
+      AND (
+        school_name = 'Sarakham Pittayakhom School - English Robert'
+        OR school_name LIKE '% - English Robert'
+      )
+  `;
+}
+
 function rowToEntry(row: Record<string, unknown>): GradebookEntry {
   return {
     id: row.id as string,
@@ -269,31 +287,51 @@ export async function saveGradebookSettings(
     WHERE teacher_id = ${teacherId}
   `;
 
-  // Write school_name LAST (like Learn title) so a stale in-flight save cannot wipe it,
-  // then verify the DB actually has the intended value.
+  // Write school_name LAST (like Learn title), on both teacher_id and grades_slug rows.
+  // The student page loads by slug — updating only teacher_id can leave /grades/spk stuck.
   let verifiedName = '';
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    const identityResult = await sql`
+    const byTeacher = await sql`
       UPDATE gradebook_settings
       SET
         school_name = ${schoolName},
         updated_at = NOW()
       WHERE teacher_id = ${teacherId}
     `;
-    if ((identityResult.rowCount ?? 0) < 1) {
+    if ((byTeacher.rowCount ?? 0) < 1) {
       throw new Error('Failed to save school name (settings row not updated).');
     }
 
-    const { rows } = await sql`
-      SELECT school_name FROM gradebook_settings WHERE teacher_id = ${teacherId} LIMIT 1
-    `;
-    verifiedName = String(rows[0]?.school_name ?? '').trim();
+    if (gradesSlug) {
+      await sql`
+        UPDATE gradebook_settings
+        SET
+          school_name = ${schoolName},
+          updated_at = NOW()
+        WHERE grades_slug = ${gradesSlug}
+      `;
+    }
+
+    // Verify the value students will see (slug row), not only the teacher_id row.
+    if (gradesSlug) {
+      const { rows } = await sql`
+        SELECT school_name FROM gradebook_settings
+        WHERE grades_slug = ${gradesSlug}
+        LIMIT 1
+      `;
+      verifiedName = String(rows[0]?.school_name ?? '').trim();
+    } else {
+      const { rows } = await sql`
+        SELECT school_name FROM gradebook_settings WHERE teacher_id = ${teacherId} LIMIT 1
+      `;
+      verifiedName = String(rows[0]?.school_name ?? '').trim();
+    }
     if (verifiedName === schoolName) break;
   }
 
   if (verifiedName !== schoolName) {
     throw new Error(
-      `School name did not stick after save (still “${verifiedName || '(empty)'}”). Try Save again.`
+      `School name did not stick after save (students would still see “${verifiedName || '(empty)'}”). Try Save again.`
     );
   }
 
@@ -312,6 +350,7 @@ export async function getTeacherIdByGradesSlug(slug: string): Promise<string | n
   await ensureGradebookSchema();
   const normalized = normalizeGradesSlug(slug);
   if (!normalized) return null;
+  await repairStuckSchoolNameForSlug(normalized);
   const { rows } = await sql`
     SELECT teacher_id FROM gradebook_settings
     WHERE grades_slug = ${normalized}
@@ -323,9 +362,19 @@ export async function getTeacherIdByGradesSlug(slug: string): Promise<string | n
 export async function getGradebookSettingsBySlug(
   slug: string
 ): Promise<GradebookSettings | null> {
-  const teacherId = await getTeacherIdByGradesSlug(slug);
-  if (!teacherId) return null;
-  return getGradebookSettings(teacherId);
+  await ensureGradebookSchema();
+  const normalized = normalizeGradesSlug(slug);
+  if (!normalized) return null;
+  await repairStuckSchoolNameForSlug(normalized);
+
+  // Read the slug row directly so student pages cannot pick up a different teacher_id row.
+  const { rows } = await sql`
+    SELECT * FROM gradebook_settings
+    WHERE grades_slug = ${normalized}
+    LIMIT 1
+  `;
+  if (rows.length === 0) return null;
+  return rowToSettings(rows[0]);
 }
 
 export async function listGradebookTasks(): Promise<GradebookTaskOption[]> {
