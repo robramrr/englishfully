@@ -27,7 +27,9 @@ export async function GET(_request: Request, { params }: RouteParams) {
       },
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          Pragma: 'no-cache',
+          Expires: '0',
         },
       }
     );

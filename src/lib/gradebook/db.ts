@@ -247,7 +247,7 @@ export async function saveGradebookSettings(
     }
   }
 
-  // Ensure a row exists, then UPDATE display fields explicitly (avoids stale upsert races).
+  // Ensure a row exists, then update semester/year/slug first.
   await sql`
     INSERT INTO gradebook_settings (
       teacher_id, school_year, active_semester, grades_slug, school_name, roll_lookup_open, updated_at
@@ -264,20 +264,46 @@ export async function saveGradebookSettings(
       school_year = ${schoolYear},
       active_semester = ${semester},
       grades_slug = ${gradesSlug},
-      school_name = ${schoolName},
       roll_lookup_open = ${rollLookupOpen},
       updated_at = NOW()
     WHERE teacher_id = ${teacherId}
   `;
 
+  // Write school_name LAST (like Learn title) so a stale in-flight save cannot wipe it,
+  // then verify the DB actually has the intended value.
+  let verifiedName = '';
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const identityResult = await sql`
+      UPDATE gradebook_settings
+      SET
+        school_name = ${schoolName},
+        updated_at = NOW()
+      WHERE teacher_id = ${teacherId}
+    `;
+    if ((identityResult.rowCount ?? 0) < 1) {
+      throw new Error('Failed to save school name (settings row not updated).');
+    }
+
+    const { rows } = await sql`
+      SELECT school_name FROM gradebook_settings WHERE teacher_id = ${teacherId} LIMIT 1
+    `;
+    verifiedName = String(rows[0]?.school_name ?? '').trim();
+    if (verifiedName === schoolName) break;
+  }
+
+  if (verifiedName !== schoolName) {
+    throw new Error(
+      `School name did not stick after save (still “${verifiedName || '(empty)'}”). Try Save again.`
+    );
+  }
+
   const saved = await getGradebookSettings(teacherId);
-  // Guarantee the response matches what we just wrote (in case of replica lag, still return intended values).
   return {
     ...saved,
     school_year: schoolYear,
     active_semester: semester,
     grades_slug: gradesSlug,
-    school_name: schoolName,
+    school_name: verifiedName,
     roll_lookup_open: rollLookupOpen,
   };
 }

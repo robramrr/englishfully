@@ -46,7 +46,10 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
     setLoadingClasses(true);
     setNotFound(false);
     setError('');
-    fetch(`/api/grades/${encodeURIComponent(schoolSlug)}/classes`, { cache: 'no-store' })
+    fetch(`/api/grades/${encodeURIComponent(schoolSlug)}/classes?_=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+    })
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) {
@@ -56,7 +59,7 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
         }
         const next = (data.classes || []) as PublicClassOption[];
         setClasses(next);
-        setSchoolName(String(data.school_name || schoolSlug));
+        setSchoolName(String(data.school_name || schoolSlug).trim());
         if (next.length > 0) setClassId(next[0].id);
       })
       .catch(() => {

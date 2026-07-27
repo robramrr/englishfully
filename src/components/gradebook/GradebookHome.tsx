@@ -145,7 +145,7 @@ export default function GradebookHome() {
     setSaveMessage('');
     // Bump generation so any in-flight overview fetch cannot overwrite this save.
     loadGenerationRef.current += 1;
-    const nameToSave = schoolNameRef.current;
+    const nameToSave = schoolNameRef.current.trim();
     const slugToSave = gradesSlugRef.current;
     const openToSave = rollLookupOpenRef.current;
     try {
@@ -171,10 +171,29 @@ export default function GradebookHome() {
       setSchoolName(saved.school_name || nameToSave);
       setGradesSlug(saved.grades_slug || slugToSave);
       setRollLookupOpen(Boolean(saved.roll_lookup_open));
+
+      // Confirm what the student API actually returns (same source as /grades/spk).
+      let liveStudentName = saved.school_name || nameToSave;
+      const liveSlug = saved.grades_slug || slugToSave;
+      if (liveSlug) {
+        try {
+          const live = await fetch(
+            `/api/grades/${encodeURIComponent(liveSlug)}/classes?_=${Date.now()}`,
+            { cache: 'no-store' }
+          );
+          if (live.ok) {
+            const liveData = await live.json();
+            liveStudentName = String(liveData.school_name || liveStudentName);
+          }
+        } catch {
+          // ignore live check failures
+        }
+      }
+
       setSaveMessage(
         saved.roll_lookup_open
-          ? `Saved. Temporary open lookup is ON — students still enter 5 digits; you’ll see what they typed below. Lock it again when you’re done.`
-          : `Saved. Students see “${saved.school_name || nameToSave || 'Check My Grades'}” at /grades/${saved.grades_slug || slugToSave || '…'}. Roll lookup is locked (strict).`
+          ? `Saved. Temporary open lookup is ON. Students see “${liveStudentName || 'Check My Grades'}” at /grades/${liveSlug || '…'}.`
+          : `Saved. Students see “${liveStudentName || 'Check My Grades'}” at /grades/${liveSlug || '…'}. Roll lookup is locked (strict).`
       );
       // Refresh class cards only — keep the display fields we just saved.
       await loadOverview(saved.active_semester, saved.school_year, {
@@ -242,7 +261,9 @@ export default function GradebookHome() {
   async function handleSemesterChange(next: GradebookSemester) {
     setSemester(next);
     setLoaded(false);
-    await loadOverview(next, schoolYear);
+    // Keep school name / slug / roll toggle — reloading them from a stale overview
+    // was putting the old student header back into the form (and a later Save wrote it back).
+    await loadOverview(next, schoolYear, { preserveDisplayFields: true });
   }
 
   return (

@@ -1,7 +1,5 @@
 'use client';
 
-import ComicText from '../../../components/ComicText';
-import ComicTitle from '../../../components/ComicTitle';
 import StudentGradeLookup from '../../../components/gradebook/StudentGradeLookup';
 
 interface SchoolGradesPageProps {
