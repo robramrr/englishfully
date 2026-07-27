@@ -1016,11 +1016,15 @@ export async function lookupStudentGrades(params: {
       };
     });
 
-  // Include assigned-but-missing tasks in the possible total (e.g. 10/20, not 10/10).
+  // Assigned tasks count toward possible. Makeup rows do not increase the denominator —
+  // they only add earned points when completed (recovering the failed assessment's points).
   let totalEarned = 0;
   let totalPossible = 0;
   for (const task of tasks) {
-    totalPossible += Math.max(0, task.max_points || 0);
+    const isMakeup = task.tool === 'listen_and_learn' || Boolean(task.makeup_for_task_id);
+    if (!isMakeup) {
+      totalPossible += Math.max(0, task.max_points || 0);
+    }
     if (task.status === 'graded' && task.points != null) {
       totalEarned += task.points;
     }
