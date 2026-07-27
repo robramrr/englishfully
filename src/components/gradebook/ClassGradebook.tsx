@@ -61,6 +61,8 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
   const [draftScores, setDraftScores] = useState<Record<string, string>>({});
   const [draftCorrect, setDraftCorrect] = useState<Record<string, string>>({});
   const [draftTotal, setDraftTotal] = useState<Record<string, string>>({});
+  const [draftRolls, setDraftRolls] = useState<Record<string, string>>({});
+  const [savingRollNumber, setSavingRollNumber] = useState<string | null>(null);
   const [submittedNumbers, setSubmittedNumbers] = useState<Set<string>>(new Set());
 
   const filteredTasks = useMemo(
@@ -91,6 +93,11 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
     setSeats(data.seats || []);
     setTaskColumns(data.task_columns || []);
     setAvailableTasks(data.available_tasks || []);
+    const nextRolls: Record<string, string> = {};
+    for (const seat of (data.seats || []) as GradebookSeat[]) {
+      nextRolls[seat.student_number] = seat.roll_number || '';
+    }
+    setDraftRolls(nextRolls);
     if (!schoolYear && data.settings.school_year) {
       setSchoolYear(data.settings.school_year);
     }
@@ -200,6 +207,51 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
       setError(err instanceof Error ? err.message : 'Failed to clear grade');
     } finally {
       setSavingNumber(null);
+    }
+  }
+
+  async function saveRollNumber(studentNumber: string, rawValue: string) {
+    const digits = rawValue.replace(/\D/g, '').slice(0, 5);
+    setDraftRolls((prev) => ({ ...prev, [studentNumber]: digits }));
+    const current = seats.find((seat) => seat.student_number === studentNumber)?.roll_number || '';
+    if (digits === (current || '')) return;
+    if (digits && digits.length !== 5) {
+      setError('Roll number must be exactly 5 digits (or leave blank).');
+      return;
+    }
+
+    setSavingRollNumber(studentNumber);
+    setError('');
+    try {
+      const response = await fetch('/api/gradebook/roster', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          class_id: classId,
+          class_label: classLabel,
+          student_number: studentNumber,
+          roll_number: digits,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to save roll number');
+      setSeats((prev) =>
+        prev.map((seat) =>
+          seat.student_number === studentNumber
+            ? { ...seat, roll_number: data.roster?.roll_number || null }
+            : seat
+        )
+      );
+      setMessage(
+        digits
+          ? `Saved roll #${digits} for student #${studentNumber}`
+          : `Cleared roll number for #${studentNumber}`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save roll number');
+      setDraftRolls((prev) => ({ ...prev, [studentNumber]: current }));
+    } finally {
+      setSavingRollNumber(null);
     }
   }
 
@@ -525,6 +577,11 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
             Speak submissions
           </ComicButton>
         </Link>
+        <Link href="/grades" target="_blank">
+          <ComicButton variant="warning" size="sm">
+            Student grade lookup
+          </ComicButton>
+        </Link>
       </div>
 
       <ComicCard className="comic-shadow-xl">
@@ -561,7 +618,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
       </ComicCard>
 
       <ComicCard className="comic-shadow-xl">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
           <ComicTitle level={3} className="comic-title-no-shadow text-[var(--comic-secondary)]">
             Enter Grades
           </ComicTitle>
@@ -579,6 +636,10 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
             </Link>
           ) : null}
         </div>
+        <ComicText className="mb-4 text-[var(--comic-dark)] font-bold text-sm">
+          Set each student’s 5-digit roll number in the Roll # column (used only for the student
+          grade lookup page). Speak &amp; Listen tools stay unchanged.
+        </ComicText>
         <div className={`grid gap-4 mb-4 ${isListen ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
           <div>
             <ComicText className="font-bold mb-1 text-sm">Tool</ComicText>
@@ -743,6 +804,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                 <tr className="border-b-4 border-[var(--comic-black)] text-left">
                   <th className="py-2 pr-3">#</th>
                   <th className="py-2 pr-3">Name</th>
+                  <th className="py-2 pr-3">Roll #</th>
                   {tool === 'speak_and_submit' ? (
                     <th className="py-2 pr-3">Recording</th>
                   ) : null}
@@ -792,6 +854,26 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                     >
                       <td className="py-2 pr-3 font-bold">{seat.student_number}</td>
                       <td className="py-2 pr-3">{seat.display_name || '—'}</td>
+                      <td className="py-2 pr-3">
+                        <input
+                          className="comic-input w-24 tracking-wider font-bold"
+                          inputMode="numeric"
+                          maxLength={5}
+                          placeholder="12345"
+                          value={draftRolls[seat.student_number] ?? ''}
+                          disabled={savingRollNumber === seat.student_number}
+                          onChange={(event) =>
+                            setDraftRolls((prev) => ({
+                              ...prev,
+                              [seat.student_number]: event.target.value.replace(/\D/g, '').slice(0, 5),
+                            }))
+                          }
+                          onBlur={(event) =>
+                            void saveRollNumber(seat.student_number, event.target.value)
+                          }
+                          aria-label={`Roll number for ${seat.student_number}`}
+                        />
+                      </td>
                       {tool === 'speak_and_submit' ? (
                         <td className="py-2 pr-3">
                           {hasRecording ? (

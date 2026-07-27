@@ -86,6 +86,11 @@ export default function GradebookHome() {
             Speak &amp; Submit classes
           </ComicButton>
         </Link>
+        <Link href="/grades" target="_blank">
+          <ComicButton variant="warning" size="sm">
+            Student grade lookup
+          </ComicButton>
+        </Link>
       </div>
 
       <ComicCard className="comic-shadow-xl">
@@ -150,8 +155,12 @@ export default function GradebookHome() {
           Classes
         </ComicTitle>
         <ComicText className="mb-6 text-[var(--comic-dark)]">
-          Classes come from your Speak &amp; Submit settings. Open a class to enter grades for Speak
-          &amp; Submit or Listen &amp; Answer tasks.
+          Classes come from your Speak &amp; Submit settings. Open a class to enter grades and set
+          each student’s 5-digit roll number. Students can check grades at{' '}
+          <Link href="/grades" className="underline font-black">
+            /grades
+          </Link>
+          .
         </ComicText>
 
         {!loaded ? (

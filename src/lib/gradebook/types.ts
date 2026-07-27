@@ -59,6 +59,8 @@ export interface GradebookClassSummary {
 export interface GradebookSeat {
   student_number: string;
   display_name: string | null;
+  /** 5-digit roll number used for student grade lookup (optional until teacher sets it). */
+  roll_number: string | null;
   entries_by_task: Record<string, GradebookEntry>;
   total_earned: number;
   total_possible: number;
@@ -93,6 +95,41 @@ export interface UpsertGradeEntryPayload {
 export interface SaveGradebookSettingsPayload {
   school_year: string;
   active_semester: GradebookSemester;
+}
+
+export interface UpsertRosterRollPayload {
+  class_id: string;
+  class_label: string;
+  student_number: string;
+  roll_number: string;
+}
+
+export interface StudentGradeLookupResult {
+  class_label: string;
+  school_year: string;
+  semester: GradebookSemester;
+  student_number: string;
+  display_name: string | null;
+  tasks: Array<{
+    tool: GradebookTool;
+    task_title: string;
+    points: number;
+    max_points: number;
+    test_correct: number | null;
+    test_total: number | null;
+  }>;
+  total_earned: number;
+  total_possible: number;
+  percent_label: string;
+}
+
+export function normalizeRollNumber(value: unknown): string {
+  const digits = String(value ?? '').replace(/\D/g, '');
+  return digits.slice(0, 5);
+}
+
+export function isValidRollNumber(value: unknown): boolean {
+  return /^\d{5}$/.test(normalizeRollNumber(value));
 }
 
 export function getCurrentSchoolYear(date = new Date()): string {

@@ -15,13 +15,18 @@ import type {
   GradebookTool,
   SaveGradebookSettingsPayload,
   UpsertGradeEntryPayload,
+  UpsertRosterRollPayload,
+  StudentGradeLookupResult,
 } from './types';
 import {
   DEFAULT_MAX_POINTS,
   buildStudentRoster,
   clampPoints,
+  formatPercent,
   getCurrentSchoolYear,
   gradePointsFromTestScore,
+  isValidRollNumber,
+  normalizeRollNumber,
   parseSemester,
   taskKey,
   clampPassPercent,
@@ -76,6 +81,26 @@ export async function ensureGradebookSchema(): Promise<void> {
       await sql`
         ALTER TABLE gradebook_entries
         ADD COLUMN IF NOT EXISTS test_total DOUBLE PRECISION
+      `;
+      await sql`
+        CREATE TABLE IF NOT EXISTS gradebook_roster (
+          id TEXT PRIMARY KEY,
+          teacher_id TEXT NOT NULL DEFAULT 'default',
+          class_id TEXT NOT NULL,
+          class_label TEXT NOT NULL DEFAULT '',
+          student_number TEXT NOT NULL,
+          roll_number TEXT NOT NULL DEFAULT '',
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          UNIQUE (teacher_id, class_id, student_number)
+        )
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_gradebook_roster_lookup
+        ON gradebook_roster(teacher_id, class_id, student_number)
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_gradebook_roster_roll
+        ON gradebook_roster(teacher_id, class_id, roll_number)
       `;
     })();
   }
@@ -360,6 +385,8 @@ export async function getClassGradebook(
     }
   }
 
+  const rollByStudent = await getClassRollMap(classId, teacherId);
+
   const seats: GradebookSeat[] = roster.map((studentNumber) => {
     const seatEntries = entries.filter((entry) => entry.student_number === studentNumber);
     const entriesByTask: Record<string, GradebookEntry> = {};
@@ -370,9 +397,11 @@ export async function getClassGradebook(
       totalEarned += entry.points;
       totalPossible += entry.max_points;
     }
+    const roll = rollByStudent.get(studentNumber) || '';
     return {
       student_number: studentNumber,
       display_name: nameByStudent.get(studentNumber) ?? null,
+      roll_number: roll || null,
       entries_by_task: entriesByTask,
       total_earned: totalEarned,
       total_possible: totalPossible,
@@ -526,4 +555,157 @@ export async function getSpeakSubmissionNumbersForTask(
       .map((item) => normalizeStudentNumber(item.student_number))
   );
   return Array.from(submitted);
+}
+
+async function getClassRollMap(
+  classId: string,
+  teacherId: string = DEFAULT_TEACHER_ID
+): Promise<Map<string, string>> {
+  await ensureGradebookSchema();
+  const { rows } = await sql`
+    SELECT student_number, roll_number
+    FROM gradebook_roster
+    WHERE teacher_id = ${teacherId} AND class_id = ${classId}
+  `;
+  const map = new Map<string, string>();
+  for (const row of rows) {
+    const number = normalizeStudentNumber(String(row.student_number ?? ''));
+    const roll = normalizeRollNumber(row.roll_number);
+    if (number && roll) map.set(number, roll);
+  }
+  return map;
+}
+
+export async function upsertRosterRoll(
+  payload: UpsertRosterRollPayload,
+  teacherId: string = DEFAULT_TEACHER_ID
+): Promise<{ student_number: string; roll_number: string | null }> {
+  await ensureGradebookSchema();
+  const classId = String(payload.class_id || '').trim();
+  const classLabel = String(payload.class_label || '').trim();
+  const studentNumber = normalizeStudentNumber(String(payload.student_number || ''));
+  const rollNumber = normalizeRollNumber(payload.roll_number);
+
+  if (!classId) throw new Error('Class is required');
+  if (!studentNumber) throw new Error('Student number is required');
+  if (rollNumber && !isValidRollNumber(rollNumber)) {
+    throw new Error('Roll number must be exactly 5 digits');
+  }
+
+  // Prevent two seats in the same class from sharing a roll number.
+  if (rollNumber) {
+    const { rows: conflicts } = await sql`
+      SELECT student_number FROM gradebook_roster
+      WHERE teacher_id = ${teacherId}
+        AND class_id = ${classId}
+        AND roll_number = ${rollNumber}
+        AND student_number <> ${studentNumber}
+      LIMIT 1
+    `;
+    if (conflicts.length > 0) {
+      throw new Error(`Roll number ${rollNumber} is already used by #${conflicts[0].student_number}`);
+    }
+  }
+
+  const id = nanoid(21);
+  await sql`
+    INSERT INTO gradebook_roster (
+      id, teacher_id, class_id, class_label, student_number, roll_number, updated_at
+    )
+    VALUES (
+      ${id},
+      ${teacherId},
+      ${classId},
+      ${classLabel},
+      ${studentNumber},
+      ${rollNumber},
+      NOW()
+    )
+    ON CONFLICT (teacher_id, class_id, student_number)
+    DO UPDATE SET
+      class_label = EXCLUDED.class_label,
+      roll_number = EXCLUDED.roll_number,
+      updated_at = NOW()
+  `;
+
+  return {
+    student_number: studentNumber,
+    roll_number: rollNumber || null,
+  };
+}
+
+export async function listPublicGradeClasses(
+  teacherId: string = DEFAULT_TEACHER_ID
+): Promise<Array<{ id: string; label: string; letter_enabled: boolean }>> {
+  const entryConfig = await getEntryConfig(teacherId);
+  return entryConfig.classes.map((item) => ({
+    id: item.id,
+    label: item.label,
+    letter_enabled: entryConfig.student_letter_enabled,
+  }));
+}
+
+export async function lookupStudentGrades(params: {
+  classId: string;
+  studentNumber: string;
+  rollNumber: string;
+  semester?: GradebookSemester;
+  schoolYear?: string;
+  teacherId?: string;
+}): Promise<StudentGradeLookupResult | null> {
+  const teacherId = params.teacherId || DEFAULT_TEACHER_ID;
+  await ensureGradebookSchema();
+
+  const classId = String(params.classId || '').trim();
+  const studentNumber = normalizeStudentNumber(params.studentNumber);
+  const rollNumber = normalizeRollNumber(params.rollNumber);
+
+  if (!classId || !studentNumber || !isValidRollNumber(rollNumber)) {
+    return null;
+  }
+
+  const { rows: rosterRows } = await sql`
+    SELECT roll_number, class_label
+    FROM gradebook_roster
+    WHERE teacher_id = ${teacherId}
+      AND class_id = ${classId}
+      AND student_number = ${studentNumber}
+    LIMIT 1
+  `;
+  const roster = rosterRows[0];
+  if (!roster || normalizeRollNumber(roster.roll_number) !== rollNumber) {
+    return null;
+  }
+
+  const gradebook = await getClassGradebook(
+    classId,
+    params.semester,
+    params.schoolYear,
+    teacherId
+  );
+  const seat = gradebook.seats.find((item) => item.student_number === studentNumber);
+  if (!seat) return null;
+
+  const tasks = Object.values(seat.entries_by_task)
+    .sort((a, b) => a.task_title.localeCompare(b.task_title, undefined, { sensitivity: 'base' }))
+    .map((entry) => ({
+      tool: entry.tool,
+      task_title: entry.task_title,
+      points: entry.points,
+      max_points: entry.max_points,
+      test_correct: entry.test_correct,
+      test_total: entry.test_total,
+    }));
+
+  return {
+    class_label: gradebook.class_label || String(roster.class_label || ''),
+    school_year: gradebook.settings.school_year,
+    semester: gradebook.settings.active_semester,
+    student_number: seat.student_number,
+    display_name: seat.display_name,
+    tasks,
+    total_earned: seat.total_earned,
+    total_possible: seat.total_possible,
+    percent_label: formatPercent(seat.total_earned, seat.total_possible),
+  };
 }
