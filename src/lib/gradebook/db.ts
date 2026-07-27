@@ -199,7 +199,7 @@ export async function saveGradebookSettings(
       : current.grades_slug;
   const schoolName =
     payload.school_name !== undefined
-      ? String(payload.school_name).trim().slice(0, 80)
+      ? String(payload.school_name).trim().slice(0, 120)
       : current.school_name;
 
   if (payload.grades_slug !== undefined && gradesSlug && !isValidGradesSlug(gradesSlug)) {
@@ -213,7 +213,7 @@ export async function saveGradebookSettings(
       LIMIT 1
     `;
     if (conflicts.length > 0) {
-      throw new Error('That grades link is already in use. Choose a different school name.');
+      throw new Error('That grades link (/grades/...) is already in use. Choose a different link name.');
     }
   }
 

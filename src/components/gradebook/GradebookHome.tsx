@@ -23,6 +23,7 @@ export default function GradebookHome() {
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [saveMessage, setSaveMessage] = useState('');
 
   const studentGradesPath = useMemo(() => {
     const slug = normalizeGradesSlug(gradesSlug || settings?.grades_slug || '');
@@ -33,19 +34,22 @@ export default function GradebookHome() {
     const params = new URLSearchParams();
     if (nextSemester) params.set('semester', String(nextSemester));
     if (nextYear) params.set('school_year', nextYear);
-    const response = await fetch(`/api/gradebook/overview?${params.toString()}`);
+    const response = await fetch(`/api/gradebook/overview?${params.toString()}`, {
+      cache: 'no-store',
+    });
     if (!response.ok) {
       setError('Failed to load gradebook.');
       setLoaded(true);
       return;
     }
     const data = await response.json();
-    setSettings(data.settings);
+    const nextSettings = data.settings as GradebookSettings;
+    setSettings(nextSettings);
     setClasses(data.classes || []);
-    setSemester(data.settings.active_semester);
-    setSchoolYear(data.settings.school_year);
-    setSchoolName(data.settings.school_name || '');
-    setGradesSlug(data.settings.grades_slug || '');
+    setSemester(nextSettings.active_semester);
+    setSchoolYear(nextSettings.school_year || '');
+    setSchoolName(nextSettings.school_name || '');
+    setGradesSlug(nextSettings.grades_slug || '');
     setError('');
     setLoaded(true);
   }, []);
@@ -57,6 +61,7 @@ export default function GradebookHome() {
   async function handleSaveSettings() {
     setSaving(true);
     setError('');
+    setSaveMessage('');
     try {
       const response = await fetch('/api/gradebook/settings', {
         method: 'PUT',
@@ -67,10 +72,22 @@ export default function GradebookHome() {
           school_name: schoolName,
           grades_slug: gradesSlug,
         }),
+        cache: 'no-store',
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to save settings');
-      await loadOverview(data.settings.active_semester, data.settings.school_year);
+
+      const saved = data.settings as GradebookSettings;
+      // Apply the saved values immediately so the form cannot snap back to stale data.
+      setSettings(saved);
+      setSemester(saved.active_semester);
+      setSchoolYear(saved.school_year || '');
+      setSchoolName(saved.school_name || '');
+      setGradesSlug(saved.grades_slug || '');
+      setSaveMessage(
+        `Saved. Students see “${saved.school_name || 'Check My Grades'}” at /grades/${saved.grades_slug || '…'}.`
+      );
+      await loadOverview(saved.active_semester, saved.school_year);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save settings');
     } finally {
@@ -149,9 +166,16 @@ export default function GradebookHome() {
             <input
               className="w-full comic-input"
               value={schoolName}
-              onChange={(event) => setSchoolName(event.target.value)}
+              onChange={(event) => {
+                setSchoolName(event.target.value);
+                setSaveMessage('');
+              }}
               placeholder="Englishfully Academy"
+              maxLength={120}
             />
+            <ComicText className="text-xs mt-1 text-[var(--comic-dark)]">
+              This name appears on the student grades page (max 120 characters).
+            </ComicText>
           </div>
           <div>
             <ComicText className="font-bold mb-1 text-sm">Grades page link name</ComicText>
@@ -160,7 +184,10 @@ export default function GradebookHome() {
               <input
                 className="w-full comic-input"
                 value={gradesSlug}
-                onChange={(event) => setGradesSlug(normalizeGradesSlug(event.target.value))}
+                onChange={(event) => {
+                  setGradesSlug(normalizeGradesSlug(event.target.value));
+                  setSaveMessage('');
+                }}
                 placeholder="englishfully"
               />
             </div>
@@ -196,7 +223,11 @@ export default function GradebookHome() {
         {settings ? (
           <ComicText className="text-sm mt-4 text-[var(--comic-dark)]">
             Viewing {settings.school_year} · Semester {settings.active_semester}
+            {settings.school_name ? ` · School name: ${settings.school_name}` : ''}
           </ComicText>
+        ) : null}
+        {saveMessage ? (
+          <ComicText className="text-[var(--comic-success)] font-bold mt-4">{saveMessage}</ComicText>
         ) : null}
         {error ? (
           <ComicText className="text-[var(--comic-danger)] font-bold mt-4">{error}</ComicText>

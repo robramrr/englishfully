@@ -24,9 +24,11 @@ const EMPTY_ROLL_DIGITS = ['', '', '', '', ''] as const;
 
 interface StudentGradeLookupProps {
   schoolSlug: string;
+  /** When true, render the page hero using the saved school name once loaded. */
+  showHero?: boolean;
 }
 
-export default function StudentGradeLookup({ schoolSlug }: StudentGradeLookupProps) {
+export default function StudentGradeLookup({ schoolSlug, showHero = false }: StudentGradeLookupProps) {
   const [classes, setClasses] = useState<PublicClassOption[]>([]);
   const [schoolName, setSchoolName] = useState('');
   const [classId, setClassId] = useState('');
@@ -203,9 +205,21 @@ export default function StudentGradeLookup({ schoolSlug }: StudentGradeLookupPro
 
   return (
     <div className="space-y-6">
+      {showHero ? (
+        <section className="comic-bg-secondary py-10 px-4 comic-pattern-dots text-center">
+          <ComicTitle level={2} className="comic-text-white mb-2">
+            📊 {schoolName.trim() || 'Check My Grades'}
+          </ComicTitle>
+          <ComicText className="comic-text-white font-bold">
+            Look up your current gradebook total with your student number and roll number.
+          </ComicText>
+        </section>
+      ) : null}
+
+      <section className={showHero ? 'max-w-3xl mx-auto py-10 px-4 space-y-6' : 'space-y-6'}>
       <ComicCard className="comic-shadow-xl space-y-4">
         <ComicTitle level={3} className="text-[var(--comic-primary)]">
-          {schoolName ? `${schoolName} · Check My Grades` : 'Check My Grades'}
+          Check My Grades
         </ComicTitle>
         <ComicText className="text-[var(--comic-dark)] font-bold">
           Enter your class, student number{letterEnabled ? ' + letter' : ''}, and your 5-digit roll
@@ -400,6 +414,7 @@ export default function StudentGradeLookup({ schoolSlug }: StudentGradeLookupPro
           )}
         </ComicCard>
       ) : null}
+      </section>
     </div>
   );
 }
