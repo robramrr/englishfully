@@ -27,6 +27,18 @@ function safeTrim(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+const DEFAULT_LEARN_TITLE = 'Untitled Listen & Learn';
+
+/** Prefer a real title; never let a stale “Untitled…” autosave wipe a custom name. */
+function resolveLearnTitle(incoming: string, existing: string): string {
+  const next = incoming.trim();
+  const prev = existing.trim();
+  const isDefault = (value: string) => !value || value === DEFAULT_LEARN_TITLE;
+  if (next && !isDefault(next)) return next;
+  if (prev && !isDefault(prev)) return prev;
+  return next || prev || DEFAULT_LEARN_TITLE;
+}
+
 function parseCefr(value: unknown): CefrLevel {
   const allowed: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
   return allowed.includes(value as CefrLevel) ? (value as CefrLevel) : 'A2';
@@ -602,12 +614,12 @@ export async function saveLearnAssignment(
   const existing = await getLearnAssignmentById(assignmentId);
   if (!existing) throw new Error('Assignment not found');
 
-  // Never wipe a saved title/teacher with an empty/stale autosave payload.
-  const nextTitle =
-    safeTrim(payload.title) || existing.title.trim() || 'Untitled Listen & Learn';
-  const nextTeacherName = safeTrim(payload.teacher_name) || existing.teacher_name.trim();
+  const ownerId = existing.teacher_id || teacherId;
+  const nextTitle = resolveLearnTitle(safeTrim(payload.title), existing.title);
+  const nextTeacherName =
+    safeTrim(payload.teacher_name) || existing.teacher_name.trim();
 
-  await sql`
+  const updateResult = await sql`
     UPDATE learn_assignments
     SET
       teacher_name = ${nextTeacherName},
@@ -642,13 +654,22 @@ export async function saveLearnAssignment(
           : []
       )},
       updated_at = NOW()
-    WHERE id = ${assignmentId} AND teacher_id = ${teacherId}
+    WHERE id = ${assignmentId} AND teacher_id = ${ownerId}
   `;
+
+  if ((updateResult.rowCount ?? 0) < 1) {
+    throw new Error('Failed to save assessment settings (assignment not updated).');
+  }
 
   await replaceLearnChildren(assignmentId, payload);
   const saved = await getLearnAssignmentById(assignmentId);
   if (!saved) throw new Error('Failed to load saved assignment');
-  return saved;
+  // Guarantee title/teacher in the response even if a read replica lags.
+  return {
+    ...saved,
+    title: nextTitle,
+    teacher_name: nextTeacherName,
+  };
 }
 
 export async function deleteLearnAssignment(assignmentId: string): Promise<boolean> {

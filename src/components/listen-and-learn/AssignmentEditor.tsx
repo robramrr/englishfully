@@ -353,10 +353,20 @@ export default function AssignmentEditor({
   }, []);
 
   const applySavedChildren = useCallback((assignment: LearnAssignmentWithDetails) => {
-    // Keep display fields in sync with what the server actually stored.
-    setTitle(assignment.title || '');
-    setTeacherName(assignment.teacher_name || '');
-    setClassName(assignment.class_name || '');
+    // Do NOT reset title/teacher/class from the server response here — a lagged read
+    // was putting “Untitled Listen & Learn” / old teacher back into the form, then
+    // autosave wrote those defaults over the real values.
+    if (assignment.title?.trim()) {
+      setTitle(assignment.title);
+      formValuesRef.current = { ...formValuesRef.current, title: assignment.title };
+    }
+    if (assignment.teacher_name?.trim()) {
+      setTeacherName(assignment.teacher_name);
+      formValuesRef.current = {
+        ...formValuesRef.current,
+        teacherName: assignment.teacher_name,
+      };
+    }
     // Keep any local image URLs if the server response is missing them (stale write).
     setVocabulary((previous) => {
       const fromServer = toClientVocabulary(assignment);
