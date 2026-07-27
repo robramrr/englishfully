@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import { Fredoka, Bungee, Comic_Neue } from "next/font/google";
+import { config } from "@fortawesome/fontawesome-svg-core";
+import "@fortawesome/fontawesome-svg-core/styles.css";
 import "./globals.css";
 import HeaderWrapper from "../components/HeaderWrapper";
 import { I18nProvider } from "../i18n/I18nProvider";
+
+config.autoAddCss = false;
 
 const fredoka = Fredoka({
   variable: "--font-fredoka",

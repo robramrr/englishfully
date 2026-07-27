@@ -110,7 +110,11 @@ function ResourceCategoriesSection() {
             <Link href="/teacher-resources/listen-and-learn">
               <ComicButton variant="warning" size="sm">
                 <span className="inline-flex items-center gap-2">
-                  <FontAwesomeIcon icon={faHeadphones} aria-hidden />
+                  <FontAwesomeIcon
+                    icon={faHeadphones}
+                    aria-hidden
+                    className="h-[1em] w-[1em] shrink-0"
+                  />
                   {t.teacherResources.listenAndLearnButton}
                 </span>
               </ComicButton>

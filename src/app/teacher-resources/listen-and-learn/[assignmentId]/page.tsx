@@ -67,7 +67,11 @@ export default function ListenAndLearnEditorPage({ params }: EditorPageProps) {
       <section className="comic-bg-secondary py-12 px-4 comic-pattern-dots text-center">
         <ComicTitle level={2} className="comic-text-white mb-2">
           <span className="inline-flex items-center justify-center gap-3">
-            <FontAwesomeIcon icon={faHeadphones} aria-hidden className="text-[0.85em]" />
+            <FontAwesomeIcon
+              icon={faHeadphones}
+              aria-hidden
+              className="h-[0.85em] w-[0.85em] shrink-0"
+            />
             <span>Listen &amp; Learn Editor</span>
           </span>
         </ComicTitle>

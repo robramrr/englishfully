@@ -214,7 +214,11 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
         <section className="comic-bg-secondary py-10 px-4 comic-pattern-dots text-center">
           <ComicTitle level={2} className="comic-text-white mb-2">
             <span className="inline-flex items-center justify-center gap-3">
-              <FontAwesomeIcon icon={faGraduationCap} aria-hidden className="text-[0.85em]" />
+              <FontAwesomeIcon
+                icon={faGraduationCap}
+                aria-hidden
+                className="h-[0.85em] w-[0.85em] shrink-0"
+              />
               <span>{schoolName.trim() || 'Check My Grades'}</span>
             </span>
           </ComicTitle>

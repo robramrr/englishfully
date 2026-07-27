@@ -92,7 +92,11 @@ export default function ListenAndLearnPage() {
       <section className="comic-bg-secondary py-16 px-4 comic-pattern-dots text-center">
         <ComicTitle level={1} className="comic-text-white mb-4">
           <span className="inline-flex items-center justify-center gap-3">
-            <FontAwesomeIcon icon={faHeadphones} aria-hidden className="text-[0.85em]" />
+            <FontAwesomeIcon
+              icon={faHeadphones}
+              aria-hidden
+              className="h-[0.85em] w-[0.85em] shrink-0"
+            />
             <span>Listen &amp; Learn</span>
           </span>
         </ComicTitle>

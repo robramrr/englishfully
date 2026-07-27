@@ -16,7 +16,11 @@ export default function ListenLearnStudentPage({ params }: StudentPageProps) {
       <section className="comic-bg-secondary py-10 px-4 comic-pattern-dots text-center">
         <ComicTitle level={2} className="comic-text-white mb-2">
           <span className="inline-flex items-center justify-center gap-3">
-            <FontAwesomeIcon icon={faHeadphones} aria-hidden className="text-[0.85em]" />
+            <FontAwesomeIcon
+              icon={faHeadphones}
+              aria-hidden
+              className="h-[0.85em] w-[0.85em] shrink-0"
+            />
             <span>Listen &amp; Learn</span>
           </span>
         </ComicTitle>
