@@ -78,6 +78,15 @@ export interface LearnAssignment {
   randomize_questions: boolean;
   randomize_answers: boolean;
   status: 'draft' | 'published';
+  /** When true, passing this Learn credits a separate makeup gradebook row. */
+  makeup_enabled: boolean;
+  /** Listen & Answer assessment id this makeup is for. */
+  makeup_listen_assignment_id: string;
+  /**
+   * Class labels (Speak/entry config) allowed to earn makeup.
+   * Empty array = all classes that failed the tied assessment.
+   */
+  makeup_class_names: string[];
   created_at: string;
   updated_at: string;
 }
@@ -138,6 +147,9 @@ export interface SaveLearnAssignmentPayload {
   randomize_questions: boolean;
   randomize_answers: boolean;
   status: 'draft' | 'published';
+  makeup_enabled?: boolean;
+  makeup_listen_assignment_id?: string;
+  makeup_class_names?: string[];
   vocabulary: Array<{
     id?: string;
     word: string;

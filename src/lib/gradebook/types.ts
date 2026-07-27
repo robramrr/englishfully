@@ -1,11 +1,16 @@
-export type GradebookTool = 'speak_and_submit' | 'listen_and_answer';
+export type GradebookTool = 'speak_and_submit' | 'listen_and_answer' | 'listen_and_learn';
 export type GradebookSemester = 1 | 2;
 
-export const GRADEBOOK_TOOLS: GradebookTool[] = ['speak_and_submit', 'listen_and_answer'];
+export const GRADEBOOK_TOOLS: GradebookTool[] = [
+  'speak_and_submit',
+  'listen_and_answer',
+  'listen_and_learn',
+];
 
 export const GRADEBOOK_TOOL_LABELS: Record<GradebookTool, string> = {
   speak_and_submit: 'Speak & Submit',
   listen_and_answer: 'Listen & Answer',
+  listen_and_learn: 'Listen & Learn',
 };
 
 export const DEFAULT_MAX_POINTS = 10;
@@ -147,6 +152,8 @@ export interface StudentGradeLookupResult {
     submitted: boolean;
     /** Student-facing assignment URL when available (e.g. /speak/...). */
     student_url: string | null;
+    /** When set, this row is makeup for the given Listen & Answer task id. */
+    makeup_for_task_id?: string | null;
   }>;
   total_earned: number;
   total_possible: number;

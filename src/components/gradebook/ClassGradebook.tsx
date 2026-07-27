@@ -652,6 +652,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
             >
               <option value="speak_and_submit">{GRADEBOOK_TOOL_LABELS.speak_and_submit}</option>
               <option value="listen_and_answer">{GRADEBOOK_TOOL_LABELS.listen_and_answer}</option>
+              <option value="listen_and_learn">{GRADEBOOK_TOOL_LABELS.listen_and_learn}</option>
             </select>
           </div>
           <div>

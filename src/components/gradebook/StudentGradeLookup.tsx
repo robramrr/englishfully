@@ -359,16 +359,35 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
                 <tbody>
                   {grade.tasks.map((task) => {
                     const isAssessment = task.tool === 'listen_and_answer';
+                    const isMakeup = task.tool === 'listen_and_learn' || Boolean(task.makeup_for_task_id);
                     const testLabel = formatTestScore(task.test_correct, task.test_total);
+                    const earnedFull =
+                      task.status === 'graded' &&
+                      task.points != null &&
+                      task.points >= (task.max_points || 0);
                     let statusNode: ReactNode;
                     if (task.status === 'graded') {
-                      statusNode = (
-                        <span className="text-[var(--comic-success)]">
-                          {isAssessment && testLabel !== '—'
-                            ? `Graded - ${testLabel}`
-                            : 'Graded'}
-                        </span>
-                      );
+                      if (isAssessment && testLabel !== '—') {
+                        statusNode = (
+                          <span
+                            className={
+                              earnedFull
+                                ? 'text-[var(--comic-success)]'
+                                : 'text-[var(--comic-danger)]'
+                            }
+                          >
+                            {earnedFull ? `Graded - ${testLabel}` : `Failed - ${testLabel}`}
+                          </span>
+                        );
+                      } else if (isMakeup) {
+                        statusNode = (
+                          <span className="text-[var(--comic-success)]">Makeup completed</span>
+                        );
+                      } else {
+                        statusNode = (
+                          <span className="text-[var(--comic-success)]">Graded</span>
+                        );
+                      }
                     } else if (task.submitted) {
                       statusNode = (
                         <span className="text-[var(--comic-warning)]">Submitted</span>
@@ -381,7 +400,7 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
                           rel="noopener noreferrer"
                           className="underline text-[var(--comic-danger)]"
                         >
-                          Not turned in — open task
+                          {isMakeup ? 'Open makeup' : 'Not turned in — open task'}
                         </a>
                       );
                     } else {

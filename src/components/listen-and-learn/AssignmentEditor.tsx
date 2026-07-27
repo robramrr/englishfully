@@ -115,6 +115,9 @@ function buildPayload(
     randomizeQuestions: boolean;
     randomizeAnswers: boolean;
     status: 'draft' | 'published';
+    makeupEnabled: boolean;
+    makeupListenAssignmentId: string;
+    makeupClassNames: string[];
   },
   vocabulary: ClientLearnVocabulary[],
   segments: ClientLearnSegment[],
@@ -139,6 +142,9 @@ function buildPayload(
     randomize_questions: values.randomizeQuestions,
     randomize_answers: values.randomizeAnswers,
     status: values.status,
+    makeup_enabled: values.makeupEnabled,
+    makeup_listen_assignment_id: values.makeupListenAssignmentId,
+    makeup_class_names: values.makeupClassNames,
     vocabulary: vocabulary.map((item) => ({
       id: item.id || item.clientId,
       word: item.word,
@@ -210,6 +216,19 @@ export default function AssignmentEditor({
   );
   const [randomizeAnswers, setRandomizeAnswers] = useState(initialAssignment.randomize_answers);
   const [status, setStatus] = useState<'draft' | 'published'>(initialAssignment.status);
+  const [makeupEnabled, setMakeupEnabled] = useState(
+    Boolean(initialAssignment.makeup_enabled)
+  );
+  const [makeupListenAssignmentId, setMakeupListenAssignmentId] = useState(
+    initialAssignment.makeup_listen_assignment_id || ''
+  );
+  const [makeupClassNames, setMakeupClassNames] = useState<string[]>(
+    initialAssignment.makeup_class_names || []
+  );
+  const [listenAssessments, setListenAssessments] = useState<
+    Array<{ id: string; title: string; class_name: string }>
+  >([]);
+  const [speakClasses, setSpeakClasses] = useState<Array<{ id: string; label: string }>>([]);
   const [vocabulary, setVocabulary] = useState<ClientLearnVocabulary[]>(() =>
     toClientVocabulary(initialAssignment)
   );
@@ -255,6 +274,9 @@ export default function AssignmentEditor({
     randomizeQuestions,
     randomizeAnswers,
     status,
+    makeupEnabled,
+    makeupListenAssignmentId,
+    makeupClassNames,
   });
 
   const formValues = useMemo(
@@ -277,6 +299,9 @@ export default function AssignmentEditor({
       randomizeQuestions,
       randomizeAnswers,
       status,
+      makeupEnabled,
+      makeupListenAssignmentId,
+      makeupClassNames,
     }),
     [
       teacherName,
@@ -297,6 +322,9 @@ export default function AssignmentEditor({
       randomizeQuestions,
       randomizeAnswers,
       status,
+      makeupEnabled,
+      makeupListenAssignmentId,
+      makeupClassNames,
     ]
   );
 
@@ -444,6 +472,48 @@ export default function AssignmentEditor({
       cancelled = true;
     };
   }, [assignmentId, status]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.all([
+      fetch('/api/listen-and-answer/assignments', { cache: 'no-store' }),
+      fetch('/api/speak-and-submit/settings', { cache: 'no-store' }),
+    ])
+      .then(async ([listenResponse, settingsResponse]) => {
+        if (cancelled) return;
+        if (listenResponse.ok) {
+          const data = await listenResponse.json();
+          const next = ((data.assignments || []) as Array<{
+            id: string;
+            title: string;
+            class_name: string;
+          }>).map((item) => ({
+            id: item.id,
+            title: item.title || 'Untitled assessment',
+            class_name: item.class_name || '',
+          }));
+          setListenAssessments(next);
+        }
+        if (settingsResponse.ok) {
+          const data = await settingsResponse.json();
+          const classes = (data.config?.classes || []) as Array<{
+            id: string;
+            label: string;
+          }>;
+          setSpeakClasses(
+            classes
+              .map((item) => ({ id: item.id, label: item.label || '' }))
+              .filter((item) => item.label.trim())
+          );
+        }
+      })
+      .catch(() => {
+        // Makeup options are optional — keep editor usable if these fail.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleManualSave(nextStatus: 'draft' | 'published' = status) {
     statusRef.current = nextStatus;
@@ -799,6 +869,86 @@ export default function AssignmentEditor({
               Auto-save
             </label>
           </div>
+        </div>
+
+        <div className="rounded-lg border-2 border-[var(--comic-dark)] p-4 space-y-3">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-1 h-5 w-5"
+              checked={makeupEnabled}
+              onChange={(event) => setMakeupEnabled(event.target.checked)}
+            />
+            <span>
+              <ComicText className="font-black">Makeup for failed Listen &amp; Answer</ComicText>
+              <ComicText className="text-sm mt-1 text-[var(--comic-dark)]">
+                Students who failed the tied assessment see this on their grades page. When they
+                pass this Listen &amp; Learn, they get a separate makeup score (same max points as
+                the assessment). The original failed test stays failed.
+              </ComicText>
+            </span>
+          </label>
+
+          {makeupEnabled ? (
+            <div className="grid md:grid-cols-2 gap-4 pt-2">
+              <label className="space-y-1 md:col-span-2">
+                <ComicText className="font-black">Tied assessment</ComicText>
+                <select
+                  className="w-full comic-border-thick rounded-md p-3 font-bold"
+                  value={makeupListenAssignmentId}
+                  onChange={(event) => setMakeupListenAssignmentId(event.target.value)}
+                >
+                  <option value="">Select a Listen &amp; Answer assessment…</option>
+                  {listenAssessments.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.title}
+                      {item.class_name ? ` (${item.class_name})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="space-y-2 md:col-span-2">
+                <ComicText className="font-black">Classes who can earn makeup</ComicText>
+                <ComicText className="text-sm text-[var(--comic-dark)]">
+                  Leave all unchecked for every class. Or pick specific classes (from Speak &amp;
+                  Submit class list).
+                </ComicText>
+                {speakClasses.length === 0 ? (
+                  <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+                    No classes found yet. Add classes in Speak &amp; Submit settings.
+                  </ComicText>
+                ) : (
+                  <div className="flex flex-wrap gap-3">
+                    {speakClasses.map((item) => {
+                      const checked = makeupClassNames.includes(item.label);
+                      return (
+                        <label
+                          key={item.id}
+                          className="flex items-center gap-2 font-bold text-[var(--comic-dark)]"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(event) => {
+                              setMakeupClassNames((current) => {
+                                if (event.target.checked) {
+                                  return current.includes(item.label)
+                                    ? current
+                                    : [...current, item.label];
+                                }
+                                return current.filter((label) => label !== item.label);
+                              });
+                            }}
+                          />
+                          {item.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
         </div>
       </ComicCard>
 

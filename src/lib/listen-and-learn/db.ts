@@ -133,6 +133,18 @@ export async function ensureLearnSchema(): Promise<void> {
         ALTER TABLE learn_vocabulary
         ADD COLUMN IF NOT EXISTS image_url TEXT NOT NULL DEFAULT ''
       `;
+      await sql`
+        ALTER TABLE learn_assignments
+        ADD COLUMN IF NOT EXISTS makeup_enabled BOOLEAN NOT NULL DEFAULT FALSE
+      `;
+      await sql`
+        ALTER TABLE learn_assignments
+        ADD COLUMN IF NOT EXISTS makeup_listen_assignment_id TEXT NOT NULL DEFAULT ''
+      `;
+      await sql`
+        ALTER TABLE learn_assignments
+        ADD COLUMN IF NOT EXISTS makeup_class_names TEXT NOT NULL DEFAULT '[]'
+      `;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_segments_assignment ON learn_segments(assignment_id, sort_order)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_questions_assignment ON learn_questions(assignment_id, sort_order)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_vocabulary_assignment ON learn_vocabulary(assignment_id, sort_order)`;
@@ -140,6 +152,26 @@ export async function ensureLearnSchema(): Promise<void> {
     })();
   }
   await schemaReady;
+}
+
+function parseMakeupClassNames(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item ?? '').trim()).filter(Boolean);
+  }
+  const raw = String(value ?? '').trim();
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (Array.isArray(parsed)) {
+      return parsed.map((item) => String(item ?? '').trim()).filter(Boolean);
+    }
+  } catch {
+    // fall through — treat as comma-separated
+  }
+  return raw
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function rowToAssignment(row: Record<string, unknown>): LearnAssignment {
@@ -164,6 +196,9 @@ function rowToAssignment(row: Record<string, unknown>): LearnAssignment {
     randomize_questions: Boolean(row.randomize_questions),
     randomize_answers: Boolean(row.randomize_answers),
     status: row.status === 'published' ? 'published' : 'draft',
+    makeup_enabled: Boolean(row.makeup_enabled),
+    makeup_listen_assignment_id: String(row.makeup_listen_assignment_id ?? '').trim(),
+    makeup_class_names: parseMakeupClassNames(row.makeup_class_names),
     created_at: new Date(row.created_at as string).toISOString(),
     updated_at: new Date(row.updated_at as string).toISOString(),
   };
@@ -245,6 +280,23 @@ export async function listLearnAssignments(
     question_count: Number(row.question_count ?? 0),
     submission_count: Number(row.submission_count ?? 0),
   }));
+}
+
+/** Published Listen & Learn assignments configured as makeup for a failed assessment. */
+export async function listPublishedMakeupAssignments(
+  teacherId: string = DEFAULT_TEACHER_ID
+): Promise<LearnAssignment[]> {
+  await ensureLearnSchema();
+  const { rows } = await sql`
+    SELECT *
+    FROM learn_assignments
+    WHERE teacher_id = ${teacherId}
+      AND status = 'published'
+      AND makeup_enabled = TRUE
+      AND makeup_listen_assignment_id <> ''
+    ORDER BY updated_at DESC
+  `;
+  return rows.map((row) => rowToAssignment(row));
 }
 
 export async function getLearnAssignmentById(
@@ -560,6 +612,19 @@ export async function saveLearnAssignment(
       randomize_questions = ${Boolean(payload.randomize_questions)},
       randomize_answers = ${Boolean(payload.randomize_answers)},
       status = ${payload.status === 'published' ? 'published' : 'draft'},
+      makeup_enabled = ${Boolean(payload.makeup_enabled)},
+      makeup_listen_assignment_id = ${
+        Boolean(payload.makeup_enabled)
+          ? safeTrim(payload.makeup_listen_assignment_id)
+          : ''
+      },
+      makeup_class_names = ${JSON.stringify(
+        Boolean(payload.makeup_enabled)
+          ? (payload.makeup_class_names || [])
+              .map((item) => String(item ?? '').trim())
+              .filter(Boolean)
+          : []
+      )},
       updated_at = NOW()
     WHERE id = ${assignmentId} AND teacher_id = ${teacherId}
   `;
@@ -738,6 +803,24 @@ export async function submitLearnAssignment(
         ${answer.is_correct}
       )
     `;
+  }
+
+  const passed = percent >= assignment.passing_score;
+  if (assignment.makeup_enabled && passed && assignment.makeup_listen_assignment_id) {
+    try {
+      const { creditListenLearnMakeup } = await import('@/lib/gradebook/db');
+      await creditListenLearnMakeup({
+        teacherId: assignment.teacher_id || DEFAULT_TEACHER_ID,
+        learnAssignmentId: assignment.id,
+        learnTitle: assignment.title,
+        makeupListenAssignmentId: assignment.makeup_listen_assignment_id,
+        makeupClassNames: assignment.makeup_class_names,
+        studentNumber,
+        classNumber,
+      });
+    } catch (error) {
+      console.error('Listen & Learn makeup credit failed:', error);
+    }
   }
 
   return {

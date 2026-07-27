@@ -303,10 +303,12 @@ export async function getGradebookSettingsBySlug(
 }
 
 export async function listGradebookTasks(): Promise<GradebookTaskOption[]> {
-  const [speakTasks, listenAssignments] = await Promise.all([
+  const [{ listLearnAssignments }, speakTasks, listenAssignments] = await Promise.all([
+    import('@/lib/listen-and-learn/db'),
     listTasks(),
     listAssignments(),
   ]);
+  const learnAssignments = await listLearnAssignments();
 
   const speakOptions: GradebookTaskOption[] = speakTasks.map((task) => ({
     id: task.id,
@@ -333,7 +335,15 @@ export async function listGradebookTasks(): Promise<GradebookTaskOption[]> {
     };
   });
 
-  return [...speakOptions, ...listenOptions];
+  const learnOptions: GradebookTaskOption[] = learnAssignments.map((assignment) => ({
+    id: assignment.id,
+    title: assignment.title,
+    tool: 'listen_and_learn' as const,
+    class_name: assignment.class_name,
+    question_count: assignment.question_count > 0 ? assignment.question_count : null,
+  }));
+
+  return [...speakOptions, ...listenOptions, ...learnOptions];
 }
 
 export async function getClassOverview(
@@ -548,7 +558,11 @@ export async function upsertGradeEntry(
 ): Promise<GradebookEntry> {
   await ensureGradebookSchema();
 
-  if (payload.tool !== 'speak_and_submit' && payload.tool !== 'listen_and_answer') {
+  if (
+    payload.tool !== 'speak_and_submit' &&
+    payload.tool !== 'listen_and_answer' &&
+    payload.tool !== 'listen_and_learn'
+  ) {
     throw new Error('Invalid tool');
   }
 
@@ -836,12 +850,15 @@ export async function lookupStudentGrades(params: {
     task_title: string;
     max_points: number;
     student_url: string | null;
+    makeup_for_task_id: string | null;
   };
 
   const assigned = new Map<string, AssignedTask>();
 
-  // Tasks created for this class (Speak/Listen), even if nobody has a grade yet.
+  // Tasks created for this class (Speak/Listen & Answer), even if nobody has a grade yet.
+  // Listen & Learn makeups are added separately for students who failed the tied assessment.
   for (const task of gradebook.available_tasks) {
+    if (task.tool === 'listen_and_learn') continue;
     if (task.class_name.trim().toLowerCase() !== classLabelKey) continue;
     const key = taskKey(task.tool, task.id);
     assigned.set(key, {
@@ -850,6 +867,7 @@ export async function lookupStudentGrades(params: {
       task_title: task.title || 'Untitled',
       max_points: DEFAULT_MAX_POINTS,
       student_url: studentUrlForTool(task.tool, task.id),
+      makeup_for_task_id: null,
     });
   }
 
@@ -863,7 +881,46 @@ export async function lookupStudentGrades(params: {
       task_title: column.task_title || existing?.task_title || 'Untitled',
       max_points: Math.max(column.max_points || 0, existing?.max_points || 0, DEFAULT_MAX_POINTS),
       student_url: existing?.student_url ?? studentUrlForTool(column.tool, column.task_id),
+      makeup_for_task_id: existing?.makeup_for_task_id ?? null,
     });
+  }
+
+  // Makeup Listen & Learn: show after a failed Listen & Answer for this seat.
+  try {
+    const { listPublishedMakeupAssignments } = await import('@/lib/listen-and-learn/db');
+    const makeups = await listPublishedMakeupAssignments(teacherId);
+    for (const makeup of makeups) {
+      const allowed = (makeup.makeup_class_names || [])
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean);
+      if (allowed.length > 0 && !allowed.includes(classLabelKey)) continue;
+
+      const failedKey = taskKey('listen_and_answer', makeup.makeup_listen_assignment_id);
+      const failedEntry = seat.entries_by_task[failedKey];
+      const makeupKey = taskKey('listen_and_learn', makeup.id);
+      const makeupEntry = seat.entries_by_task[makeupKey];
+      const failedAssessment =
+        failedEntry &&
+        Number(failedEntry.points ?? 0) < Math.max(DEFAULT_MAX_POINTS, Number(failedEntry.max_points ?? 0));
+
+      if (!failedAssessment && !makeupEntry) continue;
+
+      const maxPoints = Math.max(
+        DEFAULT_MAX_POINTS,
+        Number(failedEntry?.max_points ?? 0),
+        Number(makeupEntry?.max_points ?? 0)
+      );
+      assigned.set(makeupKey, {
+        tool: 'listen_and_learn',
+        task_id: makeup.id,
+        task_title: makeup.title || 'Makeup',
+        max_points: maxPoints,
+        student_url: studentUrlForTool('listen_and_learn', makeup.id),
+        makeup_for_task_id: makeup.makeup_listen_assignment_id,
+      });
+    }
+  } catch (error) {
+    console.error('Listen & Learn makeup lookup failed:', error);
   }
 
   // Speak submission flags for this seat (turned in vs not).
@@ -881,7 +938,28 @@ export async function lookupStudentGrades(params: {
   }
 
   const tasks = Array.from(assigned.values())
-    .sort((a, b) => a.task_title.localeCompare(b.task_title, undefined, { sensitivity: 'base' }))
+    .sort((a, b) => {
+      const aGroup = a.makeup_for_task_id || a.task_id;
+      const bGroup = b.makeup_for_task_id || b.task_id;
+      const aTitle =
+        a.makeup_for_task_id
+          ? assigned.get(taskKey('listen_and_answer', a.makeup_for_task_id))?.task_title || a.task_title
+          : a.task_title;
+      const bTitle =
+        b.makeup_for_task_id
+          ? assigned.get(taskKey('listen_and_answer', b.makeup_for_task_id))?.task_title || b.task_title
+          : b.task_title;
+      if (aGroup !== bGroup) {
+        const titleCmp = aTitle.localeCompare(bTitle, undefined, { sensitivity: 'base' });
+        if (titleCmp !== 0) return titleCmp;
+        return aGroup.localeCompare(bGroup);
+      }
+      // Same group: original assessment first, makeup after.
+      if (Boolean(a.makeup_for_task_id) !== Boolean(b.makeup_for_task_id)) {
+        return a.makeup_for_task_id ? 1 : -1;
+      }
+      return a.task_title.localeCompare(b.task_title, undefined, { sensitivity: 'base' });
+    })
     .map((item) => {
       const key = taskKey(item.tool, item.task_id);
       const entry = seat.entries_by_task[key];
@@ -897,6 +975,7 @@ export async function lookupStudentGrades(params: {
           status: 'graded' as const,
           submitted: true,
           student_url: item.student_url,
+          makeup_for_task_id: item.makeup_for_task_id,
         };
       }
       return {
@@ -910,6 +989,7 @@ export async function lookupStudentGrades(params: {
         status: 'missing' as const,
         submitted: submittedKeys.has(key),
         student_url: item.student_url,
+        makeup_for_task_id: item.makeup_for_task_id,
       };
     });
 
@@ -1004,6 +1084,86 @@ function studentUrlForTool(tool: GradebookTool, taskId: string): string | null {
   if (tool === 'speak_and_submit') {
     return `/speak/${taskId}`;
   }
+  if (tool === 'listen_and_learn') {
+    return `/listen-learn/${taskId}`;
+  }
   // Listen & Answer is print-based today — no student submit URL.
   return null;
+}
+
+/**
+ * After a student passes a Listen & Learn makeup, credit a separate gradebook row
+ * (original Listen & Answer fail stays as recorded).
+ */
+export async function creditListenLearnMakeup(params: {
+  teacherId: string;
+  learnAssignmentId: string;
+  learnTitle: string;
+  makeupListenAssignmentId: string;
+  makeupClassNames: string[];
+  studentNumber: string;
+  classNumber: string;
+}): Promise<boolean> {
+  await ensureGradebookSchema();
+  const teacherId = params.teacherId || DEFAULT_TEACHER_ID;
+  const studentNumber = normalizeStudentNumber(params.studentNumber);
+  const classLabel = params.classNumber.trim();
+  if (!studentNumber || !classLabel) return false;
+
+  const allowedClasses = (params.makeupClassNames || [])
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+  if (
+    allowedClasses.length > 0 &&
+    !allowedClasses.includes(classLabel.toLowerCase())
+  ) {
+    return false;
+  }
+
+  const entryConfig = await getEntryConfig(teacherId);
+  const classOption = entryConfig.classes.find(
+    (item) => item.label.trim().toLowerCase() === classLabel.toLowerCase()
+  );
+  if (!classOption) return false;
+
+  const settings = await getGradebookSettings(teacherId);
+  const schoolYear = settings.school_year;
+  const semester = settings.active_semester;
+
+  // Must have failed (or scored below full points) on the tied Listen & Answer assessment.
+  const { rows: failedRows } = await sql`
+    SELECT points, max_points, task_title
+    FROM gradebook_entries
+    WHERE teacher_id = ${teacherId}
+      AND school_year = ${schoolYear}
+      AND semester = ${semester}
+      AND class_id = ${classOption.id}
+      AND student_number = ${studentNumber}
+      AND tool = 'listen_and_answer'
+      AND task_id = ${params.makeupListenAssignmentId}
+    LIMIT 1
+  `;
+  if (failedRows.length === 0) return false;
+  const failed = failedRows[0];
+  const failedPoints = Number(failed.points ?? 0);
+  const failedMax = Math.max(DEFAULT_MAX_POINTS, Number(failed.max_points ?? DEFAULT_MAX_POINTS));
+  if (failedPoints >= failedMax) return false;
+
+  await upsertGradeEntry(
+    {
+      school_year: schoolYear,
+      semester,
+      class_id: classOption.id,
+      class_label: classOption.label,
+      student_number: studentNumber,
+      tool: 'listen_and_learn',
+      task_id: params.learnAssignmentId,
+      task_title: params.learnTitle.trim() || 'Makeup',
+      points: failedMax,
+      max_points: failedMax,
+      notes: `Makeup for: ${String(failed.task_title || 'assessment')}`,
+    },
+    teacherId
+  );
+  return true;
 }
