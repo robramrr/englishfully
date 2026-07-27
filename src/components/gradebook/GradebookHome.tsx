@@ -26,6 +26,16 @@ export default function GradebookHome() {
   const [claimsLoaded, setClaimsLoaded] = useState(false);
   const [clearingClaims, setClearingClaims] = useState(false);
   const [savingClaimKey, setSavingClaimKey] = useState('');
+  const [activeMakeups, setActiveMakeups] = useState<
+    Array<{
+      id: string;
+      title: string;
+      makeup_listen_title: string;
+      makeup_listen_assignment_id: string;
+      student_url: string;
+    }>
+  >([]);
+  const [makeupsLoaded, setMakeupsLoaded] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -96,6 +106,17 @@ export default function GradebookHome() {
     setClaimsLoaded(true);
   }, []);
 
+  const loadMakeups = useCallback(async () => {
+    const response = await fetch('/api/gradebook/makeups', { cache: 'no-store' });
+    if (!response.ok) {
+      setMakeupsLoaded(true);
+      return;
+    }
+    const data = await response.json();
+    setActiveMakeups(data.makeups || []);
+    setMakeupsLoaded(true);
+  }, []);
+
   const loadOverview = useCallback(
     async (
       nextSemester?: GradebookSemester,
@@ -137,7 +158,8 @@ export default function GradebookHome() {
   useEffect(() => {
     void loadOverview();
     void loadClaims();
-  }, [loadOverview, loadClaims]);
+    void loadMakeups();
+  }, [loadOverview, loadClaims, loadMakeups]);
 
   async function handleSaveSettings() {
     setSaving(true);
@@ -407,6 +429,43 @@ export default function GradebookHome() {
         {error ? (
           <ComicText className="text-[var(--comic-danger)] font-bold mt-4">{error}</ComicText>
         ) : null}
+      </ComicCard>
+
+      <ComicCard className="comic-shadow-xl">
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
+          <ComicTitle level={3} className="text-[var(--comic-secondary)]">
+            Active Listen &amp; Learn makeups
+          </ComicTitle>
+          <ComicButton type="button" variant="accent" size="sm" onClick={() => void loadMakeups()}>
+            Refresh
+          </ComicButton>
+        </div>
+        <ComicText className="mb-4 text-[var(--comic-dark)]">
+          These are published Listen &amp; Learn assignments with makeup turned on. If this list is
+          empty, students who failed will not see a makeup row yet — open the Learn editor, enable
+          makeup, pick the tied assessment, publish, and save.
+        </ComicText>
+        {!makeupsLoaded ? (
+          <ComicText className="font-bold">Loading makeups…</ComicText>
+        ) : activeMakeups.length === 0 ? (
+          <ComicText className="font-bold text-[var(--comic-danger)]">
+            No active makeups found. That is why Student #11B only shows 2 rows (0/20).
+          </ComicText>
+        ) : (
+          <ul className="space-y-3">
+            {activeMakeups.map((makeup) => (
+              <li key={makeup.id} className="border-b border-[var(--comic-dark)]/20 pb-3">
+                <ComicText className="font-black">{makeup.title || 'Untitled makeup'}</ComicText>
+                <ComicText className="text-sm text-[var(--comic-dark)]">
+                  Tied to: {makeup.makeup_listen_title || makeup.makeup_listen_assignment_id || '—'}
+                </ComicText>
+                <Link href={makeup.student_url} className="underline font-bold text-sm" target="_blank">
+                  {makeup.student_url}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </ComicCard>
 
       <ComicCard className="comic-shadow-xl">
