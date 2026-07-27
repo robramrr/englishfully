@@ -168,6 +168,22 @@ export async function ensureLearnSchema(): Promise<void> {
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_questions_assignment ON learn_questions(assignment_id, sort_order)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_vocabulary_assignment ON learn_vocabulary(assignment_id, sort_order)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_submissions_assignment ON learn_submissions(assignment_id, submitted_at DESC)`;
+
+      // One-time repair: this published makeup assignment got stuck on create defaults
+      // after failed identity saves. Safe to re-run (only matches the stuck defaults).
+      await sql`
+        UPDATE learn_assignments
+        SET
+          title = 'Listen & Learn',
+          teacher_name = 'Robert',
+          updated_at = NOW()
+        WHERE id = 'GPTNpBIRmjfS-GP6PSyll'
+          AND (
+            title = 'Untitled Listen & Learn'
+            OR title = ''
+            OR teacher_name = 'T Robert'
+          )
+      `;
     })();
   }
   await schemaReady;
@@ -329,10 +345,29 @@ export async function listPublishedMakeupAssignments(
     );
 }
 
+async function repairStuckLearnIdentity(assignmentId: string): Promise<void> {
+  // Specific stuck published makeup that kept create-default title/teacher.
+  if (assignmentId !== 'GPTNpBIRmjfS-GP6PSyll') return;
+  await sql`
+    UPDATE learn_assignments
+    SET
+      title = 'Listen & Learn',
+      teacher_name = 'Robert',
+      updated_at = NOW()
+    WHERE id = ${assignmentId}
+      AND (
+        title = 'Untitled Listen & Learn'
+        OR title = ''
+        OR teacher_name = 'T Robert'
+      )
+  `;
+}
+
 export async function getLearnAssignmentById(
   assignmentId: string
 ): Promise<LearnAssignmentWithDetails | null> {
   await ensureLearnSchema();
+  await repairStuckLearnIdentity(assignmentId);
   const { rows } = await sql`SELECT * FROM learn_assignments WHERE id = ${assignmentId}`;
   if (rows.length === 0) return null;
 
