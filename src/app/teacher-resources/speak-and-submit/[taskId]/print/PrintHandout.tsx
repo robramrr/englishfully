@@ -208,7 +208,7 @@ export default function PrintHandout({
                   <br />
                   2. Enter student name, number, and class
                   <br />
-                  3. Record each item and submit
+                  3. Record one item and submit
                 </ComicText>
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
