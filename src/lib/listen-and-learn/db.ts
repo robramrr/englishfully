@@ -621,15 +621,18 @@ export async function saveLearnAssignmentIdentity(
   const existing = await getLearnAssignmentById(assignmentId);
   if (!existing) throw new Error('Assignment not found');
 
-  const nextTitle = resolveLearnTitle(safeTrim(payload.title), existing.title);
-  const nextTeacherName = resolveLearnTeacher(
-    safeTrim(payload.teacher_name),
-    existing.teacher_name
-  );
+  // Identity-only saves FORCE the submitted values (no soft-merge with old Untitled).
+  const nextTitle = safeTrim(payload.title);
+  const nextTeacherName = safeTrim(payload.teacher_name);
+  if (!nextTitle || nextTitle === DEFAULT_LEARN_TITLE) {
+    throw new Error('Enter a real assessment title before saving.');
+  }
+  if (!nextTeacherName) {
+    throw new Error('Enter a teacher name before saving.');
+  }
   const nextClassName =
     payload.class_name !== undefined ? safeTrim(payload.class_name) : existing.class_name;
 
-  // Match by id only — teacher_id mismatches were silently updating 0 rows.
   await sql`
     UPDATE learn_assignments
     SET

@@ -530,8 +530,12 @@ export default function AssignmentEditor({
       return;
     }
 
-    // Block autosave long enough that an in-flight full save cannot wipe identity.
+    // Cancel any queued full autosave so it cannot overwrite this identity write.
     skipAutoSaveRef.current = true;
+    saveRequestedRef.current = false;
+    pendingStatusRef.current = null;
+    saveChainRef.current = Promise.resolve(null);
+
     setSaving(true);
     setError('');
     try {
@@ -565,8 +569,23 @@ export default function AssignmentEditor({
         teacherName: savedTeacher,
         className: savedClass,
       };
+
+      // Double-check what students will actually receive (same public API as the link).
+      const publicResponse = await fetch(
+        `/api/listen-and-learn/public/${assignmentId}?t=${Date.now()}`,
+        { cache: 'no-store' }
+      );
+      const publicData = await publicResponse.json();
+      const publicTitle = String(publicData.assignment?.title || '').trim();
+      const publicTeacher = String(publicData.assignment?.teacher_name || '').trim();
+      if (publicTitle !== savedTitle || publicTeacher !== savedTeacher) {
+        throw new Error(
+          `Saved in editor DB as “${savedTitle}” / “${savedTeacher}”, but student API still returns “${publicTitle}” / “${publicTeacher}”. Tell Rob — this is not a browser cache issue.`
+        );
+      }
+
       setSaveMessage(
-        `Saved identity “${savedTitle}” · Teacher: ${savedTeacher || '—'} · ${new Date().toLocaleTimeString()}. Open the student link in a new tab.`
+        `Verified student API: “${publicTitle}” · Teacher: ${publicTeacher}. Open the student link in a new tab.`
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save title/teacher');
@@ -574,7 +593,7 @@ export default function AssignmentEditor({
       setSaving(false);
       window.setTimeout(() => {
         skipAutoSaveRef.current = false;
-      }, 5000);
+      }, 8000);
     }
   }
 
@@ -857,6 +876,9 @@ export default function AssignmentEditor({
         <ComicTitle level={3} className="text-[var(--comic-primary)]">
           Assessment settings
         </ComicTitle>
+        <ComicText className="text-sm font-bold text-[var(--comic-dark)] break-all">
+          Assignment ID: {assignmentId}
+        </ComicText>
         <div className="grid md:grid-cols-2 gap-4">
           <label className="space-y-1">
             <ComicText className="font-black">Assessment Title</ComicText>
