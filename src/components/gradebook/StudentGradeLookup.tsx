@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
@@ -19,12 +19,16 @@ interface PublicClassOption {
   letter_enabled: boolean;
 }
 
+const ROLL_LENGTH = 5;
+const EMPTY_ROLL_DIGITS = ['', '', '', '', ''] as const;
+
 export default function StudentGradeLookup() {
   const [classes, setClasses] = useState<PublicClassOption[]>([]);
   const [classId, setClassId] = useState('');
   const [studentNumber, setStudentNumber] = useState('');
   const [studentLetter, setStudentLetter] = useState('');
-  const [rollNumber, setRollNumber] = useState('');
+  const [rollDigits, setRollDigits] = useState<string[]>([...EMPTY_ROLL_DIGITS]);
+  const rollInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState('');
@@ -52,6 +56,84 @@ export default function StudentGradeLookup() {
     () => Array.from({ length: maxSeat }, (_, index) => String(index + 1)),
     []
   );
+  const rollNumber = rollDigits.join('');
+
+  function focusRollBox(index: number) {
+    const clamped = Math.min(ROLL_LENGTH - 1, Math.max(0, index));
+    rollInputRefs.current[clamped]?.focus();
+    rollInputRefs.current[clamped]?.select();
+  }
+
+  function applyRollDigits(nextDigits: string[], focusIndex?: number) {
+    const padded = Array.from({ length: ROLL_LENGTH }, (_, index) => nextDigits[index] || '');
+    setRollDigits(padded);
+    if (typeof focusIndex === 'number') {
+      window.requestAnimationFrame(() => focusRollBox(focusIndex));
+    }
+  }
+
+  function handleRollChange(index: number, rawValue: string) {
+    const digitsOnly = rawValue.replace(/\D/g, '');
+    if (!digitsOnly) {
+      applyRollDigits(
+        rollDigits.map((digit, digitIndex) => (digitIndex === index ? '' : digit)),
+        index
+      );
+      return;
+    }
+
+    // Typing or pasting into a box can fill multiple digits from here.
+    const next = [...rollDigits];
+    const incoming = digitsOnly.slice(0, ROLL_LENGTH - index).split('');
+    incoming.forEach((digit, offset) => {
+      next[index + offset] = digit;
+    });
+    const nextFocus = Math.min(ROLL_LENGTH - 1, index + incoming.length);
+    applyRollDigits(next, nextFocus);
+  }
+
+  function handleRollKeyDown(index: number, event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Backspace') {
+      if (rollDigits[index]) {
+        event.preventDefault();
+        applyRollDigits(
+          rollDigits.map((digit, digitIndex) => (digitIndex === index ? '' : digit)),
+          index
+        );
+        return;
+      }
+      if (index > 0) {
+        event.preventDefault();
+        applyRollDigits(
+          rollDigits.map((digit, digitIndex) => (digitIndex === index - 1 ? '' : digit)),
+          index - 1
+        );
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowLeft' && index > 0) {
+      event.preventDefault();
+      focusRollBox(index - 1);
+      return;
+    }
+
+    if (event.key === 'ArrowRight' && index < ROLL_LENGTH - 1) {
+      event.preventDefault();
+      focusRollBox(index + 1);
+    }
+  }
+
+  function handleRollPaste(index: number, pastedText: string) {
+    const digits = normalizeRollNumber(pastedText).slice(0, ROLL_LENGTH);
+    if (!digits) return;
+    const next = [...rollDigits];
+    digits.split('').forEach((digit, offset) => {
+      const target = index + offset;
+      if (target < ROLL_LENGTH) next[target] = digit;
+    });
+    applyRollDigits(next, Math.min(ROLL_LENGTH - 1, index + digits.length));
+  }
 
   async function handleLookup(event: FormEvent) {
     event.preventDefault();
@@ -72,7 +154,7 @@ export default function StudentGradeLookup() {
     }
     const roll = normalizeRollNumber(rollNumber);
     if (roll.length !== 5) {
-      setError('Enter your 5-digit roll number.');
+      setError('Enter all 5 digits of your roll number.');
       return;
     }
 
@@ -175,18 +257,32 @@ export default function StudentGradeLookup() {
               ) : null}
             </div>
 
-            <label className="block space-y-1">
+            <div className="space-y-2">
               <ComicText className="font-black text-sm">Roll number (5 digits)</ComicText>
-              <input
-                className="w-full comic-input tracking-widest font-bold"
-                inputMode="numeric"
-                pattern="\d{5}"
-                maxLength={5}
-                placeholder="12345"
-                value={rollNumber}
-                onChange={(event) => setRollNumber(normalizeRollNumber(event.target.value))}
-              />
-            </label>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="5-digit roll number">
+                {rollDigits.map((digit, index) => (
+                  <input
+                    key={`roll-digit-${index}`}
+                    ref={(element) => {
+                      rollInputRefs.current[index] = element;
+                    }}
+                    className="comic-input w-12 h-14 text-center text-2xl font-black"
+                    inputMode="numeric"
+                    autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                    maxLength={1}
+                    value={digit}
+                    aria-label={`Roll digit ${index + 1}`}
+                    onChange={(event) => handleRollChange(index, event.target.value)}
+                    onKeyDown={(event) => handleRollKeyDown(index, event)}
+                    onFocus={(event) => event.target.select()}
+                    onPaste={(event) => {
+                      event.preventDefault();
+                      handleRollPaste(index, event.clipboardData.getData('text'));
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
 
             {error ? (
               <ComicText className="text-[var(--comic-danger)] font-bold">{error}</ComicText>
@@ -226,7 +322,10 @@ export default function StudentGradeLookup() {
                 </thead>
                 <tbody>
                   {grade.tasks.map((task, index) => (
-                    <tr key={`${task.tool}-${task.task_title}-${index}`} className="border-b border-[var(--comic-black)]/20">
+                    <tr
+                      key={`${task.tool}-${task.task_title}-${index}`}
+                      className="border-b border-[var(--comic-black)]/20"
+                    >
                       <td className="py-2 pr-3 font-bold">{task.task_title || 'Untitled'}</td>
                       <td className="py-2 pr-3 text-sm">
                         {GRADEBOOK_TOOL_LABELS[task.tool] || task.tool}
