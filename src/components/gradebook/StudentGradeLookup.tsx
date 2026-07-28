@@ -33,6 +33,7 @@ interface StudentGradeLookupProps {
 export default function StudentGradeLookup({ schoolSlug, showHero = false }: StudentGradeLookupProps) {
   const [classes, setClasses] = useState<PublicClassOption[]>([]);
   const [schoolName, setSchoolName] = useState('');
+  const [schoolYear, setSchoolYear] = useState('');
   const [classId, setClassId] = useState('');
   const [studentNumber, setStudentNumber] = useState('');
   const [studentLetter, setStudentLetter] = useState('');
@@ -62,6 +63,7 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
         const next = (data.classes || []) as PublicClassOption[];
         setClasses(next);
         setSchoolName(String(data.school_name || schoolSlug).trim());
+        setSchoolYear(String(data.school_year || '').trim());
         setClassId('');
       })
       .catch(() => {
@@ -213,10 +215,10 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
   }
 
   return (
-    <div className="space-y-6">
+    <div className={showHero ? 'max-w-xl mx-auto px-4 py-10 space-y-6' : 'space-y-6'}>
       {showHero ? (
-        <section className="comic-bg-secondary py-10 px-4 comic-pattern-dots text-center">
-          <ComicTitle level={2} className="comic-text-white mb-2">
+        <div className="text-center">
+          <ComicTitle level={2} className="text-[var(--comic-secondary)] mb-2">
             <span className="inline-flex items-center justify-center gap-3">
               <FontAwesomeIcon
                 icon={faGraduationCap}
@@ -226,13 +228,15 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
               <span>Check My Grades</span>
             </span>
           </ComicTitle>
-          <ComicText className="comic-text-white font-bold">
+          <ComicText className="text-[var(--comic-dark)] font-bold">
             {schoolName.trim() || (loadingClasses ? '…' : schoolSlug)}
           </ComicText>
-        </section>
+          {schoolYear ? (
+            <ComicText className="text-[var(--comic-dark)]">{schoolYear}</ComicText>
+          ) : null}
+        </div>
       ) : null}
 
-      <section className={showHero ? 'max-w-xl mx-auto py-10 px-4 space-y-6' : 'space-y-6'}>
       <ComicCard className="comic-shadow-xl">
         {loadingClasses ? (
           <ComicText className="font-bold text-center">Loading classes…</ComicText>
@@ -338,7 +342,13 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
               <ComicText className="text-[var(--comic-danger)] font-bold">{error}</ComicText>
             ) : null}
 
-            <ComicButton type="submit" variant="primary" size="md" disabled={checking}>
+            <ComicButton
+              type="submit"
+              variant="primary"
+              size="lg"
+              className="w-full"
+              disabled={checking}
+            >
               {checking ? 'Checking…' : 'Show my grades'}
             </ComicButton>
           </form>
@@ -460,7 +470,6 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
           )}
         </ComicCard>
       ) : null}
-      </section>
     </div>
   );
 }

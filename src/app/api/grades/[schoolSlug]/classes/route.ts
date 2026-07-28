@@ -22,6 +22,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
     return NextResponse.json(
       {
         school_name: settings.school_name || settings.grades_slug,
+        school_year: settings.school_year,
         grades_slug: settings.grades_slug,
         classes,
       },
