@@ -163,9 +163,21 @@ function toIsoTimestamp(value: unknown): string {
   return date.toISOString();
 }
 
+/**
+ * Keep empty-string teacher ids as-is. Coercing "" → "default" made /grades classes
+ * load under one teacher id while lookup used another, so scores disappeared.
+ */
+function resolveTeacherId(value: unknown, allowEmpty = true): string {
+  if (value === undefined || value === null) return DEFAULT_TEACHER_ID;
+  const trimmed = String(value).trim();
+  if (trimmed) return trimmed;
+  return allowEmpty ? '' : DEFAULT_TEACHER_ID;
+}
+
 function rowToSettings(row: Record<string, unknown>): GradebookSettings {
   return {
-    teacher_id: row.teacher_id as string,
+    // Preserve DB value (including "") so public classes + lookup use the same id.
+    teacher_id: resolveTeacherId(row.teacher_id, true),
     school_year: (row.school_year as string) || getCurrentSchoolYear(),
     active_semester: parseSemester(row.active_semester),
     grades_slug: normalizeGradesSlug(row.grades_slug),
@@ -1167,7 +1179,7 @@ export async function upsertRosterRoll(
 export async function listPublicGradeClasses(
   teacherId: string = DEFAULT_TEACHER_ID
 ): Promise<Array<{ id: string; label: string; letter_enabled: boolean }>> {
-  const entryConfig = await getEntryConfig(teacherId);
+  const entryConfig = await getEntryConfig(resolveTeacherId(teacherId, true));
   return entryConfig.classes.map((item) => ({
     id: item.id,
     label: item.label,
@@ -1184,13 +1196,20 @@ export async function lookupStudentGrades(params: {
   teacherId?: string;
   /** When set, overrides DB read — use the slug page’s saved open-mode flag. */
   rollLookupOpen?: boolean;
+  /** Optional class label from the student page — helps when class IDs rotated. */
+  classLabel?: string;
 }): Promise<StudentGradeLookupResult | null> {
-  const teacherId = params.teacherId || DEFAULT_TEACHER_ID;
+  // Must match /api/grades/.../classes exactly — do not coerce "" to "default".
+  const teacherId =
+    params.teacherId === undefined || params.teacherId === null
+      ? DEFAULT_TEACHER_ID
+      : String(params.teacherId);
   await ensureGradebookSchema();
 
   const classId = String(params.classId || '').trim();
   const studentNumber = normalizeStudentNumber(params.studentNumber);
   const rollNumber = normalizeRollNumber(params.rollNumber);
+  const requestedClassLabel = String(params.classLabel ?? '').trim();
 
   if (!classId || !studentNumber || !isValidRollNumber(rollNumber)) {
     return null;
@@ -1224,6 +1243,11 @@ export async function lookupStudentGrades(params: {
   let classOption = entryConfig.classes.find((item) => item.id === classId) || null;
 
   // Class IDs used to rotate on Speak settings save — recover by label when needed.
+  if (!classOption && requestedClassLabel) {
+    classOption =
+      entryConfig.classes.find((item) => classLabelsMatch(item.label, requestedClassLabel)) ||
+      null;
+  }
   if (!classOption) {
     const labelGuess = String(roster?.class_label || '').trim();
     if (labelGuess) {
@@ -1236,8 +1260,7 @@ export async function lookupStudentGrades(params: {
       const { rows: labelRows } = await sql`
         SELECT class_label
         FROM gradebook_entries
-        WHERE teacher_id = ${teacherId}
-          AND class_id = ${classId}
+        WHERE class_id = ${classId}
         LIMIT 1
       `;
       const fromEntry = String(labelRows[0]?.class_label || '').trim();
@@ -1249,12 +1272,38 @@ export async function lookupStudentGrades(params: {
       console.error('Lookup class-label recovery failed:', error);
     }
   }
+  if (!classOption) {
+    try {
+      const { rows: speakRows } = await sql`
+        SELECT label
+        FROM speak_class_options
+        WHERE id = ${classId}
+        LIMIT 1
+      `;
+      const fromSpeak = String(speakRows[0]?.label || '').trim();
+      if (fromSpeak) {
+        classOption =
+          entryConfig.classes.find((item) => classLabelsMatch(item.label, fromSpeak)) || null;
+        if (!classOption) {
+          // Class exists in Speak under another teacher_id — use it directly.
+          classOption = {
+            id: classId,
+            label: fromSpeak,
+            max_student_number: 35,
+            sort_order: 0,
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Lookup speak-class recovery failed:', error);
+    }
+  }
   if (classOption) {
     resolvedClassId = classOption.id;
   }
 
   let gradebook: Awaited<ReturnType<typeof getClassGradebook>> | null = null;
-  if (classOption) {
+  if (classOption && entryConfig.classes.some((item) => item.id === classOption!.id)) {
     try {
       gradebook = await getClassGradebook(
         resolvedClassId,
@@ -1269,75 +1318,130 @@ export async function lookupStudentGrades(params: {
     }
   }
 
-  const settingsForYear = gradebook?.settings || (await getGradebookSettings(teacherId));
+  const settingsForYear = gradebook?.settings || settings;
   const activeSemester = params.semester ?? settingsForYear.active_semester;
   const activeYear = params.schoolYear?.trim() || settingsForYear.school_year;
   const classLabel =
     gradebook?.class_label ||
     classOption?.label ||
+    requestedClassLabel ||
     String(roster?.class_label || '') ||
     '';
   const classLabelKey = classLabel.trim().toLowerCase();
+
+  async function loadSeatEntries(targetClassId: string): Promise<{
+    entriesByTask: Record<string, GradebookEntry>;
+    totalEarned: number;
+    totalPossible: number;
+  }> {
+    const entriesByTask: Record<string, GradebookEntry> = {};
+    let totalEarned = 0;
+    let totalPossible = 0;
+
+    const addRows = (rows: Record<string, unknown>[]) => {
+      for (const row of rows) {
+        const entry = rowToEntry(row);
+        const key = taskKey(entry.tool, entry.task_id);
+        if (entriesByTask[key]) continue;
+        entriesByTask[key] = entry;
+        totalEarned += entry.points;
+        totalPossible += entry.max_points;
+      }
+    };
+
+    const { rows: seatRows } = await sql`
+      SELECT *
+      FROM gradebook_entries
+      WHERE teacher_id = ${teacherId}
+        AND school_year = ${activeYear}
+        AND semester = ${activeSemester}
+        AND class_id = ${targetClassId}
+        AND student_number = ${studentNumber}
+      ORDER BY updated_at DESC
+    `;
+    addRows(seatRows);
+
+    if (Object.keys(entriesByTask).length === 0) {
+      const { rows: anyRows } = await sql`
+        SELECT *
+        FROM gradebook_entries
+        WHERE teacher_id = ${teacherId}
+          AND class_id = ${targetClassId}
+          AND student_number = ${studentNumber}
+        ORDER BY updated_at DESC
+      `;
+      addRows(anyRows);
+    }
+
+    // Orphaned class_id rows: match by class label for this seat.
+    if (Object.keys(entriesByTask).length === 0 && classLabelKey) {
+      const { rows: labelRows } = await sql`
+        SELECT *
+        FROM gradebook_entries
+        WHERE student_number = ${studentNumber}
+          AND lower(trim(class_label)) = ${classLabelKey}
+        ORDER BY updated_at DESC
+      `;
+      addRows(labelRows);
+    }
+
+    return { entriesByTask, totalEarned, totalPossible };
+  }
 
   // Prefer the roster seat, but never fail open-mode (or a valid roll match) just because
   // the generated seat list didn't include this number.
   let seat: GradebookSeat | null =
     gradebook?.seats.find((item) => item.student_number === studentNumber) || null;
 
-  if (!seat) {
-    const entriesByTask: Record<string, GradebookEntry> = {};
-    let totalEarned = 0;
-    let totalPossible = 0;
+  if (!seat || Object.keys(seat.entries_by_task).length === 0) {
     try {
-      if (resolvedClassId) {
-        const { rows: seatRows } = await sql`
-          SELECT *
-          FROM gradebook_entries
-          WHERE teacher_id = ${teacherId}
-            AND school_year = ${activeYear}
-            AND semester = ${activeSemester}
-            AND class_id = ${resolvedClassId}
-            AND student_number = ${studentNumber}
-          ORDER BY updated_at DESC
-        `;
-        for (const row of seatRows) {
-          const entry = rowToEntry(row);
-          entriesByTask[taskKey(entry.tool, entry.task_id)] = entry;
-          totalEarned += entry.points;
-          totalPossible += entry.max_points;
-        }
-
-        // Semester/year mismatch fallback — still show whatever scores exist for this seat.
-        if (Object.keys(entriesByTask).length === 0) {
-          const { rows: anyRows } = await sql`
-            SELECT *
-            FROM gradebook_entries
-            WHERE teacher_id = ${teacherId}
-              AND class_id = ${resolvedClassId}
-              AND student_number = ${studentNumber}
-            ORDER BY updated_at DESC
-          `;
-          for (const row of anyRows) {
-            const entry = rowToEntry(row);
-            const key = taskKey(entry.tool, entry.task_id);
-            if (entriesByTask[key]) continue;
-            entriesByTask[key] = entry;
-            totalEarned += entry.points;
-            totalPossible += entry.max_points;
-          }
-        }
+      const loaded = await loadSeatEntries(resolvedClassId || classId);
+      if (!seat) {
+        seat = {
+          student_number: studentNumber,
+          display_name: null,
+          roll_number: rosterRoll || null,
+          entries_by_task: loaded.entriesByTask,
+          total_earned: loaded.totalEarned,
+          total_possible: loaded.totalPossible,
+        };
+      } else if (Object.keys(loaded.entriesByTask).length > 0) {
+        seat = {
+          ...seat,
+          entries_by_task: { ...loaded.entriesByTask, ...seat.entries_by_task },
+          total_earned: Object.values({
+            ...loaded.entriesByTask,
+            ...seat.entries_by_task,
+          }).reduce((sum, entry) => sum + entry.points, 0),
+          total_possible: Object.values({
+            ...loaded.entriesByTask,
+            ...seat.entries_by_task,
+          }).reduce((sum, entry) => sum + entry.max_points, 0),
+        };
       }
     } catch (error) {
       console.error('Lookup synthetic seat failed:', error);
+      if (!seat) {
+        seat = {
+          student_number: studentNumber,
+          display_name: null,
+          roll_number: rosterRoll || null,
+          entries_by_task: {},
+          total_earned: 0,
+          total_possible: 0,
+        };
+      }
     }
+  }
 
+  if (!seat) {
     seat = {
       student_number: studentNumber,
       display_name: null,
       roll_number: rosterRoll || null,
-      entries_by_task: entriesByTask,
-      total_earned: totalEarned,
-      total_possible: totalPossible,
+      entries_by_task: {},
+      total_earned: 0,
+      total_possible: 0,
     };
   }
 

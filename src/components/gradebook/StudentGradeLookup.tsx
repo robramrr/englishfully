@@ -196,6 +196,7 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           class_id: classId,
+          class_label: classes.find((item) => item.id === classId)?.label || '',
           student_number: studentNumber,
           student_letter: letterEnabled ? studentLetter : '',
           roll_number: roll,

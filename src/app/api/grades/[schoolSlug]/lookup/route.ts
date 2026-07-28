@@ -18,6 +18,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const body = await request.json();
     const classId = String(body.class_id ?? '').trim();
+    const classLabel = String(body.class_label ?? '').trim();
     const studentNumber = String(body.student_number ?? '').trim();
     const studentLetter = String(body.student_letter ?? '').trim().toUpperCase();
     const rollNumber = String(body.roll_number ?? '').trim();
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       schoolYear,
       teacherId: settings.teacher_id,
       rollLookupOpen: settings.roll_lookup_open,
+      classLabel,
     });
 
     if (!result) {
