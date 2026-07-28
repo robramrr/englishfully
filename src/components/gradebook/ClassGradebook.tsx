@@ -59,6 +59,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
   const [bulkCorrect, setBulkCorrect] = useState('');
   const [bulkTotal, setBulkTotal] = useState('');
   const [applyingTestScore, setApplyingTestScore] = useState(false);
+  const [clearingScores, setClearingScores] = useState(false);
   const [draftScores, setDraftScores] = useState<Record<string, string>>({});
   const [draftCorrect, setDraftCorrect] = useState<Record<string, string>>({});
   const [draftTotal, setDraftTotal] = useState<Record<string, string>>({});
@@ -595,6 +596,66 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
     }
   }
 
+  async function clearAllScoresForTask() {
+    if (!selectedTask || !settings) return;
+
+    const gradedSeats = seats.filter((seat) => Boolean(seat.entries_by_task[activeTaskKey]));
+    if (gradedSeats.length === 0) {
+      setMessage('No saved scores to clear for this task.');
+      return;
+    }
+
+    const taskLabel = `${selectedTask.title}${
+      selectedTask.class_name ? ` (${selectedTask.class_name})` : ''
+    }`;
+    const confirmed = window.confirm(
+      `Clear all ${gradedSeats.length} saved score${gradedSeats.length === 1 ? '' : 's'} for “${taskLabel}” in ${classLabel || 'this class'}?\n\nThis cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setClearingScores(true);
+    setError('');
+    setMessage('');
+
+    const nextCorrect: Record<string, string> = {};
+    const nextTotal: Record<string, string> = {};
+    const nextScores: Record<string, string> = {};
+    for (const seat of seats) {
+      nextCorrect[seat.student_number] = '';
+      nextTotal[seat.student_number] = defaultTestTotal ? String(defaultTestTotal) : '';
+      nextScores[seat.student_number] = '';
+    }
+    setDraftCorrect(nextCorrect);
+    setDraftTotal(nextTotal);
+    setDraftScores(nextScores);
+
+    let cleared = 0;
+    try {
+      for (const seat of gradedSeats) {
+        const existing = seat.entries_by_task[activeTaskKey];
+        if (!existing) continue;
+        const response = await fetch(`/api/gradebook/entries?id=${existing.id}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || `Failed to clear #${seat.student_number}`);
+        }
+        cleared += 1;
+      }
+
+      await loadClass();
+      setMessage(
+        `Cleared ${cleared} score${cleared === 1 ? '' : 's'} for “${taskLabel}” in ${classLabel || 'this class'}.`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to clear scores');
+      await loadClass();
+    } finally {
+      setClearingScores(false);
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap gap-3">
@@ -748,13 +809,13 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                   }}
                   inputMode="numeric"
                   placeholder={String(LISTEN_PASS_PERCENT)}
-                  disabled={applyingCutoff || applyingTestScore}
+                  disabled={applyingCutoff || applyingTestScore || clearingScores}
                 />
                 <ComicButton
                   type="button"
                   variant="success"
                   size="sm"
-                  disabled={applyingCutoff || applyingTestScore || !selectedTask}
+                  disabled={applyingCutoff || applyingTestScore || clearingScores || !selectedTask}
                   onClick={() => void applyCutoffToSavedScores()}
                 >
                   {applyingCutoff ? 'Applying…' : 'Apply'}
@@ -777,7 +838,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                   }}
                   inputMode="numeric"
                   placeholder="18"
-                  disabled={applyingTestScore || applyingCutoff}
+                  disabled={applyingTestScore || applyingCutoff || clearingScores}
                   aria-label="Correct answers to apply to all"
                 />
                 <span className="font-bold">/</span>
@@ -790,19 +851,43 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                   }}
                   inputMode="numeric"
                   placeholder={defaultTestTotal ? String(defaultTestTotal) : '22'}
-                  disabled={applyingTestScore || applyingCutoff}
+                  disabled={applyingTestScore || applyingCutoff || clearingScores}
                   aria-label="Test total to apply to all"
                 />
                 <ComicButton
                   type="button"
                   variant="success"
                   size="sm"
-                  disabled={applyingTestScore || applyingCutoff || !selectedTask || seats.length === 0}
+                  disabled={
+                    applyingTestScore ||
+                    applyingCutoff ||
+                    clearingScores ||
+                    !selectedTask ||
+                    seats.length === 0
+                  }
                   onClick={() => void applyTestScoreToAll()}
                 >
-                  {applyingTestScore ? 'Applying…' : 'Apply'}
+                  {applyingTestScore ? 'Applying…' : 'Apply to all'}
+                </ComicButton>
+                <ComicButton
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  disabled={
+                    applyingTestScore ||
+                    applyingCutoff ||
+                    clearingScores ||
+                    !selectedTask ||
+                    seats.every((seat) => !seat.entries_by_task[activeTaskKey])
+                  }
+                  onClick={() => void clearAllScoresForTask()}
+                >
+                  {clearingScores ? 'Clearing…' : 'Clear scores'}
                 </ComicButton>
               </div>
+              <ComicText className="text-sm mt-2 text-[var(--comic-dark)]">
+                Clear scores removes every saved score for the selected task in this class only.
+              </ComicText>
             </div>
           ) : null}
         </div>
