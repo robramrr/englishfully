@@ -219,7 +219,7 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
       {showHero ? (
         <div className="text-center">
           <ComicTitle level={2} className="text-[var(--comic-secondary)] mb-2">
-            <span className="inline-flex items-center justify-center gap-3">
+            <span className="inline-flex items-center justify-center gap-3 whitespace-nowrap">
               <FontAwesomeIcon
                 icon={faGraduationCap}
                 aria-hidden
