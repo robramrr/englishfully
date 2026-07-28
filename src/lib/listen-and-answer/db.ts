@@ -163,7 +163,7 @@ function rowToAssignment(row: Record<string, unknown>): ListenAssignment {
     teacher_id: row.teacher_id as string,
     teacher_name: row.teacher_name as string,
     title: row.title as string,
-    class_name: row.class_name as string,
+    class_name: String(row.class_name ?? ''),
     due_date: (row.due_date as string | null) ?? null,
     points: (row.points as string) ?? '',
     include_answer_key: Boolean(row.include_answer_key),

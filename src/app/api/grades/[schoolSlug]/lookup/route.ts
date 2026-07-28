@@ -51,6 +51,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     );
   } catch (error) {
     console.error('Student grade lookup error:', error);
-    return jsonError('Failed to look up grades', 500);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return jsonError(`Failed to look up grades: ${message}`, 500);
   }
 }

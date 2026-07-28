@@ -99,7 +99,7 @@ function rowToTask(row: Record<string, unknown>): SpeakTask {
     teacher_id: row.teacher_id as string,
     title: row.title as string,
     task_type: row.task_type as TaskType,
-    class_name: row.class_name as string,
+    class_name: String(row.class_name ?? ''),
     max_recording_seconds: (row.max_recording_seconds as number) ?? 25,
     qr_code_url: (row.qr_code_url as string | null) ?? null,
     created_at: new Date(row.created_at as string).toISOString(),

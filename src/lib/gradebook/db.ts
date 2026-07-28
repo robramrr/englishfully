@@ -141,9 +141,25 @@ export async function ensureGradebookSchema(): Promise<void> {
         CREATE INDEX IF NOT EXISTS idx_gradebook_roll_claims_seat
         ON gradebook_roll_claims(teacher_id, class_id, student_number, created_at DESC)
       `;
-    })();
+    })().catch((error) => {
+      schemaReady = null;
+      throw error;
+    });
   }
   await schemaReady;
+}
+
+function parseGradebookBoolean(value: unknown): boolean {
+  if (value === true || value === 1) return true;
+  if (value === false || value === 0 || value == null) return false;
+  const normalized = String(value).trim().toLowerCase();
+  return normalized === 't' || normalized === 'true' || normalized === '1' || normalized === 'yes';
+}
+
+function toIsoTimestamp(value: unknown): string {
+  const date = value instanceof Date ? value : new Date(String(value ?? ''));
+  if (Number.isNaN(date.getTime())) return new Date().toISOString();
+  return date.toISOString();
 }
 
 function rowToSettings(row: Record<string, unknown>): GradebookSettings {
@@ -153,8 +169,8 @@ function rowToSettings(row: Record<string, unknown>): GradebookSettings {
     active_semester: parseSemester(row.active_semester),
     grades_slug: normalizeGradesSlug(row.grades_slug),
     school_name: String(row.school_name ?? '').trim(),
-    roll_lookup_open: Boolean(row.roll_lookup_open),
-    updated_at: new Date(row.updated_at as string).toISOString(),
+    roll_lookup_open: parseGradebookBoolean(row.roll_lookup_open),
+    updated_at: toIsoTimestamp(row.updated_at),
   };
 }
 
@@ -197,7 +213,7 @@ function rowToEntry(row: Record<string, unknown>): GradebookEntry {
     test_total:
       row.test_total === null || row.test_total === undefined ? null : Number(row.test_total),
     notes: (row.notes as string) ?? '',
-    updated_at: new Date(row.updated_at as string).toISOString(),
+    updated_at: toIsoTimestamp(row.updated_at),
   };
 }
 
@@ -378,47 +394,225 @@ export async function getGradebookSettingsBySlug(
 }
 
 export async function listGradebookTasks(): Promise<GradebookTaskOption[]> {
-  const [{ listLearnAssignments }, speakTasks, listenAssignments] = await Promise.all([
-    import('@/lib/listen-and-learn/db'),
-    listTasks(),
-    listAssignments(),
-  ]);
-  const learnAssignments = await listLearnAssignments();
+  const speakOptions: GradebookTaskOption[] = [];
+  const listenOptions: GradebookTaskOption[] = [];
+  const learnOptions: GradebookTaskOption[] = [];
 
-  const speakOptions: GradebookTaskOption[] = speakTasks.map((task) => ({
-    id: task.id,
-    title: task.title,
-    tool: 'speak_and_submit',
-    class_name: task.class_name,
-    question_count: null,
-  }));
+  try {
+    const speakTasks = await listTasks();
+    for (const task of speakTasks) {
+      speakOptions.push({
+        id: task.id,
+        title: task.title,
+        tool: 'speak_and_submit',
+        class_name: String(task.class_name ?? ''),
+        question_count: null,
+      });
+    }
+  } catch (error) {
+    console.error('listGradebookTasks speak failed:', error);
+  }
 
-  const listenOptions: GradebookTaskOption[] = listenAssignments.map((assignment) => {
-    const declaredTotal = Number.parseInt(String(assignment.total_questions ?? '').trim(), 10);
-    const questionCount =
-      Number.isFinite(declaredTotal) && declaredTotal > 0
-        ? declaredTotal
-        : assignment.question_count > 0
-          ? assignment.question_count
-          : null;
-    return {
-      id: assignment.id,
-      title: assignment.title,
-      tool: 'listen_and_answer' as const,
-      class_name: assignment.class_name,
-      question_count: questionCount,
-    };
-  });
+  try {
+    const listenAssignments = await listAssignments();
+    for (const assignment of listenAssignments) {
+      const declaredTotal = Number.parseInt(String(assignment.total_questions ?? '').trim(), 10);
+      const questionCount =
+        Number.isFinite(declaredTotal) && declaredTotal > 0
+          ? declaredTotal
+          : assignment.question_count > 0
+            ? assignment.question_count
+            : null;
+      listenOptions.push({
+        id: assignment.id,
+        title: assignment.title,
+        tool: 'listen_and_answer',
+        class_name: String(assignment.class_name ?? ''),
+        question_count: questionCount,
+      });
+    }
+  } catch (error) {
+    console.error('listGradebookTasks listen failed:', error);
+  }
 
-  const learnOptions: GradebookTaskOption[] = learnAssignments.map((assignment) => ({
-    id: assignment.id,
-    title: assignment.title,
-    tool: 'listen_and_learn' as const,
-    class_name: assignment.class_name,
-    question_count: assignment.question_count > 0 ? assignment.question_count : null,
-  }));
+  try {
+    const { listLearnAssignments } = await import('@/lib/listen-and-learn/db');
+    const learnAssignments = await listLearnAssignments();
+    for (const assignment of learnAssignments) {
+      learnOptions.push({
+        id: assignment.id,
+        title: assignment.title,
+        tool: 'listen_and_learn',
+        class_name: String(assignment.class_name ?? ''),
+        question_count: assignment.question_count > 0 ? assignment.question_count : null,
+      });
+    }
+  } catch (error) {
+    console.error('listGradebookTasks learn failed:', error);
+  }
 
   return [...speakOptions, ...listenOptions, ...learnOptions];
+}
+
+/**
+ * Speak settings used to recreate class rows with new IDs on every save, which
+ * orphaned gradebook_entries still keyed by the old class_id. Remap by class label.
+ */
+export async function repairOrphanedGradebookClassIds(
+  teacherId: string = DEFAULT_TEACHER_ID
+): Promise<{ remapped: number; merged: number; removed: number }> {
+  await ensureGradebookSchema();
+  const entryConfig = await getEntryConfig(teacherId);
+  let remapped = 0;
+  let merged = 0;
+  let removed = 0;
+
+  for (const classOption of entryConfig.classes) {
+    const label = String(classOption.label ?? '').trim();
+    if (!label) continue;
+    const labelKey = label.toLowerCase();
+
+    const { rows: orphanIds } = await sql`
+      SELECT DISTINCT class_id
+      FROM gradebook_entries
+      WHERE teacher_id = ${teacherId}
+        AND lower(trim(class_label)) = ${labelKey}
+        AND class_id <> ${classOption.id}
+    `;
+
+    for (const orphan of orphanIds) {
+      const oldId = String(orphan.class_id ?? '').trim();
+      if (!oldId) continue;
+
+      const { rows: orphanEntries } = await sql`
+        SELECT *
+        FROM gradebook_entries
+        WHERE teacher_id = ${teacherId}
+          AND class_id = ${oldId}
+      `;
+
+      for (const row of orphanEntries) {
+        const { rows: existingRows } = await sql`
+          SELECT *
+          FROM gradebook_entries
+          WHERE teacher_id = ${teacherId}
+            AND school_year = ${row.school_year}
+            AND semester = ${row.semester}
+            AND class_id = ${classOption.id}
+            AND student_number = ${row.student_number}
+            AND tool = ${row.tool}
+            AND task_id = ${row.task_id}
+          LIMIT 1
+        `;
+
+        if (existingRows.length === 0) {
+          await sql`
+            UPDATE gradebook_entries
+            SET class_id = ${classOption.id},
+                class_label = ${label}
+            WHERE id = ${row.id}
+          `;
+          remapped += 1;
+          continue;
+        }
+
+        const current = existingRows[0];
+        const orphanHasTest = row.test_correct != null && row.test_total != null;
+        const currentHasTest = current.test_correct != null && current.test_total != null;
+        const orphanPoints = Number(row.points ?? 0);
+        const currentPoints = Number(current.points ?? 0);
+        const orphanUpdated = new Date(String(row.updated_at ?? 0)).getTime();
+        const currentUpdated = new Date(String(current.updated_at ?? 0)).getTime();
+
+        const preferOrphan =
+          (orphanHasTest && !currentHasTest) ||
+          (!orphanHasTest &&
+            !currentHasTest &&
+            orphanPoints > currentPoints) ||
+          (orphanHasTest &&
+            currentHasTest &&
+            Number.isFinite(orphanUpdated) &&
+            Number.isFinite(currentUpdated) &&
+            orphanUpdated > currentUpdated);
+
+        if (preferOrphan) {
+          await sql`
+            UPDATE gradebook_entries
+            SET
+              class_label = ${label},
+              task_title = ${String(row.task_title ?? '')},
+              points = ${Number(row.points ?? 0)},
+              max_points = ${Number(row.max_points ?? DEFAULT_MAX_POINTS)},
+              test_correct = ${row.test_correct == null ? null : Number(row.test_correct)},
+              test_total = ${row.test_total == null ? null : Number(row.test_total)},
+              notes = ${String(row.notes ?? '')},
+              updated_at = NOW()
+            WHERE id = ${current.id}
+          `;
+          merged += 1;
+        }
+
+        await sql`DELETE FROM gradebook_entries WHERE id = ${row.id}`;
+        removed += 1;
+      }
+
+      await sql`
+        UPDATE gradebook_roster AS r
+        SET class_id = ${classOption.id},
+            class_label = ${label}
+        WHERE teacher_id = ${teacherId}
+          AND class_id = ${oldId}
+          AND NOT EXISTS (
+            SELECT 1
+            FROM gradebook_roster x
+            WHERE x.teacher_id = ${teacherId}
+              AND x.class_id = ${classOption.id}
+              AND x.student_number = r.student_number
+          )
+      `;
+      await sql`
+        DELETE FROM gradebook_roster
+        WHERE teacher_id = ${teacherId}
+          AND class_id = ${oldId}
+      `;
+      await sql`
+        UPDATE gradebook_roll_claims
+        SET class_id = ${classOption.id},
+            class_label = ${label}
+        WHERE teacher_id = ${teacherId}
+          AND class_id = ${oldId}
+      `;
+    }
+  }
+
+  return { remapped, merged, removed };
+}
+
+const classIdRepairByTeacher = new Map<string, Promise<void>>();
+
+async function ensureGradebookClassIdsRepaired(
+  teacherId: string = DEFAULT_TEACHER_ID
+): Promise<void> {
+  const existing = classIdRepairByTeacher.get(teacherId);
+  if (existing) {
+    await existing;
+    return;
+  }
+
+  const pending = (async () => {
+    try {
+      const result = await repairOrphanedGradebookClassIds(teacherId);
+      if (result.remapped || result.merged || result.removed) {
+        console.info('Repaired orphaned gradebook class IDs:', { teacherId, ...result });
+      }
+    } catch (error) {
+      classIdRepairByTeacher.delete(teacherId);
+      console.error('Gradebook class ID repair failed:', error);
+    }
+  })();
+
+  classIdRepairByTeacher.set(teacherId, pending);
+  await pending;
 }
 
 export async function getClassOverview(
@@ -431,6 +625,7 @@ export async function getClassOverview(
   classes: GradebookClassSummary[];
 }> {
   await ensureGradebookSchema();
+  await ensureGradebookClassIdsRepaired(teacherId);
   const settings = await getGradebookSettings(teacherId);
   const activeSemester = semester ?? settings.active_semester;
   const activeYear = schoolYear?.trim() || settings.school_year;
@@ -496,7 +691,8 @@ export async function getClassGradebook(
   classId: string,
   semester?: GradebookSemester,
   schoolYear?: string,
-  teacherId: string = DEFAULT_TEACHER_ID
+  teacherId: string = DEFAULT_TEACHER_ID,
+  options?: { skipMakeupBackfill?: boolean }
 ): Promise<{
   settings: GradebookSettings;
   letter_enabled: boolean;
@@ -508,6 +704,7 @@ export async function getClassGradebook(
   available_tasks: GradebookTaskOption[];
 }> {
   await ensureGradebookSchema();
+  await ensureGradebookClassIdsRepaired(teacherId);
   const settings = await getGradebookSettings(teacherId);
   const activeSemester = semester ?? settings.active_semester;
   const activeYear = schoolYear?.trim() || settings.school_year;
@@ -558,9 +755,10 @@ export async function getClassGradebook(
     if (column.tool !== 'speak_and_submit') continue;
     try {
       const submissions = await getSubmissionsForTask(column.task_id);
+      const classLabel = classOption.label.trim();
       const submitted = new Set(
         submissions
-          .filter((item) => item.class_number.trim() === classOption.label.trim())
+          .filter((item) => String(item.class_number ?? '').trim() === classLabel)
           .map((item) => normalizeStudentNumber(item.student_number))
       );
       column.submitted_student_numbers = Array.from(submitted);
@@ -575,11 +773,13 @@ export async function getClassGradebook(
     if (column.tool !== 'speak_and_submit') continue;
     try {
       const submissions = await getSubmissionsForTask(column.task_id);
+      const classLabel = classOption.label.trim();
       for (const submission of submissions) {
-        if (submission.class_number.trim() !== classOption.label.trim()) continue;
+        if (String(submission.class_number ?? '').trim() !== classLabel) continue;
         const number = normalizeStudentNumber(submission.student_number);
-        if (!nameByStudent.has(number) && submission.student_name.trim()) {
-          nameByStudent.set(number, submission.student_name.trim());
+        const displayName = String(submission.student_name ?? '').trim();
+        if (!nameByStudent.has(number) && displayName) {
+          nameByStudent.set(number, displayName);
         }
       }
     } catch {
@@ -590,66 +790,69 @@ export async function getClassGradebook(
   const rollByStudent = await getClassRollMap(classId, teacherId);
 
   // Backfill makeup credits that passed Learn but never wrote a gradebook row.
-  try {
-    const { listPublishedMakeupAssignments } = await import('@/lib/listen-and-learn/db');
-    const makeups = await listPublishedMakeupAssignments(teacherId);
-    let creditedAny = false;
-    for (const makeup of makeups) {
-      const classKey = classOption.label.trim().toLowerCase();
-      const { rows: passers } = await sql`
-        SELECT DISTINCT student_number
-        FROM learn_submissions
-        WHERE assignment_id = ${makeup.id}
-          AND lower(trim(class_number)) = ${classKey}
-          AND percent >= ${makeup.passing_score}
-      `;
-      for (const passer of passers) {
-        const credit = await creditListenLearnMakeup({
-          teacherId,
-          learnAssignmentId: makeup.id,
-          learnTitle: makeup.title,
-          makeupListenAssignmentId: makeup.makeup_listen_assignment_id,
-          makeupClassNames: makeup.makeup_class_names,
-          studentNumber: String(passer.student_number ?? ''),
-          classNumber: classOption.label,
-        });
-        if (credit.credited) creditedAny = true;
-      }
-    }
-    if (creditedAny) {
-      const { rows: refreshedRows } = await sql`
-        SELECT * FROM gradebook_entries
-        WHERE teacher_id = ${teacherId}
-          AND school_year = ${activeYear}
-          AND semester = ${activeSemester}
-          AND class_id = ${classId}
-        ORDER BY updated_at DESC
-      `;
-      entries.length = 0;
-      entries.push(...refreshedRows.map(rowToEntry));
-      taskMap.clear();
-      for (const entry of entries) {
-        const key = taskKey(entry.tool, entry.task_id);
-        const existing = taskMap.get(key);
-        if (!existing) {
-          taskMap.set(key, {
-            task_key: key,
-            tool: entry.tool,
-            task_id: entry.task_id,
-            task_title: entry.task_title,
-            max_points: entry.max_points,
-            submitted_student_numbers: [],
+  // Student lookup skips this class-wide pass (it has its own seat-scoped backfill).
+  if (!options?.skipMakeupBackfill) {
+    try {
+      const { listPublishedMakeupAssignments } = await import('@/lib/listen-and-learn/db');
+      const makeups = await listPublishedMakeupAssignments(teacherId);
+      let creditedAny = false;
+      for (const makeup of makeups) {
+        const classKey = classOption.label.trim().toLowerCase();
+        const { rows: passers } = await sql`
+          SELECT DISTINCT student_number
+          FROM learn_submissions
+          WHERE assignment_id = ${makeup.id}
+            AND lower(trim(class_number)) = ${classKey}
+            AND percent >= ${makeup.passing_score}
+        `;
+        for (const passer of passers) {
+          const credit = await creditListenLearnMakeup({
+            teacherId,
+            learnAssignmentId: makeup.id,
+            learnTitle: makeup.title,
+            makeupListenAssignmentId: makeup.makeup_listen_assignment_id,
+            makeupClassNames: makeup.makeup_class_names,
+            studentNumber: String(passer.student_number ?? ''),
+            classNumber: classOption.label,
           });
-        } else {
-          existing.max_points = Math.max(existing.max_points, entry.max_points);
-          if (!existing.task_title && entry.task_title) {
-            existing.task_title = entry.task_title;
+          if (credit.credited) creditedAny = true;
+        }
+      }
+      if (creditedAny) {
+        const { rows: refreshedRows } = await sql`
+          SELECT * FROM gradebook_entries
+          WHERE teacher_id = ${teacherId}
+            AND school_year = ${activeYear}
+            AND semester = ${activeSemester}
+            AND class_id = ${classId}
+          ORDER BY updated_at DESC
+        `;
+        entries.length = 0;
+        entries.push(...refreshedRows.map(rowToEntry));
+        taskMap.clear();
+        for (const entry of entries) {
+          const key = taskKey(entry.tool, entry.task_id);
+          const existing = taskMap.get(key);
+          if (!existing) {
+            taskMap.set(key, {
+              task_key: key,
+              tool: entry.tool,
+              task_id: entry.task_id,
+              task_title: entry.task_title,
+              max_points: entry.max_points,
+              submitted_student_numbers: [],
+            });
+          } else {
+            existing.max_points = Math.max(existing.max_points, entry.max_points);
+            if (!existing.task_title && entry.task_title) {
+              existing.task_title = entry.task_title;
+            }
           }
         }
       }
+    } catch (error) {
+      console.error('Class gradebook makeup backfill failed:', error);
     }
-  } catch (error) {
-    console.error('Class gradebook makeup backfill failed:', error);
   }
 
   const seats: GradebookSeat[] = roster.map((studentNumber) => {
@@ -673,7 +876,12 @@ export async function getClassGradebook(
     };
   });
 
-  const availableTasks = await listGradebookTasks();
+  let availableTasks: GradebookTaskOption[] = [];
+  try {
+    availableTasks = await listGradebookTasks();
+  } catch (error) {
+    console.error('listGradebookTasks failed during class gradebook load:', error);
+  }
   const taskColumns = Array.from(taskMap.values()).sort((a, b) =>
     a.task_title.localeCompare(b.task_title, undefined, { sensitivity: 'base' })
   );
@@ -818,9 +1026,10 @@ export async function getSpeakSubmissionNumbersForTask(
   classLabel: string
 ): Promise<string[]> {
   const submissions = await getSubmissionsForTask(taskId);
+  const label = classLabel.trim();
   const submitted = new Set(
     submissions
-      .filter((item) => item.class_number.trim() === classLabel.trim())
+      .filter((item) => String(item.class_number ?? '').trim() === label)
       .map((item) => normalizeStudentNumber(item.student_number))
   );
   return Array.from(submitted);
@@ -953,12 +1162,21 @@ export async function lookupStudentGrades(params: {
     }
   }
 
-  const gradebook = await getClassGradebook(
-    classId,
-    params.semester,
-    params.schoolYear,
-    teacherId
-  );
+  let gradebook: Awaited<ReturnType<typeof getClassGradebook>>;
+  try {
+    gradebook = await getClassGradebook(
+      classId,
+      params.semester,
+      params.schoolYear,
+      teacherId,
+      { skipMakeupBackfill: true }
+    );
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Class not found')) {
+      return null;
+    }
+    throw error;
+  }
   const seat = gradebook.seats.find((item) => item.student_number === studentNumber);
   if (!seat) return null;
 
@@ -1021,7 +1239,8 @@ export async function lookupStudentGrades(params: {
         classId,
         params.semester,
         params.schoolYear,
-        teacherId
+        teacherId,
+        { skipMakeupBackfill: true }
       );
       const refreshedSeat = refreshed.seats.find(
         (item) => item.student_number === studentNumber
@@ -1035,14 +1254,19 @@ export async function lookupStudentGrades(params: {
   }
 
   // Temporary open mode: still require 5 digits, but log what they typed for the teacher.
+  // Never fail the student lookup if claim logging has a problem.
   if (openLookup) {
-    await logRollClaim({
-      teacherId,
-      classId,
-      classLabel,
-      studentNumber,
-      claimedRoll: rollNumber,
-    });
+    try {
+      await logRollClaim({
+        teacherId,
+        classId,
+        classLabel,
+        studentNumber,
+        claimedRoll: rollNumber,
+      });
+    } catch (error) {
+      console.error('Roll claim log failed during grade lookup:', error);
+    }
   }
 
   type AssignedTask = {
@@ -1060,7 +1284,7 @@ export async function lookupStudentGrades(params: {
   // Listen & Learn makeups are added separately for students who failed the tied assessment.
   for (const task of gradebook.available_tasks) {
     if (task.tool === 'listen_and_learn') continue;
-    if (task.class_name.trim().toLowerCase() !== classLabelKey) continue;
+    if (String(task.class_name ?? '').trim().toLowerCase() !== classLabelKey) continue;
     const key = taskKey(task.tool, task.id);
     assigned.set(key, {
       tool: task.tool,
@@ -1102,11 +1326,13 @@ export async function lookupStudentGrades(params: {
       return Number(entry.points ?? 0) < maxPoints;
     });
     const failedTitleKeys = new Set(
-      failedListenEntries.map((entry) => entry.task_title.trim().toLowerCase()).filter(Boolean)
+      failedListenEntries
+        .map((entry) => String(entry.task_title ?? '').trim().toLowerCase())
+        .filter(Boolean)
     );
 
     for (const makeup of makeups) {
-      const tiedId = makeup.makeup_listen_assignment_id.trim();
+      const tiedId = String(makeup.makeup_listen_assignment_id ?? '').trim();
       if (!tiedId) continue;
 
       const makeupKey = taskKey('listen_and_learn', makeup.id);
@@ -1120,7 +1346,7 @@ export async function lookupStudentGrades(params: {
           if (tiedTitle && failedTitleKeys.has(tiedTitle)) {
             failedEntry =
               failedListenEntries.find(
-                (entry) => entry.task_title.trim().toLowerCase() === tiedTitle
+                (entry) => String(entry.task_title ?? '').trim().toLowerCase() === tiedTitle
               ) || null;
           }
         } catch {
@@ -1255,7 +1481,7 @@ function rowToRollClaim(row: Record<string, unknown>): GradebookRollClaim {
     class_label: String(row.class_label ?? ''),
     student_number: normalizeStudentNumber(String(row.student_number ?? '')),
     claimed_roll: normalizeRollNumber(row.claimed_roll),
-    created_at: new Date(row.created_at as string).toISOString(),
+    created_at: toIsoTimestamp(row.created_at),
   };
 }
 
@@ -1423,7 +1649,7 @@ export async function creditListenLearnMakeup(params: {
   const settings = await getGradebookSettings(teacherId);
   const schoolYear = settings.school_year;
   const activeSemester = settings.active_semester;
-  const tiedId = params.makeupListenAssignmentId.trim();
+  const tiedId = String(params.makeupListenAssignmentId ?? '').trim();
   if (!tiedId) {
     return { credited: false, reason: 'missing_tied_assessment' };
   }
@@ -1488,7 +1714,7 @@ export async function creditListenLearnMakeup(params: {
   if (!failed && tiedTitle) {
     failed =
       failing
-        .filter((row) => row.task_title.trim().toLowerCase() === tiedTitle)
+        .filter((row) => String(row.task_title ?? '').trim().toLowerCase() === tiedTitle)
         .sort(byPreference)[0] || null;
   }
 

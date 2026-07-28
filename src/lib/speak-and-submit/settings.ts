@@ -120,13 +120,28 @@ export async function saveEntryConfig(
       updated_at = NOW()
   `;
 
+  // Keep stable class IDs across saves. Recreating nanoids orphans gradebook rows keyed by class_id.
+  const { rows: existingClasses } = await sql`
+    SELECT id, label FROM speak_class_options WHERE teacher_id = ${teacherId}
+  `;
+  const idByLabel = new Map<string, string>();
+  for (const row of existingClasses) {
+    const key = String(row.label ?? '')
+      .trim()
+      .toLowerCase();
+    if (key && !idByLabel.has(key)) {
+      idByLabel.set(key, String(row.id));
+    }
+  }
+
   await sql`DELETE FROM speak_class_options WHERE teacher_id = ${teacherId}`;
 
   for (let index = 0; index < classes.length; index += 1) {
     const item = classes[index];
+    const id = idByLabel.get(item.label.toLowerCase()) || nanoid(21);
     await sql`
       INSERT INTO speak_class_options (id, teacher_id, label, max_student_number, sort_order)
-      VALUES (${nanoid(21)}, ${teacherId}, ${item.label}, ${item.max_student_number}, ${index})
+      VALUES (${id}, ${teacherId}, ${item.label}, ${item.max_student_number}, ${index})
     `;
   }
 
