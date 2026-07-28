@@ -25,6 +25,7 @@ import {
   gradePointsFromTestScore,
   parseSemester,
   runningTotalHighlightClass,
+  taskAppliesToGradebookClass,
   taskKey,
   clampPassPercent,
 } from '@/lib/gradebook/types';
@@ -65,10 +66,30 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
   const [savingRollNumber, setSavingRollNumber] = useState<string | null>(null);
   const [submittedNumbers, setSubmittedNumbers] = useState<Set<string>>(new Set());
 
-  const filteredTasks = useMemo(
-    () => availableTasks.filter((task) => task.tool === tool),
-    [availableTasks, tool]
-  );
+  const filteredTasks = useMemo(() => {
+    const matching: GradebookTaskOption[] = [];
+    const strayGraded: GradebookTaskOption[] = [];
+
+    for (const task of availableTasks) {
+      if (task.tool !== tool) continue;
+      const applies =
+        !classLabel ||
+        !String(task.class_name ?? '').trim() ||
+        taskAppliesToGradebookClass(task.class_name, classLabel);
+
+      if (applies) {
+        matching.push(task);
+        continue;
+      }
+
+      // Keep wrongly graded tasks visible so the teacher can clear them.
+      const key = taskKey(tool, task.id);
+      const hasGrades = seats.some((seat) => Boolean(seat.entries_by_task[key]));
+      if (hasGrades) strayGraded.push(task);
+    }
+
+    return [...matching, ...strayGraded];
+  }, [availableTasks, tool, classLabel, seats]);
 
   const selectedTask = filteredTasks.find((task) => task.id === selectedTaskId) || null;
   const activeTaskKey = selectedTask ? taskKey(tool, selectedTask.id) : '';
@@ -675,14 +696,30 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
               {filteredTasks.length === 0 ? (
                 <option value="">No tasks found</option>
               ) : (
-                filteredTasks.map((task) => (
-                  <option key={task.id} value={task.id}>
-                    {task.title}
-                    {task.class_name ? ` (${task.class_name})` : ''}
-                  </option>
-                ))
+                filteredTasks.map((task) => {
+                  const applies =
+                    !classLabel ||
+                    !String(task.class_name ?? '').trim() ||
+                    taskAppliesToGradebookClass(task.class_name, classLabel);
+                  return (
+                    <option key={task.id} value={task.id}>
+                      {task.title}
+                      {task.class_name ? ` (${task.class_name})` : ''}
+                      {!applies ? ' — wrong level for this class' : ''}
+                    </option>
+                  );
+                })
               )}
             </select>
+            {selectedTask &&
+            classLabel &&
+            String(selectedTask.class_name ?? '').trim() &&
+            !taskAppliesToGradebookClass(selectedTask.class_name, classLabel) ? (
+              <ComicText className="text-sm mt-2 font-bold text-[var(--comic-danger)]">
+                This task is tagged {selectedTask.class_name}, which does not match class{' '}
+                {classLabel}. Clear these scores if they were entered by mistake.
+              </ComicText>
+            ) : null}
           </div>
           <div>
             <ComicText className="font-bold mb-1 text-sm">

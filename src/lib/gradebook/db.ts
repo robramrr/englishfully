@@ -34,6 +34,8 @@ import {
   taskKey,
   clampPassPercent,
   classLabelsMatch,
+  formatGradebookTaskTitle,
+  taskAppliesToGradebookClass,
 } from './types';
 
 const DEFAULT_TEACHER_ID = 'default';
@@ -1447,6 +1449,20 @@ export async function lookupStudentGrades(params: {
 
   const availableTasks = gradebook?.available_tasks || (await listGradebookTasks().catch(() => []));
   const taskColumns = gradebook?.task_columns || [];
+  const taskMetaById = new Map(availableTasks.map((task) => [task.id, task]));
+
+  const titleFor = (taskId: string, fallbackTitle: string) => {
+    const meta = taskMetaById.get(taskId);
+    return formatGradebookTaskTitle(fallbackTitle || meta?.title || 'Untitled', meta?.class_name);
+  };
+
+  const listenTaskAllowed = (taskId: string, tool: GradebookTool) => {
+    if (tool !== 'listen_and_answer') return true;
+    const meta = taskMetaById.get(taskId);
+    // If we can't resolve the Listen assignment, keep graded rows visible.
+    if (!meta) return true;
+    return taskAppliesToGradebookClass(meta.class_name, classLabel);
+  };
 
   // If this seat already passed a makeup Learn but credit failed earlier (silent miss),
   // backfill the gradebook now so the next grades check shows the points.
@@ -1547,13 +1563,16 @@ export async function lookupStudentGrades(params: {
   // Listen & Learn makeups are added separately for students who failed the tied assessment.
   for (const task of availableTasks) {
     if (task.tool === 'listen_and_learn') continue;
-    if (!classLabelsMatch(task.class_name, classLabel) && classLabel) continue;
-    if (!classLabel && String(task.class_name ?? '').trim()) continue;
+    if (task.tool === 'listen_and_answer') {
+      if (!taskAppliesToGradebookClass(task.class_name, classLabel)) continue;
+    } else if (classLabel && !classLabelsMatch(task.class_name, classLabel)) {
+      continue;
+    }
     const key = taskKey(task.tool, task.id);
     assigned.set(key, {
       tool: task.tool,
       task_id: task.id,
-      task_title: task.title || 'Untitled',
+      task_title: titleFor(task.id, task.title || 'Untitled'),
       max_points: DEFAULT_MAX_POINTS,
       student_url: studentUrlForTool(task.tool, task.id),
       makeup_for_task_id: null,
@@ -1565,12 +1584,13 @@ export async function lookupStudentGrades(params: {
   // seat just because another classmate earned makeup credit.
   for (const column of taskColumns) {
     if (column.tool === 'listen_and_learn') continue;
+    if (!listenTaskAllowed(column.task_id, column.tool)) continue;
     const key = column.task_key;
     const existing = assigned.get(key);
     assigned.set(key, {
       tool: column.tool,
       task_id: column.task_id,
-      task_title: column.task_title || existing?.task_title || 'Untitled',
+      task_title: titleFor(column.task_id, column.task_title || existing?.task_title || 'Untitled'),
       max_points: Math.max(column.max_points || 0, existing?.max_points || 0, DEFAULT_MAX_POINTS),
       student_url: existing?.student_url ?? studentUrlForTool(column.tool, column.task_id),
       makeup_for_task_id: existing?.makeup_for_task_id ?? null,
@@ -1578,14 +1598,16 @@ export async function lookupStudentGrades(params: {
   }
 
   // Always include this seat’s saved scores even if task lists failed to load.
+  // Hide Listen tasks tagged for a different level (e.g. M6 on a 4/16 sheet).
   for (const entry of Object.values(seat.entries_by_task)) {
     if (entry.tool === 'listen_and_learn') continue;
+    if (!listenTaskAllowed(entry.task_id, entry.tool)) continue;
     const key = taskKey(entry.tool, entry.task_id);
     const existing = assigned.get(key);
     assigned.set(key, {
       tool: entry.tool,
       task_id: entry.task_id,
-      task_title: entry.task_title || existing?.task_title || 'Untitled',
+      task_title: titleFor(entry.task_id, entry.task_title || existing?.task_title || 'Untitled'),
       max_points: Math.max(entry.max_points || 0, existing?.max_points || 0, DEFAULT_MAX_POINTS),
       student_url: existing?.student_url ?? studentUrlForTool(entry.tool, entry.task_id),
       makeup_for_task_id: existing?.makeup_for_task_id ?? null,
@@ -1601,6 +1623,7 @@ export async function lookupStudentGrades(params: {
 
     const failedListenEntries = Object.values(seat.entries_by_task).filter((entry) => {
       if (entry.tool !== 'listen_and_answer') return false;
+      if (!listenTaskAllowed(entry.task_id, entry.tool)) return false;
       const maxPoints = Math.max(DEFAULT_MAX_POINTS, Number(entry.max_points ?? 0));
       return Number(entry.points ?? 0) < maxPoints;
     });
@@ -1617,16 +1640,16 @@ export async function lookupStudentGrades(params: {
       const makeupKey = taskKey('listen_and_learn', makeup.id);
       let failedEntry = failedListenEntries.find((entry) => entry.task_id === tiedId) || null;
 
-      // Fallback: tied ID might be a duplicate assessment; match by Listen & Answer title.
+      // Fallback: only when exactly one failing Listen row shares the tied title.
       if (!failedEntry) {
         try {
           const tied = await getAssignmentById(tiedId);
           const tiedTitle = tied?.title?.trim().toLowerCase() || '';
           if (tiedTitle && failedTitleKeys.has(tiedTitle)) {
-            failedEntry =
-              failedListenEntries.find(
-                (entry) => String(entry.task_title ?? '').trim().toLowerCase() === tiedTitle
-              ) || null;
+            const sameTitle = failedListenEntries.filter(
+              (entry) => String(entry.task_title ?? '').trim().toLowerCase() === tiedTitle
+            );
+            failedEntry = sameTitle.length === 1 ? sameTitle[0] : null;
           }
         } catch {
           // ignore title lookup failures
@@ -1987,14 +2010,16 @@ export async function creditListenLearnMakeup(params: {
     return 0;
   };
 
-  let failed =
+  let failed: FailCandidate | null =
     failing.filter((row) => row.task_id === tiedId).sort(byPreference)[0] || null;
 
+  // Title fallback only when exactly one failing row shares the title — never steal
+  // scores across different Listen tasks that happen to be named "English Listening".
   if (!failed && tiedTitle) {
-    failed =
-      failing
-        .filter((row) => String(row.task_title ?? '').trim().toLowerCase() === tiedTitle)
-        .sort(byPreference)[0] || null;
+    const sameTitle = failing
+      .filter((row) => String(row.task_title ?? '').trim().toLowerCase() === tiedTitle)
+      .sort(byPreference);
+    failed = sameTitle.length === 1 ? sameTitle[0] : null;
   }
 
   if (!failed) {

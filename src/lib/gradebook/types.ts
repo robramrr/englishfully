@@ -180,6 +180,75 @@ export function classLabelsMatch(a: unknown, b: unknown): boolean {
   return Boolean(left) && left === right;
 }
 
+/**
+ * Gradebook classes are usually like "4/16" (M4 room 16). Listen tasks often use
+ * tags like "M4,M5" or "M6" instead of the room label.
+ */
+export function gradebookClassLevel(classLabel: unknown): number | null {
+  const raw = String(classLabel ?? '').trim().toLowerCase();
+  if (!raw) return null;
+  const slash = raw.match(/^m?\s*([4-6])\s*[\/\-_.]/);
+  if (slash) return Number(slash[1]);
+  const tagged = raw.match(/\bm\s*([4-6])\b/);
+  if (tagged) return Number(tagged[1]);
+  const leading = raw.match(/^([4-6])(?:\D|$)/);
+  if (leading) return Number(leading[1]);
+  return null;
+}
+
+function taskClassNameMentionsLevel(taskClassName: string, level: number): boolean {
+  const normalized = taskClassName.toLowerCase().replace(/\s+/g, '');
+  if (new RegExp(`(?:^|[^0-9])m${level}(?:[^0-9]|$)`).test(normalized)) return true;
+  if (new RegExp(`(?:^|[^0-9])${level}(?:[\\/\\-_.]|$)`).test(normalized)) return true;
+  return normalized
+    .split(/[,+;/|]+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .some((part) => gradebookClassLevel(part) === level || classLabelsMatch(part, String(level)));
+}
+
+/**
+ * True when a Listen/Speak task’s class_name belongs on this gradebook class.
+ * Examples: class "4/16" matches task "M4,M5" or "4/16", but not "M6".
+ */
+export function taskAppliesToGradebookClass(
+  taskClassName: unknown,
+  gradebookClassLabel: unknown
+): boolean {
+  const gradeLabel = String(gradebookClassLabel ?? '').trim();
+  const taskClass = String(taskClassName ?? '').trim();
+  if (!gradeLabel) return true;
+  if (!taskClass) return true;
+  if (classLabelsMatch(taskClass, gradeLabel)) return true;
+
+  const level = gradebookClassLevel(gradeLabel);
+  if (level == null) {
+    return taskClass
+      .split(/[,+;/|]+/)
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .some((part) => classLabelsMatch(part, gradeLabel));
+  }
+
+  const mentionedLevels = [4, 5, 6].filter((n) => taskClassNameMentionsLevel(taskClass, n));
+  if (mentionedLevels.length === 0) {
+    return taskClass
+      .split(/[,+;/|]+/)
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .some((part) => classLabelsMatch(part, gradeLabel));
+  }
+  return mentionedLevels.includes(level);
+}
+
+export function formatGradebookTaskTitle(title: unknown, className?: unknown): string {
+  const base = String(title ?? '').trim() || 'Untitled';
+  const tag = String(className ?? '').trim();
+  if (!tag) return base;
+  if (base.toLowerCase().includes(`(${tag.toLowerCase()})`)) return base;
+  return `${base} (${tag})`;
+}
+
 export function isValidRollNumber(value: unknown): boolean {
   return /^\d{5}$/.test(normalizeRollNumber(value));
 }
