@@ -225,7 +225,7 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
                 aria-hidden
                 className="h-[0.85em] w-[0.85em] shrink-0"
               />
-              <span>Check My Grades</span>
+              <span>Grades</span>
             </span>
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold">
@@ -320,7 +320,7 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
                     ref={(element) => {
                       rollInputRefs.current[index] = element;
                     }}
-                    className="comic-input min-w-0 flex-1 max-w-[3rem] sm:max-w-none sm:w-12 h-11 sm:h-14 text-center text-xl sm:text-2xl font-black"
+                    className="comic-input min-w-0 flex-1 max-w-[3rem] sm:max-w-none sm:w-12 h-11 sm:h-14 text-center text-xl sm:text-2xl font-black !px-0 !py-1 sm:!p-2"
                     inputMode="numeric"
                     autoComplete={index === 0 ? 'one-time-code' : 'off'}
                     maxLength={1}
