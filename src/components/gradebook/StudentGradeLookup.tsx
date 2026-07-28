@@ -363,7 +363,13 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
           <ComicText className="font-bold text-[var(--comic-dark)]">
             {grade.class_label} · {grade.school_year} · Semester {grade.semester}
           </ComicText>
-          <ComicText className="font-black text-xl text-[var(--comic-primary)]">
+          <ComicText
+            className={`font-black text-xl ${
+              grade.total_possible > 0 && grade.total_earned >= grade.total_possible
+                ? 'text-[var(--comic-success)]'
+                : 'text-[var(--comic-primary)]'
+            }`}
+          >
             Running total: {grade.total_earned}/{grade.total_possible} ({grade.percent_label})
           </ComicText>
 
