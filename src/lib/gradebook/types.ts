@@ -165,6 +165,21 @@ export function normalizeRollNumber(value: unknown): string {
   return digits.slice(0, 5);
 }
 
+/** Normalize class labels for Speak/Listen matching (case, spaces, slash variants). */
+export function normalizeClassLabelKey(value: unknown): string {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[／⁄]/g, '/')
+    .replace(/\s+/g, '');
+}
+
+export function classLabelsMatch(a: unknown, b: unknown): boolean {
+  const left = normalizeClassLabelKey(a);
+  const right = normalizeClassLabelKey(b);
+  return Boolean(left) && left === right;
+}
+
 export function isValidRollNumber(value: unknown): boolean {
   return /^\d{5}$/.test(normalizeRollNumber(value));
 }

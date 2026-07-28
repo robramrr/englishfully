@@ -33,6 +33,7 @@ import {
   parseSemester,
   taskKey,
   clampPassPercent,
+  classLabelsMatch,
 } from './types';
 
 const DEFAULT_TEACHER_ID = 'default';
@@ -460,27 +461,36 @@ export async function listGradebookTasks(): Promise<GradebookTaskOption[]> {
  */
 export async function repairOrphanedGradebookClassIds(
   teacherId: string = DEFAULT_TEACHER_ID
-): Promise<{ remapped: number; merged: number; removed: number }> {
+): Promise<{ remapped: number; merged: number; removed: number; rolls_restored: number }> {
   await ensureGradebookSchema();
   const entryConfig = await getEntryConfig(teacherId);
   let remapped = 0;
   let merged = 0;
   let removed = 0;
+  let rollsRestored = 0;
 
   for (const classOption of entryConfig.classes) {
     const label = String(classOption.label ?? '').trim();
     if (!label) continue;
     const labelKey = label.toLowerCase();
 
-    const { rows: orphanIds } = await sql`
-      SELECT DISTINCT class_id
-      FROM gradebook_entries
-      WHERE teacher_id = ${teacherId}
-        AND lower(trim(class_label)) = ${labelKey}
-        AND class_id <> ${classOption.id}
+    const { rows: orphanIdRows } = await sql`
+      SELECT class_id FROM (
+        SELECT DISTINCT class_id
+        FROM gradebook_entries
+        WHERE teacher_id = ${teacherId}
+          AND lower(trim(class_label)) = ${labelKey}
+          AND class_id <> ${classOption.id}
+        UNION
+        SELECT DISTINCT class_id
+        FROM gradebook_roster
+        WHERE teacher_id = ${teacherId}
+          AND lower(trim(class_label)) = ${labelKey}
+          AND class_id <> ${classOption.id}
+      ) orphan_ids
     `;
 
-    for (const orphan of orphanIds) {
+    for (const orphan of orphanIdRows) {
       const oldId = String(orphan.class_id ?? '').trim();
       if (!oldId) continue;
 
@@ -556,25 +566,55 @@ export async function repairOrphanedGradebookClassIds(
         removed += 1;
       }
 
-      await sql`
-        UPDATE gradebook_roster AS r
-        SET class_id = ${classOption.id},
-            class_label = ${label}
-        WHERE teacher_id = ${teacherId}
-          AND class_id = ${oldId}
-          AND NOT EXISTS (
-            SELECT 1
-            FROM gradebook_roster x
-            WHERE x.teacher_id = ${teacherId}
-              AND x.class_id = ${classOption.id}
-              AND x.student_number = r.student_number
-          )
-      `;
-      await sql`
-        DELETE FROM gradebook_roster
+      const { rows: orphanRoster } = await sql`
+        SELECT id, student_number, roll_number
+        FROM gradebook_roster
         WHERE teacher_id = ${teacherId}
           AND class_id = ${oldId}
       `;
+
+      for (const row of orphanRoster) {
+        const studentNumber = normalizeStudentNumber(String(row.student_number ?? ''));
+        const orphanRoll = normalizeRollNumber(row.roll_number);
+        if (!studentNumber) {
+          await sql`DELETE FROM gradebook_roster WHERE id = ${row.id}`;
+          continue;
+        }
+
+        const { rows: currentRoster } = await sql`
+          SELECT id, roll_number
+          FROM gradebook_roster
+          WHERE teacher_id = ${teacherId}
+            AND class_id = ${classOption.id}
+            AND student_number = ${studentNumber}
+          LIMIT 1
+        `;
+
+        if (currentRoster.length === 0) {
+          await sql`
+            UPDATE gradebook_roster
+            SET class_id = ${classOption.id},
+                class_label = ${label}
+            WHERE id = ${row.id}
+          `;
+          continue;
+        }
+
+        const currentRoll = normalizeRollNumber(currentRoster[0].roll_number);
+        if (!currentRoll && orphanRoll) {
+          await sql`
+            UPDATE gradebook_roster
+            SET roll_number = ${orphanRoll},
+                class_label = ${label},
+                updated_at = NOW()
+            WHERE id = ${currentRoster[0].id}
+          `;
+          rollsRestored += 1;
+        }
+
+        await sql`DELETE FROM gradebook_roster WHERE id = ${row.id}`;
+      }
+
       await sql`
         UPDATE gradebook_roll_claims
         SET class_id = ${classOption.id},
@@ -585,15 +625,17 @@ export async function repairOrphanedGradebookClassIds(
     }
   }
 
-  return { remapped, merged, removed };
+  return { remapped, merged, removed, rolls_restored: rollsRestored };
 }
 
+const CLASS_ID_REPAIR_VERSION = '2';
 const classIdRepairByTeacher = new Map<string, Promise<void>>();
 
 async function ensureGradebookClassIdsRepaired(
   teacherId: string = DEFAULT_TEACHER_ID
 ): Promise<void> {
-  const existing = classIdRepairByTeacher.get(teacherId);
+  const cacheKey = `${teacherId}::${CLASS_ID_REPAIR_VERSION}`;
+  const existing = classIdRepairByTeacher.get(cacheKey);
   if (existing) {
     await existing;
     return;
@@ -602,16 +644,16 @@ async function ensureGradebookClassIdsRepaired(
   const pending = (async () => {
     try {
       const result = await repairOrphanedGradebookClassIds(teacherId);
-      if (result.remapped || result.merged || result.removed) {
+      if (result.remapped || result.merged || result.removed || result.rolls_restored) {
         console.info('Repaired orphaned gradebook class IDs:', { teacherId, ...result });
       }
     } catch (error) {
-      classIdRepairByTeacher.delete(teacherId);
+      classIdRepairByTeacher.delete(cacheKey);
       console.error('Gradebook class ID repair failed:', error);
     }
   })();
 
-  classIdRepairByTeacher.set(teacherId, pending);
+  classIdRepairByTeacher.set(cacheKey, pending);
   await pending;
 }
 
@@ -755,10 +797,9 @@ export async function getClassGradebook(
     if (column.tool !== 'speak_and_submit') continue;
     try {
       const submissions = await getSubmissionsForTask(column.task_id);
-      const classLabel = classOption.label.trim();
       const submitted = new Set(
         submissions
-          .filter((item) => String(item.class_number ?? '').trim() === classLabel)
+          .filter((item) => classLabelsMatch(item.class_number, classOption.label))
           .map((item) => normalizeStudentNumber(item.student_number))
       );
       column.submitted_student_numbers = Array.from(submitted);
@@ -773,9 +814,8 @@ export async function getClassGradebook(
     if (column.tool !== 'speak_and_submit') continue;
     try {
       const submissions = await getSubmissionsForTask(column.task_id);
-      const classLabel = classOption.label.trim();
       for (const submission of submissions) {
-        if (String(submission.class_number ?? '').trim() !== classLabel) continue;
+        if (!classLabelsMatch(submission.class_number, classOption.label)) continue;
         const number = normalizeStudentNumber(submission.student_number);
         const displayName = String(submission.student_name ?? '').trim();
         if (!nameByStudent.has(number) && displayName) {
@@ -1026,10 +1066,9 @@ export async function getSpeakSubmissionNumbersForTask(
   classLabel: string
 ): Promise<string[]> {
   const submissions = await getSubmissionsForTask(taskId);
-  const label = classLabel.trim();
   const submitted = new Set(
     submissions
-      .filter((item) => String(item.class_number ?? '').trim() === label)
+      .filter((item) => classLabelsMatch(item.class_number, classLabel))
       .map((item) => normalizeStudentNumber(item.student_number))
   );
   return Array.from(submitted);

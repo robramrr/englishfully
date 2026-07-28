@@ -160,21 +160,31 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
       (item) => item.tool === tool && item.task_id === selectedTask.id
     );
     if (column) {
-      setSubmittedNumbers(new Set(column.submitted_student_numbers));
       setMaxPoints(String(column.max_points || DEFAULT_MAX_POINTS));
-    } else if (tool === 'speak_and_submit') {
-      void fetch(
-        `/api/gradebook/tasks?speak_task_id=${encodeURIComponent(selectedTask.id)}&class_label=${encodeURIComponent(classLabel)}`
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          setSubmittedNumbers(new Set(data.submitted_student_numbers || []));
-        })
-        .catch(() => setSubmittedNumbers(new Set()));
+    } else {
       setMaxPoints(String(DEFAULT_MAX_POINTS));
+    }
+
+    // Always refresh Speak online indicators from submissions (source of truth).
+    // Don't trust an empty column.submitted_student_numbers cache alone.
+    if (tool === 'speak_and_submit') {
+      const fromColumn = new Set(column?.submitted_student_numbers || []);
+      setSubmittedNumbers(fromColumn);
+      if (classLabel.trim()) {
+        void fetch(
+          `/api/gradebook/tasks?speak_task_id=${encodeURIComponent(selectedTask.id)}&class_label=${encodeURIComponent(classLabel)}`
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            const fromApi = data.submitted_student_numbers || [];
+            setSubmittedNumbers(new Set([...fromColumn, ...fromApi]));
+          })
+          .catch(() => {
+            /* keep column-based set */
+          });
+      }
     } else {
       setSubmittedNumbers(new Set());
-      setMaxPoints(String(DEFAULT_MAX_POINTS));
     }
   }, [selectedTask, seats, taskColumns, tool, classLabel]);
 

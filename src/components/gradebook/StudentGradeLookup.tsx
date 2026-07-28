@@ -203,7 +203,10 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
       });
       const data = await response.json();
       if (!response.ok || !data.grade) {
-        setError(data.error || 'No grades found for that information.');
+        setError(
+          data.error ||
+            'No grades found. Check class, student number/letter, and the exact 5-digit roll number from your teacher.'
+        );
         return;
       }
       setGrade(data.grade as StudentGradeLookupResult);

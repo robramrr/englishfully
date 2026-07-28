@@ -38,7 +38,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     });
 
     if (!result) {
-      return jsonError('No grades found for that class, student number, and roll number.', 404);
+      return jsonError(
+        'No grades found. Check class, student number/letter, and the exact 5-digit roll number from your teacher.',
+        404
+      );
     }
 
     return NextResponse.json(
