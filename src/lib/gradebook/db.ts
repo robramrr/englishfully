@@ -930,7 +930,10 @@ export async function getClassGradebook(
     for (const entry of seatEntries) {
       entriesByTask[taskKey(entry.tool, entry.task_id)] = entry;
       totalEarned += entry.points;
-      totalPossible += entry.max_points;
+      // Makeup (Listen & Learn) adds credit only — it does not raise the possible total.
+      if (entry.tool !== 'listen_and_learn') {
+        totalPossible += entry.max_points;
+      }
     }
     const roll = rollByStudent.get(studentNumber) || '';
     return {
@@ -1347,7 +1350,10 @@ export async function lookupStudentGrades(params: {
         if (entriesByTask[key]) continue;
         entriesByTask[key] = entry;
         totalEarned += entry.points;
-        totalPossible += entry.max_points;
+        // Makeup (Listen & Learn) adds credit only — it does not raise the possible total.
+        if (entry.tool !== 'listen_and_learn') {
+          totalPossible += entry.max_points;
+        }
       }
     };
 
@@ -1408,17 +1414,22 @@ export async function lookupStudentGrades(params: {
           total_possible: loaded.totalPossible,
         };
       } else if (Object.keys(loaded.entriesByTask).length > 0) {
+        const mergedEntries = {
+          ...loaded.entriesByTask,
+          ...seat.entries_by_task,
+        };
         seat = {
           ...seat,
-          entries_by_task: { ...loaded.entriesByTask, ...seat.entries_by_task },
-          total_earned: Object.values({
-            ...loaded.entriesByTask,
-            ...seat.entries_by_task,
-          }).reduce((sum, entry) => sum + entry.points, 0),
-          total_possible: Object.values({
-            ...loaded.entriesByTask,
-            ...seat.entries_by_task,
-          }).reduce((sum, entry) => sum + entry.max_points, 0),
+          entries_by_task: mergedEntries,
+          total_earned: Object.values(mergedEntries).reduce(
+            (sum, entry) => sum + entry.points,
+            0
+          ),
+          total_possible: Object.values(mergedEntries).reduce(
+            (sum, entry) =>
+              entry.tool === 'listen_and_learn' ? sum : sum + entry.max_points,
+            0
+          ),
         };
       }
     } catch (error) {
