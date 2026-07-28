@@ -1073,7 +1073,10 @@ export async function lookupStudentGrades(params: {
   }
 
   // Tasks already in this class gradebook for the semester (any student graded).
+  // Skip Listen & Learn here — those are makeup-only and must not appear for every
+  // seat just because another classmate earned makeup credit.
   for (const column of gradebook.task_columns) {
+    if (column.tool === 'listen_and_learn') continue;
     const key = column.task_key;
     const existing = assigned.get(key);
     assigned.set(key, {
@@ -1086,7 +1089,7 @@ export async function lookupStudentGrades(params: {
     });
   }
 
-  // Makeup Listen & Learn: show after a failed Listen & Answer for this seat.
+  // Makeup Listen & Learn: show only when THIS seat failed the tied assessment.
   // Class checkboxes are ignored here — a failing gradebook entry in this class is enough.
   try {
     const { listPublishedMakeupAssignments } = await import('@/lib/listen-and-learn/db');
@@ -1098,7 +1101,6 @@ export async function lookupStudentGrades(params: {
       const maxPoints = Math.max(DEFAULT_MAX_POINTS, Number(entry.max_points ?? 0));
       return Number(entry.points ?? 0) < maxPoints;
     });
-    const failedTaskIds = new Set(failedListenEntries.map((entry) => entry.task_id));
     const failedTitleKeys = new Set(
       failedListenEntries.map((entry) => entry.task_title.trim().toLowerCase()).filter(Boolean)
     );
@@ -1108,11 +1110,10 @@ export async function lookupStudentGrades(params: {
       if (!tiedId) continue;
 
       const makeupKey = taskKey('listen_and_learn', makeup.id);
-      const makeupEntry = seat.entries_by_task[makeupKey];
       let failedEntry = failedListenEntries.find((entry) => entry.task_id === tiedId) || null;
 
       // Fallback: tied ID might be a duplicate assessment; match by Listen & Answer title.
-      if (!failedEntry && !makeupEntry) {
+      if (!failedEntry) {
         try {
           const tied = await getAssignmentById(tiedId);
           const tiedTitle = tied?.title?.trim().toLowerCase() || '';
@@ -1127,11 +1128,13 @@ export async function lookupStudentGrades(params: {
         }
       }
 
-      if (!failedEntry && !makeupEntry && !failedTaskIds.has(tiedId)) continue;
+      // Passers must not see an open makeup row for an assessment they already passed.
+      if (!failedEntry) continue;
 
+      const makeupEntry = seat.entries_by_task[makeupKey];
       const maxPoints = Math.max(
         DEFAULT_MAX_POINTS,
-        Number(failedEntry?.max_points ?? 0),
+        Number(failedEntry.max_points ?? 0),
         Number(makeupEntry?.max_points ?? 0)
       );
       assigned.set(makeupKey, {
@@ -1140,7 +1143,7 @@ export async function lookupStudentGrades(params: {
         task_title: makeup.title || 'Makeup',
         max_points: maxPoints,
         student_url: studentUrlForTool('listen_and_learn', makeup.id),
-        makeup_for_task_id: failedEntry?.task_id || tiedId,
+        makeup_for_task_id: failedEntry.task_id || tiedId,
       });
     }
   } catch (error) {
@@ -1317,6 +1320,66 @@ function studentUrlForTool(tool: GradebookTool, taskId: string): string | null {
   }
   // Listen & Answer is print-based today — no student submit URL.
   return null;
+}
+
+/**
+ * True when this seat scored below full points on the tied Listen & Answer assessment
+ * (eligible for a makeup Listen & Learn).
+ */
+export async function hasFailedTiedListenAssessment(params: {
+  teacherId?: string;
+  listenAssignmentId: string;
+  studentNumber: string;
+  classNumber: string;
+}): Promise<boolean> {
+  await ensureGradebookSchema();
+  const teacherId = params.teacherId || DEFAULT_TEACHER_ID;
+  const studentNumber = normalizeStudentNumber(params.studentNumber);
+  const classLabel = params.classNumber.trim();
+  const tiedId = params.listenAssignmentId.trim();
+  if (!studentNumber || !classLabel || !tiedId) return false;
+
+  const entryConfig = await getEntryConfig(teacherId);
+  const classOption = entryConfig.classes.find(
+    (item) => item.label.trim().toLowerCase() === classLabel.toLowerCase()
+  );
+  if (!classOption) return false;
+
+  const settings = await getGradebookSettings(teacherId);
+  const schoolYear = settings.school_year;
+
+  const { rows } = await sql`
+    SELECT points, max_points, task_title, task_id
+    FROM gradebook_entries
+    WHERE teacher_id = ${teacherId}
+      AND school_year = ${schoolYear}
+      AND class_id = ${classOption.id}
+      AND student_number = ${studentNumber}
+      AND tool = 'listen_and_answer'
+  `;
+
+  const failing = rows.filter((row) => {
+    const maxPoints = Math.max(DEFAULT_MAX_POINTS, Number(row.max_points ?? DEFAULT_MAX_POINTS));
+    return Number(row.points ?? 0) < maxPoints;
+  });
+
+  if (failing.some((row) => String(row.task_id ?? '') === tiedId)) return true;
+
+  try {
+    const { getAssignmentById } = await import('@/lib/listen-and-answer/db');
+    const tied = await getAssignmentById(tiedId);
+    const tiedTitle = tied?.title?.trim().toLowerCase() || '';
+    if (
+      tiedTitle &&
+      failing.some((row) => String(row.task_title ?? '').trim().toLowerCase() === tiedTitle)
+    ) {
+      return true;
+    }
+  } catch {
+    // ignore
+  }
+
+  return false;
 }
 
 export type MakeupCreditResult = {

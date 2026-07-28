@@ -933,6 +933,21 @@ export async function submitLearnAssignment(
     throw new Error('You already passed this assessment. Ask your teacher if you need another try.');
   }
 
+  if (assignment.makeup_enabled && assignment.makeup_listen_assignment_id) {
+    const { hasFailedTiedListenAssessment } = await import('@/lib/gradebook/db');
+    const failedOriginal = await hasFailedTiedListenAssessment({
+      teacherId: assignment.teacher_id || DEFAULT_TEACHER_ID,
+      listenAssignmentId: assignment.makeup_listen_assignment_id,
+      studentNumber,
+      classNumber,
+    });
+    if (!failedOriginal) {
+      throw new Error(
+        'This makeup is only for students who did not pass the original assessment.'
+      );
+    }
+  }
+
   const keepQuestions = assignment.questions.filter((question) => question.keep_question);
   const answerByQuestion = new Map(
     payload.answers.map((answer) => [answer.question_id, answer.selected_answer.trim()])

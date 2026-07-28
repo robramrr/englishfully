@@ -38,10 +38,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const assignment = await getPublicLearnAssignment(params.assignmentId);
     if (!assignment) return jsonError('Assignment not found', 404);
 
+    // Need makeup flags from the full assignment (public payload omits them).
+    const { getLearnAssignmentById } = await import('@/lib/listen-and-learn/db');
+    const fullAssignment = await getLearnAssignmentById(params.assignmentId);
+
     const studentNumber = request.nextUrl.searchParams.get('student_number') || '';
     const classNumber = request.nextUrl.searchParams.get('class_number') || '';
     let attemptsUsed = 0;
     let alreadyPassed = false;
+    let makeupNotNeeded = false;
     if (studentNumber && classNumber) {
       attemptsUsed = await countLearnAttempts(params.assignmentId, studentNumber, classNumber);
       alreadyPassed = await hasPassingLearnSubmission(
@@ -50,11 +55,29 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         classNumber,
         assignment.passing_score
       );
+
+      if (
+        fullAssignment?.makeup_enabled &&
+        fullAssignment.makeup_listen_assignment_id &&
+        !alreadyPassed
+      ) {
+        const { hasFailedTiedListenAssessment } = await import('@/lib/gradebook/db');
+        const failedOriginal = await hasFailedTiedListenAssessment({
+          teacherId: fullAssignment.teacher_id,
+          listenAssignmentId: fullAssignment.makeup_listen_assignment_id,
+          studentNumber,
+          classNumber,
+        });
+        if (!failedOriginal) {
+          makeupNotNeeded = true;
+        }
+      }
     }
 
-    const attemptsRemaining = alreadyPassed
-      ? 0
-      : Math.max(0, assignment.attempts_allowed - attemptsUsed);
+    const attemptsRemaining =
+      alreadyPassed || makeupNotNeeded
+        ? 0
+        : Math.max(0, assignment.attempts_allowed - attemptsUsed);
 
     return NextResponse.json(
       {
@@ -62,6 +85,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         attempts_used: attemptsUsed,
         attempts_remaining: attemptsRemaining,
         already_passed: alreadyPassed,
+        makeup_not_needed: makeupNotNeeded,
       },
       {
         headers: {

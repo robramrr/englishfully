@@ -150,9 +150,11 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
       }
       if ((data.attempts_remaining ?? 0) <= 0) {
         setError(
-          data.already_passed
-            ? 'You already passed this assessment. Ask your teacher if you need another try.'
-            : 'No attempts remaining for this assessment.'
+          data.makeup_not_needed
+            ? 'You already passed the original assessment — this makeup is not needed.'
+            : data.already_passed
+              ? 'You already passed this assessment. Ask your teacher if you need another try.'
+              : 'No attempts remaining for this assessment.'
         );
         return;
       }
