@@ -304,6 +304,17 @@ export async function saveGradebookSettings(
     WHERE teacher_id = ${teacherId}
   `;
 
+  // Keep slug row in sync (student lookup reads by slug). Same row usually, but write both.
+  if (gradesSlug) {
+    await sql`
+      UPDATE gradebook_settings
+      SET
+        roll_lookup_open = ${rollLookupOpen},
+        updated_at = NOW()
+      WHERE grades_slug = ${gradesSlug}
+    `;
+  }
+
   // Write school_name LAST (like Learn title), on both teacher_id and grades_slug rows.
   // The student page loads by slug — updating only teacher_id can leave /grades/spk stuck.
   let verifiedName = '';
@@ -312,6 +323,7 @@ export async function saveGradebookSettings(
       UPDATE gradebook_settings
       SET
         school_name = ${schoolName},
+        roll_lookup_open = ${rollLookupOpen},
         updated_at = NOW()
       WHERE teacher_id = ${teacherId}
     `;
@@ -324,6 +336,7 @@ export async function saveGradebookSettings(
         UPDATE gradebook_settings
         SET
           school_name = ${schoolName},
+          roll_lookup_open = ${rollLookupOpen},
           updated_at = NOW()
         WHERE grades_slug = ${gradesSlug}
       `;
@@ -1169,6 +1182,8 @@ export async function lookupStudentGrades(params: {
   semester?: GradebookSemester;
   schoolYear?: string;
   teacherId?: string;
+  /** When set, overrides DB read — use the slug page’s saved open-mode flag. */
+  rollLookupOpen?: boolean;
 }): Promise<StudentGradeLookupResult | null> {
   const teacherId = params.teacherId || DEFAULT_TEACHER_ID;
   await ensureGradebookSchema();
@@ -1182,7 +1197,10 @@ export async function lookupStudentGrades(params: {
   }
 
   const settings = await getGradebookSettings(teacherId);
-  const openLookup = settings.roll_lookup_open;
+  const openLookup =
+    params.rollLookupOpen !== undefined
+      ? Boolean(params.rollLookupOpen)
+      : settings.roll_lookup_open;
 
   const { rows: rosterRows } = await sql`
     SELECT roll_number, class_label

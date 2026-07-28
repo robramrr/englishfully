@@ -35,11 +35,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       semester,
       schoolYear,
       teacherId: settings.teacher_id,
+      rollLookupOpen: settings.roll_lookup_open,
     });
 
     if (!result) {
       return jsonError(
-        'No grades found. Check class, student number/letter, and the exact 5-digit roll number from your teacher.',
+        settings.roll_lookup_open
+          ? 'No grades found for that class and student number.'
+          : 'No grades found. Check class, student number/letter, and the exact 5-digit roll number from your teacher.',
         404
       );
     }

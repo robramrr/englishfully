@@ -139,7 +139,7 @@ export default function GradebookHome() {
     void loadClaims();
   }, [loadOverview, loadClaims]);
 
-  async function handleSaveSettings() {
+  async function handleSaveSettings(overrideOpenLookup?: boolean) {
     setSaving(true);
     setError('');
     setSaveMessage('');
@@ -147,7 +147,8 @@ export default function GradebookHome() {
     loadGenerationRef.current += 1;
     const nameToSave = schoolNameRef.current.trim();
     const slugToSave = gradesSlugRef.current;
-    const openToSave = rollLookupOpenRef.current;
+    const openToSave =
+      overrideOpenLookup !== undefined ? overrideOpenLookup : rollLookupOpenRef.current;
     try {
       const response = await fetch('/api/gradebook/settings', {
         method: 'PUT',
@@ -381,9 +382,13 @@ export default function GradebookHome() {
               type="checkbox"
               className="mt-1 h-5 w-5"
               checked={rollLookupOpen}
+              disabled={saving}
               onChange={(event) => {
-                setRollLookupOpen(event.target.checked);
+                const next = event.target.checked;
+                setRollLookupOpen(next);
                 setSaveMessage('');
+                // Persist immediately — checking the box alone used to leave students locked out.
+                void handleSaveSettings(next);
               }}
             />
             <span>
@@ -401,6 +406,11 @@ export default function GradebookHome() {
             <ComicText className="text-sm mt-3 font-bold text-[var(--comic-danger)]">
               Open mode is temporary and less private (classmates who know a seat can peek). Lock
               it again after you enter rolls.
+            </ComicText>
+          ) : null}
+          {settings && rollLookupOpen !== Boolean(settings.roll_lookup_open) ? (
+            <ComicText className="text-sm mt-3 font-bold text-[var(--comic-danger)]">
+              Saving open-lookup setting…
             </ComicText>
           ) : null}
         </div>
