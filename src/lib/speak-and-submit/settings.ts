@@ -12,12 +12,22 @@ import { sortSpeakClassOptions } from './types';
 const DEFAULT_TEACHER_ID = 'default';
 const DEFAULT_MAX_STUDENTS = 35;
 
+function parseSpeakBoolean(value: unknown): boolean {
+  if (value === true || value === 1) return true;
+  if (value === false || value === 0 || value == null) return false;
+  const normalized = String(value).trim().toLowerCase();
+  return normalized === 't' || normalized === 'true' || normalized === '1' || normalized === 'yes';
+}
+
 function rowToClassOption(row: Record<string, unknown>): SpeakClassOption {
+  const maxRaw = Number(row.max_student_number);
   return {
-    id: row.id as string,
-    label: row.label as string,
-    max_student_number: row.max_student_number as number,
-    sort_order: row.sort_order as number,
+    id: String(row.id ?? ''),
+    label: String(row.label ?? ''),
+    max_student_number: Number.isFinite(maxRaw)
+      ? Math.min(99, Math.max(1, Math.floor(maxRaw)))
+      : DEFAULT_MAX_STUDENTS,
+    sort_order: Number(row.sort_order ?? 0) || 0,
   };
 }
 
@@ -66,7 +76,7 @@ export async function getEntryConfig(
   const nameMode =
     settingsRows.length > 0 ? (settingsRows[0].name_mode as NameMode) : 'nickname';
   const studentLetterEnabled =
-    settingsRows.length > 0 ? Boolean(settingsRows[0].student_letter_enabled) : false;
+    settingsRows.length > 0 ? parseSpeakBoolean(settingsRows[0].student_letter_enabled) : false;
 
   const { rows: classRows } = await sql`
     SELECT * FROM speak_class_options

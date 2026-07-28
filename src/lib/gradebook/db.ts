@@ -1219,32 +1219,130 @@ export async function lookupStudentGrades(params: {
     }
   }
 
-  let gradebook: Awaited<ReturnType<typeof getClassGradebook>>;
-  try {
-    gradebook = await getClassGradebook(
-      classId,
-      params.semester,
-      params.schoolYear,
-      teacherId,
-      { skipMakeupBackfill: true }
-    );
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('Class not found')) {
-      return null;
-    }
-    throw error;
-  }
-  const seat = gradebook.seats.find((item) => item.student_number === studentNumber);
-  if (!seat) return null;
-
   const entryConfig = await getEntryConfig(teacherId);
-  const classFromConfig = entryConfig.classes.find((item) => item.id === classId);
+  let resolvedClassId = classId;
+  let classOption = entryConfig.classes.find((item) => item.id === classId) || null;
+
+  // Class IDs used to rotate on Speak settings save — recover by label when needed.
+  if (!classOption) {
+    const labelGuess = String(roster?.class_label || '').trim();
+    if (labelGuess) {
+      classOption =
+        entryConfig.classes.find((item) => classLabelsMatch(item.label, labelGuess)) || null;
+    }
+  }
+  if (!classOption) {
+    try {
+      const { rows: labelRows } = await sql`
+        SELECT class_label
+        FROM gradebook_entries
+        WHERE teacher_id = ${teacherId}
+          AND class_id = ${classId}
+        LIMIT 1
+      `;
+      const fromEntry = String(labelRows[0]?.class_label || '').trim();
+      if (fromEntry) {
+        classOption =
+          entryConfig.classes.find((item) => classLabelsMatch(item.label, fromEntry)) || null;
+      }
+    } catch (error) {
+      console.error('Lookup class-label recovery failed:', error);
+    }
+  }
+  if (classOption) {
+    resolvedClassId = classOption.id;
+  }
+
+  let gradebook: Awaited<ReturnType<typeof getClassGradebook>> | null = null;
+  if (classOption) {
+    try {
+      gradebook = await getClassGradebook(
+        resolvedClassId,
+        params.semester,
+        params.schoolYear,
+        teacherId,
+        { skipMakeupBackfill: true }
+      );
+    } catch (error) {
+      console.error('lookup getClassGradebook failed:', error);
+      gradebook = null;
+    }
+  }
+
+  const settingsForYear = gradebook?.settings || (await getGradebookSettings(teacherId));
+  const activeSemester = params.semester ?? settingsForYear.active_semester;
+  const activeYear = params.schoolYear?.trim() || settingsForYear.school_year;
   const classLabel =
-    gradebook.class_label ||
+    gradebook?.class_label ||
+    classOption?.label ||
     String(roster?.class_label || '') ||
-    classFromConfig?.label ||
     '';
   const classLabelKey = classLabel.trim().toLowerCase();
+
+  // Prefer the roster seat, but never fail open-mode (or a valid roll match) just because
+  // the generated seat list didn't include this number.
+  let seat: GradebookSeat | null =
+    gradebook?.seats.find((item) => item.student_number === studentNumber) || null;
+
+  if (!seat) {
+    const entriesByTask: Record<string, GradebookEntry> = {};
+    let totalEarned = 0;
+    let totalPossible = 0;
+    try {
+      if (resolvedClassId) {
+        const { rows: seatRows } = await sql`
+          SELECT *
+          FROM gradebook_entries
+          WHERE teacher_id = ${teacherId}
+            AND school_year = ${activeYear}
+            AND semester = ${activeSemester}
+            AND class_id = ${resolvedClassId}
+            AND student_number = ${studentNumber}
+          ORDER BY updated_at DESC
+        `;
+        for (const row of seatRows) {
+          const entry = rowToEntry(row);
+          entriesByTask[taskKey(entry.tool, entry.task_id)] = entry;
+          totalEarned += entry.points;
+          totalPossible += entry.max_points;
+        }
+
+        // Semester/year mismatch fallback — still show whatever scores exist for this seat.
+        if (Object.keys(entriesByTask).length === 0) {
+          const { rows: anyRows } = await sql`
+            SELECT *
+            FROM gradebook_entries
+            WHERE teacher_id = ${teacherId}
+              AND class_id = ${resolvedClassId}
+              AND student_number = ${studentNumber}
+            ORDER BY updated_at DESC
+          `;
+          for (const row of anyRows) {
+            const entry = rowToEntry(row);
+            const key = taskKey(entry.tool, entry.task_id);
+            if (entriesByTask[key]) continue;
+            entriesByTask[key] = entry;
+            totalEarned += entry.points;
+            totalPossible += entry.max_points;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Lookup synthetic seat failed:', error);
+    }
+
+    seat = {
+      student_number: studentNumber,
+      display_name: null,
+      roll_number: rosterRoll || null,
+      entries_by_task: entriesByTask,
+      total_earned: totalEarned,
+      total_possible: totalPossible,
+    };
+  }
+
+  const availableTasks = gradebook?.available_tasks || (await listGradebookTasks().catch(() => []));
+  const taskColumns = gradebook?.task_columns || [];
 
   // If this seat already passed a makeup Learn but credit failed earlier (silent miss),
   // backfill the gradebook now so the next grades check shows the points.
@@ -1292,18 +1390,22 @@ export async function lookupStudentGrades(params: {
       }
     }
     if (creditedAny) {
-      const refreshed = await getClassGradebook(
-        classId,
-        params.semester,
-        params.schoolYear,
-        teacherId,
-        { skipMakeupBackfill: true }
-      );
-      const refreshedSeat = refreshed.seats.find(
-        (item) => item.student_number === studentNumber
-      );
-      if (refreshedSeat) {
-        Object.assign(seat, refreshedSeat);
+      try {
+        const refreshed = await getClassGradebook(
+          resolvedClassId,
+          params.semester,
+          params.schoolYear,
+          teacherId,
+          { skipMakeupBackfill: true }
+        );
+        const refreshedSeat = refreshed.seats.find(
+          (item) => item.student_number === studentNumber
+        );
+        if (refreshedSeat) {
+          Object.assign(seat, refreshedSeat);
+        }
+      } catch (error) {
+        console.error('Lookup makeup refresh failed:', error);
       }
     }
   } catch (error) {
@@ -1316,7 +1418,7 @@ export async function lookupStudentGrades(params: {
     try {
       await logRollClaim({
         teacherId,
-        classId,
+        classId: resolvedClassId,
         classLabel,
         studentNumber,
         claimedRoll: rollNumber,
@@ -1339,9 +1441,10 @@ export async function lookupStudentGrades(params: {
 
   // Tasks created for this class (Speak/Listen & Answer), even if nobody has a grade yet.
   // Listen & Learn makeups are added separately for students who failed the tied assessment.
-  for (const task of gradebook.available_tasks) {
+  for (const task of availableTasks) {
     if (task.tool === 'listen_and_learn') continue;
-    if (String(task.class_name ?? '').trim().toLowerCase() !== classLabelKey) continue;
+    if (!classLabelsMatch(task.class_name, classLabel) && classLabel) continue;
+    if (!classLabel && String(task.class_name ?? '').trim()) continue;
     const key = taskKey(task.tool, task.id);
     assigned.set(key, {
       tool: task.tool,
@@ -1356,7 +1459,7 @@ export async function lookupStudentGrades(params: {
   // Tasks already in this class gradebook for the semester (any student graded).
   // Skip Listen & Learn here — those are makeup-only and must not appear for every
   // seat just because another classmate earned makeup credit.
-  for (const column of gradebook.task_columns) {
+  for (const column of taskColumns) {
     if (column.tool === 'listen_and_learn') continue;
     const key = column.task_key;
     const existing = assigned.get(key);
@@ -1366,6 +1469,21 @@ export async function lookupStudentGrades(params: {
       task_title: column.task_title || existing?.task_title || 'Untitled',
       max_points: Math.max(column.max_points || 0, existing?.max_points || 0, DEFAULT_MAX_POINTS),
       student_url: existing?.student_url ?? studentUrlForTool(column.tool, column.task_id),
+      makeup_for_task_id: existing?.makeup_for_task_id ?? null,
+    });
+  }
+
+  // Always include this seat’s saved scores even if task lists failed to load.
+  for (const entry of Object.values(seat.entries_by_task)) {
+    if (entry.tool === 'listen_and_learn') continue;
+    const key = taskKey(entry.tool, entry.task_id);
+    const existing = assigned.get(key);
+    assigned.set(key, {
+      tool: entry.tool,
+      task_id: entry.task_id,
+      task_title: entry.task_title || existing?.task_title || 'Untitled',
+      max_points: Math.max(entry.max_points || 0, existing?.max_points || 0, DEFAULT_MAX_POINTS),
+      student_url: existing?.student_url ?? studentUrlForTool(entry.tool, entry.task_id),
       makeup_for_task_id: existing?.makeup_for_task_id ?? null,
     });
   }
@@ -1519,8 +1637,8 @@ export async function lookupStudentGrades(params: {
 
   return {
     class_label: classLabel,
-    school_year: gradebook.settings.school_year,
-    semester: gradebook.settings.active_semester,
+    school_year: activeYear,
+    semester: activeSemester,
     student_number: seat.student_number,
     display_name: seat.display_name,
     tasks,
