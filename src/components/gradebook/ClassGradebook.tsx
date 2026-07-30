@@ -1132,9 +1132,9 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
               <tr className="border-b-4 border-[var(--comic-black)] text-left">
-                <th className="py-2 pr-2">#</th>
+                <th className="py-2 pr-2 border-r border-[#ccc]">#</th>
                 {taskColumns.map((column) => (
-                  <th key={column.task_key} className="py-2 pr-2">
+                  <th key={column.task_key} className="py-2 pr-2 border-r border-[#ccc]">
                     <div>{GRADEBOOK_TOOL_LABELS[column.tool]}</div>
                     <div className="font-normal">{column.task_title}</div>
                   </th>
@@ -1143,20 +1143,36 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
               </tr>
             </thead>
             <tbody>
-              {seats.map((seat) => (
-                <tr key={`summary-${seat.student_number}`} className="border-b border-black/10">
-                  <td className="py-2 pr-2 font-bold">{seat.student_number}</td>
+              {seats.map((seat, seatIndex) => (
+                <tr
+                  key={`summary-${seat.student_number}`}
+                  className={[
+                    seatIndex % 2 === 0 ? 'bg-[#e1e1e1]' : undefined,
+                    seatIndex < seats.length - 1 ? 'border-b border-[#ccc]' : undefined,
+                  ]
+                    .filter(Boolean)
+                    .join(' ') || undefined}
+                >
+                  <td className="py-2 pr-2 font-bold border-r border-[#ccc]">
+                    {seat.student_number}
+                  </td>
                   {taskColumns.map((column) => {
                     const entry = seat.entries_by_task[column.task_key];
                     if (!entry) {
                       return (
-                        <td key={`${seat.student_number}-${column.task_key}`} className="py-2 pr-2">
+                        <td
+                          key={`${seat.student_number}-${column.task_key}`}
+                          className="py-2 pr-2 border-r border-[#ccc]"
+                        >
                           —
                         </td>
                       );
                     }
                     return (
-                      <td key={`${seat.student_number}-${column.task_key}`} className="py-2 pr-2">
+                      <td
+                        key={`${seat.student_number}-${column.task_key}`}
+                        className="py-2 pr-2 border-r border-[#ccc]"
+                      >
                         {column.tool === 'listen_and_answer' &&
                         entry.test_correct != null &&
                         entry.test_total != null ? (
