@@ -1183,12 +1183,15 @@ export async function upsertRosterRoll(
 
 export async function listPublicGradeClasses(
   teacherId: string = DEFAULT_TEACHER_ID
-): Promise<Array<{ id: string; label: string; letter_enabled: boolean }>> {
+): Promise<
+  Array<{ id: string; label: string; letter_enabled: boolean; max_student_number: number }>
+> {
   const entryConfig = await getEntryConfig(resolveTeacherId(teacherId, true));
   return entryConfig.classes.map((item) => ({
     id: item.id,
     label: item.label,
     letter_enabled: entryConfig.student_letter_enabled,
+    max_student_number: item.max_student_number,
   }));
 }
 
@@ -1305,6 +1308,16 @@ export async function lookupStudentGrades(params: {
   }
   if (classOption) {
     resolvedClassId = classOption.id;
+  }
+
+  // Reject seats above this class's Speak max (e.g. 31B when max is 18). Read-only check.
+  if (classOption) {
+    const seatMatch = studentNumber.match(/^(\d+)/);
+    const seatNumber = seatMatch ? Number.parseInt(seatMatch[1], 10) : NaN;
+    const maxSeat = Math.min(99, Math.max(1, Number(classOption.max_student_number) || 1));
+    if (!Number.isFinite(seatNumber) || seatNumber < 1 || seatNumber > maxSeat) {
+      return null;
+    }
   }
 
   let gradebook: Awaited<ReturnType<typeof getClassGradebook>> | null = null;

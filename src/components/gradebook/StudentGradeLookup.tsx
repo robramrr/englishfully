@@ -19,6 +19,7 @@ interface PublicClassOption {
   id: string;
   label: string;
   letter_enabled: boolean;
+  max_student_number: number;
 }
 
 const ROLL_LENGTH = 5;
@@ -82,11 +83,32 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
   const letterEnabled =
     Boolean(selectedClass?.letter_enabled) ||
     classes.some((item) => item.letter_enabled);
-  const maxSeat = 40;
+  // Prefer the selected class max from Speak; before a class is chosen, use the
+  // highest class max (capped) so the dropdown stays usable but not unbounded.
+  const maxSeat = useMemo(() => {
+    if (selectedClass?.max_student_number) {
+      return Math.min(99, Math.max(1, selectedClass.max_student_number));
+    }
+    const fromClasses = classes.reduce(
+      (max, item) => Math.max(max, Number(item.max_student_number) || 0),
+      0
+    );
+    return Math.min(99, Math.max(1, fromClasses || 40));
+  }, [selectedClass, classes]);
   const numberOptions = useMemo(
     () => Array.from({ length: maxSeat }, (_, index) => String(index + 1)),
-    []
+    [maxSeat]
   );
+
+  // If the class max shrinks (or class changes), drop an out-of-range number.
+  useEffect(() => {
+    if (!studentNumber) return;
+    const n = Number.parseInt(studentNumber, 10);
+    if (Number.isFinite(n) && n > maxSeat) {
+      setStudentNumber('');
+    }
+  }, [maxSeat, studentNumber]);
+
   const rollNumber = rollDigits.join('');
 
   function focusRollBox(index: number) {
