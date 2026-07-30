@@ -1132,14 +1132,14 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
               <tr className="border-b-4 border-[var(--comic-black)] text-left">
-                <th className="py-2 pr-2 border-r border-[#ccc]">#</th>
+                <th className="py-2 px-2 border-r border-[#ccc]">#</th>
                 {taskColumns.map((column) => (
-                  <th key={column.task_key} className="py-2 pr-2 border-r border-[#ccc]">
+                  <th key={column.task_key} className="py-2 px-2 border-r border-[#ccc]">
                     <div>{GRADEBOOK_TOOL_LABELS[column.tool]}</div>
                     <div className="font-normal">{column.task_title}</div>
                   </th>
                 ))}
-                <th className="py-2">Total</th>
+                <th className="py-2 px-2">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -1153,7 +1153,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                     .filter(Boolean)
                     .join(' ') || undefined}
                 >
-                  <td className="py-2 pr-2 font-bold border-r border-[#ccc]">
+                  <td className="py-2 px-2 font-bold border-r border-[#ccc]">
                     {seat.student_number}
                   </td>
                   {taskColumns.map((column) => {
@@ -1162,7 +1162,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                       return (
                         <td
                           key={`${seat.student_number}-${column.task_key}`}
-                          className="py-2 pr-2 border-r border-[#ccc]"
+                          className="py-2 px-2 border-r border-[#ccc]"
                         >
                           —
                         </td>
@@ -1171,7 +1171,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                     return (
                       <td
                         key={`${seat.student_number}-${column.task_key}`}
-                        className="py-2 pr-2 border-r border-[#ccc]"
+                        className="py-2 px-2 border-r border-[#ccc]"
                       >
                         {column.tool === 'listen_and_answer' &&
                         entry.test_correct != null &&
@@ -1188,7 +1188,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                       </td>
                     );
                   })}
-                  <td className="py-2 font-bold">
+                  <td className="py-2 px-2 font-bold">
                     {seat.total_possible > 0 ? (
                       <span
                         className={runningTotalHighlightClass(
