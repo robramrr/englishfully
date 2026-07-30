@@ -943,7 +943,7 @@ export async function submitLearnAssignment(
     });
     if (!failedOriginal) {
       throw new Error(
-        'This makeup is only for students who did not pass the original assessment.'
+        'This makeup is only for students who did not pass the original assessment (failed or not turned in).'
       );
     }
   }

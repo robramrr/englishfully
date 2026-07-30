@@ -940,11 +940,12 @@ export default function AssignmentEditor({
               onChange={(event) => setMakeupEnabled(event.target.checked)}
             />
             <span>
-              <ComicText className="font-black">Makeup for failed Listen &amp; Answer</ComicText>
+              <ComicText className="font-black">Makeup for failed / missed Listen &amp; Answer</ComicText>
               <ComicText className="text-sm mt-1 text-[var(--comic-dark)]">
-                Students who failed the tied assessment see this on their grades page. When they
-                pass this Listen &amp; Learn, they get a separate makeup score (same max points as
-                the assessment). The original failed test stays failed.
+                Students who failed or never turned in the tied assessment see this on their grades
+                page. When they pass this Listen &amp; Learn, they get a separate makeup score (same
+                max points as the assessment). A failed original stays failed; a miss stays not
+                turned in.
               </ComicText>
             </span>
           </label>
