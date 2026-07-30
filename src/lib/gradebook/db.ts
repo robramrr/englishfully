@@ -922,18 +922,30 @@ export async function getClassGradebook(
     }
   }
 
+  let availableTasks: GradebookTaskOption[] = [];
+  try {
+    availableTasks = await listGradebookTasks();
+  } catch (error) {
+    console.error('listGradebookTasks failed during class gradebook load:', error);
+  }
+
+  const taskColumns = Array.from(taskMap.values()).sort((a, b) =>
+    a.task_title.localeCompare(b.task_title, undefined, { sensitivity: 'base' })
+  );
+
+  // Possible = every non-makeup column in All Graded Tasks (same for every seat).
+  // A dash still counts in the denominator — e.g. Listen 10 + Speak missing = 10/20.
+  const assignedPossible = taskColumns
+    .filter((column) => column.tool !== 'listen_and_learn')
+    .reduce((sum, column) => sum + Math.max(0, column.max_points || 0), 0);
+
   const seats: GradebookSeat[] = roster.map((studentNumber) => {
     const seatEntries = entries.filter((entry) => entry.student_number === studentNumber);
     const entriesByTask: Record<string, GradebookEntry> = {};
     let totalEarned = 0;
-    let totalPossible = 0;
     for (const entry of seatEntries) {
       entriesByTask[taskKey(entry.tool, entry.task_id)] = entry;
       totalEarned += entry.points;
-      // Makeup (Listen & Learn) adds credit only — it does not raise the possible total.
-      if (entry.tool !== 'listen_and_learn') {
-        totalPossible += entry.max_points;
-      }
     }
     const roll = rollByStudent.get(studentNumber) || '';
     return {
@@ -942,19 +954,9 @@ export async function getClassGradebook(
       roll_number: roll || null,
       entries_by_task: entriesByTask,
       total_earned: totalEarned,
-      total_possible: totalPossible,
+      total_possible: assignedPossible,
     };
   });
-
-  let availableTasks: GradebookTaskOption[] = [];
-  try {
-    availableTasks = await listGradebookTasks();
-  } catch (error) {
-    console.error('listGradebookTasks failed during class gradebook load:', error);
-  }
-  const taskColumns = Array.from(taskMap.values()).sort((a, b) =>
-    a.task_title.localeCompare(b.task_title, undefined, { sensitivity: 'base' })
-  );
 
   return {
     settings: { ...settings, active_semester: activeSemester, school_year: activeYear },

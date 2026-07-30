@@ -319,7 +319,7 @@ export function formatPercent(earned: number, possible: number): string {
   return `${Math.round((earned / possible) * 100)}%`;
 }
 
-/** Green when full points earned; red when short of the possible total. */
+/** Green when full assigned points earned; red when short of the assigned total. */
 export function runningTotalHighlightClass(earned: number, possible: number): string {
   if (!(possible > 0)) return '';
   if (earned >= possible) {
