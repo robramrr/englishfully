@@ -80,7 +80,7 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
     if (!loaded || !allTasksOnly) return;
     const classPart = (classLabel || 'Class').replace(/\//g, '-');
     const yearPart = resolvedYear || 'School-Year';
-    document.title = `Class ${classPart} · ${yearPart} · Semester ${semester} · All Graded Tasks`;
+    document.title = `Class ${classPart} · ${yearPart} · Semester ${semester} · Gradebook`;
   }, [loaded, allTasksOnly, classLabel, resolvedYear, semester]);
 
   const selectedTask = useMemo(
@@ -128,8 +128,9 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
     <div className="gradebook-print-page min-h-screen bg-white text-[var(--comic-dark)]">
       <style jsx global>{`
         @media print {
-          header,
-          footer,
+          /* Site chrome only — do not hide .print-doc-header (the PDF title block). */
+          body > header,
+          body > footer,
           .no-print {
             display: none !important;
           }
@@ -143,6 +144,16 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
             max-width: none !important;
             padding: 0 !important;
             margin: 0 !important;
+          }
+          .print-doc-header {
+            display: block !important;
+            color: #000 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .print-doc-header h1,
+          .print-doc-header p {
+            color: #000 !important;
           }
           .print-table th,
           .print-table td {
@@ -165,15 +176,15 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
         </div>
         <ComicText className="font-bold text-sm">
           {allTasksOnly
-            ? 'Use Print → Save as PDF for a clean All Graded Tasks export (header controls are hidden when printing).'
+            ? 'Use Print → Save as PDF for a clean gradebook export (toolbar controls are hidden when printing).'
             : 'Print this page for a clean grade sheet (header and controls are hidden when printing).'}
         </ComicText>
       </div>
 
       <main className="print-page max-w-4xl mx-auto px-6 py-8">
-        <header className="mb-6 border-b-2 border-[var(--comic-black)] pb-4">
+        <div className="print-doc-header mb-6 border-b-2 border-[var(--comic-black)] pb-4">
           <h1 className="comic-title comic-title-no-shadow text-2xl md:text-3xl text-[var(--comic-primary)] mb-2">
-            {allTasksOnly ? 'All Graded Tasks' : 'Gradebook'}
+            Gradebook
           </h1>
           <p className="font-bold text-lg">
             Class {classLabel || '—'} · {resolvedYear || '—'} · Semester {semester}
@@ -196,7 +207,7 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
             <p className="text-sm mt-1">Max points {maxPoints}</p>
           ) : null}
           <p className="text-sm mt-1">Printed {printedOn}</p>
-        </header>
+        </div>
 
         {!allTasksOnly && selectedTask ? (
           <section className="mb-8">
