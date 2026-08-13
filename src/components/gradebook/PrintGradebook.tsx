@@ -160,6 +160,16 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
             font-size: 11pt;
             padding: 4px 6px !important;
           }
+          .print-table tbody tr {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .print-row-odd {
+            background-color: #e1e1e1 !important;
+          }
+          .print-row-even {
+            background-color: #ffffff !important;
+          }
         }
       `}</style>
 
@@ -315,10 +325,13 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
                 </tr>
               </thead>
               <tbody>
-                {seats.map((seat) => (
+                {seats.map((seat, seatIndex) => (
                   <tr
                     key={`summary-${seat.student_number}`}
-                    className="border-b border-[var(--comic-black)]/25"
+                    className={[
+                      'border-b border-[var(--comic-black)]/25',
+                      seatIndex % 2 === 0 ? 'print-row-odd bg-[#e1e1e1]' : 'print-row-even bg-white',
+                    ].join(' ')}
                   >
                     <td className="py-1.5 pr-2 font-bold">{seat.student_number}</td>
                     {allTasksOnly ? null : (
