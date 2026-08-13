@@ -34,6 +34,8 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
   const searchParams = useSearchParams();
   const semester = parseSemester(searchParams.get('semester')) as GradebookSemester;
   const schoolYear = searchParams.get('school_year') || '';
+  const view = searchParams.get('view') || '';
+  const allTasksOnly = view === 'all_tasks';
   const tool = (searchParams.get('tool') as GradebookTool) || 'listen_and_answer';
   const taskId = searchParams.get('task_id') || '';
   const passPercent = clampPassPercent(searchParams.get('pass_percent') || LISTEN_PASS_PERCENT);
@@ -73,6 +75,13 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
   useEffect(() => {
     void loadClass();
   }, [loadClass]);
+
+  useEffect(() => {
+    if (!loaded || !allTasksOnly) return;
+    const classPart = (classLabel || 'Class').replace(/\//g, '-');
+    const yearPart = resolvedYear || 'School-Year';
+    document.title = `Class ${classPart} · ${yearPart} · Semester ${semester} · All Graded Tasks`;
+  }, [loaded, allTasksOnly, classLabel, resolvedYear, semester]);
 
   const selectedTask = useMemo(
     () =>
@@ -151,41 +160,45 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
             </ComicButton>
           </Link>
           <ComicButton variant="secondary" size="sm" onClick={() => window.print()}>
-            Print
+            {allTasksOnly ? 'Print / Save as PDF' : 'Print'}
           </ComicButton>
         </div>
         <ComicText className="font-bold text-sm">
-          Print this page for a clean grade sheet (header and controls are hidden when printing).
+          {allTasksOnly
+            ? 'Use Print → Save as PDF for a clean All Graded Tasks export (header controls are hidden when printing).'
+            : 'Print this page for a clean grade sheet (header and controls are hidden when printing).'}
         </ComicText>
       </div>
 
       <main className="print-page max-w-4xl mx-auto px-6 py-8">
         <header className="mb-6 border-b-2 border-[var(--comic-black)] pb-4">
           <h1 className="comic-title comic-title-no-shadow text-2xl md:text-3xl text-[var(--comic-primary)] mb-2">
-            Gradebook
+            {allTasksOnly ? 'All Graded Tasks' : 'Gradebook'}
           </h1>
           <p className="font-bold text-lg">
             Class {classLabel || '—'} · {resolvedYear || '—'} · Semester {semester}
           </p>
-          {selectedTask ? (
+          {!allTasksOnly && selectedTask ? (
             <p className="font-bold mt-1">
               {GRADEBOOK_TOOL_LABELS[tool]} — {selectedTask.title}
               {selectedTask.class_name ? ` (${selectedTask.class_name})` : ''}
             </p>
-          ) : (
+          ) : null}
+          {!allTasksOnly && !selectedTask ? (
             <p className="font-bold mt-1">{GRADEBOOK_TOOL_LABELS[tool]}</p>
-          )}
-          {isListen ? (
+          ) : null}
+          {!allTasksOnly && isListen ? (
             <p className="text-sm mt-1">
               Pass cutoff {passPercent}% · Grade points max {maxPoints}
             </p>
-          ) : (
+          ) : null}
+          {!allTasksOnly && !isListen ? (
             <p className="text-sm mt-1">Max points {maxPoints}</p>
-          )}
+          ) : null}
           <p className="text-sm mt-1">Printed {printedOn}</p>
         </header>
 
-        {selectedTask ? (
+        {!allTasksOnly && selectedTask ? (
           <section className="mb-8">
             <h2 className="comic-title comic-title-no-shadow text-xl text-[var(--comic-secondary)] mb-3">
               Task scores
@@ -265,20 +278,22 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
               </tbody>
             </table>
           </section>
-        ) : (
+        ) : !allTasksOnly ? (
           <ComicText className="font-bold mb-8">No task selected for this printout.</ComicText>
-        )}
+        ) : null}
 
         {taskColumns.length > 0 ? (
           <section>
-            <h2 className="comic-title comic-title-no-shadow text-xl text-[var(--comic-primary)] mb-3">
-              All graded tasks
-            </h2>
+            {!allTasksOnly ? (
+              <h2 className="comic-title comic-title-no-shadow text-xl text-[var(--comic-primary)] mb-3">
+                All graded tasks
+              </h2>
+            ) : null}
             <table className="print-table w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b-2 border-[var(--comic-black)] text-left">
                   <th className="py-2 pr-2">#</th>
-                  <th className="py-2 pr-2">Name</th>
+                  {allTasksOnly ? null : <th className="py-2 pr-2">Name</th>}
                   {taskColumns.map((column) => (
                     <th key={column.task_key} className="py-2 pr-2">
                       <div>{GRADEBOOK_TOOL_LABELS[column.tool]}</div>
@@ -295,7 +310,9 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
                     className="border-b border-[var(--comic-black)]/25"
                   >
                     <td className="py-1.5 pr-2 font-bold">{seat.student_number}</td>
-                    <td className="py-1.5 pr-2">{seat.display_name || '—'}</td>
+                    {allTasksOnly ? null : (
+                      <td className="py-1.5 pr-2">{seat.display_name || '—'}</td>
+                    )}
                     {taskColumns.map((column) => {
                       const entry = seat.entries_by_task[column.task_key];
                       if (!entry) {

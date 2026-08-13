@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
@@ -1126,9 +1128,26 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
 
       {taskColumns.length > 0 ? (
         <ComicCard className="comic-shadow-xl overflow-x-auto">
-          <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-primary)]">
-            All Graded Tasks
-          </ComicTitle>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <ComicTitle level={3} className="comic-title-no-shadow text-[var(--comic-primary)]">
+              All Graded Tasks
+            </ComicTitle>
+            <Link
+              href={`/teacher-resources/gradebook/${classId}/print?view=all_tasks&semester=${semester}${
+                schoolYear || settings?.school_year
+                  ? `&school_year=${encodeURIComponent(schoolYear || settings?.school_year || '')}`
+                  : ''
+              }`}
+              title="Export All Graded Tasks as PDF"
+            >
+              <ComicButton variant="warning" size="sm">
+                <span className="inline-flex items-center gap-2">
+                  <FontAwesomeIcon icon={faFilePdf} aria-hidden className="h-[1em] w-[1em]" />
+                  PDF
+                </span>
+              </ComicButton>
+            </Link>
+          </div>
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
               <tr className="border-b-4 border-[var(--comic-black)] text-left">
