@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileExcel } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
 import type {
@@ -25,6 +27,7 @@ import {
   taskKey,
   clampPassPercent,
 } from '@/lib/gradebook/types';
+import { downloadAllGradedTasksExcel } from '@/lib/gradebook/exportExcel';
 
 interface PrintGradebookProps {
   classId: string;
@@ -180,6 +183,27 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
               ← Back to gradebook
             </ComicButton>
           </Link>
+          {allTasksOnly && taskColumns.length > 0 ? (
+            <ComicButton
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() =>
+                downloadAllGradedTasksExcel({
+                  classLabel,
+                  schoolYear: resolvedYear,
+                  semester,
+                  taskColumns,
+                  seats,
+                })
+              }
+            >
+              <span className="inline-flex items-center gap-2">
+                <FontAwesomeIcon icon={faFileExcel} aria-hidden className="h-[1.1em] w-[1.1em]" />
+                Download Excel
+              </span>
+            </ComicButton>
+          ) : null}
           <ComicButton variant="secondary" size="sm" onClick={() => window.print()}>
             {allTasksOnly ? 'Print / Save as PDF' : 'Print'}
           </ComicButton>
