@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import { faFileExcel, faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
@@ -34,6 +34,80 @@ import {
 
 interface ClassGradebookProps {
   classId: string;
+}
+
+function escapeCsvCell(value: string): string {
+  if (/[",\n\r]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+function downloadAllGradedTasksExcel(params: {
+  classLabel: string;
+  schoolYear: string;
+  semester: GradebookSemester;
+  taskColumns: GradebookTaskColumn[];
+  seats: GradebookSeat[];
+}) {
+  const { classLabel, schoolYear, semester, taskColumns, seats } = params;
+  const titleLine = `Class ${classLabel || '—'} · ${schoolYear || '—'} · Semester ${semester}`;
+  const header = [
+    '#',
+    ...taskColumns.map(
+      (column) => `${GRADEBOOK_TOOL_LABELS[column.tool]} — ${column.task_title}`
+    ),
+    'Total earned',
+    'Total possible',
+    'Total',
+  ];
+
+  const dataRows = seats.map((seat) => {
+    const cells = taskColumns.map((column) => {
+      const entry = seat.entries_by_task[column.task_key];
+      if (!entry) return '—';
+      if (
+        column.tool === 'listen_and_answer' &&
+        entry.test_correct != null &&
+        entry.test_total != null
+      ) {
+        return `${formatTestScore(entry.test_correct, entry.test_total)} | ${entry.points}/${entry.max_points} pts`;
+      }
+      return `${entry.points}/${entry.max_points}`;
+    });
+    const totalLabel =
+      seat.total_possible > 0 ? `${seat.total_earned}/${seat.total_possible}` : '—';
+    return [
+      seat.student_number,
+      ...cells,
+      seat.total_possible > 0 ? String(seat.total_earned) : '',
+      seat.total_possible > 0 ? String(seat.total_possible) : '',
+      totalLabel,
+    ];
+  });
+
+  const lines = [
+    ['Gradebook'],
+    [titleLine],
+    [],
+    header,
+    ...dataRows,
+  ].map((row) => row.map((cell) => escapeCsvCell(String(cell ?? ''))).join(','));
+
+  // UTF-8 BOM so Excel opens Thai/Unicode cleanly
+  const blob = new Blob([`\uFEFF${lines.join('\n')}`], {
+    type: 'text/csv;charset=utf-8;',
+  });
+  const classPart = (classLabel || 'Class').replace(/[^\w.-]+/g, '-');
+  const yearPart = (schoolYear || 'School-Year').replace(/[^\w.-]+/g, '-');
+  const filename = `Class_${classPart}_${yearPart}_Semester_${semester}_Gradebook.csv`;
+
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
 }
 
 export default function ClassGradebook({ classId }: ClassGradebookProps) {
@@ -1132,21 +1206,43 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
             <ComicTitle level={3} className="comic-title-no-shadow text-[var(--comic-primary)]">
               All Graded Tasks
             </ComicTitle>
-            <Link
-              href={`/teacher-resources/gradebook/${classId}/print?view=all_tasks&semester=${semester}${
-                schoolYear || settings?.school_year
-                  ? `&school_year=${encodeURIComponent(schoolYear || settings?.school_year || '')}`
-                  : ''
-              }`}
-              title="Export All Graded Tasks as PDF"
-            >
-              <ComicButton variant="warning" size="sm">
+            <div className="flex flex-wrap gap-2">
+              <ComicButton
+                type="button"
+                variant="success"
+                size="sm"
+                title="Export All Graded Tasks to Excel"
+                onClick={() =>
+                  downloadAllGradedTasksExcel({
+                    classLabel,
+                    schoolYear: schoolYear || settings?.school_year || '',
+                    semester,
+                    taskColumns,
+                    seats,
+                  })
+                }
+              >
                 <span className="inline-flex items-center gap-2">
-                  <FontAwesomeIcon icon={faFilePdf} aria-hidden className="h-[1em] w-[1em]" />
-                  PDF
+                  <FontAwesomeIcon icon={faFileExcel} aria-hidden className="h-[1em] w-[1em]" />
+                  Excel
                 </span>
               </ComicButton>
-            </Link>
+              <Link
+                href={`/teacher-resources/gradebook/${classId}/print?view=all_tasks&semester=${semester}${
+                  schoolYear || settings?.school_year
+                    ? `&school_year=${encodeURIComponent(schoolYear || settings?.school_year || '')}`
+                    : ''
+                }`}
+                title="Export All Graded Tasks as PDF"
+              >
+                <ComicButton variant="warning" size="sm">
+                  <span className="inline-flex items-center gap-2">
+                    <FontAwesomeIcon icon={faFilePdf} aria-hidden className="h-[1em] w-[1em]" />
+                    PDF
+                  </span>
+                </ComicButton>
+              </Link>
+            </div>
           </div>
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
