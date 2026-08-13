@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isTeacherAuthenticated } from '@/lib/speak-and-submit/auth';
 import { jsonError } from '@/lib/speak-and-submit/api';
-import { clearRollClaims, listRollClaims } from '@/lib/gradebook/db';
+import { clearRollClaims, listRollClaims, listRosterRollsBySeat } from '@/lib/gradebook/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,8 +11,11 @@ export async function GET() {
   }
 
   try {
-    const claims = await listRollClaims();
-    return NextResponse.json({ claims });
+    const [claims, roster_rolls] = await Promise.all([
+      listRollClaims(),
+      listRosterRollsBySeat(),
+    ]);
+    return NextResponse.json({ claims, roster_rolls });
   } catch (error) {
     console.error('List roll claims error:', error);
     return jsonError('Failed to load claimed roll numbers', 500);

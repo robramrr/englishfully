@@ -23,6 +23,7 @@ export default function GradebookHome() {
   const [gradesSlug, setGradesSlug] = useState('');
   const [rollLookupOpen, setRollLookupOpen] = useState(false);
   const [claims, setClaims] = useState<GradebookRollClaim[]>([]);
+  const [rosterRolls, setRosterRolls] = useState<Record<string, string>>({});
   const [claimsLoaded, setClaimsLoaded] = useState(false);
   const [clearingClaims, setClearingClaims] = useState(false);
   const [savingClaimKey, setSavingClaimKey] = useState('');
@@ -54,6 +55,7 @@ export default function GradebookHome() {
         latest_at: string;
         rolls: string[];
         conflict: boolean;
+        roster_roll: string;
       }
     >();
     for (const claim of claims) {
@@ -68,6 +70,7 @@ export default function GradebookHome() {
           latest_at: claim.created_at,
           rolls: [claim.claimed_roll],
           conflict: false,
+          roster_roll: rosterRolls[key] || '',
         });
         continue;
       }
@@ -83,7 +86,7 @@ export default function GradebookHome() {
       if (classCmp !== 0) return classCmp;
       return a.student_number.localeCompare(b.student_number, undefined, { numeric: true });
     });
-  }, [claims]);
+  }, [claims, rosterRolls]);
 
   const loadClaims = useCallback(async () => {
     const response = await fetch('/api/gradebook/roll-claims', { cache: 'no-store' });
@@ -93,6 +96,7 @@ export default function GradebookHome() {
     }
     const data = await response.json();
     setClaims((data.claims || []) as GradebookRollClaim[]);
+    setRosterRolls((data.roster_rolls || {}) as Record<string, string>);
     setClaimsLoaded(true);
   }, []);
 
@@ -249,6 +253,7 @@ export default function GradebookHome() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to save roll to roster');
+      setRosterRolls((prev) => ({ ...prev, [key]: claim.latest_roll }));
       setSaveMessage(
         `Saved roll ${claim.latest_roll} for ${claim.class_label} #${claim.student_number} to the roster.`
       );
@@ -467,8 +472,9 @@ export default function GradebookHome() {
         </div>
         <ComicText className="mb-4 text-[var(--comic-dark)]">
           When temporary open lookup is on, each successful student check logs the 5 digits they
-          typed. Use “Save to roster” after you verify, or copy them into the class gradebook Roll #
-          column yourself.
+          typed. Notes show when that seat has no current 5-digit roll on the roster — use “Save to
+          roster” to adopt what they entered, or copy it into the class gradebook Roll # column
+          yourself.
         </ComicText>
 
         {!claimsLoaded ? (
@@ -520,13 +526,26 @@ export default function GradebookHome() {
                         </ComicText>
                       </td>
                       <td className="py-3 pr-3">
-                        {claim.conflict ? (
-                          <ComicText className="text-sm font-bold text-[var(--comic-danger)]">
-                            Conflict: {claim.rolls.join(', ')}
-                          </ComicText>
-                        ) : (
-                          <ComicText className="text-sm text-[var(--comic-dark)]">OK</ComicText>
-                        )}
+                        <div className="space-y-1">
+                          {!claim.roster_roll ? (
+                            <ComicText className="text-sm font-bold text-[var(--comic-secondary)]">
+                              No current 5-digit roll on roster — Save to roster to adopt
+                            </ComicText>
+                          ) : claim.roster_roll === claim.latest_roll ? (
+                            <ComicText className="text-sm text-[var(--comic-dark)]">
+                              Roster already has {claim.roster_roll} (matches)
+                            </ComicText>
+                          ) : (
+                            <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+                              Roster currently has {claim.roster_roll}
+                            </ComicText>
+                          )}
+                          {claim.conflict ? (
+                            <ComicText className="text-sm font-bold text-[var(--comic-danger)]">
+                              Conflict: {claim.rolls.join(', ')}
+                            </ComicText>
+                          ) : null}
+                        </div>
                       </td>
                       <td className="py-3">
                         <ComicButton

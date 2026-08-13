@@ -1880,6 +1880,27 @@ export async function listRollClaims(
   return rows.map((row) => rowToRollClaim(row));
 }
 
+/** Map of `${class_id}::${student_number}` → current 5-digit roster roll (if set). */
+export async function listRosterRollsBySeat(
+  teacherId: string = DEFAULT_TEACHER_ID
+): Promise<Record<string, string>> {
+  await ensureGradebookSchema();
+  const { rows } = await sql`
+    SELECT class_id, student_number, roll_number
+    FROM gradebook_roster
+    WHERE teacher_id = ${teacherId}
+  `;
+  const map: Record<string, string> = {};
+  for (const row of rows) {
+    const classId = String(row.class_id ?? '').trim();
+    const studentNumber = normalizeStudentNumber(String(row.student_number ?? ''));
+    const roll = normalizeRollNumber(row.roll_number);
+    if (!classId || !studentNumber || !roll) continue;
+    map[`${classId}::${studentNumber}`] = roll;
+  }
+  return map;
+}
+
 export async function clearRollClaims(
   teacherId: string = DEFAULT_TEACHER_ID
 ): Promise<number> {
