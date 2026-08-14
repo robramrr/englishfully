@@ -131,9 +131,31 @@ export default function PrintHandout({
             margin-bottom: 0.75rem !important;
           }
           .speak-and-submit-page .print-student-url {
-            font-size: 20px !important;
-            line-height: 1.3 !important;
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-size: 16pt !important;
+            font-weight: 700 !important;
+            line-height: 1.35 !important;
+            letter-spacing: 0.01em !important;
+            color: #000 !important;
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+            word-break: break-all !important;
+            -webkit-font-smoothing: auto !important;
+            -moz-osx-font-smoothing: auto !important;
           }
+        }
+
+        /* Screen preview — match print size/crispness */
+        .speak-and-submit-page .print-student-url {
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 22px;
+          font-weight: 700;
+          line-height: 1.35;
+          letter-spacing: 0.01em;
+          color: #000;
+          white-space: normal;
+          overflow-wrap: anywhere;
+          word-break: break-all;
         }
       `}</style>
 
@@ -266,7 +288,7 @@ export default function PrintHandout({
 
             <hr className="print-qr-divider border-0 border-t-4 border-[var(--comic-black)] mb-4" />
 
-            <p className="print-student-url font-bold text-[20px] leading-tight whitespace-nowrap text-center text-[var(--comic-dark)]">
+            <p className="print-student-url text-center">
               {studentUrl}
             </p>
           </section>
