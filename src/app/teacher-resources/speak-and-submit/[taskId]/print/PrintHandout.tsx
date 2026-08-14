@@ -132,7 +132,7 @@ export default function PrintHandout({
           }
           .speak-and-submit-page .print-student-url {
             font-family: Arial, Helvetica, sans-serif !important;
-            font-size: 16pt !important;
+            font-size: 14pt !important;
             font-weight: 700 !important;
             line-height: 1.35 !important;
             letter-spacing: 0.01em !important;
@@ -148,7 +148,7 @@ export default function PrintHandout({
         /* Screen preview — match print size/crispness */
         .speak-and-submit-page .print-student-url {
           font-family: Arial, Helvetica, sans-serif;
-          font-size: 22px;
+          font-size: 14pt;
           font-weight: 700;
           line-height: 1.35;
           letter-spacing: 0.01em;
