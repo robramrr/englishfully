@@ -131,7 +131,7 @@ export default function PrintHandout({
             margin-bottom: 0.75rem !important;
           }
           .speak-and-submit-page .print-student-url {
-            font-size: 16px !important;
+            font-size: 20px !important;
             line-height: 1.3 !important;
           }
         }
@@ -266,7 +266,7 @@ export default function PrintHandout({
 
             <hr className="print-qr-divider border-0 border-t-4 border-[var(--comic-black)] mb-4" />
 
-            <p className="print-student-url font-bold text-[16px] leading-tight whitespace-nowrap text-center text-[var(--comic-dark)]">
+            <p className="print-student-url font-bold text-[20px] leading-tight whitespace-nowrap text-center text-[var(--comic-dark)]">
               {studentUrl}
             </p>
           </section>
