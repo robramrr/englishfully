@@ -406,13 +406,23 @@ export default function PresentationEditor() {
                       onChange={(event) =>
                         setDeck((prev) =>
                           updateSlide(prev, selected.id, {
-                            bullets: event.target.value
-                              .split(/\r?\n/)
+                            // Keep blank lines while typing so Enter can start the next bullet
+                            bullets: event.target.value.split(/\r?\n/),
+                          })
+                        )
+                      }
+                      onBlur={() =>
+                        setDeck((prev) =>
+                          updateSlide(prev, selected.id, {
+                            bullets: (
+                              prev.slides.find((slide) => slide.id === selected.id)?.bullets || []
+                            )
                               .map((line) => line.trim())
                               .filter(Boolean),
                           })
                         )
                       }
+                      onKeyDown={(event) => event.stopPropagation()}
                       placeholder={'- I wake up at 6.\n- I eat breakfast.'}
                     />
                   </label>

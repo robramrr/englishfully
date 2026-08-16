@@ -69,16 +69,18 @@ function ContentBody({
         </p>
       )}
 
-      {slide.bullets.length > 0 ? (
+      {slide.bullets.filter((item) => item.trim()).length > 0 ? (
         <ul
           className={[
             'list-disc space-y-1 pl-5 font-bold',
             compact ? 'text-xs' : 'text-base md:text-xl',
           ].join(' ')}
         >
-          {slide.bullets.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
+          {slide.bullets
+            .filter((item) => item.trim())
+            .map((item) => (
+              <li key={item}>{item}</li>
+            ))}
         </ul>
       ) : null}
 
