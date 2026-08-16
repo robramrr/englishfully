@@ -1,10 +1,7 @@
 'use client';
 
 import type { PresentationDeck, PresentationSlide } from '@/lib/presentation/types';
-import {
-  GrammarHighlightedText,
-  useGrammarHighlight,
-} from './GrammarHighlight';
+import { GrammarLiveTextBox } from './GrammarHighlight';
 
 interface SlideCanvasProps {
   slide: PresentationSlide;
@@ -55,74 +52,28 @@ function ContentBody({
   onBodyChange?: (body: string) => void;
 }) {
   const grammarOn =
-    slide.layout === 'content' &&
-    slide.grammarHighlighterEnabled &&
-    Boolean(slide.grammarTarget.trim());
-
-  const { spans, loading, error } = useGrammarHighlight({
-    enabled: grammarOn,
-    text: body,
-    grammarTarget: slide.grammarTarget,
-  });
+    slide.layout === 'content' && slide.grammarHighlighterEnabled;
 
   const textClass = [
     'font-bold leading-relaxed',
     compact ? 'text-xs' : 'text-base md:text-xl',
   ].join(' ');
 
-  if (liveEditable && grammarOn) {
-    return (
-      <div className="flex h-full min-h-0 flex-col gap-2">
-        {slide.grammarTarget ? (
-          <p className="text-xs font-bold uppercase tracking-wide text-[var(--comic-primary)]">
-            Grammar focus: {slide.grammarTarget}
-            {loading ? ' · highlighting…' : ''}
-          </p>
-        ) : null}
-        <div className="min-h-0 flex-1 overflow-auto rounded-sm border-4 border-[var(--comic-black)] bg-white/80 p-3">
-          <GrammarHighlightedText
-            text={body}
-            spans={spans}
-            className={textClass}
-            placeholder="Start typing below — matches light up yellow"
-          />
-        </div>
-        <textarea
-          className={[
-            'w-full shrink-0 resize-none border-4 border-[var(--comic-black)] bg-white p-2 comic-shadow-sm',
-            compact ? 'min-h-[3rem] text-xs font-bold' : 'min-h-[4.5rem] text-base font-bold',
-          ].join(' ')}
-          value={body}
-          onChange={(event) => onBodyChange?.(event.target.value)}
-          placeholder="Live type here…"
-          onKeyDown={(event) => event.stopPropagation()}
-        />
-        {error ? (
-          <p className="text-xs font-bold text-[var(--comic-danger)]">{error}</p>
-        ) : null}
-      </div>
-    );
-  }
-
+  // One box only — type here; highlights appear in-place after a full stop.
   if (grammarOn) {
     return (
-      <div className="space-y-2">
-        {slide.grammarTarget ? (
-          <p className="text-xs font-bold uppercase tracking-wide text-[var(--comic-primary)]">
-            Grammar focus: {slide.grammarTarget}
-            {loading ? ' · highlighting…' : ''}
-          </p>
-        ) : null}
-        <GrammarHighlightedText
-          text={body}
-          spans={spans}
-          className={textClass}
-          placeholder="Add slide text…"
-        />
-        {error ? (
-          <p className="text-xs font-bold text-[var(--comic-danger)]">{error}</p>
-        ) : null}
-      </div>
+      <GrammarLiveTextBox
+        value={body}
+        grammarTarget={slide.grammarTarget}
+        editable={liveEditable && Boolean(onBodyChange)}
+        onChange={onBodyChange}
+        className={textClass}
+        placeholder={
+          liveEditable
+            ? 'Type live — grammar highlights in this box after a full stop'
+            : 'Add text in the editor — grammar highlights after a full stop'
+        }
+      />
     );
   }
 

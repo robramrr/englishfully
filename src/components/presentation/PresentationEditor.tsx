@@ -357,37 +357,44 @@ export default function PresentationEditor() {
                   />
                 </label>
 
-                <label className="block space-y-1">
-                  <ComicText className="text-sm font-bold">
-                    {selected.layout === 'title' ? 'Subtitle' : 'Text'}
+                {selected.layout === 'title' || !selected.grammarHighlighterEnabled ? (
+                  <label className="block space-y-1">
+                    <ComicText className="text-sm font-bold">
+                      {selected.layout === 'title' ? 'Subtitle' : 'Text'}
+                    </ComicText>
+                    <textarea
+                      className="comic-textarea w-full min-h-[120px]"
+                      value={selected.body}
+                      onChange={(event) => {
+                        const body = event.target.value;
+                        setDeck((prev) => {
+                          let next = updateSlide(prev, selected.id, { body });
+                          if (selected.layout === 'title' || selectedIndex === 0) {
+                            next = { ...next, subtitle: body };
+                          }
+                          return next;
+                        });
+                      }}
+                      onBlur={() =>
+                        setDeck((prev) =>
+                          updateSlide(prev, selected.id, {
+                            body: cleanSlideText(selected.body),
+                          })
+                        )
+                      }
+                      placeholder={
+                        selected.layout === 'title'
+                          ? 'Short subtitle for the opening slide'
+                          : 'Main text for this slide'
+                      }
+                    />
+                  </label>
+                ) : (
+                  <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+                    Text box is on the live slide below — type there (highlights after a full
+                    stop). Your existing text stays until you edit it.
                   </ComicText>
-                  <textarea
-                    className="comic-textarea w-full min-h-[120px]"
-                    value={selected.body}
-                    onChange={(event) => {
-                      const body = event.target.value;
-                      setDeck((prev) => {
-                        let next = updateSlide(prev, selected.id, { body });
-                        if (selected.layout === 'title' || selectedIndex === 0) {
-                          next = { ...next, subtitle: body };
-                        }
-                        return next;
-                      });
-                    }}
-                    onBlur={() =>
-                      setDeck((prev) =>
-                        updateSlide(prev, selected.id, {
-                          body: cleanSlideText(selected.body),
-                        })
-                      )
-                    }
-                    placeholder={
-                      selected.layout === 'title'
-                        ? 'Short subtitle for the opening slide'
-                        : 'Main text for this slide'
-                    }
-                  />
-                </label>
+                )}
 
                 {(selected.layout === 'content' ||
                   selected.layout === 'image' ||
@@ -453,8 +460,8 @@ export default function PresentationEditor() {
                       <div>
                         <ComicText className="font-black">Grammar highlighter</ComicText>
                         <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                          Leave the text empty to type live in Present, or paste text now. AI
-                          highlights the target grammar in yellow.
+                          Turns on one text box on the slide. Type or paste there; after a full
+                          stop, target grammar lights up yellow in that same box (no second field).
                         </ComicText>
                       </div>
                       <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
@@ -506,6 +513,14 @@ export default function PresentationEditor() {
                   slideNumber={selectedIndex + 1}
                   totalSlides={deck.slides.length}
                   showImageSlot
+                  liveEditable={
+                    selected.layout === 'content' && selected.grammarHighlighterEnabled
+                  }
+                  onBodyChange={
+                    selected.layout === 'content' && selected.grammarHighlighterEnabled
+                      ? (body) => setDeck((prev) => updateSlide(prev, selected.id, { body }))
+                      : undefined
+                  }
                 />
               </div>
             </>

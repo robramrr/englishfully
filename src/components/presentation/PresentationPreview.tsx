@@ -29,8 +29,7 @@ export default function PresentationPreview({
   const liveGrammar =
     Boolean(slide) &&
     slide.layout === 'content' &&
-    slide.grammarHighlighterEnabled &&
-    Boolean(slide.grammarTarget.trim());
+    slide.grammarHighlighterEnabled;
 
   const goPrev = useCallback(() => {
     onIndexChange(Math.max(0, safeIndex - 1));
