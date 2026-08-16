@@ -61,7 +61,6 @@ function ContentBody({
 
   return (
     <div className="space-y-3">
-      {/* Definition / explanation — always independent of grammar highlighter */}
       {body ? (
         <p className={`whitespace-pre-wrap ${textClass}`}>{body}</p>
       ) : (
@@ -70,7 +69,19 @@ function ContentBody({
         </p>
       )}
 
-      {/* Separate practice box — only when grammar highlighter is on */}
+      {slide.bullets.length > 0 ? (
+        <ul
+          className={[
+            'list-disc space-y-1 pl-5 font-bold',
+            compact ? 'text-xs' : 'text-base md:text-xl',
+          ].join(' ')}
+        >
+          {slide.bullets.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      ) : null}
+
       {grammarOn ? (
         <GrammarLiveTextBox
           value={slide.grammarText}
@@ -78,11 +89,7 @@ function ContentBody({
           editable={liveEditable && Boolean(onGrammarTextChange)}
           onChange={onGrammarTextChange}
           className={textClass}
-          placeholder={
-            liveEditable
-              ? 'Grammar practice — type live; highlights after a full stop'
-              : 'Grammar practice text — highlights after a full stop'
-          }
+          placeholder="Example..."
         />
       ) : null}
     </div>
@@ -183,18 +190,6 @@ export default function SlideCanvas({
                   liveEditable={liveEditable}
                   onGrammarTextChange={onGrammarTextChange}
                 />
-                {slide.bullets.length > 0 ? (
-                  <ul
-                    className={[
-                      'mt-3 list-disc space-y-1 pl-5 font-bold',
-                      compact ? 'text-xs' : 'text-base md:text-xl',
-                    ].join(' ')}
-                  >
-                    {slide.bullets.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                ) : null}
               </div>
               {showImage ? (
                 <SlideImage

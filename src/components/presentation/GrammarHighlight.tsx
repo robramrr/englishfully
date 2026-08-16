@@ -79,7 +79,7 @@ export function GrammarLiveTextBox({
   onChange,
   grammarTarget,
   className = '',
-  placeholder = 'Type here — grammar highlights after a full stop',
+  placeholder = 'Example...',
   editable = true,
 }: {
   value: string;
@@ -94,7 +94,6 @@ export function GrammarLiveTextBox({
   const ignoreSyncRef = useRef(false);
   const highlightedForRef = useRef('');
   const requestIdRef = useRef(0);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const setEditorHtml = useCallback(
@@ -147,7 +146,6 @@ export function GrammarLiveTextBox({
       return;
     }
     const requestId = ++requestIdRef.current;
-    setLoading(true);
     setError('');
     try {
       const matches = await fetchGrammarMatches(text, grammarTarget);
@@ -159,8 +157,6 @@ export function GrammarLiveTextBox({
     } catch (err) {
       if (requestId !== requestIdRef.current) return;
       setError(err instanceof Error ? err.message : 'Failed to highlight grammar');
-    } finally {
-      if (requestId === requestIdRef.current) setLoading(false);
     }
   }
 
@@ -185,16 +181,6 @@ export function GrammarLiveTextBox({
 
   return (
     <div className="space-y-1">
-      {grammarTarget ? (
-        <p className="text-xs font-bold uppercase tracking-wide text-[var(--comic-primary)]">
-          Grammar focus: {grammarTarget}
-          {loading ? ' · highlighting…' : ''}
-        </p>
-      ) : (
-        <p className="text-xs font-bold text-[var(--comic-dark)]/70">
-          Add a target grammar above to enable yellow highlights after a full stop.
-        </p>
-      )}
       <div
         ref={editorRef}
         role="textbox"
