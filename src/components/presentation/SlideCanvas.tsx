@@ -12,9 +12,9 @@ interface SlideCanvasProps {
   compact?: boolean;
   /** Show empty image placeholder (editor). Hidden in present mode when no URL. */
   showImageSlot?: boolean;
-  /** Allow live typing into the text box during present/preview. */
+  /** Allow live typing into the grammar practice box during present/preview. */
   liveEditable?: boolean;
-  onBodyChange?: (body: string) => void;
+  onGrammarTextChange?: (grammarText: string) => void;
 }
 
 function SlideImage({ url, alt, className = '' }: { url: string; alt: string; className?: string }) {
@@ -43,13 +43,13 @@ function ContentBody({
   body,
   compact,
   liveEditable,
-  onBodyChange,
+  onGrammarTextChange,
 }: {
   slide: PresentationSlide;
   body: string;
   compact: boolean;
   liveEditable: boolean;
-  onBodyChange?: (body: string) => void;
+  onGrammarTextChange?: (grammarText: string) => void;
 }) {
   const grammarOn =
     slide.layout === 'content' && slide.grammarHighlighterEnabled;
@@ -59,29 +59,34 @@ function ContentBody({
     compact ? 'text-xs' : 'text-base md:text-xl',
   ].join(' ');
 
-  // One box only — type here; highlights appear in-place after a full stop.
-  if (grammarOn) {
-    return (
-      <GrammarLiveTextBox
-        value={body}
-        grammarTarget={slide.grammarTarget}
-        editable={liveEditable && Boolean(onBodyChange)}
-        onChange={onBodyChange}
-        className={textClass}
-        placeholder={
-          liveEditable
-            ? 'Type live — grammar highlights in this box after a full stop'
-            : 'Add text in the editor — grammar highlights after a full stop'
-        }
-      />
-    );
-  }
+  return (
+    <div className="space-y-3">
+      {/* Definition / explanation — always independent of grammar highlighter */}
+      {body ? (
+        <p className={`whitespace-pre-wrap ${textClass}`}>{body}</p>
+      ) : (
+        <p className={`font-bold text-[var(--comic-dark)]/50 ${textClass}`}>
+          Add a definition or explanation…
+        </p>
+      )}
 
-  if (body) {
-    return <p className={`whitespace-pre-wrap ${textClass}`}>{body}</p>;
-  }
-
-  return <p className={`font-bold text-[var(--comic-dark)]/50 ${textClass}`}>Add slide text…</p>;
+      {/* Separate practice box — only when grammar highlighter is on */}
+      {grammarOn ? (
+        <GrammarLiveTextBox
+          value={slide.grammarText}
+          grammarTarget={slide.grammarTarget}
+          editable={liveEditable && Boolean(onGrammarTextChange)}
+          onChange={onGrammarTextChange}
+          className={textClass}
+          placeholder={
+            liveEditable
+              ? 'Grammar practice — type live; highlights after a full stop'
+              : 'Grammar practice text — highlights after a full stop'
+          }
+        />
+      ) : null}
+    </div>
+  );
 }
 
 export default function SlideCanvas({
@@ -93,7 +98,7 @@ export default function SlideCanvas({
   compact = false,
   showImageSlot = false,
   liveEditable = false,
-  onBodyChange,
+  onGrammarTextChange,
 }: SlideCanvasProps) {
   const title = slide.title || (slide.layout === 'title' ? deck.title : 'Untitled slide');
   const body =
@@ -176,7 +181,7 @@ export default function SlideCanvas({
                   body={body}
                   compact={compact}
                   liveEditable={liveEditable}
-                  onBodyChange={onBodyChange}
+                  onGrammarTextChange={onGrammarTextChange}
                 />
                 {slide.bullets.length > 0 ? (
                   <ul

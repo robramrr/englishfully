@@ -129,8 +129,8 @@ export default function PresentationEditor() {
         onIndexChange={setPreviewIndex}
         onClose={() => setPreviewMode('off')}
         fullscreen
-        onSlideBodyChange={(slideId, body) =>
-          setDeck((prev) => updateSlide(prev, slideId, { body }))
+        onGrammarTextChange={(slideId, grammarText) =>
+          setDeck((prev) => updateSlide(prev, slideId, { grammarText }))
         }
       />
     );
@@ -243,8 +243,8 @@ export default function PresentationEditor() {
             index={previewIndex}
             onIndexChange={setPreviewIndex}
             onClose={() => setPreviewMode('off')}
-            onSlideBodyChange={(slideId, body) =>
-              setDeck((prev) => updateSlide(prev, slideId, { body }))
+            onGrammarTextChange={(slideId, grammarText) =>
+              setDeck((prev) => updateSlide(prev, slideId, { grammarText }))
             }
           />
         </ComicCard>
@@ -357,44 +357,43 @@ export default function PresentationEditor() {
                   />
                 </label>
 
-                {selected.layout === 'title' || !selected.grammarHighlighterEnabled ? (
-                  <label className="block space-y-1">
-                    <ComicText className="text-sm font-bold">
-                      {selected.layout === 'title' ? 'Subtitle' : 'Text'}
-                    </ComicText>
-                    <textarea
-                      className="comic-textarea w-full min-h-[120px]"
-                      value={selected.body}
-                      onChange={(event) => {
-                        const body = event.target.value;
-                        setDeck((prev) => {
-                          let next = updateSlide(prev, selected.id, { body });
-                          if (selected.layout === 'title' || selectedIndex === 0) {
-                            next = { ...next, subtitle: body };
-                          }
-                          return next;
-                        });
-                      }}
-                      onBlur={() =>
-                        setDeck((prev) =>
-                          updateSlide(prev, selected.id, {
-                            body: cleanSlideText(selected.body),
-                          })
-                        )
-                      }
-                      placeholder={
-                        selected.layout === 'title'
-                          ? 'Short subtitle for the opening slide'
-                          : 'Main text for this slide'
-                      }
-                    />
-                  </label>
-                ) : (
-                  <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                    Text box is on the live slide below — type there (highlights after a full
-                    stop). Your existing text stays until you edit it.
+                <label className="block space-y-1">
+                  <ComicText className="text-sm font-bold">
+                    {selected.layout === 'title'
+                      ? 'Subtitle'
+                      : selected.layout === 'content'
+                        ? 'Definition / explanation'
+                        : 'Text'}
                   </ComicText>
-                )}
+                  <textarea
+                    className="comic-textarea w-full min-h-[120px]"
+                    value={selected.body}
+                    onChange={(event) => {
+                      const body = event.target.value;
+                      setDeck((prev) => {
+                        let next = updateSlide(prev, selected.id, { body });
+                        if (selected.layout === 'title' || selectedIndex === 0) {
+                          next = { ...next, subtitle: body };
+                        }
+                        return next;
+                      });
+                    }}
+                    onBlur={() =>
+                      setDeck((prev) =>
+                        updateSlide(prev, selected.id, {
+                          body: cleanSlideText(selected.body),
+                        })
+                      )
+                    }
+                    placeholder={
+                      selected.layout === 'title'
+                        ? 'Short subtitle for the opening slide'
+                        : selected.layout === 'content'
+                          ? 'e.g. Possessive adjectives show who something belongs to (my, your, his…).'
+                          : 'Main text for this slide'
+                    }
+                  />
+                </label>
 
                 {(selected.layout === 'content' ||
                   selected.layout === 'image' ||
@@ -460,8 +459,9 @@ export default function PresentationEditor() {
                       <div>
                         <ComicText className="font-black">Grammar highlighter</ComicText>
                         <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                          Turns on one text box on the slide. Type or paste there; after a full
-                          stop, target grammar lights up yellow in that same box (no second field).
+                          Keeps your definition above. Adds one separate practice text box on
+                          the slide — type or paste examples; after a full stop, target grammar
+                          highlights yellow in that box only.
                         </ComicText>
                       </div>
                       <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
@@ -484,9 +484,7 @@ export default function PresentationEditor() {
                     </div>
                     {selected.grammarHighlighterEnabled ? (
                       <label className="block space-y-1">
-                        <ComicText className="text-sm font-bold">
-                          Target grammar
-                        </ComicText>
+                        <ComicText className="text-sm font-bold">Target grammar</ComicText>
                         <input
                           className="comic-input w-full"
                           value={selected.grammarTarget}
@@ -516,9 +514,10 @@ export default function PresentationEditor() {
                   liveEditable={
                     selected.layout === 'content' && selected.grammarHighlighterEnabled
                   }
-                  onBodyChange={
+                  onGrammarTextChange={
                     selected.layout === 'content' && selected.grammarHighlighterEnabled
-                      ? (body) => setDeck((prev) => updateSlide(prev, selected.id, { body }))
+                      ? (grammarText) =>
+                          setDeck((prev) => updateSlide(prev, selected.id, { grammarText }))
                       : undefined
                   }
                 />

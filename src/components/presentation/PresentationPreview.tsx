@@ -12,7 +12,7 @@ interface PresentationPreviewProps {
   onIndexChange: (index: number) => void;
   onClose: () => void;
   fullscreen?: boolean;
-  onSlideBodyChange?: (slideId: string, body: string) => void;
+  onGrammarTextChange?: (slideId: string, grammarText: string) => void;
 }
 
 export default function PresentationPreview({
@@ -21,7 +21,7 @@ export default function PresentationPreview({
   onIndexChange,
   onClose,
   fullscreen = false,
-  onSlideBodyChange,
+  onGrammarTextChange,
 }: PresentationPreviewProps) {
   const total = deck.slides.length;
   const safeIndex = Math.min(Math.max(index, 0), Math.max(total - 1, 0));
@@ -112,9 +112,9 @@ export default function PresentationPreview({
           slideNumber={safeIndex + 1}
           totalSlides={total}
           liveEditable={liveGrammar}
-          onBodyChange={
-            liveGrammar && onSlideBodyChange
-              ? (body) => onSlideBodyChange(slide.id, body)
+          onGrammarTextChange={
+            liveGrammar && onGrammarTextChange
+              ? (grammarText) => onGrammarTextChange(slide.id, grammarText)
               : undefined
           }
         />
@@ -123,7 +123,7 @@ export default function PresentationPreview({
       {fullscreen ? (
         <ComicText className="text-center text-sm font-bold text-white/80">
           Arrow keys / space to navigate · Esc to exit
-          {liveGrammar ? ' · Type in the live box to highlight grammar' : ''}
+          {liveGrammar ? ' · Type in the grammar box — highlights after a full stop' : ''}
         </ComicText>
       ) : null}
     </div>
