@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faDoorOpen, faHeadphones } from "@fortawesome/free-solid-svg-icons";
+import { faChalkboard, faDoorOpen, faHeadphones } from "@fortawesome/free-solid-svg-icons";
 import ComicButton from "../../components/ComicButton";
 import ComicCard from "../../components/ComicCard";
 import ComicTitle from "../../components/ComicTitle";
@@ -133,6 +133,18 @@ function ResourceCategoriesSection() {
                     className="h-[1em] w-[1em] shrink-0"
                   />
                   Escape Room Generator
+                </span>
+              </ComicButton>
+            </Link>
+            <Link href="/teacher-resources/presentation">
+              <ComicButton variant="secondary" size="sm">
+                <span className="inline-flex items-center gap-2">
+                  <FontAwesomeIcon
+                    icon={faChalkboard}
+                    aria-hidden
+                    className="h-[1em] w-[1em] shrink-0"
+                  />
+                  Presentation
                 </span>
               </ComicButton>
             </Link>
