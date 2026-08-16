@@ -493,21 +493,70 @@ export default function PresentationEditor() {
                       </label>
                     </div>
                     {selected.grammarHighlighterEnabled ? (
-                      <label className="block space-y-1">
-                        <ComicText className="text-sm font-bold">Target grammar</ComicText>
-                        <input
-                          className="comic-input w-full"
-                          value={selected.grammarTarget}
-                          onChange={(event) =>
-                            setDeck((prev) =>
-                              updateSlide(prev, selected.id, {
-                                grammarTarget: event.target.value,
-                              })
-                            )
-                          }
-                          placeholder="e.g. Possessive Adjectives"
-                        />
-                      </label>
+                      <div className="space-y-3">
+                        <label className="block space-y-1">
+                          <ComicText className="text-sm font-bold">Target grammar</ComicText>
+                          <input
+                            className="comic-input w-full"
+                            value={selected.grammarTarget}
+                            onChange={(event) =>
+                              setDeck((prev) =>
+                                updateSlide(prev, selected.id, {
+                                  grammarTarget: event.target.value,
+                                })
+                              )
+                            }
+                            placeholder="e.g. Possessive Adjectives"
+                          />
+                        </label>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <ComicText className="text-sm font-bold">Custom placeholder</ComicText>
+                            <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
+                              Override “Example...” with a form/reminder (line breaks allowed).
+                            </ComicText>
+                          </div>
+                          <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
+                            <span className="text-sm">
+                              {selected.grammarCustomPlaceholderEnabled ? 'On' : 'Off'}
+                            </span>
+                            <input
+                              type="checkbox"
+                              className="h-5 w-9 accent-[var(--comic-primary)]"
+                              checked={selected.grammarCustomPlaceholderEnabled}
+                              onChange={(event) =>
+                                setDeck((prev) =>
+                                  updateSlide(prev, selected.id, {
+                                    grammarCustomPlaceholderEnabled: event.target.checked,
+                                  })
+                                )
+                              }
+                            />
+                          </label>
+                        </div>
+                        {selected.grammarCustomPlaceholderEnabled ? (
+                          <label className="block space-y-1">
+                            <ComicText className="text-sm font-bold">
+                              Placeholder text
+                            </ComicText>
+                            <textarea
+                              className="comic-textarea w-full min-h-[100px]"
+                              value={selected.grammarPlaceholder}
+                              onChange={(event) =>
+                                setDeck((prev) =>
+                                  updateSlide(prev, selected.id, {
+                                    grammarPlaceholder: event.target.value,
+                                  })
+                                )
+                              }
+                              onKeyDown={(event) => event.stopPropagation()}
+                              placeholder={
+                                'Subject + Adverb + Adjective\nSubject + Verb + Object'
+                              }
+                            />
+                          </label>
+                        ) : null}
+                      </div>
                     ) : null}
                   </div>
                 ) : null}

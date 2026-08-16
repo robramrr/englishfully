@@ -179,36 +179,44 @@ export function GrammarLiveTextBox({
     }
   }
 
+  const showPlaceholder = !value.trim();
+
   return (
     <div className="space-y-1">
-      <div
-        ref={editorRef}
-        role="textbox"
-        aria-multiline="true"
-        contentEditable={editable}
-        suppressContentEditableWarning
-        data-placeholder={placeholder}
-        className={[
-          'grammar-live-textbox w-full min-h-[8rem] whitespace-pre-wrap border-4 border-[var(--comic-black)] bg-white/90 p-3 comic-shadow-sm outline-none',
-          editable ? 'cursor-text' : 'cursor-default',
-          className,
-        ].join(' ')}
-        onInput={handleInput}
-        onKeyDown={(event) => event.stopPropagation()}
-        onPaste={(event) => {
-          if (!editable) return;
-          event.preventDefault();
-          const text = event.clipboardData.getData('text/plain');
-          document.execCommand('insertText', false, text);
-        }}
-      />
+      <div className="relative min-h-[8rem] border-4 border-[var(--comic-black)] bg-white/90 comic-shadow-sm">
+        {showPlaceholder ? (
+          <div
+            aria-hidden
+            className={[
+              'pointer-events-none absolute inset-0 z-0 overflow-hidden p-3 font-bold whitespace-pre-wrap text-[color-mix(in_srgb,var(--comic-dark)_45%,white)]',
+              className,
+            ].join(' ')}
+          >
+            {placeholder}
+          </div>
+        ) : null}
+        <div
+          ref={editorRef}
+          role="textbox"
+          aria-multiline="true"
+          contentEditable={editable}
+          suppressContentEditableWarning
+          className={[
+            'grammar-live-textbox relative z-[1] w-full min-h-[8rem] whitespace-pre-wrap bg-transparent p-3 outline-none',
+            editable ? 'cursor-text' : 'cursor-default',
+            className,
+          ].join(' ')}
+          onInput={handleInput}
+          onKeyDown={(event) => event.stopPropagation()}
+          onPaste={(event) => {
+            if (!editable) return;
+            event.preventDefault();
+            const text = event.clipboardData.getData('text/plain');
+            document.execCommand('insertText', false, text);
+          }}
+        />
+      </div>
       <style jsx global>{`
-        .grammar-live-textbox:empty:before {
-          content: attr(data-placeholder);
-          color: color-mix(in srgb, var(--comic-dark) 45%, white);
-          font-weight: 700;
-          pointer-events: none;
-        }
         .grammar-live-textbox mark.grammar-hl,
         .grammar-live-textbox mark {
           background: #facc15;

@@ -15,6 +15,10 @@ export interface PresentationSlide {
   grammarTarget: string;
   /** Practice text for the grammar highlighter box (not the definition). */
   grammarText: string;
+  /** When true, grammarPlaceholder replaces the default "Example..." hint. */
+  grammarCustomPlaceholderEnabled: boolean;
+  /** Multi-line custom placeholder (e.g. sentence frames). */
+  grammarPlaceholder: string;
 }
 
 export interface PresentationDeck {
@@ -47,6 +51,8 @@ export function createEmptySlide(
     grammarHighlighterEnabled: false,
     grammarTarget: '',
     grammarText: '',
+    grammarCustomPlaceholderEnabled: false,
+    grammarPlaceholder: '',
   };
 }
 
@@ -71,6 +77,8 @@ export function normalizeSlide(
     grammarHighlighterEnabled: Boolean(slide.grammarHighlighterEnabled),
     grammarTarget: String(slide.grammarTarget ?? ''),
     grammarText: String(slide.grammarText ?? ''),
+    grammarCustomPlaceholderEnabled: Boolean(slide.grammarCustomPlaceholderEnabled),
+    grammarPlaceholder: String(slide.grammarPlaceholder ?? ''),
   };
 }
 

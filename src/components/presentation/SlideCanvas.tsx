@@ -91,7 +91,11 @@ function ContentBody({
           editable={liveEditable && Boolean(onGrammarTextChange)}
           onChange={onGrammarTextChange}
           className={textClass}
-          placeholder="Example..."
+          placeholder={
+            slide.grammarCustomPlaceholderEnabled && slide.grammarPlaceholder.trim()
+              ? slide.grammarPlaceholder
+              : 'Example...'
+          }
         />
       ) : null}
     </div>
