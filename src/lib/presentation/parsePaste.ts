@@ -152,6 +152,7 @@ export function structurePastedContent(raw: string): PresentationDeck {
   }
 
   return {
+    ...createEmptyDeck(),
     id: createEmptyDeck().id,
     title: deckTitle || 'Untitled presentation',
     subtitle: deckSubtitle,

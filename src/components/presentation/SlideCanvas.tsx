@@ -149,7 +149,7 @@ export default function SlideCanvas({
                 compact ? 'text-xs' : 'text-sm md:text-base',
               ].join(' ')}
             >
-              Englishfully
+              {deck.brandLabel?.trim() || 'Englishfully'}
             </p>
             <h2
               className={[

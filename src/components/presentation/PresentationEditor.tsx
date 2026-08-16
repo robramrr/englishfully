@@ -147,7 +147,18 @@ export default function PresentationEditor() {
           edit each slide, then preview like a PowerPoint deck.
         </ComicText>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
+          <label className="block space-y-1">
+            <ComicText className="text-sm font-bold">Banner title</ComicText>
+            <input
+              className="comic-input w-full"
+              value={deck.brandLabel}
+              onChange={(event) =>
+                setDeck((prev) => ({ ...prev, brandLabel: event.target.value }))
+              }
+              placeholder="Englishfully"
+            />
+          </label>
           <label className="block space-y-1">
             <ComicText className="text-sm font-bold">Presentation title</ComicText>
             <input

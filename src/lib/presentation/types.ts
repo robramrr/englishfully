@@ -23,11 +23,15 @@ export interface PresentationSlide {
 
 export interface PresentationDeck {
   id: string;
+  /** Small banner/logo line on the title slide (default Englishfully). */
+  brandLabel: string;
   title: string;
   subtitle: string;
   slides: PresentationSlide[];
   updatedAt: string;
 }
+
+export const DEFAULT_BRAND_LABEL = 'Englishfully';
 
 export function createSlideId(): string {
   return `slide_${Math.random().toString(36).slice(2, 10)}`;
@@ -85,6 +89,7 @@ export function normalizeSlide(
 export function createEmptyDeck(): PresentationDeck {
   return {
     id: createDeckId(),
+    brandLabel: DEFAULT_BRAND_LABEL,
     title: '',
     subtitle: '',
     slides: [
@@ -96,5 +101,21 @@ export function createEmptyDeck(): PresentationDeck {
       createEmptySlide('content'),
     ],
     updatedAt: new Date().toISOString(),
+  };
+}
+
+export function normalizeDeck(deck: Partial<PresentationDeck>): PresentationDeck {
+  const base = createEmptyDeck();
+  return {
+    ...base,
+    ...deck,
+    id: String(deck.id || base.id),
+    brandLabel: String(deck.brandLabel ?? DEFAULT_BRAND_LABEL).trim() || DEFAULT_BRAND_LABEL,
+    title: String(deck.title ?? ''),
+    subtitle: String(deck.subtitle ?? ''),
+    slides: Array.isArray(deck.slides)
+      ? deck.slides.map((slide) => normalizeSlide(slide))
+      : base.slides,
+    updatedAt: String(deck.updatedAt || base.updatedAt),
   };
 }

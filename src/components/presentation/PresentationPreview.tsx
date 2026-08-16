@@ -81,11 +81,7 @@ export default function PresentationPreview({
         fullscreen ? 'fixed inset-0 z-50 bg-[var(--comic-secondary)] p-4 md:p-8' : '',
       ].join(' ')}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <ComicText className={`font-bold ${fullscreen ? 'text-white' : ''}`}>
-          Preview · {safeIndex + 1} / {total}
-          {liveGrammar ? ' · Grammar highlighter live' : ''}
-        </ComicText>
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <div className="flex flex-wrap gap-2">
           <ComicButton type="button" variant="accent" size="sm" onClick={goPrev} disabled={safeIndex === 0}>
             ← Prev
@@ -123,7 +119,6 @@ export default function PresentationPreview({
       {fullscreen ? (
         <ComicText className="text-center text-sm font-bold text-white/80">
           Arrow keys / space to navigate · Esc to exit
-          {liveGrammar ? ' · Type in the grammar box — highlights after a full stop' : ''}
         </ComicText>
       ) : null}
     </div>
