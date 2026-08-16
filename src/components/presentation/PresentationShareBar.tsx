@@ -101,27 +101,27 @@ export default function PresentationShareBar({
 
   return (
     <ComicCard className="comic-shadow-xl space-y-4">
-      <ComicTitle level={3} className="text-[var(--comic-secondary)]">
-        Share &amp; download
+      <ComicTitle level={3} className="text-[var(--comic-primary)]">
+        Share · Link · QR · PDF · PowerPoint
       </ComicTitle>
       <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-        Save to get a quick-access link and QR code. Download PDF or PowerPoint anytime.
+        Use these buttons to share or download this presentation.
       </ComicText>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-3">
         <ComicButton
           type="button"
           variant="primary"
-          size="sm"
+          size="md"
           disabled={saving}
           onClick={() => void handleSaveAndShare()}
         >
-          {saving ? 'Saving…' : 'Save & get link'}
+          {saving ? 'Saving…' : 'Save & get link + QR'}
         </ComicButton>
         <ComicButton
           type="button"
           variant="secondary"
-          size="sm"
+          size="md"
           disabled={saving}
           onClick={() => void handleCopyLink()}
         >
@@ -130,7 +130,7 @@ export default function PresentationShareBar({
         <ComicButton
           type="button"
           variant="warning"
-          size="sm"
+          size="md"
           disabled={Boolean(exporting)}
           onClick={() => void handlePdf()}
         >
@@ -139,7 +139,7 @@ export default function PresentationShareBar({
         <ComicButton
           type="button"
           variant="accent"
-          size="sm"
+          size="md"
           disabled={Boolean(exporting)}
           onClick={() => void handlePptx()}
         >

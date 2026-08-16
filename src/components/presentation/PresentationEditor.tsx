@@ -139,6 +139,14 @@ export default function PresentationEditor() {
 
   return (
     <div className="space-y-8">
+      <PresentationShareBar
+        deck={deck}
+        onDeckSaved={(saved) => {
+          setDeck(saved);
+          setMessage('Presentation saved for sharing.');
+        }}
+      />
+
       <ComicCard className="comic-shadow-xl space-y-4">
         <ComicTitle level={3} className="text-[var(--comic-primary)]">
           Presentation
@@ -221,14 +229,6 @@ export default function PresentationEditor() {
           <ComicText className="font-bold text-[var(--comic-success)]">{message}</ComicText>
         ) : null}
       </ComicCard>
-
-      <PresentationShareBar
-        deck={deck}
-        onDeckSaved={(saved) => {
-          setDeck(saved);
-          setMessage('Presentation saved for sharing.');
-        }}
-      />
 
       <ComicCard className="comic-shadow-xl space-y-3">
         <ComicTitle level={3} className="text-[var(--comic-secondary)]">
