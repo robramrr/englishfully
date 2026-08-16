@@ -1,6 +1,10 @@
 'use client';
 
 import type { PresentationDeck, PresentationSlide } from '@/lib/presentation/types';
+import {
+  GrammarHighlightedText,
+  useGrammarHighlight,
+} from './GrammarHighlight';
 
 interface SlideCanvasProps {
   slide: PresentationSlide;
@@ -11,6 +15,9 @@ interface SlideCanvasProps {
   compact?: boolean;
   /** Show empty image placeholder (editor). Hidden in present mode when no URL. */
   showImageSlot?: boolean;
+  /** Allow live typing into the text box during present/preview. */
+  liveEditable?: boolean;
+  onBodyChange?: (body: string) => void;
 }
 
 function SlideImage({ url, alt, className = '' }: { url: string; alt: string; className?: string }) {
@@ -34,6 +41,98 @@ function SlideImage({ url, alt, className = '' }: { url: string; alt: string; cl
   );
 }
 
+function ContentBody({
+  slide,
+  body,
+  compact,
+  liveEditable,
+  onBodyChange,
+}: {
+  slide: PresentationSlide;
+  body: string;
+  compact: boolean;
+  liveEditable: boolean;
+  onBodyChange?: (body: string) => void;
+}) {
+  const grammarOn =
+    slide.layout === 'content' &&
+    slide.grammarHighlighterEnabled &&
+    Boolean(slide.grammarTarget.trim());
+
+  const { spans, loading, error } = useGrammarHighlight({
+    enabled: grammarOn,
+    text: body,
+    grammarTarget: slide.grammarTarget,
+  });
+
+  const textClass = [
+    'font-bold leading-relaxed',
+    compact ? 'text-xs' : 'text-base md:text-xl',
+  ].join(' ');
+
+  if (liveEditable && grammarOn) {
+    return (
+      <div className="flex h-full min-h-0 flex-col gap-2">
+        {slide.grammarTarget ? (
+          <p className="text-xs font-bold uppercase tracking-wide text-[var(--comic-primary)]">
+            Grammar focus: {slide.grammarTarget}
+            {loading ? ' · highlighting…' : ''}
+          </p>
+        ) : null}
+        <div className="min-h-0 flex-1 overflow-auto rounded-sm border-4 border-[var(--comic-black)] bg-white/80 p-3">
+          <GrammarHighlightedText
+            text={body}
+            spans={spans}
+            className={textClass}
+            placeholder="Start typing below — matches light up yellow"
+          />
+        </div>
+        <textarea
+          className={[
+            'w-full shrink-0 resize-none border-4 border-[var(--comic-black)] bg-white p-2 comic-shadow-sm',
+            compact ? 'min-h-[3rem] text-xs font-bold' : 'min-h-[4.5rem] text-base font-bold',
+          ].join(' ')}
+          value={body}
+          onChange={(event) => onBodyChange?.(event.target.value)}
+          placeholder="Live type here…"
+          onKeyDown={(event) => event.stopPropagation()}
+        />
+        {error ? (
+          <p className="text-xs font-bold text-[var(--comic-danger)]">{error}</p>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (grammarOn) {
+    return (
+      <div className="space-y-2">
+        {slide.grammarTarget ? (
+          <p className="text-xs font-bold uppercase tracking-wide text-[var(--comic-primary)]">
+            Grammar focus: {slide.grammarTarget}
+            {loading ? ' · highlighting…' : ''}
+          </p>
+        ) : null}
+        <GrammarHighlightedText
+          text={body}
+          spans={spans}
+          className={textClass}
+          placeholder="Add slide text…"
+        />
+        {error ? (
+          <p className="text-xs font-bold text-[var(--comic-danger)]">{error}</p>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (body) {
+    return <p className={`whitespace-pre-wrap ${textClass}`}>{body}</p>;
+  }
+
+  return <p className={`font-bold text-[var(--comic-dark)]/50 ${textClass}`}>Add slide text…</p>;
+}
+
 export default function SlideCanvas({
   slide,
   deck,
@@ -42,6 +141,8 @@ export default function SlideCanvas({
   className = '',
   compact = false,
   showImageSlot = false,
+  liveEditable = false,
+  onBodyChange,
 }: SlideCanvasProps) {
   const title = slide.title || (slide.layout === 'title' ? deck.title : 'Untitled slide');
   const body =
@@ -119,18 +220,13 @@ export default function SlideCanvas({
               ].join(' ')}
             >
               <div className="min-h-0 overflow-auto">
-                {body ? (
-                  <p
-                    className={[
-                      'whitespace-pre-wrap font-bold leading-relaxed',
-                      compact ? 'text-xs' : 'text-base md:text-xl',
-                    ].join(' ')}
-                  >
-                    {body}
-                  </p>
-                ) : (
-                  <p className="font-bold text-[var(--comic-dark)]/50">Add slide text…</p>
-                )}
+                <ContentBody
+                  slide={slide}
+                  body={body}
+                  compact={compact}
+                  liveEditable={liveEditable}
+                  onBodyChange={onBodyChange}
+                />
                 {slide.bullets.length > 0 ? (
                   <ul
                     className={[

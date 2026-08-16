@@ -12,6 +12,7 @@ interface PresentationPreviewProps {
   onIndexChange: (index: number) => void;
   onClose: () => void;
   fullscreen?: boolean;
+  onSlideBodyChange?: (slideId: string, body: string) => void;
 }
 
 export default function PresentationPreview({
@@ -20,10 +21,16 @@ export default function PresentationPreview({
   onIndexChange,
   onClose,
   fullscreen = false,
+  onSlideBodyChange,
 }: PresentationPreviewProps) {
   const total = deck.slides.length;
   const safeIndex = Math.min(Math.max(index, 0), Math.max(total - 1, 0));
   const slide = deck.slides[safeIndex];
+  const liveGrammar =
+    Boolean(slide) &&
+    slide.layout === 'content' &&
+    slide.grammarHighlighterEnabled &&
+    Boolean(slide.grammarTarget.trim());
 
   const goPrev = useCallback(() => {
     onIndexChange(Math.max(0, safeIndex - 1));
@@ -35,6 +42,14 @@ export default function PresentationPreview({
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      const typing =
+        target &&
+        (target.tagName === 'TEXTAREA' ||
+          target.tagName === 'INPUT' ||
+          target.isContentEditable);
+      if (typing) return;
+
       if (event.key === 'Escape') {
         onClose();
         return;
@@ -60,7 +75,7 @@ export default function PresentationPreview({
     );
   }
 
-  const shell = (
+  return (
     <div
       className={[
         'flex flex-col gap-4',
@@ -70,6 +85,7 @@ export default function PresentationPreview({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ComicText className={`font-bold ${fullscreen ? 'text-white' : ''}`}>
           Preview · {safeIndex + 1} / {total}
+          {liveGrammar ? ' · Grammar highlighter live' : ''}
         </ComicText>
         <div className="flex flex-wrap gap-2">
           <ComicButton type="button" variant="accent" size="sm" onClick={goPrev} disabled={safeIndex === 0}>
@@ -96,16 +112,21 @@ export default function PresentationPreview({
           deck={deck}
           slideNumber={safeIndex + 1}
           totalSlides={total}
+          liveEditable={liveGrammar}
+          onBodyChange={
+            liveGrammar && onSlideBodyChange
+              ? (body) => onSlideBodyChange(slide.id, body)
+              : undefined
+          }
         />
       </div>
 
       {fullscreen ? (
         <ComicText className="text-center text-sm font-bold text-white/80">
           Arrow keys / space to navigate · Esc to exit
+          {liveGrammar ? ' · Type in the live box to highlight grammar' : ''}
         </ComicText>
       ) : null}
     </div>
   );
-
-  return shell;
 }

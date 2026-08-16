@@ -1,5 +1,5 @@
 import type { PresentationDeck } from './types';
-import { createEmptyDeck } from './types';
+import { createEmptyDeck, normalizeSlide } from './types';
 
 const STORAGE_KEY = 'englishfully.presentation.draft.v1';
 
@@ -10,7 +10,11 @@ export function loadPresentationDraft(): PresentationDeck {
     if (!raw) return createEmptyDeck();
     const parsed = JSON.parse(raw) as PresentationDeck;
     if (!parsed || !Array.isArray(parsed.slides)) return createEmptyDeck();
-    return parsed;
+    return {
+      ...createEmptyDeck(),
+      ...parsed,
+      slides: parsed.slides.map((slide) => normalizeSlide(slide)),
+    };
   } catch {
     return createEmptyDeck();
   }

@@ -78,6 +78,7 @@ function parseSlideChunk(chunk: string, index: number): PresentationSlide {
   }
 
   return {
+    ...createEmptySlide(layout),
     id: createSlideId(),
     layout,
     title,

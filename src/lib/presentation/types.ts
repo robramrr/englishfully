@@ -8,6 +8,10 @@ export interface PresentationSlide {
   bullets: string[];
   imageUrl: string;
   imageAlt: string;
+  /** Text + image only: highlight target grammar in yellow (AI-assisted). */
+  grammarHighlighterEnabled: boolean;
+  /** e.g. "Possessive Adjectives" */
+  grammarTarget: string;
 }
 
 export interface PresentationDeck {
@@ -37,6 +41,29 @@ export function createEmptySlide(
     bullets: [],
     imageUrl: '',
     imageAlt: '',
+    grammarHighlighterEnabled: false,
+    grammarTarget: '',
+  };
+}
+
+export function normalizeSlide(slide: Partial<PresentationSlide> & { id?: string }): PresentationSlide {
+  const base = createEmptySlide(
+    (slide.layout as PresentationSlideLayout) || 'content'
+  );
+  return {
+    ...base,
+    ...slide,
+    id: slide.id || base.id,
+    layout: (slide.layout as PresentationSlideLayout) || base.layout,
+    title: String(slide.title ?? ''),
+    body: String(slide.body ?? ''),
+    bullets: Array.isArray(slide.bullets)
+      ? slide.bullets.map((item) => String(item ?? '').trim()).filter(Boolean)
+      : [],
+    imageUrl: String(slide.imageUrl ?? ''),
+    imageAlt: String(slide.imageAlt ?? ''),
+    grammarHighlighterEnabled: Boolean(slide.grammarHighlighterEnabled),
+    grammarTarget: String(slide.grammarTarget ?? ''),
   };
 }
 

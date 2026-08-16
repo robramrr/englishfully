@@ -129,6 +129,9 @@ export default function PresentationEditor() {
         onIndexChange={setPreviewIndex}
         onClose={() => setPreviewMode('off')}
         fullscreen
+        onSlideBodyChange={(slideId, body) =>
+          setDeck((prev) => updateSlide(prev, slideId, { body }))
+        }
       />
     );
   }
@@ -240,6 +243,9 @@ export default function PresentationEditor() {
             index={previewIndex}
             onIndexChange={setPreviewIndex}
             onClose={() => setPreviewMode('off')}
+            onSlideBodyChange={(slideId, body) =>
+              setDeck((prev) => updateSlide(prev, slideId, { body }))
+            }
           />
         </ComicCard>
       ) : null}
@@ -440,6 +446,56 @@ export default function PresentationEditor() {
                     </label>
                   </>
                 )}
+
+                {selected.layout === 'content' ? (
+                  <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <ComicText className="font-black">Grammar highlighter</ComicText>
+                        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+                          Leave the text empty to type live in Present, or paste text now. AI
+                          highlights the target grammar in yellow.
+                        </ComicText>
+                      </div>
+                      <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
+                        <span className="text-sm">
+                          {selected.grammarHighlighterEnabled ? 'On' : 'Off'}
+                        </span>
+                        <input
+                          type="checkbox"
+                          className="h-5 w-9 accent-[var(--comic-primary)]"
+                          checked={selected.grammarHighlighterEnabled}
+                          onChange={(event) =>
+                            setDeck((prev) =>
+                              updateSlide(prev, selected.id, {
+                                grammarHighlighterEnabled: event.target.checked,
+                              })
+                            )
+                          }
+                        />
+                      </label>
+                    </div>
+                    {selected.grammarHighlighterEnabled ? (
+                      <label className="block space-y-1">
+                        <ComicText className="text-sm font-bold">
+                          Target grammar
+                        </ComicText>
+                        <input
+                          className="comic-input w-full"
+                          value={selected.grammarTarget}
+                          onChange={(event) =>
+                            setDeck((prev) =>
+                              updateSlide(prev, selected.id, {
+                                grammarTarget: event.target.value,
+                              })
+                            )
+                          }
+                          placeholder="e.g. Possessive Adjectives"
+                        />
+                      </label>
+                    ) : null}
+                  </div>
+                ) : null}
               </ComicCard>
 
               <div>
