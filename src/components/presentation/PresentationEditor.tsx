@@ -7,6 +7,7 @@ import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import SlideCanvas from './SlideCanvas';
 import PresentationPreview from './PresentationPreview';
+import PresentationShareBar from './PresentationShareBar';
 import { structurePastedContent, cleanSlideText } from '@/lib/presentation/parsePaste';
 import {
   clearPresentationDraft,
@@ -220,6 +221,14 @@ export default function PresentationEditor() {
           <ComicText className="font-bold text-[var(--comic-success)]">{message}</ComicText>
         ) : null}
       </ComicCard>
+
+      <PresentationShareBar
+        deck={deck}
+        onDeckSaved={(saved) => {
+          setDeck(saved);
+          setMessage('Presentation saved for sharing.');
+        }}
+      />
 
       <ComicCard className="comic-shadow-xl space-y-3">
         <ComicTitle level={3} className="text-[var(--comic-secondary)]">
