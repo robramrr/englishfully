@@ -25,8 +25,20 @@ export async function POST(request: NextRequest) {
     return jsonError('Unauthorized', 401);
   }
   try {
-    const body = await request.json();
-    const deck = normalizeDeck((body.deck || body) as PresentationDeck);
+    const body = await request.json().catch(() => ({}));
+    const rawDeck = (body.deck || body) as Partial<PresentationDeck>;
+    const isCreateOnly = body.create === true || (!rawDeck.slides && !body.deck);
+    const deck = normalizeDeck(
+      isCreateOnly
+        ? {
+            title: String(body.title || 'Untitled presentation'),
+            status: 'draft',
+          }
+        : (rawDeck as PresentationDeck)
+    );
+    if (body.publish === true) {
+      deck.status = 'published';
+    }
     const saved = await upsertPresentation(deck);
     const origin = request.nextUrl.origin;
     return NextResponse.json({

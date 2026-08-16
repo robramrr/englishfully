@@ -7,7 +7,6 @@ import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import { generateQrDataUrl, getPresentationUrl } from '@/lib/presentation/qr';
 import { downloadPresentationPdf } from '@/lib/presentation/exportPdf';
-import { downloadPresentationPptx } from '@/lib/presentation/exportPptx';
 import type { PresentationDeck } from '@/lib/presentation/types';
 
 interface PresentationShareBarProps {
@@ -26,6 +25,14 @@ export default function PresentationShareBar({
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
+  const isPublished = deck.status === 'published';
+
+  useEffect(() => {
+    if (isPublished && deck.id) {
+      setShareUrl(getPresentationUrl(deck.id, window.location.origin));
+    }
+  }, [isPublished, deck.id]);
+
   useEffect(() => {
     if (!shareUrl) {
       setQrCode('');
@@ -34,27 +41,50 @@ export default function PresentationShareBar({
     void generateQrDataUrl(shareUrl).then(setQrCode).catch(() => setQrCode(''));
   }, [shareUrl]);
 
-  async function handleSaveAndShare() {
+  async function handlePublish() {
     setSaving(true);
     setError('');
     setMessage('');
     try {
-      const response = await fetch('/api/presentation/decks', {
-        method: 'POST',
+      const response = await fetch(`/api/presentation/decks/${deck.id}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deck }),
+        body: JSON.stringify({ deck, publish: true }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to save presentation');
+      if (!response.ok) throw new Error(data.error || 'Failed to publish');
       const saved = data.presentation as PresentationDeck;
       const url =
         (data.url as string) ||
         getPresentationUrl(saved.id, window.location.origin);
       onDeckSaved(saved);
       setShareUrl(url);
-      setMessage('Saved. Link and QR are ready.');
+      setMessage('Published. Share the link or QR below.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save presentation');
+      setError(err instanceof Error ? err.message : 'Failed to publish');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSaveDraft() {
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const response = await fetch(`/api/presentation/decks/${deck.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deck: { ...deck, status: deck.status || 'draft' },
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to save draft');
+      onDeckSaved(data.presentation as PresentationDeck);
+      setMessage('Draft saved.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save draft');
     } finally {
       setSaving(false);
     }
@@ -62,7 +92,7 @@ export default function PresentationShareBar({
 
   async function handleCopyLink() {
     if (!shareUrl) {
-      await handleSaveAndShare();
+      await handlePublish();
       return;
     }
     try {
@@ -90,7 +120,24 @@ export default function PresentationShareBar({
     setExporting('pptx');
     setError('');
     try {
-      await downloadPresentationPptx(deck);
+      const response = await fetch('/api/presentation/export-pptx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deck }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to export PowerPoint');
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      const disposition = response.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename="([^"]+)"/);
+      anchor.href = url;
+      anchor.download = match?.[1] || 'presentation.pptx';
+      anchor.click();
+      URL.revokeObjectURL(url);
       setMessage('PowerPoint downloaded.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to export PowerPoint');
@@ -102,27 +149,41 @@ export default function PresentationShareBar({
   return (
     <ComicCard className="comic-shadow-xl space-y-4">
       <ComicTitle level={3} className="text-[var(--comic-primary)]">
-        Share · Link · QR · PDF · PowerPoint
+        Publish · Link · QR · PDF · PowerPoint
       </ComicTitle>
       <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-        Use these buttons to share or download this presentation.
+        {isPublished
+          ? 'This presentation is published. Update anytime, then publish again to refresh the live link.'
+          : 'Save your draft while editing. Publish when ready to get a share link and QR code.'}
+      </ComicText>
+      <ComicText className="text-sm font-black">
+        Status: {isPublished ? 'Published' : 'Draft'}
       </ComicText>
 
       <div className="flex flex-wrap gap-3">
         <ComicButton
           type="button"
+          variant="accent"
+          size="md"
+          disabled={saving}
+          onClick={() => void handleSaveDraft()}
+        >
+          {saving ? 'Saving…' : 'Save draft'}
+        </ComicButton>
+        <ComicButton
+          type="button"
           variant="primary"
           size="md"
           disabled={saving}
-          onClick={() => void handleSaveAndShare()}
+          onClick={() => void handlePublish()}
         >
-          {saving ? 'Saving…' : 'Save & get link + QR'}
+          {saving ? 'Publishing…' : isPublished ? 'Publish update' : 'Publish & get link'}
         </ComicButton>
         <ComicButton
           type="button"
           variant="secondary"
           size="md"
-          disabled={saving}
+          disabled={saving || (!shareUrl && !isPublished)}
           onClick={() => void handleCopyLink()}
         >
           Copy link
@@ -147,10 +208,10 @@ export default function PresentationShareBar({
         </ComicButton>
       </div>
 
-      {shareUrl ? (
+      {shareUrl && isPublished ? (
         <div className="grid gap-4 md:grid-cols-[1fr_auto] items-start">
           <div className="space-y-2 min-w-0">
-            <ComicText className="text-sm font-bold">Share link</ComicText>
+            <ComicText className="text-sm font-bold">Direct link</ComicText>
             <a
               href={shareUrl}
               target="_blank"

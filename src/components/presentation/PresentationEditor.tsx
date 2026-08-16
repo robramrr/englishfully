@@ -10,13 +10,14 @@ import PresentationPreview from './PresentationPreview';
 import PresentationShareBar from './PresentationShareBar';
 import { structurePastedContent, cleanSlideText } from '@/lib/presentation/parsePaste';
 import {
-  clearPresentationDraft,
-  loadPresentationDraft,
-  savePresentationDraft,
+  clearPresentationDraftById,
+  loadPresentationDraftById,
+  savePresentationDraftById,
 } from '@/lib/presentation/storage';
 import {
   createEmptyDeck,
   createEmptySlide,
+  normalizeDeck,
   type PresentationDeck,
   type PresentationSlide,
   type PresentationSlideLayout,
@@ -42,25 +43,72 @@ function updateSlide(
   };
 }
 
-export default function PresentationEditor() {
-  const [deck, setDeck] = useState<PresentationDeck>(() => createEmptyDeck());
+interface PresentationEditorProps {
+  presentationId: string;
+}
+
+export default function PresentationEditor({ presentationId }: PresentationEditorProps) {
+  const [deck, setDeck] = useState<PresentationDeck>(() =>
+    createEmptyDeck()
+  );
   const [selectedId, setSelectedId] = useState('');
   const [pasteText, setPasteText] = useState('');
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
   const [previewMode, setPreviewMode] = useState<'off' | 'panel' | 'fullscreen'>('off');
   const [previewIndex, setPreviewIndex] = useState(0);
   const [hydrated, setHydrated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const saved = loadPresentationDraft();
-    setDeck(saved);
-    setSelectedId(saved.slides[0]?.id || '');
-    setHydrated(true);
-  }, []);
+    let cancelled = false;
+    void (async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const response = await fetch(`/api/presentation/decks/${presentationId}`, {
+          cache: 'no-store',
+        });
+        const data = await response.json();
+        if (cancelled) return;
+        if (response.ok && data.presentation) {
+          const loaded = normalizeDeck(data.presentation);
+          setDeck(loaded);
+          setSelectedId(loaded.slides[0]?.id || '');
+          savePresentationDraftById(loaded);
+        } else {
+          const local = loadPresentationDraftById(presentationId);
+          if (local) {
+            setDeck(local);
+            setSelectedId(local.slides[0]?.id || '');
+          } else {
+            setError(data.error || 'Presentation not found');
+          }
+        }
+      } catch {
+        if (cancelled) return;
+        const local = loadPresentationDraftById(presentationId);
+        if (local) {
+          setDeck(local);
+          setSelectedId(local.slides[0]?.id || '');
+        } else {
+          setError('Failed to load presentation');
+        }
+      } finally {
+        if (!cancelled) {
+          setHydrated(true);
+          setLoading(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [presentationId]);
 
   useEffect(() => {
-    if (!hydrated) return;
-    savePresentationDraft(deck);
+    if (!hydrated || !deck.id) return;
+    savePresentationDraftById(deck);
   }, [deck, hydrated]);
 
   const selected =
@@ -76,7 +124,14 @@ export default function PresentationEditor() {
 
   function handleStructurePaste() {
     const next = structurePastedContent(pasteText);
-    setDeck(next);
+    setDeck((prev) =>
+      normalizeDeck({
+        ...next,
+        id: prev.id,
+        brandLabel: prev.brandLabel,
+        status: prev.status,
+      })
+    );
     setSelectedId(next.slides[0]?.id || '');
     setMessage(`Structured into ${next.slides.length} clean slides.`);
     setPasteText('');
@@ -109,17 +164,33 @@ export default function PresentationEditor() {
   }
 
   function handleReset() {
-    if (!window.confirm('Clear this presentation draft?')) return;
-    const empty = createEmptyDeck();
-    clearPresentationDraft();
+    if (!window.confirm('Reset this presentation to a blank draft?')) return;
+    const empty = normalizeDeck({
+      ...createEmptyDeck(),
+      id: presentationId,
+      status: deck.status,
+    });
+    clearPresentationDraftById(presentationId);
     setDeck(empty);
     setSelectedId(empty.slides[0].id);
-    setMessage('Draft cleared.');
+    setMessage('Presentation reset locally — save or publish to update the server.');
   }
 
   function openPreview(mode: 'panel' | 'fullscreen') {
     setPreviewIndex(selectedIndex);
     setPreviewMode(mode);
+  }
+
+  if (loading) {
+    return <ComicText className="font-bold">Loading presentation…</ComicText>;
+  }
+
+  if (error && !deck.slides.length) {
+    return (
+      <ComicCard className="comic-shadow-xl space-y-3">
+        <ComicText className="font-bold text-[var(--comic-danger)]">{error}</ComicText>
+      </ComicCard>
+    );
   }
 
   if (previewMode === 'fullscreen') {

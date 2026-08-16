@@ -18,6 +18,12 @@ export async function GET(
   try {
     const deck = await getPresentation(context.params.id);
     if (!deck) return jsonError('Presentation not found', 404);
+
+    const teacher = await isTeacherAuthenticated();
+    if (deck.status !== 'published' && !teacher) {
+      return jsonError('Presentation not published yet', 404);
+    }
+
     return NextResponse.json({ presentation: deck });
   } catch (error) {
     console.error('Get presentation error:', error);
@@ -38,6 +44,9 @@ export async function PUT(
       ...((body.deck || body) as PresentationDeck),
       id: context.params.id,
     });
+    if (body.publish === true) {
+      deck.status = 'published';
+    }
     const saved = await upsertPresentation(deck);
     return NextResponse.json({
       presentation: saved,

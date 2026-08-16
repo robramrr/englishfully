@@ -1,28 +1,63 @@
 import type { PresentationDeck } from './types';
 import { createEmptyDeck, normalizeDeck } from './types';
 
-const STORAGE_KEY = 'englishfully.presentation.draft.v1';
+function draftKey(id: string): string {
+  return `englishfully.presentation.draft.${id}`;
+}
 
-export function loadPresentationDraft(): PresentationDeck {
-  if (typeof window === 'undefined') return createEmptyDeck();
+export function loadPresentationDraftById(id: string): PresentationDeck | null {
+  if (typeof window === 'undefined' || !id) return null;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return createEmptyDeck();
+    const raw = window.localStorage.getItem(draftKey(id));
+    if (!raw) return null;
     const parsed = JSON.parse(raw) as PresentationDeck;
-    if (!parsed || !Array.isArray(parsed.slides)) return createEmptyDeck();
-    return normalizeDeck(parsed);
+    if (!parsed || !Array.isArray(parsed.slides)) return null;
+    return normalizeDeck({ ...parsed, id });
   } catch {
-    return createEmptyDeck();
+    return null;
   }
 }
 
-export function savePresentationDraft(deck: PresentationDeck): void {
-  if (typeof window === 'undefined') return;
+export function savePresentationDraftById(deck: PresentationDeck): void {
+  if (typeof window === 'undefined' || !deck.id) return;
   const next = { ...deck, updatedAt: new Date().toISOString() };
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  window.localStorage.setItem(draftKey(deck.id), JSON.stringify(next));
+}
+
+export function clearPresentationDraftById(id: string): void {
+  if (typeof window === 'undefined' || !id) return;
+  window.localStorage.removeItem(draftKey(id));
+}
+
+/** @deprecated single-draft helpers — kept for one-time migration */
+const LEGACY_KEY = 'englishfully.presentation.draft.v1';
+
+export function loadLegacyPresentationDraft(): PresentationDeck | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(LEGACY_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PresentationDeck;
+    if (!parsed || !Array.isArray(parsed.slides)) return null;
+    return normalizeDeck(parsed);
+  } catch {
+    return null;
+  }
+}
+
+export function clearLegacyPresentationDraft(): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(LEGACY_KEY);
+}
+
+export function loadPresentationDraft(): PresentationDeck {
+  return loadLegacyPresentationDraft() || createEmptyDeck();
+}
+
+export function savePresentationDraft(deck: PresentationDeck): void {
+  savePresentationDraftById(deck);
 }
 
 export function clearPresentationDraft(): void {
-  if (typeof window === 'undefined') return;
-  window.localStorage.removeItem(STORAGE_KEY);
+  clearLegacyPresentationDraft();
 }

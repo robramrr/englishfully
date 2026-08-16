@@ -1,3 +1,4 @@
+import 'server-only';
 import PptxGenJS from 'pptxgenjs';
 import type { PresentationDeck } from './types';
 
@@ -6,27 +7,26 @@ const RED = 'EA1225';
 const GRAY = 'E5E5E4';
 const WHITE = 'FFFFFF';
 
-function safeFilename(value: string): string {
-  return (value || 'presentation').replace(/[^\w.-]+/g, '_').slice(0, 80);
+export function presentationPptxFilename(deck: PresentationDeck): string {
+  return `${(deck.title || 'presentation').replace(/[^\w.-]+/g, '_').slice(0, 80)}.pptx`;
 }
 
 async function fetchImageAsBase64(url: string): Promise<string | null> {
   try {
     const response = await fetch(url);
     if (!response.ok) return null;
-    const blob = await response.blob();
-    return await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : null);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
+    const contentType = response.headers.get('content-type') || 'image/png';
+    const buffer = Buffer.from(await response.arrayBuffer());
+    return `data:${contentType};base64,${buffer.toString('base64')}`;
   } catch {
     return null;
   }
 }
 
-export async function downloadPresentationPptx(deck: PresentationDeck): Promise<void> {
+/** Build a PowerPoint file on the server (pptxgenjs is Node-only). */
+export async function buildPresentationPptxBuffer(
+  deck: PresentationDeck
+): Promise<Buffer> {
   const pptx = new PptxGenJS();
   pptx.defineLayout({ name: 'EF_WIDE', width: 13.333, height: 7.5 });
   pptx.layout = 'EF_WIDE';
@@ -37,7 +37,6 @@ export async function downloadPresentationPptx(deck: PresentationDeck): Promise<
     const page = pptx.addSlide();
     page.background = { color: WHITE };
 
-    // Accent bar
     page.addShape(pptx.ShapeType.rect, {
       x: 0,
       y: 0,
@@ -151,28 +150,16 @@ export async function downloadPresentationPptx(deck: PresentationDeck): Promise<
       }
 
       if (slide.imageUrl.trim()) {
-        try {
-          const imageData = await fetchImageAsBase64(slide.imageUrl);
-          if (imageData) {
-            page.addImage({
-              data: imageData,
-              x: 7.8,
-              y: 1.35,
-              w: 4.8,
-              h: 4.8,
-            });
-          } else {
-            page.addText(slide.imageUrl, {
-              x: 7.8,
-              y: 1.35,
-              w: 4.8,
-              h: 1.2,
-              fontSize: 11,
-              color: NAVY,
-              fontFace: 'Arial',
-            });
-          }
-        } catch {
+        const imageData = await fetchImageAsBase64(slide.imageUrl);
+        if (imageData) {
+          page.addImage({
+            data: imageData,
+            x: 7.8,
+            y: 1.35,
+            w: 4.8,
+            h: 4.8,
+          });
+        } else {
           page.addText(slide.imageUrl, {
             x: 7.8,
             y: 1.35,
@@ -197,7 +184,6 @@ export async function downloadPresentationPptx(deck: PresentationDeck): Promise<
     });
   }
 
-  await pptx.writeFile({
-    fileName: `${safeFilename(deck.title || 'Presentation')}.pptx`,
-  });
+  const output = await pptx.write({ outputType: 'nodebuffer' });
+  return Buffer.from(output as ArrayBuffer);
 }

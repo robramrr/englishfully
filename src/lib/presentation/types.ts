@@ -21,17 +21,29 @@ export interface PresentationSlide {
   grammarPlaceholder: string;
 }
 
+export type PresentationStatus = 'draft' | 'published';
+
 export interface PresentationDeck {
   id: string;
   /** Small banner/logo line on the title slide (default Englishfully). */
   brandLabel: string;
   title: string;
   subtitle: string;
+  status: PresentationStatus;
   slides: PresentationSlide[];
   updatedAt: string;
 }
 
 export const DEFAULT_BRAND_LABEL = 'Englishfully';
+
+export interface PresentationListItem {
+  id: string;
+  title: string;
+  brand_label: string;
+  status: PresentationStatus;
+  slide_count: number;
+  updated_at: string;
+}
 
 export function createSlideId(): string {
   return `slide_${Math.random().toString(36).slice(2, 10)}`;
@@ -92,6 +104,7 @@ export function createEmptyDeck(): PresentationDeck {
     brandLabel: DEFAULT_BRAND_LABEL,
     title: '',
     subtitle: '',
+    status: 'draft',
     slides: [
       {
         ...createEmptySlide('title'),
@@ -106,6 +119,8 @@ export function createEmptyDeck(): PresentationDeck {
 
 export function normalizeDeck(deck: Partial<PresentationDeck>): PresentationDeck {
   const base = createEmptyDeck();
+  const status: PresentationStatus =
+    deck.status === 'published' ? 'published' : 'draft';
   return {
     ...base,
     ...deck,
@@ -113,6 +128,7 @@ export function normalizeDeck(deck: Partial<PresentationDeck>): PresentationDeck
     brandLabel: String(deck.brandLabel ?? DEFAULT_BRAND_LABEL).trim() || DEFAULT_BRAND_LABEL,
     title: String(deck.title ?? ''),
     subtitle: String(deck.subtitle ?? ''),
+    status,
     slides: Array.isArray(deck.slides)
       ? deck.slides.map((slide) => normalizeSlide(slide))
       : base.slides,

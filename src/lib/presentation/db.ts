@@ -3,7 +3,10 @@ import { nanoid } from 'nanoid';
 import {
   normalizeDeck,
   type PresentationDeck,
+  type PresentationListItem,
 } from './types';
+
+export type { PresentationListItem };
 
 const DEFAULT_TEACHER_ID = 'default';
 
@@ -40,14 +43,6 @@ async function ensurePresentationSchema(): Promise<void> {
   await schemaReady;
 }
 
-export interface PresentationListItem {
-  id: string;
-  title: string;
-  brand_label: string;
-  slide_count: number;
-  updated_at: string;
-}
-
 function rowToDeck(row: Record<string, unknown>): PresentationDeck {
   const raw = row.deck_json;
   const parsed =
@@ -79,6 +74,7 @@ export async function listPresentations(
       id: deck.id,
       title: deck.title || 'Untitled presentation',
       brand_label: deck.brandLabel,
+      status: deck.status,
       slide_count: deck.slides.length,
       updated_at: deck.updatedAt,
     };
