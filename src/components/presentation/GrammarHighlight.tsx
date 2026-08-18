@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type KeyboardEvent,
   type ReactNode,
 } from 'react';
 import {
@@ -12,8 +13,22 @@ import {
   type GrammarHighlightSpan,
 } from '@/lib/presentation/grammarHighlight';
 
-function endsWithSentencePause(text: string): boolean {
-  return /[.!?]["')\]]?\s*$/.test(text.trimEnd());
+function endsWithSentencePause(text: string): string | null {
+  const trimmed = text.replace(/\s+$/u, '');
+  if (!/[.!?]$/u.test(trimmed)) return null;
+  return trimmed;
+}
+
+/** True when the user finished a sentence — not when they only pressed Enter after one. */
+function shouldRunHighlight(next: string, prev: string): boolean {
+  const nextSentence = endsWithSentencePause(next);
+  if (!nextSentence) return false;
+  const prevSentence = endsWithSentencePause(prev);
+  // Only added trailing newlines/spaces after an already-complete sentence
+  if (prevSentence === nextSentence && next.length >= prev.length) {
+    return false;
+  }
+  return true;
 }
 
 function escapeHtml(value: string): string {
@@ -52,6 +67,68 @@ function placeCaretAtEnd(element: HTMLElement) {
   range.collapse(false);
   selection.removeAllRanges();
   selection.addRange(range);
+}
+
+/**
+ * Read plain text without Chrome's "Enter → <div><br>" doubling newlines.
+ * One visual line break = one \n.
+ */
+function readEditablePlainText(root: HTMLElement): string {
+  let result = '';
+
+  const appendNewline = () => {
+    if (!result.endsWith('\n')) result += '\n';
+  };
+
+  const walk = (node: Node, isRoot = false) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      result += (node.textContent || '').replace(/\u00a0/g, ' ');
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    const el = node as HTMLElement;
+    const tag = el.tagName;
+
+    if (tag === 'BR') {
+      result += '\n';
+      return;
+    }
+
+    const children = Array.from(el.childNodes);
+    const isBlock = tag === 'DIV' || tag === 'P' || tag === 'LI';
+
+    if (isBlock && !isRoot) {
+      // Empty line box from browser Enter
+      if (
+        children.length === 0 ||
+        (children.length === 1 &&
+          children[0].nodeType === Node.ELEMENT_NODE &&
+          (children[0] as HTMLElement).tagName === 'BR')
+      ) {
+        result += '\n';
+        return;
+      }
+      if (result.length > 0 && !result.endsWith('\n')) {
+        appendNewline();
+      }
+      children.forEach((child) => walk(child));
+      return;
+    }
+
+    children.forEach((child) => walk(child));
+  };
+
+  walk(root, true);
+  return result.replace(/\r/g, '');
+}
+
+function insertSingleLineBreak() {
+  // Prefer a single <br> — avoids block <div> that doubles with innerText
+  if (document.queryCommandSupported?.('insertLineBreak')) {
+    document.execCommand('insertLineBreak');
+    return;
+  }
+  document.execCommand('insertText', false, '\n');
 }
 
 async function fetchGrammarMatches(text: string, grammarTarget: string): Promise<string[]> {
@@ -115,7 +192,10 @@ export function GrammarLiveTextBox({
       valueRef.current = value;
       return;
     }
-    if (value === valueRef.current && editorRef.current?.innerText.replace(/\u00a0/g, ' ') === value) {
+    const current = editorRef.current
+      ? readEditablePlainText(editorRef.current)
+      : '';
+    if (value === valueRef.current && current === value) {
       return;
     }
     valueRef.current = value;
@@ -160,22 +240,37 @@ export function GrammarLiveTextBox({
     }
   }
 
-  function handleInput() {
-    const el = editorRef.current;
-    if (!el || !editable) return;
-    let plain = el.innerText.replace(/\u00a0/g, ' ');
-    // If user keeps typing after highlights, drop marks and continue in the same box
-    if (el.querySelector('mark') && !endsWithSentencePause(plain)) {
-      el.innerText = plain;
-      placeCaretAtEnd(el);
-      plain = el.innerText.replace(/\u00a0/g, ' ');
-      highlightedForRef.current = '';
-    }
+  function commitPlainText(plain: string) {
+    const prev = valueRef.current;
     valueRef.current = plain;
     ignoreSyncRef.current = true;
     onChange?.(plain);
-    if (endsWithSentencePause(plain)) {
+    if (grammarTarget.trim() && shouldRunHighlight(plain, prev)) {
       void highlight(plain);
+    }
+  }
+
+  function handleInput() {
+    const el = editorRef.current;
+    if (!el || !editable) return;
+    let plain = readEditablePlainText(el);
+    // If user keeps typing after highlights, drop marks and continue in the same box
+    if (el.querySelector('mark') && !endsWithSentencePause(plain)) {
+      setEditorHtml(plain, [], true);
+      plain = readEditablePlainText(el);
+      highlightedForRef.current = '';
+    }
+    commitPlainText(plain);
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    event.stopPropagation();
+    if (!editable) return;
+    if (event.key === 'Enter' && !event.shiftKey && !event.metaKey && !event.ctrlKey) {
+      event.preventDefault();
+      insertSingleLineBreak();
+      // insertLineBreak does not always fire input in every browser
+      requestAnimationFrame(() => handleInput());
     }
   }
 
@@ -207,11 +302,11 @@ export function GrammarLiveTextBox({
             className,
           ].join(' ')}
           onInput={handleInput}
-          onKeyDown={(event) => event.stopPropagation()}
+          onKeyDown={handleKeyDown}
           onPaste={(event) => {
             if (!editable) return;
             event.preventDefault();
-            const text = event.clipboardData.getData('text/plain');
+            const text = event.clipboardData.getData('text/plain').replace(/\r\n/g, '\n');
             document.execCommand('insertText', false, text);
           }}
         />
