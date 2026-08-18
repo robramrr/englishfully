@@ -103,14 +103,16 @@ function ContentBody({
       )}
 
       {slide.bullets.filter((item) => item.trim()).length > 0 ? (
-        <ul
-          className="list-disc space-y-1 pl-5 font-bold"
-          style={textStyle(slide.bulletsFontSize, slide.bulletsColor, mode)}
-        >
+        <ul className="list-disc space-y-1 pl-5 font-bold">
           {slide.bullets
             .filter((item) => item.trim())
             .map((item) => (
-              <li key={item}>{item}</li>
+              <li
+                key={item}
+                style={textStyle(slide.bulletsFontSize, slide.bulletsColor, mode)}
+              >
+                {item}
+              </li>
             ))}
         </ul>
       ) : null}
@@ -256,14 +258,12 @@ export default function SlideCanvas({
             >
               {title}
             </h2>
-            <ul
-              className="flex-1 space-y-2 overflow-auto font-bold"
-              style={textStyle(slide.bulletsFontSize, slide.bulletsColor, mode)}
-            >
+            <ul className="flex-1 space-y-2 overflow-auto font-bold">
               {(slide.bullets.length > 0 ? slide.bullets : ['Add bullet points…']).map((item) => (
                 <li
                   key={item}
                   className="flex gap-3 border-4 border-[var(--comic-black)] bg-white/80 px-3 py-2 comic-shadow-sm"
+                  style={textStyle(slide.bulletsFontSize, slide.bulletsColor, mode)}
                 >
                   <span className="text-[var(--comic-primary)]">●</span>
                   <span>{item}</span>
@@ -297,14 +297,16 @@ export default function SlideCanvas({
               </p>
             ) : null}
             {slide.bullets.filter((item) => item.trim()).length > 0 ? (
-              <ul
-                className="list-disc space-y-1 pl-5 font-bold"
-                style={textStyle(slide.bulletsFontSize, slide.bulletsColor, mode)}
-              >
+              <ul className="list-disc space-y-1 pl-5 font-bold">
                 {slide.bullets
                   .filter((item) => item.trim())
                   .map((item) => (
-                    <li key={item}>{item}</li>
+                    <li
+                      key={item}
+                      style={textStyle(slide.bulletsFontSize, slide.bulletsColor, mode)}
+                    >
+                      {item}
+                    </li>
                   ))}
               </ul>
             ) : null}

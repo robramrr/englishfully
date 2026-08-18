@@ -13,8 +13,8 @@ const WHITE = 'FFFFFF';
 
 function pptxFontColor(color: PresentationFontColor | undefined): string {
   if (color === 'red') return RED;
-  if (color === 'mediumGray') return '6B7588';
-  if (color === 'softGray') return 'A8AEB8';
+  if (color === 'mediumGray') return '3F4A5C';
+  if (color === 'softGray') return '6B7588';
   return NAVY;
 }
 

@@ -6,8 +6,8 @@
   --brand-red: #ea1225;
   --brand-white: #ffffff;
   --brand-gray: #e5e5e4;
-  --brand-medium-gray: #6b7588;
-  --brand-soft-gray: #a8aeb8;
+  --brand-medium-gray: #3f4a5c;
+  --brand-soft-gray: #6b7588;
   --comic-accent-light-gradient: linear-gradient(
     135deg,
     color-mix(in srgb, var(--brand-navy) 40%, var(--brand-gray)) 0%,
@@ -353,6 +353,12 @@ ol li {
   ol li {
     font-size: 1.25rem; /* text-xl */
   }
+}
+
+/* Presentation slides set size/color on each li — don't let global ul li override. */
+.presentation-slide ul li,
+.presentation-slide ol li {
+  letter-spacing: normal;
 }
 
 /* Ensure proper spacing between list items */

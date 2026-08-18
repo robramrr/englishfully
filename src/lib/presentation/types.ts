@@ -42,9 +42,9 @@ export function presentationFontSizePx(
   const key: PresentationFontSize =
     size === 'sm' || size === 'lg' || size === 'xl' ? size : 'md';
   const scales = {
-    compact: { sm: 10, md: 12, lg: 14, xl: 16 },
-    default: { sm: 14, md: 18, lg: 24, xl: 32 },
-    present: { sm: 20, md: 28, lg: 40, xl: 56 },
+    compact: { sm: 10, md: 12, lg: 15, xl: 18 },
+    default: { sm: 14, md: 18, lg: 26, xl: 36 },
+    present: { sm: 22, md: 30, lg: 44, xl: 64 },
   } as const;
   return scales[mode][key];
 }
