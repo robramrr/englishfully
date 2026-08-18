@@ -58,13 +58,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
       if (
         fullAssignment?.makeup_enabled &&
-        fullAssignment.makeup_listen_assignment_id &&
+        fullAssignment.makeup_listen_assignment_ids.length > 0 &&
         !alreadyPassed
       ) {
-        const { hasFailedTiedListenAssessment } = await import('@/lib/gradebook/db');
-        const failedOriginal = await hasFailedTiedListenAssessment({
+        const { hasFailedAnyTiedListenAssessment } = await import('@/lib/gradebook/db');
+        const failedOriginal = await hasFailedAnyTiedListenAssessment({
           teacherId: fullAssignment.teacher_id,
-          listenAssignmentId: fullAssignment.makeup_listen_assignment_id,
+          listenAssignmentIds: fullAssignment.makeup_listen_assignment_ids,
           studentNumber,
           classNumber,
         });

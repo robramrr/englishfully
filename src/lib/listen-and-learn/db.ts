@@ -17,7 +17,7 @@ import type {
   SaveLearnAssignmentPayload,
   SubmitLearnPayload,
 } from './types';
-import { shuffleArray, stripChoiceLetterPrefix } from './types';
+import { shuffleArray, stripChoiceLetterPrefix, parseMakeupListenAssignmentIds, serializeMakeupListenAssignmentIds } from './types';
 
 const DEFAULT_TEACHER_ID = 'default';
 
@@ -238,7 +238,9 @@ function rowToAssignment(row: Record<string, unknown>): LearnAssignment {
     randomize_answers: parseDbBoolean(row.randomize_answers),
     status: row.status === 'published' ? 'published' : 'draft',
     makeup_enabled: parseDbBoolean(row.makeup_enabled),
-    makeup_listen_assignment_id: String(row.makeup_listen_assignment_id ?? '').trim(),
+    makeup_listen_assignment_ids: parseMakeupListenAssignmentIds(row.makeup_listen_assignment_id),
+    makeup_listen_assignment_id:
+      parseMakeupListenAssignmentIds(row.makeup_listen_assignment_id)[0] || '',
     makeup_class_names: parseMakeupClassNames(row.makeup_class_names),
     created_at: new Date(row.created_at as string).toISOString(),
     updated_at: new Date(row.updated_at as string).toISOString(),
@@ -340,7 +342,7 @@ export async function listPublishedMakeupAssignments(
     .map((row) => rowToAssignment(row))
     .filter(
       (assignment) =>
-        assignment.makeup_enabled && Boolean(assignment.makeup_listen_assignment_id.trim())
+        assignment.makeup_enabled && assignment.makeup_listen_assignment_ids.length > 0
     );
 }
 
@@ -736,7 +738,9 @@ export async function saveLearnAssignment(
       makeup_enabled = ${Boolean(payload.makeup_enabled)},
       makeup_listen_assignment_id = ${
         Boolean(payload.makeup_enabled)
-          ? safeTrim(payload.makeup_listen_assignment_id)
+          ? serializeMakeupListenAssignmentIds(
+              payload.makeup_listen_assignment_ids ?? payload.makeup_listen_assignment_id
+            )
           : ''
       },
       makeup_class_names = ${JSON.stringify(
@@ -933,11 +937,11 @@ export async function submitLearnAssignment(
     throw new Error('You already passed this assessment. Ask your teacher if you need another try.');
   }
 
-  if (assignment.makeup_enabled && assignment.makeup_listen_assignment_id) {
-    const { hasFailedTiedListenAssessment } = await import('@/lib/gradebook/db');
-    const failedOriginal = await hasFailedTiedListenAssessment({
+  if (assignment.makeup_enabled && assignment.makeup_listen_assignment_ids.length > 0) {
+    const { hasFailedAnyTiedListenAssessment } = await import('@/lib/gradebook/db');
+    const failedOriginal = await hasFailedAnyTiedListenAssessment({
       teacherId: assignment.teacher_id || DEFAULT_TEACHER_ID,
-      listenAssignmentId: assignment.makeup_listen_assignment_id,
+      listenAssignmentIds: assignment.makeup_listen_assignment_ids,
       studentNumber,
       classNumber,
     });
@@ -1007,14 +1011,14 @@ export async function submitLearnAssignment(
 
   const passed = percent >= assignment.passing_score;
   let makeupCredited: boolean | null = null;
-  if (assignment.makeup_enabled && passed && assignment.makeup_listen_assignment_id) {
+  if (assignment.makeup_enabled && passed && assignment.makeup_listen_assignment_ids.length > 0) {
     try {
       const { creditListenLearnMakeup } = await import('@/lib/gradebook/db');
       const credit = await creditListenLearnMakeup({
         teacherId: assignment.teacher_id || DEFAULT_TEACHER_ID,
         learnAssignmentId: assignment.id,
         learnTitle: assignment.title,
-        makeupListenAssignmentId: assignment.makeup_listen_assignment_id,
+        makeupListenAssignmentIds: assignment.makeup_listen_assignment_ids,
         makeupClassNames: assignment.makeup_class_names,
         studentNumber,
         classNumber,
@@ -1023,7 +1027,7 @@ export async function submitLearnAssignment(
       if (!credit.credited) {
         console.warn('Listen & Learn makeup not credited:', credit.reason, {
           learnAssignmentId: assignment.id,
-          tiedId: assignment.makeup_listen_assignment_id,
+          tiedIds: assignment.makeup_listen_assignment_ids,
           studentNumber,
           classNumber,
         });

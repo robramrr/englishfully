@@ -877,7 +877,7 @@ export async function getClassGradebook(
             teacherId,
             learnAssignmentId: makeup.id,
             learnTitle: makeup.title,
-            makeupListenAssignmentId: makeup.makeup_listen_assignment_id,
+            makeupListenAssignmentIds: makeup.makeup_listen_assignment_ids,
             makeupClassNames: makeup.makeup_class_names,
             studentNumber: String(passer.student_number ?? ''),
             classNumber: classOption.label,
@@ -1521,7 +1521,7 @@ export async function lookupStudentGrades(params: {
         teacherId,
         learnAssignmentId: makeup.id,
         learnTitle: makeup.title,
-        makeupListenAssignmentId: makeup.makeup_listen_assignment_id,
+        makeupListenAssignmentIds: makeup.makeup_listen_assignment_ids,
         makeupClassNames: makeup.makeup_class_names,
         studentNumber,
         classNumber: classLabel,
@@ -1665,14 +1665,24 @@ export async function lookupStudentGrades(params: {
     );
 
     for (const makeup of makeups) {
-      const tiedId = String(makeup.makeup_listen_assignment_id ?? '').trim();
-      if (!tiedId) continue;
+      const tiedIds = makeup.makeup_listen_assignment_ids?.length
+        ? makeup.makeup_listen_assignment_ids
+        : [String(makeup.makeup_listen_assignment_id ?? '').trim()].filter(Boolean);
+      if (tiedIds.length === 0) continue;
 
       const makeupKey = taskKey('listen_and_learn', makeup.id);
-      let failedEntry = failedListenEntries.find((entry) => entry.task_id === tiedId) || null;
+      let failedEntry: (typeof failedListenEntries)[number] | null = null;
+      let matchedTiedId = '';
 
-      // Fallback: only when exactly one failing Listen row shares the tied title.
-      if (!failedEntry) {
+      for (const tiedId of tiedIds) {
+        const byId = failedListenEntries.find((entry) => entry.task_id === tiedId) || null;
+        if (byId) {
+          failedEntry = byId;
+          matchedTiedId = tiedId;
+          break;
+        }
+
+        // Fallback: only when exactly one failing Listen row shares the tied title.
         try {
           const tied = await getAssignmentById(tiedId);
           const tiedTitle = tied?.title?.trim().toLowerCase() || '';
@@ -1680,36 +1690,67 @@ export async function lookupStudentGrades(params: {
             const sameTitle = failedListenEntries.filter(
               (entry) => String(entry.task_title ?? '').trim().toLowerCase() === tiedTitle
             );
-            failedEntry = sameTitle.length === 1 ? sameTitle[0] : null;
+            if (sameTitle.length === 1) {
+              failedEntry = sameTitle[0];
+              matchedTiedId = tiedId;
+              break;
+            }
           }
         } catch {
           // ignore title lookup failures
         }
       }
 
-      const passedTied = passedListenEntries.some((entry) => entry.task_id === tiedId);
-
-      let passedByTitle = false;
-      if (!passedTied && !failedEntry) {
+      let passedAnyTied = false;
+      for (const tiedId of tiedIds) {
+        if (passedListenEntries.some((entry) => entry.task_id === tiedId)) {
+          passedAnyTied = true;
+          break;
+        }
         try {
           const tied = await getAssignmentById(tiedId);
           const tiedTitle = tied?.title?.trim().toLowerCase() || '';
-          if (tiedTitle) {
-            const sameTitlePassed = passedListenEntries.filter(
-              (entry) => String(entry.task_title ?? '').trim().toLowerCase() === tiedTitle
-            );
-            passedByTitle = sameTitlePassed.length === 1;
+          if (!tiedTitle) continue;
+          const sameTitlePassed = passedListenEntries.filter(
+            (entry) => String(entry.task_title ?? '').trim().toLowerCase() === tiedTitle
+          );
+          if (sameTitlePassed.length === 1) {
+            passedAnyTied = true;
+            break;
           }
         } catch {
           // ignore
         }
       }
 
-      if (passedTied || passedByTitle) continue;
+      // Hide only when the student passed every tied assessment that applies.
+      // If they failed/missed at least one, still show makeup.
+      if (passedAnyTied && !failedEntry) {
+        const anyMissAssigned = tiedIds.some((tiedId) =>
+          assigned.has(taskKey('listen_and_answer', tiedId))
+        );
+        if (!anyMissAssigned) continue;
+        // They passed some but still have another tied assessment assigned without a fail row
+        // — treat remaining assigned miss as eligible below.
+      }
 
-      // Missing (not turned in): makeup only if the tied Listen task is on this seat's list.
-      const listenAssigned = assigned.has(taskKey('listen_and_answer', tiedId));
-      if (!failedEntry && !listenAssigned) continue;
+      if (failedEntry) {
+        // ok — show
+      } else {
+        const listenAssigned = tiedIds.some((tiedId) =>
+          assigned.has(taskKey('listen_and_answer', tiedId))
+        );
+        // Exclude seats that already passed all tied assessments they were assigned.
+        const allAssignedPassed = tiedIds.every((tiedId) => {
+          const isAssigned = assigned.has(taskKey('listen_and_answer', tiedId));
+          if (!isAssigned) return true;
+          return passedListenEntries.some((entry) => entry.task_id === tiedId);
+        });
+        if (!listenAssigned || allAssignedPassed) continue;
+        matchedTiedId =
+          tiedIds.find((tiedId) => assigned.has(taskKey('listen_and_answer', tiedId))) ||
+          tiedIds[0];
+      }
 
       const makeupEntry = seat.entries_by_task[makeupKey];
       const maxPoints = Math.max(
@@ -1723,7 +1764,7 @@ export async function lookupStudentGrades(params: {
         task_title: makeup.title || 'Makeup',
         max_points: maxPoints,
         student_url: studentUrlForTool('listen_and_learn', makeup.id),
-        makeup_for_task_id: failedEntry?.task_id || tiedId,
+        makeup_for_task_id: failedEntry?.task_id || matchedTiedId,
       });
     }
   } catch (error) {
@@ -1934,12 +1975,33 @@ export async function hasFailedTiedListenAssessment(params: {
   studentNumber: string;
   classNumber: string;
 }): Promise<boolean> {
+  return hasFailedAnyTiedListenAssessment({
+    teacherId: params.teacherId,
+    listenAssignmentIds: [params.listenAssignmentId],
+    studentNumber: params.studentNumber,
+    classNumber: params.classNumber,
+  });
+}
+
+/** Eligible if the seat failed or missed any of the tied Listen & Answer assessments. */
+export async function hasFailedAnyTiedListenAssessment(params: {
+  teacherId?: string;
+  listenAssignmentIds: string[];
+  studentNumber: string;
+  classNumber: string;
+}): Promise<boolean> {
+  const ids = [
+    ...new Set(
+      (params.listenAssignmentIds || []).map((id) => String(id ?? '').trim()).filter(Boolean)
+    ),
+  ];
+  if (ids.length === 0) return false;
+
   await ensureGradebookSchema();
   const teacherId = params.teacherId || DEFAULT_TEACHER_ID;
   const studentNumber = normalizeStudentNumber(params.studentNumber);
   const classLabel = params.classNumber.trim();
-  const tiedId = params.listenAssignmentId.trim();
-  if (!studentNumber || !classLabel || !tiedId) return false;
+  if (!studentNumber || !classLabel) return false;
 
   const entryConfig = await getEntryConfig(teacherId);
   const classOption = entryConfig.classes.find(
@@ -1960,43 +2022,44 @@ export async function hasFailedTiedListenAssessment(params: {
       AND tool = 'listen_and_answer'
   `;
 
-  let tiedTitle = '';
-  let tiedClassName = '';
-  try {
-    const { getAssignmentById } = await import('@/lib/listen-and-answer/db');
-    const tied = await getAssignmentById(tiedId);
-    tiedTitle = tied?.title?.trim().toLowerCase() || '';
-    tiedClassName = String(tied?.class_name ?? '').trim();
-  } catch {
-    // Title / class tag unavailable — id match may still work.
-  }
+  const { getAssignmentById } = await import('@/lib/listen-and-answer/db');
 
-  let matched = rows.filter((row) => String(row.task_id ?? '') === tiedId);
-  if (matched.length === 0 && tiedTitle) {
-    const sameTitle = rows.filter(
-      (row) => String(row.task_title ?? '').trim().toLowerCase() === tiedTitle
-    );
-    // Only use title when unambiguous (same rule as credit / lookup).
-    if (sameTitle.length === 1) matched = sameTitle;
-  }
+  for (const tiedId of ids) {
+    let tiedTitle = '';
+    let tiedClassName = '';
+    try {
+      const tied = await getAssignmentById(tiedId);
+      tiedTitle = tied?.title?.trim().toLowerCase() || '';
+      tiedClassName = String(tied?.class_name ?? '').trim();
+    } catch {
+      // Title / class tag unavailable — id match may still work.
+    }
 
-  if (matched.length > 0) {
-    // Full points on the tied assessment → not eligible.
-    const hasFull = matched.some((row) => {
-      const maxPoints = Math.max(DEFAULT_MAX_POINTS, Number(row.max_points ?? DEFAULT_MAX_POINTS));
-      return Number(row.points ?? 0) >= maxPoints;
-    });
-    if (hasFull) return false;
-    // Below full points → eligible (failed).
+    let matched = rows.filter((row) => String(row.task_id ?? '') === tiedId);
+    if (matched.length === 0 && tiedTitle) {
+      const sameTitle = rows.filter(
+        (row) => String(row.task_title ?? '').trim().toLowerCase() === tiedTitle
+      );
+      if (sameTitle.length === 1) matched = sameTitle;
+    }
+
+    if (matched.length > 0) {
+      const hasFull = matched.some((row) => {
+        const maxPoints = Math.max(DEFAULT_MAX_POINTS, Number(row.max_points ?? DEFAULT_MAX_POINTS));
+        return Number(row.points ?? 0) >= maxPoints;
+      });
+      if (!hasFull) return true;
+      continue;
+    }
+
+    // No gradebook row: eligible as not-turned-in when the tied Listen belongs on this class.
+    if (tiedClassName && !taskAppliesToGradebookClass(tiedClassName, classLabel)) {
+      continue;
+    }
     return true;
   }
 
-  // No gradebook row: eligible as not-turned-in, but only if the tied Listen
-  // assessment belongs on this class.
-  if (tiedClassName && !taskAppliesToGradebookClass(tiedClassName, classLabel)) {
-    return false;
-  }
-  return Boolean(tiedId);
+  return false;
 }
 
 export type MakeupCreditResult = {
@@ -2016,7 +2079,10 @@ export async function creditListenLearnMakeup(params: {
   teacherId: string;
   learnAssignmentId: string;
   learnTitle: string;
-  makeupListenAssignmentId: string;
+  /** Prefer this when multiple assessments are tied. */
+  makeupListenAssignmentIds?: string[];
+  /** Legacy single id. */
+  makeupListenAssignmentId?: string;
   makeupClassNames?: string[];
   studentNumber: string;
   classNumber: string;
@@ -2040,22 +2106,37 @@ export async function creditListenLearnMakeup(params: {
   const settings = await getGradebookSettings(teacherId);
   const schoolYear = settings.school_year;
   const activeSemester = settings.active_semester;
-  const tiedId = String(params.makeupListenAssignmentId ?? '').trim();
-  if (!tiedId) {
+  const tiedIds = [
+    ...new Set(
+      [
+        ...(params.makeupListenAssignmentIds || []),
+        params.makeupListenAssignmentId || '',
+      ]
+        .map((id) => String(id ?? '').trim())
+        .filter(Boolean)
+    ),
+  ];
+  if (tiedIds.length === 0) {
     return { credited: false, reason: 'missing_tied_assessment' };
   }
 
-  let tiedTitle = '';
-  let tiedDisplayTitle = '';
-  let tiedClassName = '';
-  try {
-    const { getAssignmentById } = await import('@/lib/listen-and-answer/db');
-    const tied = await getAssignmentById(tiedId);
-    tiedDisplayTitle = tied?.title?.trim() || '';
-    tiedTitle = tiedDisplayTitle.toLowerCase();
-    tiedClassName = String(tied?.class_name ?? '').trim();
-  } catch {
-    // Title fallback unavailable — exact id match may still work.
+  const { getAssignmentById } = await import('@/lib/listen-and-answer/db');
+  const tiedMeta = new Map<
+    string,
+    { title: string; displayTitle: string; className: string }
+  >();
+  for (const tiedId of tiedIds) {
+    try {
+      const tied = await getAssignmentById(tiedId);
+      const displayTitle = tied?.title?.trim() || '';
+      tiedMeta.set(tiedId, {
+        title: displayTitle.toLowerCase(),
+        displayTitle,
+        className: String(tied?.class_name ?? '').trim(),
+      });
+    } catch {
+      tiedMeta.set(tiedId, { title: '', displayTitle: '', className: '' });
+    }
   }
 
   // Find failing Listen & Answer rows for this seat in the current school year
@@ -2103,28 +2184,61 @@ export async function creditListenLearnMakeup(params: {
     return 0;
   };
 
-  let failed: FailCandidate | null =
-    failing.filter((row) => row.task_id === tiedId).sort(byPreference)[0] || null;
+  let failed: FailCandidate | null = null;
+  let matchedTiedId = '';
 
-  // Title fallback only when exactly one failing row shares the title — never steal
-  // scores across different Listen tasks that happen to be named "English Listening".
-  if (!failed && tiedTitle) {
+  for (const tiedId of tiedIds) {
+    const byId = failing.filter((row) => row.task_id === tiedId).sort(byPreference)[0] || null;
+    if (byId) {
+      failed = byId;
+      matchedTiedId = tiedId;
+      break;
+    }
+    const tiedTitle = tiedMeta.get(tiedId)?.title || '';
+    if (!tiedTitle) continue;
     const sameTitle = failing
       .filter((row) => String(row.task_title ?? '').trim().toLowerCase() === tiedTitle)
       .sort(byPreference);
-    failed = sameTitle.length === 1 ? sameTitle[0] : null;
+    if (sameTitle.length === 1) {
+      failed = sameTitle[0];
+      matchedTiedId = tiedId;
+      break;
+    }
   }
 
   if (!failed) {
-    const anyTied = listenRows.find((row) => String(row.task_id ?? '') === tiedId);
-    if (anyTied) {
+    // If every tied assessment that has a grade is already full points, no credit.
+    const anyFullTied = tiedIds.some((tiedId) =>
+      listenRows.some((row) => String(row.task_id ?? '') === tiedId)
+    );
+    const anyFailOrMissingEligible = tiedIds.some((tiedId) => {
+      const hasRow = listenRows.some((row) => String(row.task_id ?? '') === tiedId);
+      if (hasRow) return false;
+      const tiedClassName = tiedMeta.get(tiedId)?.className || '';
+      if (tiedClassName && !taskAppliesToGradebookClass(tiedClassName, classLabel)) {
+        return false;
+      }
+      return true;
+    });
+
+    if (anyFullTied && !anyFailOrMissingEligible) {
       return { credited: false, reason: 'tied_assessment_already_full_points' };
     }
 
-    // Absent / not turned in: still allow makeup credit (same max points as usual).
-    if (tiedClassName && !taskAppliesToGradebookClass(tiedClassName, classLabel)) {
+    if (!anyFailOrMissingEligible) {
       return { credited: false, reason: 'tied_assessment_not_for_class' };
     }
+
+    const missTiedId =
+      tiedIds.find((tiedId) => {
+        const hasRow = listenRows.some((row) => String(row.task_id ?? '') === tiedId);
+        if (hasRow) return false;
+        const tiedClassName = tiedMeta.get(tiedId)?.className || '';
+        if (tiedClassName && !taskAppliesToGradebookClass(tiedClassName, classLabel)) {
+          return false;
+        }
+        return true;
+      }) || tiedIds[0];
 
     const maxPoints = DEFAULT_MAX_POINTS;
     await upsertGradeEntry(
@@ -2139,7 +2253,9 @@ export async function creditListenLearnMakeup(params: {
         task_title: params.learnTitle.trim() || 'Makeup',
         points: maxPoints,
         max_points: maxPoints,
-        notes: `Makeup for: ${tiedDisplayTitle || 'assessment'} (not turned in)`,
+        notes: `Makeup for: ${
+          tiedMeta.get(missTiedId)?.displayTitle || 'assessment'
+        } (not turned in)`,
       },
       teacherId
     );
@@ -2158,7 +2274,7 @@ export async function creditListenLearnMakeup(params: {
       task_title: params.learnTitle.trim() || 'Makeup',
       points: failed.max_points,
       max_points: failed.max_points,
-      notes: `Makeup for: ${failed.task_title || 'assessment'}`,
+      notes: `Makeup for: ${failed.task_title || tiedMeta.get(matchedTiedId)?.displayTitle || 'assessment'}`,
     },
     teacherId
   );

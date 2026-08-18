@@ -80,7 +80,12 @@ export interface LearnAssignment {
   status: 'draft' | 'published';
   /** When true, passing this Learn credits a separate makeup gradebook row. */
   makeup_enabled: boolean;
-  /** Listen & Answer assessment id this makeup is for. */
+  /**
+   * Listen & Answer assessment id(s) this makeup is for.
+   * Stored as a single id or JSON array in `makeup_listen_assignment_id`.
+   */
+  makeup_listen_assignment_ids: string[];
+  /** First tied assessment id (legacy / convenience). */
   makeup_listen_assignment_id: string;
   /**
    * Class labels (Speak/entry config) allowed to earn makeup.
@@ -150,6 +155,9 @@ export interface SaveLearnAssignmentPayload {
   randomize_answers: boolean;
   status: 'draft' | 'published';
   makeup_enabled?: boolean;
+  /** Prefer this when tying to one or more Listen & Answer assessments. */
+  makeup_listen_assignment_ids?: string[];
+  /** Legacy single id — still accepted and merged into ids. */
   makeup_listen_assignment_id?: string;
   makeup_class_names?: string[];
   vocabulary: Array<{
@@ -334,6 +342,41 @@ export function mergeShortSegments(
       end_seconds: Number((segment.start_seconds + minSeconds).toFixed(2)),
     };
   });
+}
+
+/**
+ * Parse tied Listen & Answer id(s) from DB / payload.
+ * Supports legacy single id, JSON array, or string[].
+ */
+export function parseMakeupListenAssignmentIds(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return [
+      ...new Set(value.map((item) => String(item ?? '').trim()).filter(Boolean)),
+    ];
+  }
+  const raw = String(value ?? '').trim();
+  if (!raw) return [];
+  if (raw.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed)) {
+        return [
+          ...new Set(parsed.map((item) => String(item ?? '').trim()).filter(Boolean)),
+        ];
+      }
+    } catch {
+      // fall through
+    }
+  }
+  return [raw];
+}
+
+/** Persist one or more tied assessment ids (single id stays plain for legacy rows). */
+export function serializeMakeupListenAssignmentIds(ids: unknown): string {
+  const cleaned = parseMakeupListenAssignmentIds(ids);
+  if (cleaned.length === 0) return '';
+  if (cleaned.length === 1) return cleaned[0];
+  return JSON.stringify(cleaned);
 }
 
 export function getKeepQuestions(assignment: LearnAssignmentWithDetails): LearnQuestion[] {
