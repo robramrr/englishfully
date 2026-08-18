@@ -210,6 +210,9 @@ function taskClassNameMentionsLevel(taskClassName: string, level: number): boole
 /**
  * True when a Listen/Speak task’s class_name belongs on this gradebook class.
  * Examples: class "4/16" matches task "M4,M5" or "4/16", but not "M6".
+ *
+ * Note: Listen & Learn makeup tasks are not filtered by this in the gradebook UI —
+ * any Learn assignment can be selected on any class sheet.
  */
 export function taskAppliesToGradebookClass(
   taskClassName: unknown,

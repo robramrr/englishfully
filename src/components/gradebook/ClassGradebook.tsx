@@ -76,7 +76,10 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
 
     for (const task of availableTasks) {
       if (task.tool !== tool) continue;
+      // Listen & Learn is makeup — allow any tagged Learn task on any class sheet
+      // (titles often say M4/M5 even when used for M6 rooms like 6/11).
       const applies =
+        tool === 'listen_and_learn' ||
         !classLabel ||
         !String(task.class_name ?? '').trim() ||
         taskAppliesToGradebookClass(task.class_name, classLabel);
@@ -799,6 +802,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
               ) : (
                 filteredTasks.map((task) => {
                   const applies =
+                    tool === 'listen_and_learn' ||
                     !classLabel ||
                     !String(task.class_name ?? '').trim() ||
                     taskAppliesToGradebookClass(task.class_name, classLabel);
@@ -813,6 +817,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
               )}
             </select>
             {selectedTask &&
+            tool !== 'listen_and_learn' &&
             classLabel &&
             String(selectedTask.class_name ?? '').trim() &&
             !taskAppliesToGradebookClass(selectedTask.class_name, classLabel) ? (
