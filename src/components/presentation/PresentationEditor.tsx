@@ -8,6 +8,7 @@ import ComicTitle from '../ComicTitle';
 import SlideCanvas from './SlideCanvas';
 import PresentationPreview from './PresentationPreview';
 import PresentationShareBar from './PresentationShareBar';
+import SlideTextStyleControls from './SlideTextStyleControls';
 import { structurePastedContent, cleanSlideText } from '@/lib/presentation/parsePaste';
 import {
   clearPresentationDraftById,
@@ -448,7 +449,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                   />
                 </label>
 
-                <label className="block space-y-1">
+                <div className="block space-y-1">
                   <ComicText className="text-sm font-bold">
                     {selected.layout === 'title'
                       ? 'Subtitle'
@@ -484,12 +485,22 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                           : 'Main text for this slide'
                     }
                   />
-                </label>
+                  <SlideTextStyleControls
+                    fontSize={selected.bodyFontSize}
+                    color={selected.bodyColor}
+                    onFontSizeChange={(bodyFontSize) =>
+                      setDeck((prev) => updateSlide(prev, selected.id, { bodyFontSize }))
+                    }
+                    onColorChange={(bodyColor) =>
+                      setDeck((prev) => updateSlide(prev, selected.id, { bodyColor }))
+                    }
+                  />
+                </div>
 
                 {(selected.layout === 'content' ||
                   selected.layout === 'image' ||
                   selected.layout === 'bullets') && (
-                  <label className="block space-y-1">
+                  <div className="block space-y-1">
                     <ComicText className="text-sm font-bold">Bullets (one per line)</ComicText>
                     <textarea
                       className="comic-textarea w-full min-h-[100px]"
@@ -516,7 +527,17 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                       onKeyDown={(event) => event.stopPropagation()}
                       placeholder={'- I wake up at 6.\n- I eat breakfast.'}
                     />
-                  </label>
+                    <SlideTextStyleControls
+                      fontSize={selected.bulletsFontSize}
+                      color={selected.bulletsColor}
+                      onFontSizeChange={(bulletsFontSize) =>
+                        setDeck((prev) => updateSlide(prev, selected.id, { bulletsFontSize }))
+                      }
+                      onColorChange={(bulletsColor) =>
+                        setDeck((prev) => updateSlide(prev, selected.id, { bulletsColor }))
+                      }
+                    />
+                  </div>
                 )}
 
                 {(selected.layout === 'content' || selected.layout === 'image') && (

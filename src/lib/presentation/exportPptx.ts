@@ -1,11 +1,29 @@
 import 'server-only';
 import PptxGenJS from 'pptxgenjs';
-import type { PresentationDeck } from './types';
+import type {
+  PresentationDeck,
+  PresentationFontColor,
+  PresentationFontSize,
+} from './types';
 
 const NAVY = '001a48';
 const RED = 'EA1225';
 const GRAY = 'E5E5E4';
 const WHITE = 'FFFFFF';
+
+function pptxFontColor(color: PresentationFontColor | undefined): string {
+  if (color === 'red') return RED;
+  if (color === 'gray') return GRAY;
+  if (color === 'white') return WHITE;
+  return NAVY;
+}
+
+function pptxFontSize(size: PresentationFontSize | undefined, base = 18): number {
+  if (size === 'sm') return Math.max(12, base - 4);
+  if (size === 'lg') return base + 4;
+  if (size === 'xl') return base + 8;
+  return base;
+}
 
 export function presentationPptxFilename(deck: PresentationDeck): string {
   return `${(deck.title || 'presentation').replace(/[^\w.-]+/g, '_').slice(0, 80)}.pptx`;
@@ -99,9 +117,9 @@ export async function buildPresentationPptxBuffer(
           y,
           w: slide.imageUrl.trim() ? 6.8 : 12.1,
           h: 2.2,
-          fontSize: 18,
+          fontSize: pptxFontSize(slide.bodyFontSize, 18),
           bold: true,
-          color: NAVY,
+          color: pptxFontColor(slide.bodyColor),
           fontFace: 'Arial',
           valign: 'top',
         });
@@ -117,9 +135,9 @@ export async function buildPresentationPptxBuffer(
             y,
             w: slide.imageUrl.trim() ? 6.8 : 12.1,
             h: Math.min(2.8, bullets.length * 0.45 + 0.3),
-            fontSize: 18,
+            fontSize: pptxFontSize(slide.bulletsFontSize, 18),
             bold: true,
-            color: NAVY,
+            color: pptxFontColor(slide.bulletsColor),
             fontFace: 'Arial',
             valign: 'top',
           }

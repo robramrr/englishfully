@@ -1,5 +1,72 @@
 export type PresentationSlideLayout = 'title' | 'content' | 'bullets' | 'image';
 
+/** Slide body / bullets type scale. */
+export type PresentationFontSize = 'sm' | 'md' | 'lg' | 'xl';
+
+/** Theme palette only (brand navy / red / gray / white). */
+export type PresentationFontColor = 'navy' | 'red' | 'gray' | 'white';
+
+export const PRESENTATION_FONT_SIZES: {
+  value: PresentationFontSize;
+  label: string;
+}[] = [
+  { value: 'sm', label: 'S' },
+  { value: 'md', label: 'M' },
+  { value: 'lg', label: 'L' },
+  { value: 'xl', label: 'XL' },
+];
+
+export const PRESENTATION_FONT_COLORS: {
+  value: PresentationFontColor;
+  label: string;
+  cssVar: string;
+}[] = [
+  { value: 'navy', label: 'Navy', cssVar: 'var(--brand-navy)' },
+  { value: 'red', label: 'Red', cssVar: 'var(--brand-red)' },
+  { value: 'gray', label: 'Gray', cssVar: 'var(--brand-gray)' },
+  { value: 'white', label: 'White', cssVar: 'var(--brand-white)' },
+];
+
+export function presentationFontColorCss(
+  color: PresentationFontColor | string | undefined
+): string {
+  const match = PRESENTATION_FONT_COLORS.find((item) => item.value === color);
+  return match?.cssVar ?? 'var(--brand-navy)';
+}
+
+export function presentationFontSizeClass(
+  size: PresentationFontSize | string | undefined,
+  mode: 'compact' | 'default' | 'present'
+): string {
+  const key: PresentationFontSize =
+    size === 'sm' || size === 'lg' || size === 'xl' ? size : 'md';
+  if (mode === 'compact') {
+    return { sm: 'text-[10px]', md: 'text-xs', lg: 'text-sm', xl: 'text-base' }[key];
+  }
+  if (mode === 'present') {
+    return {
+      sm: 'text-lg md:text-2xl',
+      md: 'text-xl md:text-3xl',
+      lg: 'text-2xl md:text-4xl',
+      xl: 'text-3xl md:text-5xl',
+    }[key];
+  }
+  return {
+    sm: 'text-sm md:text-base',
+    md: 'text-base md:text-xl',
+    lg: 'text-lg md:text-2xl',
+    xl: 'text-xl md:text-3xl',
+  }[key];
+}
+
+function normalizeFontSize(value: unknown): PresentationFontSize {
+  return value === 'sm' || value === 'lg' || value === 'xl' ? value : 'md';
+}
+
+function normalizeFontColor(value: unknown): PresentationFontColor {
+  return value === 'red' || value === 'gray' || value === 'white' ? value : 'navy';
+}
+
 export interface PresentationSlide {
   id: string;
   layout: PresentationSlideLayout;
@@ -9,6 +76,14 @@ export interface PresentationSlide {
   bullets: string[];
   imageUrl: string;
   imageAlt: string;
+  /** Font size for definition / explanation. */
+  bodyFontSize: PresentationFontSize;
+  /** Theme color for definition / explanation. */
+  bodyColor: PresentationFontColor;
+  /** Font size for bullets. */
+  bulletsFontSize: PresentationFontSize;
+  /** Theme color for bullets. */
+  bulletsColor: PresentationFontColor;
   /** Text + image only: show a separate practice box with yellow grammar highlights. */
   grammarHighlighterEnabled: boolean;
   /** e.g. "Possessive Adjectives" */
@@ -64,6 +139,10 @@ export function createEmptySlide(
     bullets: [],
     imageUrl: '',
     imageAlt: '',
+    bodyFontSize: 'md',
+    bodyColor: 'navy',
+    bulletsFontSize: 'md',
+    bulletsColor: 'navy',
     grammarHighlighterEnabled: false,
     grammarTarget: '',
     grammarText: '',
@@ -90,6 +169,10 @@ export function normalizeSlide(
       : [],
     imageUrl: String(slide.imageUrl ?? ''),
     imageAlt: String(slide.imageAlt ?? ''),
+    bodyFontSize: normalizeFontSize(slide.bodyFontSize),
+    bodyColor: normalizeFontColor(slide.bodyColor),
+    bulletsFontSize: normalizeFontSize(slide.bulletsFontSize),
+    bulletsColor: normalizeFontColor(slide.bulletsColor),
     grammarHighlighterEnabled: Boolean(slide.grammarHighlighterEnabled),
     grammarTarget: String(slide.grammarTarget ?? ''),
     grammarText: String(slide.grammarText ?? ''),

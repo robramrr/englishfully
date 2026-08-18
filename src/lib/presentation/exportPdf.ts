@@ -1,7 +1,25 @@
-import type { PresentationDeck } from './types';
+import type {
+  PresentationDeck,
+  PresentationFontColor,
+  PresentationFontSize,
+} from './types';
 
 function safeFilename(value: string): string {
   return (value || 'presentation').replace(/[^\w.-]+/g, '_').slice(0, 80);
+}
+
+function pdfColor(color: PresentationFontColor | undefined): string {
+  if (color === 'red') return '#ea1225';
+  if (color === 'gray') return '#e5e5e4';
+  if (color === 'white') return '#ffffff';
+  return '#001a48';
+}
+
+function pdfFontSize(size: PresentationFontSize | undefined, base: number): number {
+  if (size === 'sm') return base - 4;
+  if (size === 'lg') return base + 4;
+  if (size === 'xl') return base + 8;
+  return base;
 }
 
 /** Open a print-friendly window (use browser Print → Save as PDF). */
@@ -23,12 +41,25 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
               slide.layout === 'title'
                 ? `<p class="brand">${escapeHtml(brand)}</p>
                    <h1>${escapeHtml(title || 'Presentation')}</h1>
-                   ${body ? `<p class="subtitle">${escapeHtml(body)}</p>` : ''}`
+                   ${body ? `<p class="subtitle" style="color:${pdfColor(slide.bodyColor)};font-size:${pdfFontSize(
+                       slide.bodyFontSize,
+                       22
+                     )}px">${escapeHtml(body)}</p>` : ''}`
                 : `<h2>${escapeHtml(title)}</h2>
-                   ${body ? `<p class="body">${escapeHtml(body)}</p>` : ''}
+                   ${
+                     body
+                       ? `<p class="body" style="color:${pdfColor(slide.bodyColor)};font-size:${pdfFontSize(
+                           slide.bodyFontSize,
+                           18
+                         )}px">${escapeHtml(body)}</p>`
+                       : ''
+                   }
                    ${
                      bullets.length
-                       ? `<ul>${bullets
+                       ? `<ul style="color:${pdfColor(slide.bulletsColor)};font-size:${pdfFontSize(
+                           slide.bulletsFontSize,
+                           18
+                         )}px">${bullets
                            .map((item) => `<li>${escapeHtml(item)}</li>`)
                            .join('')}</ul>`
                        : ''

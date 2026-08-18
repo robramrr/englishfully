@@ -1,6 +1,11 @@
 'use client';
 
-import type { PresentationDeck, PresentationSlide } from '@/lib/presentation/types';
+import {
+  presentationFontColorCss,
+  presentationFontSizeClass,
+  type PresentationDeck,
+  type PresentationSlide,
+} from '@/lib/presentation/types';
 import { GrammarLiveTextBox } from './GrammarHighlight';
 
 interface SlideCanvasProps {
@@ -17,6 +22,15 @@ interface SlideCanvasProps {
   /** Allow live typing into the grammar practice box during present/preview. */
   liveEditable?: boolean;
   onGrammarTextChange?: (grammarText: string) => void;
+}
+
+function sizeMode(
+  compact: boolean,
+  present: boolean
+): 'compact' | 'default' | 'present' {
+  if (compact) return 'compact';
+  if (present) return 'present';
+  return 'default';
 }
 
 function SlideImage({ url, alt, className = '' }: { url: string; alt: string; className?: string }) {
@@ -57,28 +71,39 @@ function ContentBody({
 }) {
   const grammarOn =
     slide.layout === 'content' && slide.grammarHighlighterEnabled;
+  const mode = sizeMode(compact, present);
 
-  const textClass = [
+  const bodyClass = [
+    'font-bold leading-relaxed whitespace-pre-wrap',
+    presentationFontSizeClass(slide.bodyFontSize, mode),
+  ].join(' ');
+
+  const bulletsClass = [
+    'list-disc space-y-1 pl-5 font-bold',
+    presentationFontSizeClass(slide.bulletsFontSize, mode),
+  ].join(' ');
+
+  const grammarClass = [
     'font-bold leading-relaxed',
-    compact ? 'text-xs' : present ? 'text-xl md:text-3xl' : 'text-base md:text-xl',
+    presentationFontSizeClass(slide.bodyFontSize, mode),
   ].join(' ');
 
   return (
     <div className="space-y-3">
       {body ? (
-        <p className={`whitespace-pre-wrap ${textClass}`}>{body}</p>
+        <p className={bodyClass} style={{ color: presentationFontColorCss(slide.bodyColor) }}>
+          {body}
+        </p>
       ) : (
-        <p className={`font-bold text-[var(--comic-dark)]/50 ${textClass}`}>
+        <p className={`${bodyClass} text-[var(--comic-dark)]/50`}>
           Add a definition or explanation…
         </p>
       )}
 
       {slide.bullets.filter((item) => item.trim()).length > 0 ? (
         <ul
-          className={[
-            'list-disc space-y-1 pl-5 font-bold',
-            compact ? 'text-xs' : present ? 'text-xl md:text-3xl' : 'text-base md:text-xl',
-          ].join(' ')}
+          className={bulletsClass}
+          style={{ color: presentationFontColorCss(slide.bulletsColor) }}
         >
           {slide.bullets
             .filter((item) => item.trim())
@@ -95,7 +120,7 @@ function ContentBody({
           grammarTarget={slide.grammarTarget}
           editable={liveEditable && Boolean(onGrammarTextChange)}
           onChange={onGrammarTextChange}
-          className={textClass}
+          className={grammarClass}
           placeholder={
             slide.grammarCustomPlaceholderEnabled && slide.grammarPlaceholder.trim()
               ? slide.grammarPlaceholder
@@ -127,6 +152,7 @@ export default function SlideCanvas({
   const showImage =
     Boolean(slide.imageUrl.trim()) ||
     (showImageSlot && (slide.layout === 'content' || slide.layout === 'image'));
+  const mode = sizeMode(compact, present);
 
   return (
     <article
@@ -172,9 +198,10 @@ export default function SlideCanvas({
             {body ? (
               <p
                 className={[
-                  'max-w-4xl font-bold text-[var(--comic-dark)]',
-                  compact ? 'text-sm' : present ? 'text-2xl md:text-4xl' : 'text-lg md:text-2xl',
+                  'max-w-4xl font-bold',
+                  presentationFontSizeClass(slide.bodyFontSize, mode),
                 ].join(' ')}
+                style={{ color: presentationFontColorCss(slide.bodyColor) }}
               >
                 {body}
               </p>
@@ -232,8 +259,9 @@ export default function SlideCanvas({
             <ul
               className={[
                 'flex-1 space-y-2 overflow-auto font-bold',
-                compact ? 'text-xs' : present ? 'text-2xl md:text-4xl' : 'text-lg md:text-2xl',
+                presentationFontSizeClass(slide.bulletsFontSize, mode),
               ].join(' ')}
+              style={{ color: presentationFontColorCss(slide.bulletsColor) }}
             >
               {(slide.bullets.length > 0 ? slide.bullets : ['Add bullet points…']).map((item) => (
                 <li
@@ -265,16 +293,28 @@ export default function SlideCanvas({
             />
             {body ? (
               <p
-                className={
-                  compact
-                    ? 'text-xs font-bold'
-                    : present
-                      ? 'text-xl md:text-3xl font-bold'
-                      : 'text-lg font-bold'
-                }
+                className={['font-bold', presentationFontSizeClass(slide.bodyFontSize, mode)].join(
+                  ' '
+                )}
+                style={{ color: presentationFontColorCss(slide.bodyColor) }}
               >
                 {body}
               </p>
+            ) : null}
+            {slide.bullets.filter((item) => item.trim()).length > 0 ? (
+              <ul
+                className={[
+                  'list-disc space-y-1 pl-5 font-bold',
+                  presentationFontSizeClass(slide.bulletsFontSize, mode),
+                ].join(' ')}
+                style={{ color: presentationFontColorCss(slide.bulletsColor) }}
+              >
+                {slide.bullets
+                  .filter((item) => item.trim())
+                  .map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+              </ul>
             ) : null}
           </div>
         ) : null}

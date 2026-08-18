@@ -231,11 +231,13 @@ export function GrammarLiveTextBox({
   editable?: boolean;
 }) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const placeholderMeasureRef = useRef<HTMLDivElement>(null);
   const valueRef = useRef(value);
   const ignoreSyncRef = useRef(false);
   const highlightedForRef = useRef('');
   const requestIdRef = useRef(0);
   const [error, setError] = useState('');
+  const [boxMinHeight, setBoxMinHeight] = useState<number | undefined>(undefined);
 
   const setEditorHtml = useCallback(
     (text: string, spans: GrammarHighlightSpan[], caretOffset: number | null) => {
@@ -367,14 +369,42 @@ export function GrammarLiveTextBox({
 
   const showPlaceholder = !value.trim();
 
+  useEffect(() => {
+    if (!showPlaceholder) {
+      setBoxMinHeight(undefined);
+      return;
+    }
+
+    const measure = () => {
+      const el = placeholderMeasureRef.current;
+      if (!el) return;
+      // padding (p-3 = 12px * 2) + border breathing room
+      const next = Math.max(128, Math.ceil(el.scrollHeight) + 8);
+      setBoxMinHeight(next);
+    };
+
+    measure();
+    const el = placeholderMeasureRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [showPlaceholder, placeholder, className]);
+
+  const boxStyle = boxMinHeight ? { minHeight: boxMinHeight } : undefined;
+
   return (
     <div className="space-y-1">
-      <div className="relative min-h-[8rem] border-4 border-[var(--comic-black)] bg-white/90 comic-shadow-sm">
+      <div
+        className="relative min-h-[8rem] border-4 border-[var(--comic-black)] bg-white/90 comic-shadow-sm"
+        style={boxStyle}
+      >
         {showPlaceholder ? (
           <div
+            ref={placeholderMeasureRef}
             aria-hidden
             className={[
-              'pointer-events-none absolute inset-0 z-0 overflow-hidden p-3 font-bold whitespace-pre-wrap text-[color-mix(in_srgb,var(--comic-dark)_45%,white)]',
+              'pointer-events-none absolute inset-x-0 top-0 z-0 p-3 font-bold whitespace-pre-wrap text-[color-mix(in_srgb,var(--comic-dark)_45%,white)]',
               className,
             ].join(' ')}
           >
@@ -392,6 +422,7 @@ export function GrammarLiveTextBox({
             editable ? 'cursor-text' : 'cursor-default',
             className,
           ].join(' ')}
+          style={boxStyle}
           onInput={handleInput}
           onKeyDown={handleKeyDown}
           onPaste={(event) => {

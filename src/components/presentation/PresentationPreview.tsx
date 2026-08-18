@@ -36,6 +36,8 @@ export default function PresentationPreview({
     slide.layout === 'content' &&
     slide.grammarHighlighterEnabled;
   const presentMode = fullscreen || browserFullscreen;
+  /** True browser fullscreen: no chrome — arrows/space only. */
+  const showChrome = !browserFullscreen;
 
   const goPrev = useCallback(() => {
     onIndexChange(Math.max(0, safeIndex - 1));
@@ -47,7 +49,10 @@ export default function PresentationPreview({
 
   const exitBrowserFullscreen = useCallback(async () => {
     const doc = document as Document & { webkitExitFullscreen?: () => Promise<void> | void };
-    if (!document.fullscreenElement && !(doc as Document & { webkitFullscreenElement?: Element }).webkitFullscreenElement) {
+    if (
+      !document.fullscreenElement &&
+      !(doc as Document & { webkitFullscreenElement?: Element }).webkitFullscreenElement
+    ) {
       return;
     }
     try {
@@ -59,9 +64,11 @@ export default function PresentationPreview({
   }, []);
 
   const toggleBrowserFullscreen = useCallback(async () => {
-    const el = rootRef.current as (HTMLDivElement & {
-      webkitRequestFullscreen?: () => Promise<void> | void;
-    }) | null;
+    const el = rootRef.current as
+      | (HTMLDivElement & {
+          webkitRequestFullscreen?: () => Promise<void> | void;
+        })
+      | null;
     if (!el) return;
     const doc = document as Document & {
       webkitFullscreenElement?: Element;
@@ -87,11 +94,12 @@ export default function PresentationPreview({
   }, [exitBrowserFullscreen, onClose]);
 
   const revealControls = useCallback(() => {
+    if (browserFullscreen) return;
     setControlsVisible(true);
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     if (!presentMode) return;
     hideTimerRef.current = setTimeout(() => setControlsVisible(false), 2500);
-  }, [presentMode]);
+  }, [browserFullscreen, presentMode]);
 
   useEffect(() => {
     function onFullscreenChange() {
@@ -107,6 +115,11 @@ export default function PresentationPreview({
   }, []);
 
   useEffect(() => {
+    if (browserFullscreen) {
+      setControlsVisible(false);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+      return;
+    }
     if (!presentMode) {
       setControlsVisible(true);
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
@@ -116,7 +129,7 @@ export default function PresentationPreview({
     return () => {
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     };
-  }, [presentMode, revealControls]);
+  }, [browserFullscreen, presentMode, revealControls]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -163,8 +176,8 @@ export default function PresentationPreview({
   return (
     <div
       ref={rootRef}
-      onMouseMove={revealControls}
-      onClick={revealControls}
+      onMouseMove={showChrome ? revealControls : undefined}
+      onClick={showChrome ? revealControls : undefined}
       className={[
         'relative flex flex-col',
         fullscreen || browserFullscreen
@@ -172,44 +185,46 @@ export default function PresentationPreview({
           : 'gap-4',
       ].join(' ')}
     >
-      <div
-        className={[
-          presentMode
-            ? [
-                'absolute inset-x-0 top-0 z-20 flex justify-end p-3 transition-opacity duration-300',
-                controlsVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
-              ].join(' ')
-            : 'flex flex-wrap items-center justify-end gap-3',
-        ].join(' ')}
-      >
+      {showChrome ? (
         <div
           className={[
-            'flex flex-wrap gap-2',
             presentMode
-              ? 'rounded-lg border-2 border-[var(--comic-black)] bg-[var(--comic-secondary)]/90 p-2 comic-shadow-md backdrop-blur-sm'
-              : '',
+              ? [
+                  'absolute inset-x-0 top-0 z-20 flex justify-end p-3 transition-opacity duration-300',
+                  controlsVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
+                ].join(' ')
+              : 'flex flex-wrap items-center justify-end gap-3',
           ].join(' ')}
         >
-          <ComicButton type="button" variant="accent" size="sm" onClick={goPrev} disabled={safeIndex === 0}>
-            ← Prev
-          </ComicButton>
-          <ComicButton
-            type="button"
-            variant="accent"
-            size="sm"
-            onClick={goNext}
-            disabled={safeIndex >= total - 1}
+          <div
+            className={[
+              'flex flex-wrap gap-2',
+              presentMode
+                ? 'rounded-lg border-2 border-[var(--comic-black)] bg-[var(--comic-secondary)]/90 p-2 comic-shadow-md backdrop-blur-sm'
+                : '',
+            ].join(' ')}
           >
-            Next →
-          </ComicButton>
-          <ComicButton type="button" variant="success" size="sm" onClick={() => void toggleBrowserFullscreen()}>
-            {browserFullscreen ? 'Exit full screen' : 'Full screen'}
-          </ComicButton>
-          <ComicButton type="button" variant="warning" size="sm" onClick={() => void handleClose()}>
-            {fullscreen || browserFullscreen ? 'Exit' : 'Close preview'}
-          </ComicButton>
+            <ComicButton type="button" variant="accent" size="sm" onClick={goPrev} disabled={safeIndex === 0}>
+              ← Prev
+            </ComicButton>
+            <ComicButton
+              type="button"
+              variant="accent"
+              size="sm"
+              onClick={goNext}
+              disabled={safeIndex >= total - 1}
+            >
+              Next →
+            </ComicButton>
+            <ComicButton type="button" variant="success" size="sm" onClick={() => void toggleBrowserFullscreen()}>
+              Full screen
+            </ComicButton>
+            <ComicButton type="button" variant="warning" size="sm" onClick={() => void handleClose()}>
+              {fullscreen ? 'Exit' : 'Close preview'}
+            </ComicButton>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div
         className={[
