@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
 import SlideCanvas from './SlideCanvas';
@@ -23,6 +23,11 @@ export default function PresentationPreview({
   fullscreen = false,
   onGrammarTextChange,
 }: PresentationPreviewProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [browserFullscreen, setBrowserFullscreen] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(true);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const total = deck.slides.length;
   const safeIndex = Math.min(Math.max(index, 0), Math.max(total - 1, 0));
   const slide = deck.slides[safeIndex];
@@ -30,6 +35,7 @@ export default function PresentationPreview({
     Boolean(slide) &&
     slide.layout === 'content' &&
     slide.grammarHighlighterEnabled;
+  const presentMode = fullscreen || browserFullscreen;
 
   const goPrev = useCallback(() => {
     onIndexChange(Math.max(0, safeIndex - 1));
@@ -38,6 +44,79 @@ export default function PresentationPreview({
   const goNext = useCallback(() => {
     onIndexChange(Math.min(total - 1, safeIndex + 1));
   }, [onIndexChange, safeIndex, total]);
+
+  const exitBrowserFullscreen = useCallback(async () => {
+    const doc = document as Document & { webkitExitFullscreen?: () => Promise<void> | void };
+    if (!document.fullscreenElement && !(doc as Document & { webkitFullscreenElement?: Element }).webkitFullscreenElement) {
+      return;
+    }
+    try {
+      if (document.exitFullscreen) await document.exitFullscreen();
+      else if (doc.webkitExitFullscreen) await doc.webkitExitFullscreen();
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const toggleBrowserFullscreen = useCallback(async () => {
+    const el = rootRef.current as (HTMLDivElement & {
+      webkitRequestFullscreen?: () => Promise<void> | void;
+    }) | null;
+    if (!el) return;
+    const doc = document as Document & {
+      webkitFullscreenElement?: Element;
+      webkitExitFullscreen?: () => Promise<void> | void;
+    };
+    try {
+      if (document.fullscreenElement || doc.webkitFullscreenElement) {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (doc.webkitExitFullscreen) await doc.webkitExitFullscreen();
+      } else if (el.requestFullscreen) {
+        await el.requestFullscreen();
+      } else if (el.webkitRequestFullscreen) {
+        await el.webkitRequestFullscreen();
+      }
+    } catch {
+      // Browser may deny fullscreen without a user gesture / permission
+    }
+  }, []);
+
+  const handleClose = useCallback(async () => {
+    await exitBrowserFullscreen();
+    onClose();
+  }, [exitBrowserFullscreen, onClose]);
+
+  const revealControls = useCallback(() => {
+    setControlsVisible(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    if (!presentMode) return;
+    hideTimerRef.current = setTimeout(() => setControlsVisible(false), 2500);
+  }, [presentMode]);
+
+  useEffect(() => {
+    function onFullscreenChange() {
+      const doc = document as Document & { webkitFullscreenElement?: Element };
+      setBrowserFullscreen(Boolean(document.fullscreenElement || doc.webkitFullscreenElement));
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', onFullscreenChange as EventListener);
+    return () => {
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', onFullscreenChange as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!presentMode) {
+      setControlsVisible(true);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+      return;
+    }
+    revealControls();
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, [presentMode, revealControls]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -50,6 +129,9 @@ export default function PresentationPreview({
       if (typing) return;
 
       if (event.key === 'Escape') {
+        // Let the browser exit OS fullscreen first; don't close the deck yet.
+        const doc = document as Document & { webkitFullscreenElement?: Element };
+        if (document.fullscreenElement || doc.webkitFullscreenElement) return;
         onClose();
         return;
       }
@@ -61,10 +143,14 @@ export default function PresentationPreview({
         event.preventDefault();
         goNext();
       }
+      if (event.key === 'f' || event.key === 'F') {
+        event.preventDefault();
+        void toggleBrowserFullscreen();
+      }
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [goNext, goPrev, onClose]);
+  }, [goNext, goPrev, onClose, toggleBrowserFullscreen]);
 
   if (!slide) {
     return (
@@ -76,13 +162,34 @@ export default function PresentationPreview({
 
   return (
     <div
+      ref={rootRef}
+      onMouseMove={revealControls}
+      onClick={revealControls}
       className={[
-        'flex flex-col gap-4',
-        fullscreen ? 'fixed inset-0 z-50 bg-[var(--comic-secondary)] p-4 md:p-8' : '',
+        'relative flex flex-col',
+        fullscreen || browserFullscreen
+          ? 'fixed inset-0 z-50 bg-[var(--comic-secondary)]'
+          : 'gap-4',
       ].join(' ')}
     >
-      <div className="flex flex-wrap items-center justify-end gap-3">
-        <div className="flex flex-wrap gap-2">
+      <div
+        className={[
+          presentMode
+            ? [
+                'absolute inset-x-0 top-0 z-20 flex justify-end p-3 transition-opacity duration-300',
+                controlsVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
+              ].join(' ')
+            : 'flex flex-wrap items-center justify-end gap-3',
+        ].join(' ')}
+      >
+        <div
+          className={[
+            'flex flex-wrap gap-2',
+            presentMode
+              ? 'rounded-lg border-2 border-[var(--comic-black)] bg-[var(--comic-secondary)]/90 p-2 comic-shadow-md backdrop-blur-sm'
+              : '',
+          ].join(' ')}
+        >
           <ComicButton type="button" variant="accent" size="sm" onClick={goPrev} disabled={safeIndex === 0}>
             ← Prev
           </ComicButton>
@@ -95,32 +202,49 @@ export default function PresentationPreview({
           >
             Next →
           </ComicButton>
-          <ComicButton type="button" variant="warning" size="sm" onClick={onClose}>
-            {fullscreen ? 'Exit' : 'Close preview'}
+          <ComicButton type="button" variant="success" size="sm" onClick={() => void toggleBrowserFullscreen()}>
+            {browserFullscreen ? 'Exit full screen' : 'Full screen'}
+          </ComicButton>
+          <ComicButton type="button" variant="warning" size="sm" onClick={() => void handleClose()}>
+            {fullscreen || browserFullscreen ? 'Exit' : 'Close preview'}
           </ComicButton>
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-6xl flex-1 flex items-center">
-        <SlideCanvas
-          slide={slide}
-          deck={deck}
-          slideNumber={safeIndex + 1}
-          totalSlides={total}
-          liveEditable={liveGrammar}
-          onGrammarTextChange={
-            liveGrammar && onGrammarTextChange
-              ? (grammarText) => onGrammarTextChange(slide.id, grammarText)
-              : undefined
-          }
-        />
+      <div
+        className={[
+          'mx-auto flex w-full flex-1 items-center justify-center',
+          presentMode ? 'h-full min-h-0 p-2 md:p-4' : '',
+        ].join(' ')}
+      >
+        <div
+          className={[
+            'w-full',
+            presentMode
+              ? 'flex h-full max-h-full items-center justify-center'
+              : 'max-w-6xl',
+          ].join(' ')}
+        >
+          <SlideCanvas
+            slide={slide}
+            deck={deck}
+            slideNumber={safeIndex + 1}
+            totalSlides={total}
+            present={presentMode}
+            className={
+              presentMode
+                ? 'h-auto max-h-full w-auto max-w-full !aspect-[16/9] [width:min(100%,calc(100vh*16/9))]'
+                : undefined
+            }
+            liveEditable={liveGrammar}
+            onGrammarTextChange={
+              liveGrammar && onGrammarTextChange
+                ? (grammarText) => onGrammarTextChange(slide.id, grammarText)
+                : undefined
+            }
+          />
+        </div>
       </div>
-
-      {fullscreen ? (
-        <ComicText className="text-center text-sm font-bold text-white/80">
-          Arrow keys / space to navigate · Esc to exit
-        </ComicText>
-      ) : null}
     </div>
   );
 }

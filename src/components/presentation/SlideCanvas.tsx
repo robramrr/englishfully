@@ -10,6 +10,8 @@ interface SlideCanvasProps {
   totalSlides: number;
   className?: string;
   compact?: boolean;
+  /** Larger type for projecting / presenting. */
+  present?: boolean;
   /** Show empty image placeholder (editor). Hidden in present mode when no URL. */
   showImageSlot?: boolean;
   /** Allow live typing into the grammar practice box during present/preview. */
@@ -42,12 +44,14 @@ function ContentBody({
   slide,
   body,
   compact,
+  present,
   liveEditable,
   onGrammarTextChange,
 }: {
   slide: PresentationSlide;
   body: string;
   compact: boolean;
+  present: boolean;
   liveEditable: boolean;
   onGrammarTextChange?: (grammarText: string) => void;
 }) {
@@ -56,7 +60,7 @@ function ContentBody({
 
   const textClass = [
     'font-bold leading-relaxed',
-    compact ? 'text-xs' : 'text-base md:text-xl',
+    compact ? 'text-xs' : present ? 'text-xl md:text-3xl' : 'text-base md:text-xl',
   ].join(' ');
 
   return (
@@ -73,7 +77,7 @@ function ContentBody({
         <ul
           className={[
             'list-disc space-y-1 pl-5 font-bold',
-            compact ? 'text-xs' : 'text-base md:text-xl',
+            compact ? 'text-xs' : present ? 'text-xl md:text-3xl' : 'text-base md:text-xl',
           ].join(' ')}
         >
           {slide.bullets
@@ -109,6 +113,7 @@ export default function SlideCanvas({
   totalSlides,
   className = '',
   compact = false,
+  present = false,
   showImageSlot = false,
   liveEditable = false,
   onGrammarTextChange,
@@ -138,7 +143,11 @@ export default function SlideCanvas({
       <div
         className={[
           'relative z-[1] flex h-full flex-col',
-          compact ? 'p-4 gap-2' : 'p-8 md:p-10 gap-4',
+          compact
+            ? 'p-4 gap-2'
+            : present
+              ? 'p-10 md:p-14 gap-5'
+              : 'p-8 md:p-10 gap-4',
         ].join(' ')}
       >
         {slide.layout === 'title' ? (
@@ -146,7 +155,7 @@ export default function SlideCanvas({
             <p
               className={[
                 'font-bungee uppercase tracking-wide text-[var(--comic-primary)]',
-                compact ? 'text-xs' : 'text-sm md:text-base',
+                compact ? 'text-xs' : present ? 'text-base md:text-xl' : 'text-sm md:text-base',
               ].join(' ')}
             >
               {deck.brandLabel?.trim() || 'Englishfully'}
@@ -154,7 +163,7 @@ export default function SlideCanvas({
             <h2
               className={[
                 'font-bungee leading-tight text-[var(--comic-secondary)]',
-                compact ? 'text-xl' : 'text-3xl md:text-5xl',
+                compact ? 'text-xl' : present ? 'text-4xl md:text-6xl' : 'text-3xl md:text-5xl',
               ].join(' ')}
             >
               {title || 'Presentation title'}
@@ -162,8 +171,8 @@ export default function SlideCanvas({
             {body ? (
               <p
                 className={[
-                  'max-w-3xl font-bold text-[var(--comic-dark)]',
-                  compact ? 'text-sm' : 'text-lg md:text-2xl',
+                  'max-w-4xl font-bold text-[var(--comic-dark)]',
+                  compact ? 'text-sm' : present ? 'text-2xl md:text-4xl' : 'text-lg md:text-2xl',
                 ].join(' ')}
               >
                 {body}
@@ -177,7 +186,7 @@ export default function SlideCanvas({
             <h2
               className={[
                 'font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
-                compact ? 'text-base' : 'text-2xl md:text-4xl',
+                compact ? 'text-base' : present ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl',
               ].join(' ')}
             >
               {title}
@@ -193,6 +202,7 @@ export default function SlideCanvas({
                   slide={slide}
                   body={body}
                   compact={compact}
+                  present={present}
                   liveEditable={liveEditable}
                   onGrammarTextChange={onGrammarTextChange}
                 />
@@ -213,7 +223,7 @@ export default function SlideCanvas({
             <h2
               className={[
                 'font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
-                compact ? 'text-base' : 'text-2xl md:text-4xl',
+                compact ? 'text-base' : present ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl',
               ].join(' ')}
             >
               {title}
@@ -221,7 +231,7 @@ export default function SlideCanvas({
             <ul
               className={[
                 'flex-1 space-y-2 overflow-auto font-bold',
-                compact ? 'text-xs' : 'text-lg md:text-2xl',
+                compact ? 'text-xs' : present ? 'text-2xl md:text-4xl' : 'text-lg md:text-2xl',
               ].join(' ')}
             >
               {(slide.bullets.length > 0 ? slide.bullets : ['Add bullet points…']).map((item) => (
@@ -242,7 +252,7 @@ export default function SlideCanvas({
             <h2
               className={[
                 'font-bungee text-[var(--comic-secondary)] leading-tight',
-                compact ? 'text-base' : 'text-2xl md:text-4xl',
+                compact ? 'text-base' : present ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl',
               ].join(' ')}
             >
               {title}
@@ -253,7 +263,17 @@ export default function SlideCanvas({
               className="min-h-0 flex-1 w-full"
             />
             {body ? (
-              <p className={compact ? 'text-xs font-bold' : 'text-lg font-bold'}>{body}</p>
+              <p
+                className={
+                  compact
+                    ? 'text-xs font-bold'
+                    : present
+                      ? 'text-xl md:text-3xl font-bold'
+                      : 'text-lg font-bold'
+                }
+              >
+                {body}
+              </p>
             ) : null}
           </div>
         ) : null}
@@ -261,7 +281,7 @@ export default function SlideCanvas({
         <div
           className={[
             'mt-auto flex items-center justify-between border-t-2 border-[var(--comic-black)]/30 pt-2 font-bold text-[var(--comic-dark)]/70',
-            compact ? 'text-[10px]' : 'text-sm',
+            compact ? 'text-[10px]' : present ? 'text-base md:text-lg' : 'text-sm',
           ].join(' ')}
         >
           <span>{deck.title || 'Presentation'}</span>
