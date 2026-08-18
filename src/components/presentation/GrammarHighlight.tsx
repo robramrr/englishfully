@@ -69,6 +69,70 @@ function placeCaretAtEnd(element: HTMLElement) {
   selection.addRange(range);
 }
 
+/** Plain-text caret offset inside the editor (counts like readEditablePlainText). */
+function getCaretPlainOffset(root: HTMLElement): number | null {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0 || !selection.focusNode || !root.contains(selection.focusNode)) {
+    return null;
+  }
+  const range = selection.getRangeAt(0).cloneRange();
+  range.selectNodeContents(root);
+  range.setEnd(selection.focusNode, selection.focusOffset);
+  const pre = range.cloneContents();
+  const walkerHost = document.createElement('div');
+  walkerHost.appendChild(pre);
+  return readEditablePlainText(walkerHost).length;
+}
+
+function setCaretPlainOffset(root: HTMLElement, offset: number) {
+  const selection = window.getSelection();
+  if (!selection) return;
+  let remaining = Math.max(0, offset);
+
+  const place = (node: Node, at: number) => {
+    const range = document.createRange();
+    range.setStart(node, at);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  };
+
+  const walk = (node: Node): boolean => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = (node.textContent || '').replace(/\u00a0/g, ' ');
+      if (remaining <= text.length) {
+        place(node, remaining);
+        return true;
+      }
+      remaining -= text.length;
+      return false;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return false;
+    const el = node as HTMLElement;
+    if (el.tagName === 'BR') {
+      if (remaining === 0) {
+        // Place after this <br>
+        const range = document.createRange();
+        range.setStartAfter(el);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        return true;
+      }
+      remaining -= 1;
+      return false;
+    }
+    for (const child of Array.from(el.childNodes)) {
+      if (walk(child)) return true;
+    }
+    return false;
+  };
+
+  if (!walk(root)) {
+    placeCaretAtEnd(root);
+  }
+}
+
 /**
  * Read plain text without Chrome's "Enter → <div><br>" doubling newlines.
  * One visual line break = one \n.
@@ -174,12 +238,16 @@ export function GrammarLiveTextBox({
   const [error, setError] = useState('');
 
   const setEditorHtml = useCallback(
-    (text: string, spans: GrammarHighlightSpan[], moveCaretToEnd: boolean) => {
+    (text: string, spans: GrammarHighlightSpan[], caretOffset: number | null) => {
       const el = editorRef.current;
       if (!el) return;
       el.innerHTML = text ? spansToHtml(text, spans) : '';
-      if (moveCaretToEnd && editable && document.activeElement === el) {
-        placeCaretAtEnd(el);
+      if (editable && document.activeElement === el) {
+        if (caretOffset == null) {
+          placeCaretAtEnd(el);
+        } else {
+          setCaretPlainOffset(el, Math.min(caretOffset, text.length));
+        }
       }
     },
     [editable]
@@ -204,13 +272,13 @@ export function GrammarLiveTextBox({
       void (async () => {
         try {
           const matches = await fetchGrammarMatches(value, grammarTarget);
-          setEditorHtml(value, buildGrammarHighlightSpans(value, matches), false);
+          setEditorHtml(value, buildGrammarHighlightSpans(value, matches), null);
         } catch {
-          setEditorHtml(value, [], false);
+          setEditorHtml(value, [], null);
         }
       })();
     } else {
-      setEditorHtml(value, [], false);
+      setEditorHtml(value, [], null);
       // Auto-highlight prepared text that already ends with a sentence
       if (grammarTarget.trim() && value.trim() && endsWithSentencePause(value)) {
         void highlight(value);
@@ -222,18 +290,41 @@ export function GrammarLiveTextBox({
   async function highlight(text: string) {
     if (!grammarTarget.trim() || !text.trim()) {
       highlightedForRef.current = '';
-      setEditorHtml(text, [], true);
+      const el = editorRef.current;
+      const caret = el ? getCaretPlainOffset(el) : null;
+      setEditorHtml(text, [], caret);
       return;
     }
     const requestId = ++requestIdRef.current;
+    const requestedBase = text.replace(/\s+$/u, '');
     setError('');
     try {
       const matches = await fetchGrammarMatches(text, grammarTarget);
       if (requestId !== requestIdRef.current) return;
-      const spans = buildGrammarHighlightSpans(text, matches);
-      highlightedForRef.current = text;
-      valueRef.current = text;
-      setEditorHtml(text, spans, true);
+
+      const el = editorRef.current;
+      const live = el ? readEditablePlainText(el) : valueRef.current;
+      const liveBase = live.replace(/\s+$/u, '');
+      const caret = el && document.activeElement === el ? getCaretPlainOffset(el) : null;
+
+      // User changed the sentence itself while waiting — drop stale result
+      if (liveBase !== requestedBase && !live.startsWith(requestedBase)) {
+        return;
+      }
+
+      // Keep any line breaks / typing added after the sentence while AI ran
+      const textToPaint = live.startsWith(requestedBase) ? live : text;
+      const spans = buildGrammarHighlightSpans(textToPaint, matches);
+      highlightedForRef.current = textToPaint;
+      valueRef.current = textToPaint;
+      ignoreSyncRef.current = true;
+      onChange?.(textToPaint);
+      // Prefer the user's current caret (e.g. already on the new line after Enter)
+      setEditorHtml(
+        textToPaint,
+        spans,
+        caret == null ? textToPaint.length : Math.min(caret, textToPaint.length)
+      );
     } catch (err) {
       if (requestId !== requestIdRef.current) return;
       setError(err instanceof Error ? err.message : 'Failed to highlight grammar');
@@ -256,9 +347,10 @@ export function GrammarLiveTextBox({
     let plain = readEditablePlainText(el);
     // If user keeps typing after highlights, drop marks and continue in the same box
     if (el.querySelector('mark') && !endsWithSentencePause(plain)) {
-      setEditorHtml(plain, [], true);
-      plain = readEditablePlainText(el);
+      const caret = getCaretPlainOffset(el);
       highlightedForRef.current = '';
+      setEditorHtml(plain, [], caret);
+      plain = readEditablePlainText(el);
     }
     commitPlainText(plain);
   }
