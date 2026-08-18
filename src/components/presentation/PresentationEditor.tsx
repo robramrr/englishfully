@@ -21,7 +21,6 @@ import {
   createEmptySlide,
   normalizeDeck,
   PRESENTATION_CHOICE_LETTERS,
-  type PresentationChoiceLetter,
   type PresentationDeck,
   type PresentationSlide,
   type PresentationSlideLayout,
@@ -593,7 +592,8 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                       <div>
                         <ComicText className="font-black">Choice images (A–D)</ComicText>
                         <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                          Add up to four image URLs. Students tap one after listening.
+                          Shared across every track on this slide. Set each track’s correct letter
+                          in the audio section above.
                         </ComicText>
                       </div>
                       {PRESENTATION_CHOICE_LETTERS.map((letter, index) => (
@@ -614,31 +614,6 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                           />
                         </label>
                       ))}
-                      <div className="space-y-2">
-                        <ComicText className="text-sm font-bold">Correct answer</ComicText>
-                        <div className="flex flex-wrap gap-3">
-                          {PRESENTATION_CHOICE_LETTERS.map((letter) => (
-                            <label
-                              key={letter}
-                              className="inline-flex items-center gap-2 font-bold"
-                            >
-                              <input
-                                type="radio"
-                                name={`correct-choice-${selected.id}`}
-                                checked={selected.correctChoice === letter}
-                                onChange={() =>
-                                  setDeck((prev) =>
-                                    updateSlide(prev, selected.id, {
-                                      correctChoice: letter as PresentationChoiceLetter,
-                                    })
-                                  )
-                                }
-                              />
-                              {letter}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
                     </div>
                   </div>
                 ) : null}

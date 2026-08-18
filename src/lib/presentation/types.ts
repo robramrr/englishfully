@@ -93,6 +93,81 @@ function normalizeSeconds(value: unknown, fallback = 0): number {
   return Number(n.toFixed(2));
 }
 
+export function createAudioTrackId(): string {
+  return `track_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export interface PresentationAudioTrack {
+  id: string;
+  startSeconds: number;
+  endSeconds: number;
+  clipText: string;
+  correctChoice: PresentationChoiceLetter;
+}
+
+export function createEmptyAudioTrack(
+  patch: Partial<PresentationAudioTrack> = {}
+): PresentationAudioTrack {
+  const startSeconds = normalizeSeconds(patch.startSeconds, 0);
+  return {
+    id: patch.id || createAudioTrackId(),
+    startSeconds,
+    endSeconds: Math.max(startSeconds + 0.5, normalizeSeconds(patch.endSeconds, 5)),
+    clipText: String(patch.clipText ?? ''),
+    correctChoice: normalizeChoiceLetter(patch.correctChoice),
+  };
+}
+
+function normalizeAudioTrack(
+  track: Partial<PresentationAudioTrack> & { id?: string }
+): PresentationAudioTrack {
+  return createEmptyAudioTrack(track);
+}
+
+/**
+ * Prefer audioTracks; fall back to legacy single-clip fields.
+ */
+export function getPresentationAudioTracks(
+  slide: Pick<
+    PresentationSlide,
+    | 'audioTracks'
+    | 'audioStartSeconds'
+    | 'audioEndSeconds'
+    | 'audioClipText'
+    | 'correctChoice'
+  >
+): PresentationAudioTrack[] {
+  if (Array.isArray(slide.audioTracks) && slide.audioTracks.length > 0) {
+    return slide.audioTracks.map((track) => normalizeAudioTrack(track));
+  }
+  return [
+    createEmptyAudioTrack({
+      id: 'track_legacy',
+      startSeconds: slide.audioStartSeconds,
+      endSeconds: slide.audioEndSeconds,
+      clipText: slide.audioClipText,
+      correctChoice: slide.correctChoice,
+    }),
+  ];
+}
+
+/** Keep legacy single-clip fields in sync with the first track. */
+export function withSyncedAudioTrackFields(
+  patch: Partial<PresentationSlide> & { audioTracks?: PresentationAudioTrack[] }
+): Partial<PresentationSlide> {
+  const tracks = patch.audioTracks;
+  if (!tracks || tracks.length === 0) return patch;
+  const first = normalizeAudioTrack(tracks[0]);
+  return {
+    ...patch,
+    audioTracks: tracks.map((track) => normalizeAudioTrack(track)),
+    audioStartSeconds: first.startSeconds,
+    audioEndSeconds: first.endSeconds,
+    audioClipText: first.clipText,
+    correctChoice: first.correctChoice,
+  };
+}
+
 export interface PresentationSlide {
   id: string;
   layout: PresentationSlideLayout;
@@ -122,17 +197,22 @@ export interface PresentationSlide {
   grammarPlaceholder: string;
   /** Audio + image: full audio URL (same pattern as Listen & Learn). */
   audioUrl: string;
-  /** Clip start within audioUrl. */
+  /**
+   * One or more clips from the same audio URL. Images stay shared;
+   * each track has its own correct letter.
+   */
+  audioTracks: PresentationAudioTrack[];
+  /** @deprecated Synced from audioTracks[0] for older decks / exports. */
   audioStartSeconds: number;
-  /** Clip end within audioUrl. */
+  /** @deprecated Synced from audioTracks[0]. */
   audioEndSeconds: number;
   /** Optional transcript text for the clip editor. */
   audioTranscript: string;
-  /** Optional label / sentence for the selected clip. */
+  /** @deprecated Synced from audioTracks[0]. */
   audioClipText: string;
-  /** Choice image URLs for A–D (empty string = unused slot). */
+  /** Choice image URLs for A–D (empty string = unused slot). Shared across tracks. */
   choiceImages: string[];
-  /** Correct multiple-choice letter. */
+  /** @deprecated Synced from audioTracks[0]. */
   correctChoice: PresentationChoiceLetter;
 }
 
@@ -189,6 +269,7 @@ export function createEmptySlide(
     grammarCustomPlaceholderEnabled: false,
     grammarPlaceholder: '',
     audioUrl: '',
+    audioTracks: [createEmptyAudioTrack()],
     audioStartSeconds: 0,
     audioEndSeconds: 5,
     audioTranscript: '',
@@ -204,6 +285,14 @@ export function normalizeSlide(
   const base = createEmptySlide(
     (slide.layout as PresentationSlideLayout) || 'content'
   );
+  const tracks = getPresentationAudioTracks({
+    audioTracks: Array.isArray(slide.audioTracks) ? slide.audioTracks : [],
+    audioStartSeconds: slide.audioStartSeconds ?? base.audioStartSeconds,
+    audioEndSeconds: slide.audioEndSeconds ?? base.audioEndSeconds,
+    audioClipText: slide.audioClipText ?? base.audioClipText,
+    correctChoice: slide.correctChoice ?? base.correctChoice,
+  });
+  const first = tracks[0];
   return {
     ...base,
     ...slide,
@@ -226,15 +315,13 @@ export function normalizeSlide(
     grammarCustomPlaceholderEnabled: Boolean(slide.grammarCustomPlaceholderEnabled),
     grammarPlaceholder: String(slide.grammarPlaceholder ?? ''),
     audioUrl: String(slide.audioUrl ?? ''),
-    audioStartSeconds: normalizeSeconds(slide.audioStartSeconds, 0),
-    audioEndSeconds: Math.max(
-      normalizeSeconds(slide.audioStartSeconds, 0) + 0.5,
-      normalizeSeconds(slide.audioEndSeconds, 5)
-    ),
+    audioTracks: tracks,
+    audioStartSeconds: first.startSeconds,
+    audioEndSeconds: first.endSeconds,
     audioTranscript: String(slide.audioTranscript ?? ''),
-    audioClipText: String(slide.audioClipText ?? ''),
+    audioClipText: first.clipText,
     choiceImages: normalizeChoiceImages(slide.choiceImages),
-    correctChoice: normalizeChoiceLetter(slide.correctChoice),
+    correctChoice: first.correctChoice,
   };
 }
 

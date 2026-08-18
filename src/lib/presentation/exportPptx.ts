@@ -124,10 +124,16 @@ export async function buildPresentationPptxBuffer(
         y += 0.7;
       }
       page.addText(
-        `Audio clip${slide.audioUrl ? '' : ' (missing URL)'} · ${Number(
-          slide.audioStartSeconds
-        ).toFixed(1)}s–${Number(slide.audioEndSeconds).toFixed(1)}s · Correct: ${
-          slide.correctChoice
+        `Audio${slide.audioUrl ? '' : ' (missing URL)'} · ${
+          (slide.audioTracks?.length || 1) > 1
+            ? `${slide.audioTracks.length} tracks`
+            : `${Number(slide.audioStartSeconds).toFixed(1)}s–${Number(
+                slide.audioEndSeconds
+              ).toFixed(1)}s`
+        } · Correct: ${
+          (slide.audioTracks || [])
+            .map((track, i) => `T${i + 1}=${track.correctChoice}`)
+            .join(', ') || slide.correctChoice
         }`,
         {
           x: 0.6,

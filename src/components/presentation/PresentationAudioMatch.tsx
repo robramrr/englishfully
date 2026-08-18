@@ -4,7 +4,10 @@ import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
 import type { PresentationChoiceLetter, PresentationSlide } from '@/lib/presentation/types';
-import { PRESENTATION_CHOICE_LETTERS } from '@/lib/presentation/types';
+import {
+  getPresentationAudioTracks,
+  PRESENTATION_CHOICE_LETTERS,
+} from '@/lib/presentation/types';
 
 /** Brand has no green token — use a clear quiz green for correct feedback. */
 const QUIZ_CORRECT = '#15803d';
@@ -26,7 +29,6 @@ function playQuizTone(kind: 'correct' | 'wrong') {
     const now = ctx.currentTime;
 
     if (kind === 'correct') {
-      // Short ascending chime
       const notes = [523.25, 659.25, 783.99];
       notes.forEach((freq, index) => {
         const osc = ctx.createOscillator();
@@ -45,7 +47,6 @@ function playQuizTone(kind: 'correct' | 'wrong') {
       return;
     }
 
-    // Low buzz for wrong
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'square';
@@ -60,12 +61,12 @@ function playQuizTone(kind: 'correct' | 'wrong') {
     osc.stop(now + 0.35);
     window.setTimeout(() => void ctx.close(), 600);
   } catch {
-    // Autoplay / AudioContext restrictions — ignore
+    // ignore
   }
 }
 
 /**
- * Present-mode Audio + image quiz: clip player with progress track + A–D image choices.
+ * Present-mode Audio + image quiz: shared images, multiple tracks with next/prev.
  */
 export default function PresentationAudioMatch({
   slide,
@@ -73,18 +74,27 @@ export default function PresentationAudioMatch({
   compact = false,
 }: PresentationAudioMatchProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const tracks = getPresentationAudioTracks(slide);
+  const [trackIndex, setTrackIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [selected, setSelected] = useState<PresentationChoiceLetter | null>(null);
   const [error, setError] = useState('');
 
-  const start = Math.max(0, Number(slide.audioStartSeconds) || 0);
-  const end = Math.max(start + 0.25, Number(slide.audioEndSeconds) || start + 5);
+  const safeIndex = Math.min(Math.max(trackIndex, 0), Math.max(tracks.length - 1, 0));
+  const track = tracks[safeIndex] || tracks[0];
+  const start = Math.max(0, Number(track?.startSeconds) || 0);
+  const end = Math.max(start + 0.25, Number(track?.endSeconds) || start + 5);
   const duration = Math.max(0.25, end - start);
+  const correctChoice = track?.correctChoice || 'A';
   const images = PRESENTATION_CHOICE_LETTERS.map((letter, index) => ({
     letter,
     url: String(slide.choiceImages[index] ?? '').trim(),
   })).filter((item) => item.url);
+
+  useEffect(() => {
+    setTrackIndex(0);
+  }, [slide.id]);
 
   useEffect(() => {
     setSelected(null);
@@ -96,7 +106,7 @@ export default function PresentationAudioMatch({
       audio.pause();
       audio.currentTime = start;
     }
-  }, [slide.id, start, end, slide.audioUrl]);
+  }, [slide.id, safeIndex, start, end, slide.audioUrl]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -164,7 +174,17 @@ export default function PresentationAudioMatch({
 
   function handleSelect(letter: PresentationChoiceLetter) {
     setSelected(letter);
-    playQuizTone(letter === slide.correctChoice ? 'correct' : 'wrong');
+    playQuizTone(letter === correctChoice ? 'correct' : 'wrong');
+  }
+
+  function goPrevTrack() {
+    handleStop();
+    setTrackIndex((index) => Math.max(0, index - 1));
+  }
+
+  function goNextTrack() {
+    handleStop();
+    setTrackIndex((index) => Math.min(tracks.length - 1, index + 1));
   }
 
   return (
@@ -177,25 +197,53 @@ export default function PresentationAudioMatch({
           compact ? 'p-2' : '',
         ].join(' ')}
       >
-        <div className="flex flex-wrap items-center gap-2 mb-2">
-          <ComicButton
-            type="button"
-            variant="secondary"
-            size="sm"
-            disabled={!slide.audioUrl.trim() || playing}
-            onClick={() => void handlePlay()}
-          >
-            {playing ? 'Playing…' : 'Play'}
-          </ComicButton>
-          {playing ? (
-            <ComicButton type="button" variant="accent" size="sm" onClick={handleStop}>
-              Stop
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <ComicButton
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={!slide.audioUrl.trim() || playing}
+              onClick={() => void handlePlay()}
+            >
+              {playing ? 'Playing…' : 'Play'}
             </ComicButton>
-          ) : null}
-          {!slide.audioUrl.trim() ? (
-            <ComicText className="text-sm font-bold text-[var(--comic-dark)]/60">
-              Add an audio URL on this slide
-            </ComicText>
+            {playing ? (
+              <ComicButton type="button" variant="accent" size="sm" onClick={handleStop}>
+                Stop
+              </ComicButton>
+            ) : null}
+            {!slide.audioUrl.trim() ? (
+              <ComicText className="text-sm font-bold text-[var(--comic-dark)]/60">
+                Add an audio URL on this slide
+              </ComicText>
+            ) : null}
+          </div>
+
+          {tracks.length > 1 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <ComicButton
+                type="button"
+                variant="accent"
+                size="sm"
+                disabled={safeIndex <= 0}
+                onClick={goPrevTrack}
+              >
+                ← Prev
+              </ComicButton>
+              <ComicText className="text-sm font-black text-[var(--comic-dark)]">
+                Track {safeIndex + 1} / {tracks.length}
+              </ComicText>
+              <ComicButton
+                type="button"
+                variant="accent"
+                size="sm"
+                disabled={safeIndex >= tracks.length - 1}
+                onClick={goNextTrack}
+              >
+                Next →
+              </ComicButton>
+            </div>
           ) : null}
         </div>
         <div
@@ -230,7 +278,7 @@ export default function PresentationAudioMatch({
         >
           {images.map((item) => {
             const isSelected = selected === item.letter;
-            const isCorrect = item.letter === slide.correctChoice;
+            const isCorrect = item.letter === correctChoice;
             const showCorrect = isSelected && isCorrect;
             const showWrong = isSelected && !isCorrect;
             const revealCorrect = Boolean(selected) && isCorrect && !isSelected;
@@ -248,7 +296,7 @@ export default function PresentationAudioMatch({
                   borderColor: showCorrect
                     ? QUIZ_CORRECT
                     : showWrong
-                      ? undefined
+                      ? QUIZ_WRONG
                       : revealCorrect
                         ? QUIZ_CORRECT
                         : 'var(--comic-black)',
@@ -257,7 +305,6 @@ export default function PresentationAudioMatch({
                     : showWrong
                       ? `0 0 0 4px color-mix(in srgb, ${QUIZ_WRONG} 35%, transparent)`
                       : undefined,
-                  ...(showWrong ? { borderColor: QUIZ_WRONG } : null),
                 }}
               >
                 <span

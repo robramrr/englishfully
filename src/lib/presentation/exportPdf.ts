@@ -68,11 +68,19 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                      slide.layout === 'audio_image'
                        ? `<p class="body"><strong>Audio + image</strong>${
                            slide.audioUrl
-                             ? ` — audio clip (${Number(slide.audioStartSeconds).toFixed(1)}s–${Number(
-                                 slide.audioEndSeconds
-                               ).toFixed(1)}s)`
+                             ? ` — ${
+                                 (slide.audioTracks?.length || 1) > 1
+                                   ? `${slide.audioTracks?.length || 1} tracks`
+                                   : `audio clip (${Number(slide.audioStartSeconds).toFixed(
+                                       1
+                                     )}s–${Number(slide.audioEndSeconds).toFixed(1)}s)`
+                               }`
                              : ''
-                         } · Correct: ${escapeHtml(slide.correctChoice)}</p>
+                         } · Correct: ${escapeHtml(
+                           (slide.audioTracks || [])
+                             .map((track, i) => `T${i + 1}=${track.correctChoice}`)
+                             .join(', ') || slide.correctChoice
+                         )}</p>
                           <div style="display:flex;gap:8px;flex-wrap:wrap;">
                             ${['A', 'B', 'C', 'D']
                               .map((letter, i) => {

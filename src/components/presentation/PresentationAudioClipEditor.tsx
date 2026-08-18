@@ -9,7 +9,15 @@ import {
   parseTimestamp,
   type TranscriptSegmentDraft,
 } from '@/lib/listen-and-learn/types';
-import type { PresentationSlide } from '@/lib/presentation/types';
+import {
+  createEmptyAudioTrack,
+  getPresentationAudioTracks,
+  PRESENTATION_CHOICE_LETTERS,
+  withSyncedAudioTrackFields,
+  type PresentationAudioTrack,
+  type PresentationChoiceLetter,
+  type PresentationSlide,
+} from '@/lib/presentation/types';
 
 interface PresentationAudioClipEditorProps {
   slide: PresentationSlide;
@@ -17,16 +25,47 @@ interface PresentationAudioClipEditorProps {
 }
 
 /**
- * Reuses Listen & Learn transcript API + SegmentAudioPlayer for clip picking.
+ * Shared audio URL + multiple tracks (clips), each with its own correct letter.
+ * Images stay shared on the slide.
  */
 export default function PresentationAudioClipEditor({
   slide,
   onChange,
 }: PresentationAudioClipEditorProps) {
+  const tracks = getPresentationAudioTracks(slide);
+  const [activeTrackId, setActiveTrackId] = useState(tracks[0]?.id || '');
   const [segments, setSegments] = useState<TranscriptSegmentDraft[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  const activeTrack =
+    tracks.find((track) => track.id === activeTrackId) || tracks[0] || createEmptyAudioTrack();
+
+  function commitTracks(nextTracks: PresentationAudioTrack[]) {
+    onChange(withSyncedAudioTrackFields({ audioTracks: nextTracks }));
+  }
+
+  function updateActiveTrack(patch: Partial<PresentationAudioTrack>) {
+    const next = tracks.map((track) =>
+      track.id === activeTrack.id ? { ...track, ...patch } : track
+    );
+    commitTracks(next);
+  }
+
+  function handleAddTrack() {
+    const nextTrack = createEmptyAudioTrack();
+    commitTracks([...tracks, nextTrack]);
+    setActiveTrackId(nextTrack.id);
+    setMessage('Added another track. Pick a clip and set its correct answer.');
+  }
+
+  function handleRemoveTrack(trackId: string) {
+    if (tracks.length <= 1) return;
+    const next = tracks.filter((track) => track.id !== trackId);
+    commitTracks(next);
+    setActiveTrackId(next[0]?.id || '');
+  }
 
   async function handleTranscribe() {
     if (!slide.audioUrl.trim()) {
@@ -51,7 +90,7 @@ export default function PresentationAudioClipEditor({
         audioTranscript: String(data.transcript || ''),
       });
       setMessage(
-        `Created ${nextSegments.length} clip${nextSegments.length === 1 ? '' : 's'}. Pick one below.`
+        `Created ${nextSegments.length} clip${nextSegments.length === 1 ? '' : 's'}. Assign one to the selected track below.`
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to process transcript');
@@ -61,22 +100,22 @@ export default function PresentationAudioClipEditor({
   }
 
   function selectSegment(segment: TranscriptSegmentDraft) {
-    onChange({
-      audioStartSeconds: Number(segment.start_seconds) || 0,
-      audioEndSeconds: Number(segment.end_seconds) || 5,
-      audioClipText: String(segment.sentence_text || ''),
+    updateActiveTrack({
+      startSeconds: Number(segment.start_seconds) || 0,
+      endSeconds: Number(segment.end_seconds) || 5,
+      clipText: String(segment.sentence_text || ''),
     });
   }
 
-  const selectedKey = `${slide.audioStartSeconds}-${slide.audioEndSeconds}`;
+  const selectedKey = `${activeTrack.startSeconds}-${activeTrack.endSeconds}`;
 
   return (
     <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
       <div>
-        <ComicText className="font-black">Audio clip</ComicText>
+        <ComicText className="font-black">Audio tracks</ComicText>
         <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-          Same flow as Listen &amp; Learn: paste an audio URL, auto-transcribe, then pick one
-          segment to play on the slide.
+          One shared audio URL and the same A–D images. Add more tracks when several clips use
+          those pictures (each track has its own correct letter).
         </ComicText>
       </div>
 
@@ -100,6 +139,9 @@ export default function PresentationAudioClipEditor({
         >
           {busy ? 'Transcribing…' : 'Auto-transcribe & make clips'}
         </ComicButton>
+        <ComicButton type="button" variant="accent" size="sm" onClick={handleAddTrack}>
+          + Add track
+        </ComicButton>
       </div>
 
       {error ? (
@@ -109,53 +151,115 @@ export default function PresentationAudioClipEditor({
         <ComicText className="text-sm font-bold text-[var(--comic-success)]">{message}</ComicText>
       ) : null}
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block space-y-1">
-          <ComicText className="text-sm font-bold">Clip start</ComicText>
-          <input
-            className="comic-input w-full"
-            value={formatTimestamp(slide.audioStartSeconds)}
-            onChange={(event) =>
-              onChange({ audioStartSeconds: parseTimestamp(event.target.value) })
-            }
-            placeholder="0:00.0"
-          />
-        </label>
-        <label className="block space-y-1">
-          <ComicText className="text-sm font-bold">Clip end</ComicText>
-          <input
-            className="comic-input w-full"
-            value={formatTimestamp(slide.audioEndSeconds)}
-            onChange={(event) =>
-              onChange({ audioEndSeconds: parseTimestamp(event.target.value) })
-            }
-            placeholder="0:05.0"
-          />
-        </label>
+      <div className="flex flex-wrap gap-2">
+        {tracks.map((track, index) => {
+          const active = track.id === activeTrack.id;
+          return (
+            <button
+              key={track.id}
+              type="button"
+              onClick={() => setActiveTrackId(track.id)}
+              className={[
+                'border-2 border-[var(--comic-black)] px-3 py-1 text-sm font-black',
+                active
+                  ? 'bg-[var(--comic-secondary)] text-white'
+                  : 'bg-white text-[var(--comic-dark)]',
+              ].join(' ')}
+            >
+              Track {index + 1}
+              {track.correctChoice ? ` · ${track.correctChoice}` : ''}
+            </button>
+          );
+        })}
       </div>
 
-      {slide.audioClipText ? (
-        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-          Selected clip: {slide.audioClipText}
-        </ComicText>
-      ) : null}
-
-      {slide.audioUrl.trim() ? (
-        <div className="rounded-md border-2 border-[var(--comic-black)] bg-white p-3">
-          <ComicText className="mb-2 text-sm font-black">Preview selected clip</ComicText>
-          <SegmentAudioPlayer
-            audioUrl={slide.audioUrl}
-            startSeconds={slide.audioStartSeconds}
-            endSeconds={slide.audioEndSeconds}
-            compact
-            label="Play clip"
-          />
+      <div className="space-y-3 rounded-md border-2 border-[var(--comic-black)] bg-white p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <ComicText className="font-black">
+            Editing track {Math.max(1, tracks.findIndex((t) => t.id === activeTrack.id) + 1)}
+          </ComicText>
+          {tracks.length > 1 ? (
+            <ComicButton
+              type="button"
+              variant="danger"
+              size="sm"
+              onClick={() => handleRemoveTrack(activeTrack.id)}
+            >
+              Remove track
+            </ComicButton>
+          ) : null}
         </div>
-      ) : null}
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block space-y-1">
+            <ComicText className="text-sm font-bold">Clip start</ComicText>
+            <input
+              className="comic-input w-full"
+              value={formatTimestamp(activeTrack.startSeconds)}
+              onChange={(event) =>
+                updateActiveTrack({ startSeconds: parseTimestamp(event.target.value) })
+              }
+              placeholder="0:00.0"
+            />
+          </label>
+          <label className="block space-y-1">
+            <ComicText className="text-sm font-bold">Clip end</ComicText>
+            <input
+              className="comic-input w-full"
+              value={formatTimestamp(activeTrack.endSeconds)}
+              onChange={(event) =>
+                updateActiveTrack({ endSeconds: parseTimestamp(event.target.value) })
+              }
+              placeholder="0:05.0"
+            />
+          </label>
+        </div>
+
+        {activeTrack.clipText ? (
+          <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+            Selected clip: {activeTrack.clipText}
+          </ComicText>
+        ) : null}
+
+        <div className="space-y-2">
+          <ComicText className="text-sm font-bold">Correct answer for this track</ComicText>
+          <div className="flex flex-wrap gap-3">
+            {PRESENTATION_CHOICE_LETTERS.map((letter) => (
+              <label key={letter} className="inline-flex items-center gap-2 font-bold">
+                <input
+                  type="radio"
+                  name={`correct-choice-${slide.id}-${activeTrack.id}`}
+                  checked={activeTrack.correctChoice === letter}
+                  onChange={() =>
+                    updateActiveTrack({ correctChoice: letter as PresentationChoiceLetter })
+                  }
+                />
+                {letter}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {slide.audioUrl.trim() ? (
+          <div>
+            <ComicText className="mb-2 text-sm font-black">Preview this track</ComicText>
+            <SegmentAudioPlayer
+              audioUrl={slide.audioUrl}
+              startSeconds={activeTrack.startSeconds}
+              endSeconds={activeTrack.endSeconds}
+              compact
+              label="Play clip"
+            />
+          </div>
+        ) : null}
+      </div>
 
       {segments.length > 0 ? (
         <div className="space-y-2">
-          <ComicText className="text-sm font-black">Pick a clip</ComicText>
+          <ComicText className="text-sm font-black">
+            Pick a clip for track{' '}
+            {Math.max(1, tracks.findIndex((t) => t.id === activeTrack.id) + 1)}
+          </ComicText>
           <div className="max-h-64 space-y-2 overflow-y-auto rounded-md border-2 border-[var(--comic-black)] bg-white p-2">
             {segments.map((segment, index) => {
               const key = `${segment.start_seconds}-${segment.end_seconds}`;
@@ -172,7 +276,7 @@ export default function PresentationAudioClipEditor({
                 >
                   <input
                     type="radio"
-                    name={`audio-clip-${slide.id}`}
+                    name={`audio-clip-${slide.id}-${activeTrack.id}`}
                     className="mt-1"
                     checked={active}
                     onChange={() => selectSegment(segment)}
