@@ -21,6 +21,31 @@ interface PresentationSlideTimerProps {
   onStateChange?: (state: SlideTimerState) => void;
 }
 
+function playTickTone(urgent = false) {
+  try {
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = urgent ? 980 : 720;
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(urgent ? 0.09 : 0.05, now + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + (urgent ? 0.07 : 0.05));
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.08);
+    window.setTimeout(() => void ctx.close(), 200);
+  } catch {
+    // ignore
+  }
+}
+
 function playTimeUpTone() {
   try {
     const AudioCtx =
@@ -80,6 +105,7 @@ export default function PresentationSlideTimer({
       playTimeUpTone();
       return;
     }
+    playTickTone(secondsLeft <= 5);
     const id = window.setTimeout(() => setSecondsLeft((value) => value - 1), 1000);
     return () => window.clearTimeout(id);
   }, [enabled, started, timeUp, secondsLeft]);

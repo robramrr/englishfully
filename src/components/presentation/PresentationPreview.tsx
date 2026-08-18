@@ -253,8 +253,10 @@ export default function PresentationPreview({
           className={[
             'z-30',
             presentMode
-              ? 'absolute left-3 top-3 md:left-4 md:top-4'
-              : 'flex justify-start',
+              ? browserFullscreen
+                ? 'absolute right-8 top-8 md:right-10 md:top-10'
+                : 'absolute right-6 top-20 md:right-8 md:top-24'
+              : 'flex justify-end pr-2 pt-1',
           ].join(' ')}
         >
           <PresentationSlideTimer
