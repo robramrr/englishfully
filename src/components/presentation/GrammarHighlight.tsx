@@ -255,34 +255,33 @@ export function GrammarLiveTextBox({
 
   // Keep DOM in sync when parent value changes (slide switch / external edit)
   useEffect(() => {
-    if (ignoreSyncRef.current) {
-      ignoreSyncRef.current = false;
-      valueRef.current = value;
-      return;
-    }
     const current = editorRef.current
       ? readEditablePlainText(editorRef.current)
       : '';
+
+    // Echo of our own onChange — skip only if DOM already matches.
+    // If value jumped (e.g. slide change while ignore was set), fall through and sync.
+    if (ignoreSyncRef.current) {
+      ignoreSyncRef.current = false;
+      if (value === valueRef.current && current === value) {
+        return;
+      }
+    }
+
     if (value === valueRef.current && current === value) {
       return;
     }
+
+    // Cancel in-flight highlight from a previous value / slide
+    requestIdRef.current += 1;
+    highlightedForRef.current = '';
     valueRef.current = value;
-    // Preserve highlights only if this exact string was already highlighted
-    if (highlightedForRef.current === value && value) {
-      void (async () => {
-        try {
-          const matches = await fetchGrammarMatches(value, grammarTarget);
-          setEditorHtml(value, buildGrammarHighlightSpans(value, matches), null);
-        } catch {
-          setEditorHtml(value, [], null);
-        }
-      })();
-    } else {
-      setEditorHtml(value, [], null);
-      // Auto-highlight prepared text that already ends with a sentence
-      if (grammarTarget.trim() && value.trim() && endsWithSentencePause(value)) {
-        void highlight(value);
-      }
+    setError('');
+    setEditorHtml(value, [], null);
+
+    // Auto-highlight prepared text that already ends with a sentence
+    if (grammarTarget.trim() && value.trim() && endsWithSentencePause(value)) {
+      void highlight(value);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, grammarTarget, setEditorHtml]);

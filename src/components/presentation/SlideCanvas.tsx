@@ -90,6 +90,7 @@ function ContentBody({
 
       {grammarOn ? (
         <GrammarLiveTextBox
+          key={slide.id}
           value={slide.grammarText}
           grammarTarget={slide.grammarTarget}
           editable={liveEditable && Boolean(onGrammarTextChange)}
