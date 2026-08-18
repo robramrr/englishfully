@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
 import type { PresentationSlide } from '@/lib/presentation/types';
+import type { SlideTimerState } from './PresentationSlideTimer';
 
 const QUIZ_CORRECT = '#15803d';
 const QUIZ_WRONG = '#ea1225';
@@ -12,9 +13,12 @@ interface PresentationDescribeImageProps {
   slide: PresentationSlide;
   present?: boolean;
   compact?: boolean;
+  /** Shared slide timer from present/preview (any-slide timer). */
+  timerState?: SlideTimerState | null;
+  onRequestTimerReset?: () => void;
 }
 
-function playQuizTone(kind: 'correct' | 'wrong' | 'complete' | 'timeup') {
+function playQuizTone(kind: 'correct' | 'wrong' | 'complete') {
   try {
     const AudioCtx =
       window.AudioContext ||
@@ -46,16 +50,16 @@ function playQuizTone(kind: 'correct' | 'wrong' | 'complete' | 'timeup') {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'square';
-    osc.frequency.setValueAtTime(kind === 'timeup' ? 160 : 180, now);
-    osc.frequency.exponentialRampToValueAtTime(90, now + (kind === 'timeup' ? 0.45 : 0.28));
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(110, now + 0.28);
     gain.gain.setValueAtTime(0.0001, now);
     gain.gain.exponentialRampToValueAtTime(0.12, now + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + (kind === 'timeup' ? 0.5 : 0.32));
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start(now);
-    osc.stop(now + (kind === 'timeup' ? 0.55 : 0.35));
-    window.setTimeout(() => void ctx.close(), 700);
+    osc.stop(now + 0.35);
+    window.setTimeout(() => void ctx.close(), 600);
   } catch {
     // ignore
   }
@@ -72,12 +76,14 @@ function shuffleIds(ids: string[]): string[] {
 
 /**
  * Present-mode Describe + image: tap word tags — green if they match the picture,
- * red if not. Optional countdown. Completes when enough matching words are found.
+ * red if not. Optional shared slide timer gates play when enabled.
  */
 export default function PresentationDescribeImage({
   slide,
   present = false,
   compact = false,
+  timerState = null,
+  onRequestTimerReset,
 }: PresentationDescribeImageProps) {
   const words = useMemo(
     () =>
@@ -96,14 +102,13 @@ export default function PresentationDescribeImage({
     1,
     Math.min(slide.describeWordsNeeded || 10, Math.max(matchCount, 1))
   );
-  const timerEnabled = Boolean(slide.describeTimerEnabled);
-  const timerSeconds = Math.max(1, Math.min(600, slide.describeTimerSeconds || 60));
+  const timerEnabled = Boolean(slide.timerEnabled);
+  /** Gate only when a live shared timer is mounted (present/preview). */
+  const timerStarted = !timerEnabled || timerState == null || timerState.started;
+  const timeUp = Boolean(timerEnabled && timerState?.timeUp);
 
   const [order, setOrder] = useState<string[]>([]);
   const [picked, setPicked] = useState<Record<string, 'correct' | 'wrong'>>({});
-  const [started, setStarted] = useState(!timerEnabled);
-  const [secondsLeft, setSecondsLeft] = useState(timerSeconds);
-  const [timeUp, setTimeUp] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
 
   const correctFound = Object.values(picked).filter((value) => value === 'correct').length;
@@ -115,24 +120,9 @@ export default function PresentationDescribeImage({
   useEffect(() => {
     setOrder(shuffleIds(words.map((word) => word.id)));
     setPicked({});
-    setStarted(!timerEnabled);
-    setSecondsLeft(timerSeconds);
-    setTimeUp(false);
     setJustCompleted(false);
-    // Reset when slide identity or word bank / timer settings change.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- words derived via wordsKey
-  }, [slide.id, wordsKey, timerEnabled, timerSeconds]);
-
-  useEffect(() => {
-    if (!timerEnabled || !started || locked) return;
-    if (secondsLeft <= 0) {
-      setTimeUp(true);
-      playQuizTone('timeup');
-      return;
-    }
-    const id = window.setTimeout(() => setSecondsLeft((value) => value - 1), 1000);
-    return () => window.clearTimeout(id);
-  }, [timerEnabled, started, locked, secondsLeft]);
+  }, [slide.id, wordsKey]);
 
   useEffect(() => {
     if (!completed || justCompleted) return;
@@ -140,26 +130,15 @@ export default function PresentationDescribeImage({
     playQuizTone('complete');
   }, [completed, justCompleted]);
 
-  function handleStart() {
-    setStarted(true);
-    setSecondsLeft(timerSeconds);
-    setTimeUp(false);
-    setPicked({});
-    setJustCompleted(false);
-    setOrder(shuffleIds(words.map((word) => word.id)));
-  }
-
   function handleReset() {
     setPicked({});
-    setStarted(!timerEnabled);
-    setSecondsLeft(timerSeconds);
-    setTimeUp(false);
     setJustCompleted(false);
     setOrder(shuffleIds(words.map((word) => word.id)));
+    onRequestTimerReset?.();
   }
 
   function handlePick(wordId: string) {
-    if (locked || (timerEnabled && !started)) return;
+    if (locked || !timerStarted) return;
     if (picked[wordId]) return;
     const word = words.find((item) => item.id === wordId);
     if (!word) return;
@@ -191,16 +170,6 @@ export default function PresentationDescribeImage({
           <ComicText className="font-black text-[var(--comic-dark)]">
             {correctFound} / {wordsNeeded} words
           </ComicText>
-          {timerEnabled ? (
-            <span
-              className="font-black"
-              style={{
-                color: timeUp || secondsLeft <= 5 ? QUIZ_WRONG : 'var(--comic-dark)',
-              }}
-            >
-              {started ? `${secondsLeft}s` : `${timerSeconds}s timer`}
-            </span>
-          ) : null}
           {completed ? (
             <span className="font-black" style={{ color: QUIZ_CORRECT }}>
               Complete!
@@ -212,16 +181,9 @@ export default function PresentationDescribeImage({
             </span>
           ) : null}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {timerEnabled && !started ? (
-            <ComicButton type="button" variant="secondary" size="sm" onClick={handleStart}>
-              Start
-            </ComicButton>
-          ) : null}
-          <ComicButton type="button" variant="accent" size="sm" onClick={handleReset}>
-            Reset
-          </ComicButton>
-        </div>
+        <ComicButton type="button" variant="accent" size="sm" onClick={handleReset}>
+          Reset
+        </ComicButton>
       </div>
 
       <div
@@ -268,7 +230,7 @@ export default function PresentationDescribeImage({
                   <button
                     key={word.id}
                     type="button"
-                    disabled={locked || Boolean(state) || (timerEnabled && !started)}
+                    disabled={locked || Boolean(state) || !timerStarted}
                     onClick={() => handlePick(word.id)}
                     className={[
                       'rounded-md border-2 border-[var(--comic-black)] px-3 py-1.5 font-bold transition-transform comic-shadow-sm',
@@ -283,9 +245,9 @@ export default function PresentationDescribeImage({
               })}
             </div>
           )}
-          {timerEnabled && !started ? (
+          {timerEnabled && timerState != null && !timerStarted ? (
             <ComicText className="text-sm font-bold text-[var(--comic-dark)]/70">
-              Press Start when the class is ready.
+              Press Start on the slide timer when the class is ready.
             </ComicText>
           ) : null}
         </div>

@@ -747,51 +747,10 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                           }
                         />
                       </label>
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <ComicText className="text-sm font-bold">Optional timer</ComicText>
-                          <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
-                            <span className="text-sm">
-                              {selected.describeTimerEnabled ? 'On' : 'Off'}
-                            </span>
-                            <input
-                              type="checkbox"
-                              className="h-5 w-9 accent-[var(--comic-primary)]"
-                              checked={selected.describeTimerEnabled}
-                              onChange={(event) =>
-                                setDeck((prev) =>
-                                  updateSlide(prev, selected.id, {
-                                    describeTimerEnabled: event.target.checked,
-                                  })
-                                )
-                              }
-                            />
-                          </label>
-                        </div>
-                        {selected.describeTimerEnabled ? (
-                          <label className="block space-y-1">
-                            <ComicText className="text-sm font-bold">Seconds</ComicText>
-                            <input
-                              type="number"
-                              min={5}
-                              max={600}
-                              className="comic-input w-full"
-                              value={selected.describeTimerSeconds}
-                              onChange={(event) =>
-                                setDeck((prev) =>
-                                  updateSlide(prev, selected.id, {
-                                    describeTimerSeconds: Math.max(
-                                      5,
-                                      Math.min(600, Number(event.target.value) || 60)
-                                    ),
-                                  })
-                                )
-                              }
-                              placeholder="25, 60…"
-                            />
-                          </label>
-                        ) : null}
-                      </div>
+                      <ComicText className="self-end text-sm font-bold text-[var(--comic-dark)]">
+                        Use the slide Timer section below for a countdown (locks picks when time
+                        runs out).
+                      </ComicText>
                     </div>
 
                     <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
@@ -911,6 +870,56 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                     </div>
                   </div>
                 ) : null}
+
+                <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <ComicText className="font-black">Slide timer</ComicText>
+                      <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+                        Optional countdown for this slide only (think time, speak time, etc.).
+                        Works with any layout. Start it while presenting.
+                      </ComicText>
+                    </div>
+                    <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
+                      <span className="text-sm">{selected.timerEnabled ? 'On' : 'Off'}</span>
+                      <input
+                        type="checkbox"
+                        className="h-5 w-9 accent-[var(--comic-primary)]"
+                        checked={selected.timerEnabled}
+                        onChange={(event) =>
+                          setDeck((prev) =>
+                            updateSlide(prev, selected.id, {
+                              timerEnabled: event.target.checked,
+                            })
+                          )
+                        }
+                      />
+                    </label>
+                  </div>
+                  {selected.timerEnabled ? (
+                    <label className="block max-w-xs space-y-1">
+                      <ComicText className="text-sm font-bold">Seconds</ComicText>
+                      <input
+                        type="number"
+                        min={5}
+                        max={600}
+                        className="comic-input w-full"
+                        value={selected.timerSeconds}
+                        onChange={(event) =>
+                          setDeck((prev) =>
+                            updateSlide(prev, selected.id, {
+                              timerSeconds: Math.max(
+                                5,
+                                Math.min(600, Number(event.target.value) || 60)
+                              ),
+                            })
+                          )
+                        }
+                        placeholder="25, 60…"
+                      />
+                    </label>
+                  ) : null}
+                </div>
 
                 {selected.layout === 'content' ? (
                   <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">

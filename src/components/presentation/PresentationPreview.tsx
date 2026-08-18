@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
 import SlideCanvas from './SlideCanvas';
+import PresentationSlideTimer, { type SlideTimerState } from './PresentationSlideTimer';
 import type { PresentationDeck } from '@/lib/presentation/types';
 
 interface PresentationPreviewProps {
@@ -27,6 +28,12 @@ export default function PresentationPreview({
   const [browserFullscreen, setBrowserFullscreen] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [timerEpoch, setTimerEpoch] = useState(0);
+  const [timerState, setTimerState] = useState<SlideTimerState>({
+    started: false,
+    secondsLeft: 60,
+    timeUp: false,
+  });
 
   const total = deck.slides.length;
   const safeIndex = Math.min(Math.max(index, 0), Math.max(total - 1, 0));
@@ -38,6 +45,15 @@ export default function PresentationPreview({
   const presentMode = fullscreen || browserFullscreen;
   /** True browser fullscreen: no chrome — arrows/space only. */
   const showChrome = !browserFullscreen;
+  const slideTimerOn = Boolean(slide?.timerEnabled);
+
+  const handleTimerStateChange = useCallback((state: SlideTimerState) => {
+    setTimerState(state);
+  }, []);
+
+  const requestTimerReset = useCallback(() => {
+    setTimerEpoch((value) => value + 1);
+  }, []);
 
   const goPrev = useCallback(() => {
     onIndexChange(Math.max(0, safeIndex - 1));
@@ -100,6 +116,10 @@ export default function PresentationPreview({
     if (!presentMode) return;
     hideTimerRef.current = setTimeout(() => setControlsVisible(false), 2500);
   }, [browserFullscreen, presentMode]);
+
+  useEffect(() => {
+    setTimerEpoch((value) => value + 1);
+  }, [slide?.id]);
 
   useEffect(() => {
     function onFullscreenChange() {
@@ -228,6 +248,26 @@ export default function PresentationPreview({
         </div>
       ) : null}
 
+      {slideTimerOn ? (
+        <div
+          className={[
+            'z-30',
+            presentMode
+              ? 'absolute left-3 top-3 md:left-4 md:top-4'
+              : 'flex justify-start',
+          ].join(' ')}
+        >
+          <PresentationSlideTimer
+            key={`${slide.id}-${timerEpoch}`}
+            enabled={slideTimerOn}
+            seconds={slide.timerSeconds || 60}
+            slideId={slide.id}
+            present={presentMode}
+            onStateChange={handleTimerStateChange}
+          />
+        </div>
+      ) : null}
+
       <div
         className={[
           'mx-auto flex w-full flex-1 items-center justify-center',
@@ -254,6 +294,8 @@ export default function PresentationPreview({
                 : undefined
             }
             liveEditable={liveGrammar}
+            timerState={slideTimerOn ? timerState : null}
+            onRequestTimerReset={slideTimerOn ? requestTimerReset : undefined}
             onGrammarTextChange={
               liveGrammar && onGrammarTextChange
                 ? (grammarText) => onGrammarTextChange(slide.id, grammarText)

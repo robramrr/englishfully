@@ -101,8 +101,8 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                        ? `<p class="body"><strong>Describe + image</strong> — find ${
                            slide.describeWordsNeeded || 10
                          } matching words${
-                           slide.describeTimerEnabled
-                             ? ` · timer ${slide.describeTimerSeconds || 60}s`
+                           slide.timerEnabled
+                             ? ` · timer ${slide.timerSeconds || 60}s`
                              : ''
                          }</p>
                           <p class="body">${escapeHtml(

@@ -9,6 +9,7 @@ import {
 import { GrammarLiveTextBox } from './GrammarHighlight';
 import PresentationAudioMatch from './PresentationAudioMatch';
 import PresentationDescribeImage from './PresentationDescribeImage';
+import type { SlideTimerState } from './PresentationSlideTimer';
 import type { CSSProperties } from 'react';
 
 interface SlideCanvasProps {
@@ -25,6 +26,9 @@ interface SlideCanvasProps {
   /** Allow live typing into the grammar practice box during present/preview. */
   liveEditable?: boolean;
   onGrammarTextChange?: (grammarText: string) => void;
+  /** Shared per-slide timer state (from present/preview). */
+  timerState?: SlideTimerState | null;
+  onRequestTimerReset?: () => void;
 }
 
 function sizeMode(
@@ -154,6 +158,8 @@ export default function SlideCanvas({
   showImageSlot = false,
   liveEditable = false,
   onGrammarTextChange,
+  timerState = null,
+  onRequestTimerReset,
 }: SlideCanvasProps) {
   const title = slide.title || (slide.layout === 'title' ? deck.title : 'Untitled slide');
   const body =
@@ -366,7 +372,13 @@ export default function SlideCanvas({
               </p>
             ) : null}
             <div className="min-h-0 flex-1">
-              <PresentationDescribeImage slide={slide} present={present} compact={compact} />
+              <PresentationDescribeImage
+                slide={slide}
+                present={present}
+                compact={compact}
+                timerState={timerState}
+                onRequestTimerReset={onRequestTimerReset}
+              />
             </div>
           </div>
         ) : null}

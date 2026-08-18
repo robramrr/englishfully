@@ -263,10 +263,17 @@ export interface PresentationSlide {
   describeWords: PresentationDescribeWord[];
   /** How many matching words students must find to complete. */
   describeWordsNeeded: number;
-  /** Optional countdown timer during play. */
-  describeTimerEnabled: boolean;
+  /**
+   * Optional countdown on any slide (think / speak / activity time).
+   * Started from present mode.
+   */
+  timerEnabled: boolean;
   /** Countdown length in seconds when timer is on. */
-  describeTimerSeconds: number;
+  timerSeconds: number;
+  /** @deprecated Migrated into timerEnabled. */
+  describeTimerEnabled?: boolean;
+  /** @deprecated Migrated into timerSeconds. */
+  describeTimerSeconds?: number;
 }
 
 export type PresentationStatus = 'draft' | 'published';
@@ -331,8 +338,8 @@ export function createEmptySlide(
     correctChoice: 'A',
     describeWords: [],
     describeWordsNeeded: 10,
-    describeTimerEnabled: false,
-    describeTimerSeconds: 60,
+    timerEnabled: false,
+    timerSeconds: 60,
   };
 }
 
@@ -381,8 +388,14 @@ export function normalizeSlide(
     correctChoice: first.correctChoice,
     describeWords: normalizeDescribeWords(slide.describeWords),
     describeWordsNeeded: normalizePositiveInt(slide.describeWordsNeeded, 10),
-    describeTimerEnabled: Boolean(slide.describeTimerEnabled),
-    describeTimerSeconds: normalizePositiveInt(slide.describeTimerSeconds, 60, 600),
+    timerEnabled: Boolean(
+      slide.timerEnabled ?? slide.describeTimerEnabled ?? false
+    ),
+    timerSeconds: normalizePositiveInt(
+      slide.timerSeconds ?? slide.describeTimerSeconds,
+      60,
+      600
+    ),
   };
 }
 

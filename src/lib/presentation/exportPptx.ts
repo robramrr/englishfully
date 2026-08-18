@@ -202,8 +202,8 @@ export async function buildPresentationPptxBuffer(
       }
       page.addText(
         `Find ${slide.describeWordsNeeded || 10} matching words${
-          slide.describeTimerEnabled
-            ? ` · ${slide.describeTimerSeconds || 60}s timer`
+          slide.timerEnabled
+            ? ` · ${slide.timerSeconds || 60}s timer`
             : ''
         }`,
         {
