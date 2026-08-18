@@ -6,10 +6,62 @@ import ComicText from '../ComicText';
 import type { PresentationChoiceLetter, PresentationSlide } from '@/lib/presentation/types';
 import { PRESENTATION_CHOICE_LETTERS } from '@/lib/presentation/types';
 
+/** Brand has no green token — use a clear quiz green for correct feedback. */
+const QUIZ_CORRECT = '#15803d';
+const QUIZ_WRONG = '#ea1225';
+
 interface PresentationAudioMatchProps {
   slide: PresentationSlide;
   present?: boolean;
   compact?: boolean;
+}
+
+function playQuizTone(kind: 'correct' | 'wrong') {
+  try {
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+
+    if (kind === 'correct') {
+      // Short ascending chime
+      const notes = [523.25, 659.25, 783.99];
+      notes.forEach((freq, index) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.18, now + 0.02 + index * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22 + index * 0.08);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + index * 0.08);
+        osc.stop(now + 0.28 + index * 0.08);
+      });
+      window.setTimeout(() => void ctx.close(), 800);
+      return;
+    }
+
+    // Low buzz for wrong
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(110, now + 0.28);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.12, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.35);
+    window.setTimeout(() => void ctx.close(), 600);
+  } catch {
+    // Autoplay / AudioContext restrictions — ignore
+  }
 }
 
 /**
@@ -110,6 +162,11 @@ export default function PresentationAudioMatch({
     setProgress(ratio);
   }
 
+  function handleSelect(letter: PresentationChoiceLetter) {
+    setSelected(letter);
+    playQuizTone(letter === slide.correctChoice ? 'correct' : 'wrong');
+  }
+
   return (
     <div className={['flex h-full min-h-0 flex-col gap-3', compact ? 'gap-2' : ''].join(' ')}>
       <audio ref={audioRef} src={slide.audioUrl || undefined} preload="metadata" />
@@ -174,36 +231,46 @@ export default function PresentationAudioMatch({
           {images.map((item) => {
             const isSelected = selected === item.letter;
             const isCorrect = item.letter === slide.correctChoice;
-            let borderClass = 'border-[var(--comic-black)]';
-            if (isSelected && isCorrect) {
-              borderClass = 'border-[var(--comic-success)] ring-4 ring-[var(--comic-success)]/40';
-            } else if (isSelected && !isCorrect) {
-              borderClass = 'border-[var(--comic-danger)] ring-4 ring-[var(--comic-danger)]/40';
-            } else if (selected && isCorrect && present) {
-              // After a wrong guess, softly reveal the right one
-              borderClass = 'border-[var(--comic-success)]';
-            }
+            const showCorrect = isSelected && isCorrect;
+            const showWrong = isSelected && !isCorrect;
+            const revealCorrect = Boolean(selected) && isCorrect && !isSelected;
 
             return (
               <button
                 key={item.letter}
                 type="button"
-                onClick={() => setSelected(item.letter)}
+                onClick={() => handleSelect(item.letter)}
                 className={[
                   'relative flex min-h-0 flex-col overflow-hidden rounded-lg border-4 bg-white text-left comic-shadow-sm transition-transform',
-                  borderClass,
                   present ? 'hover:-translate-y-0.5' : '',
                 ].join(' ')}
+                style={{
+                  borderColor: showCorrect
+                    ? QUIZ_CORRECT
+                    : showWrong
+                      ? undefined
+                      : revealCorrect
+                        ? QUIZ_CORRECT
+                        : 'var(--comic-black)',
+                  boxShadow: showCorrect
+                    ? `0 0 0 4px color-mix(in srgb, ${QUIZ_CORRECT} 35%, transparent)`
+                    : showWrong
+                      ? `0 0 0 4px color-mix(in srgb, ${QUIZ_WRONG} 35%, transparent)`
+                      : undefined,
+                  ...(showWrong ? { borderColor: QUIZ_WRONG } : null),
+                }}
               >
                 <span
-                  className={[
-                    'absolute left-2 top-2 z-[1] flex h-8 w-8 items-center justify-center border-2 border-[var(--comic-black)] font-bungee text-sm',
-                    isSelected && isCorrect
-                      ? 'bg-[var(--comic-success)] text-white'
-                      : isSelected && !isCorrect
-                        ? 'bg-[var(--comic-danger)] text-white'
-                        : 'bg-[var(--comic-secondary)] text-white',
-                  ].join(' ')}
+                  className="absolute left-2 top-2 z-[1] flex h-8 w-8 items-center justify-center border-2 border-[var(--comic-black)] font-bungee text-sm text-white"
+                  style={{
+                    backgroundColor: showCorrect
+                      ? QUIZ_CORRECT
+                      : showWrong
+                        ? QUIZ_WRONG
+                        : revealCorrect
+                          ? QUIZ_CORRECT
+                          : 'var(--comic-secondary)',
+                  }}
                 >
                   {item.letter}
                 </span>
