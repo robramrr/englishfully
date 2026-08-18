@@ -103,15 +103,19 @@ function ContentBody({
       )}
 
       {slide.bullets.filter((item) => item.trim()).length > 0 ? (
-        <ul className="list-disc space-y-1 pl-5 font-bold">
+        <ul className="space-y-1 font-bold">
           {slide.bullets
             .filter((item) => item.trim())
             .map((item) => (
               <li
                 key={item}
+                className="flex items-start gap-[0.55em]"
                 style={textStyle(slide.bulletsFontSize, slide.bulletsColor, mode)}
               >
-                {item}
+                <span className="shrink-0 leading-[1.35]" aria-hidden>
+                  ●
+                </span>
+                <span className="min-w-0 flex-1 leading-[1.35]">{item}</span>
               </li>
             ))}
         </ul>
@@ -297,15 +301,19 @@ export default function SlideCanvas({
               </p>
             ) : null}
             {slide.bullets.filter((item) => item.trim()).length > 0 ? (
-              <ul className="list-disc space-y-1 pl-5 font-bold">
+              <ul className="space-y-1 font-bold">
                 {slide.bullets
                   .filter((item) => item.trim())
                   .map((item) => (
                     <li
                       key={item}
+                      className="flex items-start gap-[0.55em]"
                       style={textStyle(slide.bulletsFontSize, slide.bulletsColor, mode)}
                     >
-                      {item}
+                      <span className="shrink-0 leading-[1.35]" aria-hidden>
+                        ●
+                      </span>
+                      <span className="min-w-0 flex-1 leading-[1.35]">{item}</span>
                     </li>
                   ))}
               </ul>

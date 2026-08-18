@@ -21,7 +21,7 @@ export default function SlideTextStyleControls({
   color,
   onFontSizeChange,
   onColorChange,
-  sizeLabel = 'Font size',
+  sizeLabel = 'Size',
 }: SlideTextStyleControlsProps) {
   return (
     <div className="flex flex-wrap items-center gap-3 pt-1">
