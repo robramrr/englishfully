@@ -18,10 +18,12 @@ import {
 } from '@/lib/presentation/storage';
 import {
   createEmptyDeck,
+  createEmptyDescribeWord,
   createEmptySlide,
   normalizeDeck,
   PRESENTATION_CHOICE_LETTERS,
   type PresentationDeck,
+  type PresentationDescribeWord,
   type PresentationSlide,
   type PresentationSlideLayout,
 } from '@/lib/presentation/types';
@@ -32,6 +34,7 @@ const LAYOUT_OPTIONS: { value: PresentationSlideLayout; label: string }[] = [
   { value: 'bullets', label: 'Bullets' },
   { value: 'image', label: 'Image focus' },
   { value: 'audio_image', label: 'Audio + image' },
+  { value: 'describe_image', label: 'Describe + image' },
 ];
 
 function updateSlide(
@@ -63,6 +66,9 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
   const [previewIndex, setPreviewIndex] = useState(0);
   const [hydrated, setHydrated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [describeAnalyzing, setDescribeAnalyzing] = useState(false);
+  const [newDescribeWord, setNewDescribeWord] = useState('');
+  const [newDescribeMatches, setNewDescribeMatches] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -165,6 +171,59 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
     const [item] = next.splice(index, 1);
     next.splice(target, 0, item);
     setDeck((prev) => ({ ...prev, slides: next }));
+  }
+
+  async function handleAnalyzeDescribeImage() {
+    if (!selected?.imageUrl.trim()) {
+      setError('Paste an image URL first.');
+      return;
+    }
+    setDescribeAnalyzing(true);
+    setError('');
+    setMessage('');
+    try {
+      const response = await fetch('/api/presentation/describe-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_url: selected.imageUrl.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to analyze image');
+      }
+      const matches = Array.isArray(data.matches) ? data.matches : [];
+      const distractors = Array.isArray(data.distractors) ? data.distractors : [];
+      const describeWords: PresentationDescribeWord[] = [
+        ...matches.map((text: unknown) =>
+          createEmptyDescribeWord({ text: String(text ?? ''), matches: true })
+        ),
+        ...distractors.map((text: unknown) =>
+          createEmptyDescribeWord({ text: String(text ?? ''), matches: false })
+        ),
+      ].filter((word) => word.text);
+      setDeck((prev) => updateSlide(prev, selected.id, { describeWords }));
+      setMessage(
+        `Added ${describeWords.filter((w) => w.matches).length} matches and ${
+          describeWords.filter((w) => !w.matches).length
+        } distractors.`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to analyze image');
+    } finally {
+      setDescribeAnalyzing(false);
+    }
+  }
+
+  function handleAddDescribeWord() {
+    if (!selected) return;
+    const text = newDescribeWord.trim();
+    if (!text) return;
+    const next = [
+      ...selected.describeWords,
+      createEmptyDescribeWord({ text, matches: newDescribeMatches }),
+    ];
+    setDeck((prev) => updateSlide(prev, selected.id, { describeWords: next }));
+    setNewDescribeWord('');
   }
 
   function handleReset() {
@@ -460,7 +519,9 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                         ? 'Definition / explanation'
                         : selected.layout === 'audio_image'
                           ? 'Prompt (optional)'
-                          : 'Text'}
+                          : selected.layout === 'describe_image'
+                            ? 'Prompt (optional)'
+                            : 'Text'}
                   </ComicText>
                   <textarea
                     className="comic-textarea w-full min-h-[120px]"
@@ -614,6 +675,239 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                           />
                         </label>
                       ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {selected.layout === 'describe_image' ? (
+                  <div className="space-y-4">
+                    <label className="block space-y-1">
+                      <ComicText className="text-sm font-bold">Image URL</ComicText>
+                      <input
+                        className="comic-input w-full"
+                        value={selected.imageUrl}
+                        onChange={(event) =>
+                          setDeck((prev) =>
+                            updateSlide(prev, selected.id, {
+                              imageUrl: event.target.value.trim(),
+                            })
+                          )
+                        }
+                        placeholder="https://…"
+                      />
+                    </label>
+                    <label className="block space-y-1">
+                      <ComicText className="text-sm font-bold">Image alt text</ComicText>
+                      <input
+                        className="comic-input w-full"
+                        value={selected.imageAlt}
+                        onChange={(event) =>
+                          setDeck((prev) =>
+                            updateSlide(prev, selected.id, {
+                              imageAlt: event.target.value,
+                            })
+                          )
+                        }
+                        placeholder="Describe the image"
+                      />
+                    </label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <ComicButton
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={describeAnalyzing || !selected.imageUrl.trim()}
+                        onClick={() => void handleAnalyzeDescribeImage()}
+                      >
+                        {describeAnalyzing ? 'Analyzing…' : 'Analyze image'}
+                      </ComicButton>
+                      <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+                        Suggests matches + distractors from the picture (replaces the word bank).
+                      </ComicText>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="block space-y-1">
+                        <ComicText className="text-sm font-bold">Words needed to finish</ComicText>
+                        <input
+                          type="number"
+                          min={1}
+                          max={50}
+                          className="comic-input w-full"
+                          value={selected.describeWordsNeeded}
+                          onChange={(event) =>
+                            setDeck((prev) =>
+                              updateSlide(prev, selected.id, {
+                                describeWordsNeeded: Math.max(
+                                  1,
+                                  Math.min(50, Number(event.target.value) || 1)
+                                ),
+                              })
+                            )
+                          }
+                        />
+                      </label>
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <ComicText className="text-sm font-bold">Optional timer</ComicText>
+                          <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
+                            <span className="text-sm">
+                              {selected.describeTimerEnabled ? 'On' : 'Off'}
+                            </span>
+                            <input
+                              type="checkbox"
+                              className="h-5 w-9 accent-[var(--comic-primary)]"
+                              checked={selected.describeTimerEnabled}
+                              onChange={(event) =>
+                                setDeck((prev) =>
+                                  updateSlide(prev, selected.id, {
+                                    describeTimerEnabled: event.target.checked,
+                                  })
+                                )
+                              }
+                            />
+                          </label>
+                        </div>
+                        {selected.describeTimerEnabled ? (
+                          <label className="block space-y-1">
+                            <ComicText className="text-sm font-bold">Seconds</ComicText>
+                            <input
+                              type="number"
+                              min={5}
+                              max={600}
+                              className="comic-input w-full"
+                              value={selected.describeTimerSeconds}
+                              onChange={(event) =>
+                                setDeck((prev) =>
+                                  updateSlide(prev, selected.id, {
+                                    describeTimerSeconds: Math.max(
+                                      5,
+                                      Math.min(600, Number(event.target.value) || 60)
+                                    ),
+                                  })
+                                )
+                              }
+                              placeholder="25, 60…"
+                            />
+                          </label>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
+                      <div>
+                        <ComicText className="font-black">Word bank</ComicText>
+                        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+                          Green tags = match the image. Red tags = distractors. Toggle Match on
+                          each word.
+                        </ComicText>
+                      </div>
+                      <div className="flex flex-wrap items-end gap-2">
+                        <label className="min-w-[12rem] flex-1 space-y-1">
+                          <ComicText className="text-sm font-bold">Add word</ComicText>
+                          <input
+                            className="comic-input w-full"
+                            value={newDescribeWord}
+                            onChange={(event) => setNewDescribeWord(event.target.value)}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter') {
+                                event.preventDefault();
+                                handleAddDescribeWord();
+                              }
+                            }}
+                            placeholder="noun or adjective"
+                          />
+                        </label>
+                        <label className="inline-flex items-center gap-2 pb-2 font-bold">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 accent-[var(--comic-primary)]"
+                            checked={newDescribeMatches}
+                            onChange={(event) => setNewDescribeMatches(event.target.checked)}
+                          />
+                          <span className="text-sm">Match</span>
+                        </label>
+                        <ComicButton
+                          type="button"
+                          variant="accent"
+                          size="sm"
+                          onClick={handleAddDescribeWord}
+                        >
+                          Add
+                        </ComicButton>
+                      </div>
+                      {selected.describeWords.length === 0 ? (
+                        <ComicText className="text-sm font-bold text-[var(--comic-dark)]/60">
+                          No words yet — Analyze or add them manually.
+                        </ComicText>
+                      ) : (
+                        <ul className="space-y-2">
+                          {selected.describeWords.map((word) => (
+                            <li
+                              key={word.id}
+                              className="flex flex-wrap items-center gap-2 rounded-md border-2 border-[var(--comic-black)] bg-white px-2 py-1.5"
+                            >
+                              <input
+                                className="comic-input min-w-[8rem] flex-1"
+                                value={word.text}
+                                onChange={(event) => {
+                                  const text = event.target.value;
+                                  setDeck((prev) =>
+                                    updateSlide(prev, selected.id, {
+                                      describeWords: selected.describeWords.map((item) =>
+                                        item.id === word.id ? { ...item, text } : item
+                                      ),
+                                    })
+                                  );
+                                }}
+                              />
+                              <label className="inline-flex items-center gap-1.5 font-bold text-sm">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 accent-[#15803d]"
+                                  checked={word.matches}
+                                  onChange={(event) =>
+                                    setDeck((prev) =>
+                                      updateSlide(prev, selected.id, {
+                                        describeWords: selected.describeWords.map((item) =>
+                                          item.id === word.id
+                                            ? { ...item, matches: event.target.checked }
+                                            : item
+                                        ),
+                                      })
+                                    )
+                                  }
+                                />
+                                Match
+                              </label>
+                              <span
+                                className="rounded px-2 py-0.5 text-xs font-black text-white"
+                                style={{
+                                  backgroundColor: word.matches ? '#15803d' : '#ea1225',
+                                }}
+                              >
+                                {word.matches ? 'green' : 'red'}
+                              </span>
+                              <ComicButton
+                                type="button"
+                                variant="accent"
+                                size="sm"
+                                onClick={() =>
+                                  setDeck((prev) =>
+                                    updateSlide(prev, selected.id, {
+                                      describeWords: selected.describeWords.filter(
+                                        (item) => item.id !== word.id
+                                      ),
+                                    })
+                                  )
+                                }
+                              >
+                                Remove
+                              </ComicButton>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   </div>
                 ) : null}

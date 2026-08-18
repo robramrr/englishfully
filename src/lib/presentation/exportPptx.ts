@@ -175,6 +175,77 @@ export async function buildPresentationPptxBuffer(
           });
         }
       }
+    } else if (slide.layout === 'describe_image') {
+      page.addText(slide.title || 'Describe the image', {
+        x: 0.6,
+        y: 0.45,
+        w: 12.1,
+        h: 0.7,
+        fontSize: 28,
+        bold: true,
+        color: NAVY,
+        fontFace: 'Arial',
+      });
+      let y = 1.25;
+      if (slide.body.trim()) {
+        page.addText(slide.body, {
+          x: 0.6,
+          y,
+          w: slide.imageUrl.trim() ? 6.8 : 12.1,
+          h: 0.6,
+          fontSize: 16,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+        });
+        y += 0.7;
+      }
+      page.addText(
+        `Find ${slide.describeWordsNeeded || 10} matching words${
+          slide.describeTimerEnabled
+            ? ` · ${slide.describeTimerSeconds || 60}s timer`
+            : ''
+        }`,
+        {
+          x: 0.6,
+          y,
+          w: slide.imageUrl.trim() ? 6.8 : 12.1,
+          h: 0.4,
+          fontSize: 14,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+        }
+      );
+      y += 0.5;
+      const wordLine = (slide.describeWords || [])
+        .map((word) => `${word.text}${word.matches ? '' : ' (×)'}`)
+        .join(', ');
+      if (wordLine) {
+        page.addText(wordLine, {
+          x: 0.6,
+          y,
+          w: slide.imageUrl.trim() ? 6.8 : 12.1,
+          h: 2.4,
+          fontSize: 16,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+          valign: 'top',
+        });
+      }
+      if (slide.imageUrl.trim()) {
+        const imageData = await fetchImageAsBase64(slide.imageUrl);
+        if (imageData) {
+          page.addImage({
+            data: imageData,
+            x: 7.6,
+            y: 1.25,
+            w: 5.1,
+            h: 4.2,
+          });
+        }
+      }
     } else {
       page.addText(slide.title || 'Untitled slide', {
         x: 0.6,

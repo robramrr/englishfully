@@ -3,9 +3,54 @@ export type PresentationSlideLayout =
   | 'content'
   | 'bullets'
   | 'image'
-  | 'audio_image';
+  | 'audio_image'
+  | 'describe_image';
 
 export type PresentationChoiceLetter = 'A' | 'B' | 'C' | 'D';
+
+export interface PresentationDescribeWord {
+  id: string;
+  text: string;
+  /** True = matches the image (green). False = distractor (red). */
+  matches: boolean;
+}
+
+export function createDescribeWordId(): string {
+  return `dw_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function createEmptyDescribeWord(
+  patch: Partial<PresentationDescribeWord> = {}
+): PresentationDescribeWord {
+  return {
+    id: patch.id || createDescribeWordId(),
+    text: String(patch.text ?? '').trim(),
+    matches: patch.matches !== false,
+  };
+}
+
+function normalizeDescribeWords(value: unknown): PresentationDescribeWord[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const raw = item as Partial<PresentationDescribeWord>;
+      const text = String(raw.text ?? '').trim();
+      if (!text) return null;
+      return createEmptyDescribeWord({
+        id: raw.id,
+        text,
+        matches: raw.matches !== false,
+      });
+    })
+    .filter((item): item is PresentationDescribeWord => Boolean(item));
+}
+
+function normalizePositiveInt(value: unknown, fallback: number, max = 50): number {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n) || n < 1) return fallback;
+  return Math.min(max, n);
+}
 
 export const PRESENTATION_CHOICE_LETTERS: PresentationChoiceLetter[] = [
   'A',
@@ -214,6 +259,14 @@ export interface PresentationSlide {
   choiceImages: string[];
   /** @deprecated Synced from audioTracks[0]. */
   correctChoice: PresentationChoiceLetter;
+  /** Describe + image: word bank (matches + distractors). */
+  describeWords: PresentationDescribeWord[];
+  /** How many matching words students must find to complete. */
+  describeWordsNeeded: number;
+  /** Optional countdown timer during play. */
+  describeTimerEnabled: boolean;
+  /** Countdown length in seconds when timer is on. */
+  describeTimerSeconds: number;
 }
 
 export type PresentationStatus = 'draft' | 'published';
@@ -276,6 +329,10 @@ export function createEmptySlide(
     audioClipText: '',
     choiceImages: ['', '', '', ''],
     correctChoice: 'A',
+    describeWords: [],
+    describeWordsNeeded: 10,
+    describeTimerEnabled: false,
+    describeTimerSeconds: 60,
   };
 }
 
@@ -322,6 +379,10 @@ export function normalizeSlide(
     audioClipText: first.clipText,
     choiceImages: normalizeChoiceImages(slide.choiceImages),
     correctChoice: first.correctChoice,
+    describeWords: normalizeDescribeWords(slide.describeWords),
+    describeWordsNeeded: normalizePositiveInt(slide.describeWordsNeeded, 10),
+    describeTimerEnabled: Boolean(slide.describeTimerEnabled),
+    describeTimerSeconds: normalizePositiveInt(slide.describeTimerSeconds, 60, 600),
   };
 }
 

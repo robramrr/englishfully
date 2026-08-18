@@ -8,6 +8,7 @@ import {
 } from '@/lib/presentation/types';
 import { GrammarLiveTextBox } from './GrammarHighlight';
 import PresentationAudioMatch from './PresentationAudioMatch';
+import PresentationDescribeImage from './PresentationDescribeImage';
 import type { CSSProperties } from 'react';
 
 interface SlideCanvasProps {
@@ -342,6 +343,30 @@ export default function SlideCanvas({
             ) : null}
             <div className="min-h-0 flex-1">
               <PresentationAudioMatch slide={slide} present={present} compact={compact} />
+            </div>
+          </div>
+        ) : null}
+
+        {slide.layout === 'describe_image' ? (
+          <div className="flex flex-1 min-h-0 flex-col gap-3">
+            <h2
+              className={[
+                'font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
+                compact ? 'text-base' : present ? 'text-2xl md:text-4xl' : 'text-xl md:text-3xl',
+              ].join(' ')}
+            >
+              {title || 'Describe the image'}
+            </h2>
+            {body ? (
+              <p
+                className="font-bold whitespace-pre-wrap"
+                style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}
+              >
+                {body}
+              </p>
+            ) : null}
+            <div className="min-h-0 flex-1">
+              <PresentationDescribeImage slide={slide} present={present} compact={compact} />
             </div>
           </div>
         ) : null}

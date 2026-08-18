@@ -97,7 +97,31 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                        : ''
                    }
                    ${
+                     slide.layout === 'describe_image'
+                       ? `<p class="body"><strong>Describe + image</strong> — find ${
+                           slide.describeWordsNeeded || 10
+                         } matching words${
+                           slide.describeTimerEnabled
+                             ? ` · timer ${slide.describeTimerSeconds || 60}s`
+                             : ''
+                         }</p>
+                          <p class="body">${escapeHtml(
+                            (slide.describeWords || [])
+                              .map((word) => `${word.text}${word.matches ? '' : ' (×)'}`)
+                              .join(', ')
+                          )}</p>
+                          ${
+                            slide.imageUrl.trim()
+                              ? `<img src="${escapeAttr(slide.imageUrl)}" alt="${escapeAttr(
+                                  slide.imageAlt || title
+                                )}" />`
+                              : ''
+                          }`
+                       : ''
+                   }
+                   ${
                      slide.layout !== 'audio_image' &&
+                     slide.layout !== 'describe_image' &&
                      slide.grammarHighlighterEnabled &&
                      slide.grammarText.trim()
                        ? `<div class="grammar"><strong>Practice:</strong> ${escapeHtml(
@@ -106,7 +130,9 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                        : ''
                    }
                    ${
-                     slide.layout !== 'audio_image' && slide.imageUrl.trim()
+                     slide.layout !== 'audio_image' &&
+                     slide.layout !== 'describe_image' &&
+                     slide.imageUrl.trim()
                        ? `<img src="${escapeAttr(slide.imageUrl)}" alt="${escapeAttr(
                            slide.imageAlt || title
                          )}" />`
