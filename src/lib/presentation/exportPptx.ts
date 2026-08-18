@@ -98,6 +98,77 @@ export async function buildPresentationPptxBuffer(
           fontFace: 'Arial',
         });
       }
+    } else if (slide.layout === 'audio_image') {
+      page.addText(slide.title || 'Listen and choose', {
+        x: 0.6,
+        y: 0.45,
+        w: 12.1,
+        h: 0.7,
+        fontSize: 28,
+        bold: true,
+        color: NAVY,
+        fontFace: 'Arial',
+      });
+      let y = 1.25;
+      if (slide.body.trim()) {
+        page.addText(slide.body, {
+          x: 0.6,
+          y,
+          w: 12.1,
+          h: 0.6,
+          fontSize: 16,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+        });
+        y += 0.7;
+      }
+      page.addText(
+        `Audio clip${slide.audioUrl ? '' : ' (missing URL)'} · ${Number(
+          slide.audioStartSeconds
+        ).toFixed(1)}s–${Number(slide.audioEndSeconds).toFixed(1)}s · Correct: ${
+          slide.correctChoice
+        }`,
+        {
+          x: 0.6,
+          y,
+          w: 12.1,
+          h: 0.4,
+          fontSize: 14,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+        }
+      );
+      y += 0.55;
+      const choiceW = 2.8;
+      const gap = 0.25;
+      for (let i = 0; i < 4; i += 1) {
+        const url = String(slide.choiceImages?.[i] ?? '').trim();
+        if (!url) continue;
+        const letter = ['A', 'B', 'C', 'D'][i];
+        const x = 0.6 + i * (choiceW + gap);
+        page.addText(`${letter}${slide.correctChoice === letter ? ' ✓' : ''}`, {
+          x,
+          y,
+          w: choiceW,
+          h: 0.35,
+          fontSize: 14,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+        });
+        const imageData = await fetchImageAsBase64(url);
+        if (imageData) {
+          page.addImage({
+            data: imageData,
+            x,
+            y: y + 0.4,
+            w: choiceW,
+            h: 2.8,
+          });
+        }
+      }
     } else {
       page.addText(slide.title || 'Untitled slide', {
         x: 0.6,

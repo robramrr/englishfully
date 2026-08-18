@@ -9,6 +9,7 @@ import SlideCanvas from './SlideCanvas';
 import PresentationPreview from './PresentationPreview';
 import PresentationShareBar from './PresentationShareBar';
 import SlideTextStyleControls from './SlideTextStyleControls';
+import PresentationAudioClipEditor from './PresentationAudioClipEditor';
 import { structurePastedContent, cleanSlideText } from '@/lib/presentation/parsePaste';
 import {
   clearPresentationDraftById,
@@ -19,6 +20,8 @@ import {
   createEmptyDeck,
   createEmptySlide,
   normalizeDeck,
+  PRESENTATION_CHOICE_LETTERS,
+  type PresentationChoiceLetter,
   type PresentationDeck,
   type PresentationSlide,
   type PresentationSlideLayout,
@@ -29,6 +32,7 @@ const LAYOUT_OPTIONS: { value: PresentationSlideLayout; label: string }[] = [
   { value: 'content', label: 'Text + image' },
   { value: 'bullets', label: 'Bullets' },
   { value: 'image', label: 'Image focus' },
+  { value: 'audio_image', label: 'Audio + image' },
 ];
 
 function updateSlide(
@@ -455,7 +459,9 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                       ? 'Subtitle'
                       : selected.layout === 'content'
                         ? 'Definition / explanation'
-                        : 'Text'}
+                        : selected.layout === 'audio_image'
+                          ? 'Prompt (optional)'
+                          : 'Text'}
                   </ComicText>
                   <textarea
                     className="comic-textarea w-full min-h-[120px]"
@@ -574,6 +580,68 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                     </label>
                   </>
                 )}
+
+                {selected.layout === 'audio_image' ? (
+                  <div className="space-y-4">
+                    <PresentationAudioClipEditor
+                      slide={selected}
+                      onChange={(patch) =>
+                        setDeck((prev) => updateSlide(prev, selected.id, patch))
+                      }
+                    />
+                    <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
+                      <div>
+                        <ComicText className="font-black">Choice images (A–D)</ComicText>
+                        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+                          Add up to four image URLs. Students tap one after listening.
+                        </ComicText>
+                      </div>
+                      {PRESENTATION_CHOICE_LETTERS.map((letter, index) => (
+                        <label key={letter} className="block space-y-1">
+                          <ComicText className="text-sm font-bold">Image {letter}</ComicText>
+                          <input
+                            className="comic-input w-full"
+                            value={selected.choiceImages[index] || ''}
+                            onChange={(event) => {
+                              const next = [...selected.choiceImages];
+                              while (next.length < 4) next.push('');
+                              next[index] = event.target.value.trim();
+                              setDeck((prev) =>
+                                updateSlide(prev, selected.id, { choiceImages: next.slice(0, 4) })
+                              );
+                            }}
+                            placeholder="https://…"
+                          />
+                        </label>
+                      ))}
+                      <div className="space-y-2">
+                        <ComicText className="text-sm font-bold">Correct answer</ComicText>
+                        <div className="flex flex-wrap gap-3">
+                          {PRESENTATION_CHOICE_LETTERS.map((letter) => (
+                            <label
+                              key={letter}
+                              className="inline-flex items-center gap-2 font-bold"
+                            >
+                              <input
+                                type="radio"
+                                name={`correct-choice-${selected.id}`}
+                                checked={selected.correctChoice === letter}
+                                onChange={() =>
+                                  setDeck((prev) =>
+                                    updateSlide(prev, selected.id, {
+                                      correctChoice: letter as PresentationChoiceLetter,
+                                    })
+                                  )
+                                }
+                              />
+                              {letter}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
 
                 {selected.layout === 'content' ? (
                   <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">

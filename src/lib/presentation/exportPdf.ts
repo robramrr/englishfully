@@ -65,14 +65,40 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                        : ''
                    }
                    ${
-                     slide.grammarHighlighterEnabled && slide.grammarText.trim()
+                     slide.layout === 'audio_image'
+                       ? `<p class="body"><strong>Audio + image</strong>${
+                           slide.audioUrl
+                             ? ` — audio clip (${Number(slide.audioStartSeconds).toFixed(1)}s–${Number(
+                                 slide.audioEndSeconds
+                               ).toFixed(1)}s)`
+                             : ''
+                         } · Correct: ${escapeHtml(slide.correctChoice)}</p>
+                          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            ${['A', 'B', 'C', 'D']
+                              .map((letter, i) => {
+                                const url = String(slide.choiceImages?.[i] ?? '').trim();
+                                if (!url) return '';
+                                return `<div style="width:22%;min-width:120px;"><strong>${letter}${
+                                  slide.correctChoice === letter ? ' ✓' : ''
+                                }</strong><br/><img src="${escapeAttr(
+                                  url
+                                )}" alt="${letter}" style="max-width:100%;max-height:140px;object-fit:cover;border:3px solid #001a48;" /></div>`;
+                              })
+                              .join('')}
+                          </div>`
+                       : ''
+                   }
+                   ${
+                     slide.layout !== 'audio_image' &&
+                     slide.grammarHighlighterEnabled &&
+                     slide.grammarText.trim()
                        ? `<div class="grammar"><strong>Practice:</strong> ${escapeHtml(
                            slide.grammarText
                          )}</div>`
                        : ''
                    }
                    ${
-                     slide.imageUrl.trim()
+                     slide.layout !== 'audio_image' && slide.imageUrl.trim()
                        ? `<img src="${escapeAttr(slide.imageUrl)}" alt="${escapeAttr(
                            slide.imageAlt || title
                          )}" />`

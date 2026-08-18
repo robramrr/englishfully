@@ -1,4 +1,18 @@
-export type PresentationSlideLayout = 'title' | 'content' | 'bullets' | 'image';
+export type PresentationSlideLayout =
+  | 'title'
+  | 'content'
+  | 'bullets'
+  | 'image'
+  | 'audio_image';
+
+export type PresentationChoiceLetter = 'A' | 'B' | 'C' | 'D';
+
+export const PRESENTATION_CHOICE_LETTERS: PresentationChoiceLetter[] = [
+  'A',
+  'B',
+  'C',
+  'D',
+];
 
 /** Slide body / bullets type scale. */
 export type PresentationFontSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -60,6 +74,25 @@ function normalizeFontColor(value: unknown): PresentationFontColor {
   return 'navy';
 }
 
+function normalizeChoiceLetter(value: unknown): PresentationChoiceLetter {
+  const letter = String(value ?? '')
+    .trim()
+    .toUpperCase();
+  if (letter === 'B' || letter === 'C' || letter === 'D') return letter;
+  return 'A';
+}
+
+function normalizeChoiceImages(value: unknown): string[] {
+  const raw = Array.isArray(value) ? value : [];
+  return [0, 1, 2, 3].map((index) => String(raw[index] ?? '').trim());
+}
+
+function normalizeSeconds(value: unknown, fallback = 0): number {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return fallback;
+  return Number(n.toFixed(2));
+}
+
 export interface PresentationSlide {
   id: string;
   layout: PresentationSlideLayout;
@@ -87,6 +120,20 @@ export interface PresentationSlide {
   grammarCustomPlaceholderEnabled: boolean;
   /** Multi-line custom placeholder (e.g. sentence frames). */
   grammarPlaceholder: string;
+  /** Audio + image: full audio URL (same pattern as Listen & Learn). */
+  audioUrl: string;
+  /** Clip start within audioUrl. */
+  audioStartSeconds: number;
+  /** Clip end within audioUrl. */
+  audioEndSeconds: number;
+  /** Optional transcript text for the clip editor. */
+  audioTranscript: string;
+  /** Optional label / sentence for the selected clip. */
+  audioClipText: string;
+  /** Choice image URLs for A–D (empty string = unused slot). */
+  choiceImages: string[];
+  /** Correct multiple-choice letter. */
+  correctChoice: PresentationChoiceLetter;
 }
 
 export type PresentationStatus = 'draft' | 'published';
@@ -141,6 +188,13 @@ export function createEmptySlide(
     grammarText: '',
     grammarCustomPlaceholderEnabled: false,
     grammarPlaceholder: '',
+    audioUrl: '',
+    audioStartSeconds: 0,
+    audioEndSeconds: 5,
+    audioTranscript: '',
+    audioClipText: '',
+    choiceImages: ['', '', '', ''],
+    correctChoice: 'A',
   };
 }
 
@@ -171,6 +225,16 @@ export function normalizeSlide(
     grammarText: String(slide.grammarText ?? ''),
     grammarCustomPlaceholderEnabled: Boolean(slide.grammarCustomPlaceholderEnabled),
     grammarPlaceholder: String(slide.grammarPlaceholder ?? ''),
+    audioUrl: String(slide.audioUrl ?? ''),
+    audioStartSeconds: normalizeSeconds(slide.audioStartSeconds, 0),
+    audioEndSeconds: Math.max(
+      normalizeSeconds(slide.audioStartSeconds, 0) + 0.5,
+      normalizeSeconds(slide.audioEndSeconds, 5)
+    ),
+    audioTranscript: String(slide.audioTranscript ?? ''),
+    audioClipText: String(slide.audioClipText ?? ''),
+    choiceImages: normalizeChoiceImages(slide.choiceImages),
+    correctChoice: normalizeChoiceLetter(slide.correctChoice),
   };
 }
 

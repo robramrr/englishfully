@@ -138,7 +138,9 @@ export default function PresentationPreview({
         target &&
         (target.tagName === 'TEXTAREA' ||
           target.tagName === 'INPUT' ||
-          target.isContentEditable);
+          target.tagName === 'BUTTON' ||
+          target.isContentEditable ||
+          target.getAttribute('role') === 'slider');
       if (typing) return;
 
       if (event.key === 'Escape') {
