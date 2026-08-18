@@ -3,8 +3,8 @@ export type PresentationSlideLayout = 'title' | 'content' | 'bullets' | 'image';
 /** Slide body / bullets type scale. */
 export type PresentationFontSize = 'sm' | 'md' | 'lg' | 'xl';
 
-/** Theme palette only (brand navy / red / gray / white). */
-export type PresentationFontColor = 'navy' | 'red' | 'gray' | 'white';
+/** Brand navy / red plus readable greys for slide text. */
+export type PresentationFontColor = 'navy' | 'red' | 'mediumGray' | 'softGray';
 
 export const PRESENTATION_FONT_SIZES: {
   value: PresentationFontSize;
@@ -23,8 +23,8 @@ export const PRESENTATION_FONT_COLORS: {
 }[] = [
   { value: 'navy', label: 'Navy', cssVar: 'var(--brand-navy)' },
   { value: 'red', label: 'Red', cssVar: 'var(--brand-red)' },
-  { value: 'gray', label: 'Gray', cssVar: 'var(--brand-gray)' },
-  { value: 'white', label: 'White', cssVar: 'var(--brand-white)' },
+  { value: 'mediumGray', label: 'Medium grey', cssVar: 'var(--brand-medium-gray)' },
+  { value: 'softGray', label: 'Soft grey', cssVar: 'var(--brand-soft-gray)' },
 ];
 
 export function presentationFontColorCss(
@@ -34,29 +34,19 @@ export function presentationFontColorCss(
   return match?.cssVar ?? 'var(--brand-navy)';
 }
 
-export function presentationFontSizeClass(
+/** Explicit px sizes so slide text scale always applies (not Tailwind-scanned classes). */
+export function presentationFontSizePx(
   size: PresentationFontSize | string | undefined,
   mode: 'compact' | 'default' | 'present'
-): string {
+): number {
   const key: PresentationFontSize =
     size === 'sm' || size === 'lg' || size === 'xl' ? size : 'md';
-  if (mode === 'compact') {
-    return { sm: 'text-[10px]', md: 'text-xs', lg: 'text-sm', xl: 'text-base' }[key];
-  }
-  if (mode === 'present') {
-    return {
-      sm: 'text-lg md:text-2xl',
-      md: 'text-xl md:text-3xl',
-      lg: 'text-2xl md:text-4xl',
-      xl: 'text-3xl md:text-5xl',
-    }[key];
-  }
-  return {
-    sm: 'text-sm md:text-base',
-    md: 'text-base md:text-xl',
-    lg: 'text-lg md:text-2xl',
-    xl: 'text-xl md:text-3xl',
-  }[key];
+  const scales = {
+    compact: { sm: 10, md: 12, lg: 14, xl: 16 },
+    default: { sm: 14, md: 18, lg: 24, xl: 32 },
+    present: { sm: 20, md: 28, lg: 40, xl: 56 },
+  } as const;
+  return scales[mode][key];
 }
 
 function normalizeFontSize(value: unknown): PresentationFontSize {
@@ -64,7 +54,10 @@ function normalizeFontSize(value: unknown): PresentationFontSize {
 }
 
 function normalizeFontColor(value: unknown): PresentationFontColor {
-  return value === 'red' || value === 'gray' || value === 'white' ? value : 'navy';
+  if (value === 'red') return 'red';
+  if (value === 'mediumGray' || value === 'gray') return 'mediumGray';
+  if (value === 'softGray' || value === 'white') return 'softGray';
+  return 'navy';
 }
 
 export interface PresentationSlide {

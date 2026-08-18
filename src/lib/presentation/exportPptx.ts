@@ -13,15 +13,15 @@ const WHITE = 'FFFFFF';
 
 function pptxFontColor(color: PresentationFontColor | undefined): string {
   if (color === 'red') return RED;
-  if (color === 'gray') return GRAY;
-  if (color === 'white') return WHITE;
+  if (color === 'mediumGray') return '6B7588';
+  if (color === 'softGray') return 'A8AEB8';
   return NAVY;
 }
 
 function pptxFontSize(size: PresentationFontSize | undefined, base = 18): number {
   if (size === 'sm') return Math.max(12, base - 4);
-  if (size === 'lg') return base + 4;
-  if (size === 'xl') return base + 8;
+  if (size === 'lg') return base + 6;
+  if (size === 'xl') return base + 14;
   return base;
 }
 

@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
@@ -220,6 +221,7 @@ export function GrammarLiveTextBox({
   onChange,
   grammarTarget,
   className = '',
+  style,
   placeholder = 'Example...',
   editable = true,
 }: {
@@ -227,6 +229,7 @@ export function GrammarLiveTextBox({
   onChange?: (value: string) => void;
   grammarTarget: string;
   className?: string;
+  style?: CSSProperties;
   placeholder?: string;
   editable?: boolean;
 }) {
@@ -407,6 +410,7 @@ export function GrammarLiveTextBox({
               'pointer-events-none absolute inset-x-0 top-0 z-0 p-3 font-bold whitespace-pre-wrap text-[color-mix(in_srgb,var(--comic-dark)_45%,white)]',
               className,
             ].join(' ')}
+            style={style}
           >
             {placeholder}
           </div>
@@ -422,7 +426,7 @@ export function GrammarLiveTextBox({
             editable ? 'cursor-text' : 'cursor-default',
             className,
           ].join(' ')}
-          style={boxStyle}
+          style={{ ...style, ...(boxStyle || {}) }}
           onInput={handleInput}
           onKeyDown={handleKeyDown}
           onPaste={(event) => {

@@ -10,8 +10,8 @@ function safeFilename(value: string): string {
 
 function pdfColor(color: PresentationFontColor | undefined): string {
   if (color === 'red') return '#ea1225';
-  if (color === 'gray') return '#e5e5e4';
-  if (color === 'white') return '#ffffff';
+  if (color === 'mediumGray') return '#6b7588';
+  if (color === 'softGray') return '#a8aeb8';
   return '#001a48';
 }
 

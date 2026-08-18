@@ -6,6 +6,8 @@
   --brand-red: #ea1225;
   --brand-white: #ffffff;
   --brand-gray: #e5e5e4;
+  --brand-medium-gray: #6b7588;
+  --brand-soft-gray: #a8aeb8;
   --comic-accent-light-gradient: linear-gradient(
     135deg,
     color-mix(in srgb, var(--brand-navy) 40%, var(--brand-gray)) 0%,
@@ -54,6 +56,8 @@
   --color-brand-red: var(--brand-red);
   --color-brand-white: var(--brand-white);
   --color-brand-gray: var(--brand-gray);
+  --color-brand-medium-gray: var(--brand-medium-gray);
+  --color-brand-soft-gray: var(--brand-soft-gray);
 
   --color-comic-primary: var(--comic-primary);
   --color-comic-secondary: var(--comic-secondary);

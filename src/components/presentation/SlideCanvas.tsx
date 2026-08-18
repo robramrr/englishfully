@@ -2,11 +2,12 @@
 
 import {
   presentationFontColorCss,
-  presentationFontSizeClass,
+  presentationFontSizePx,
   type PresentationDeck,
   type PresentationSlide,
 } from '@/lib/presentation/types';
 import { GrammarLiveTextBox } from './GrammarHighlight';
+import type { CSSProperties } from 'react';
 
 interface SlideCanvasProps {
   slide: PresentationSlide;
@@ -31,6 +32,18 @@ function sizeMode(
   if (compact) return 'compact';
   if (present) return 'present';
   return 'default';
+}
+
+function textStyle(
+  size: PresentationSlide['bodyFontSize'],
+  color: PresentationSlide['bodyColor'],
+  mode: 'compact' | 'default' | 'present'
+): CSSProperties {
+  return {
+    fontSize: `${presentationFontSizePx(size, mode)}px`,
+    color: presentationFontColorCss(color),
+    lineHeight: 1.35,
+  };
 }
 
 function SlideImage({ url, alt, className = '' }: { url: string; alt: string; className?: string }) {
@@ -72,38 +85,27 @@ function ContentBody({
   const grammarOn =
     slide.layout === 'content' && slide.grammarHighlighterEnabled;
   const mode = sizeMode(compact, present);
-
-  const bodyClass = [
-    'font-bold leading-relaxed whitespace-pre-wrap',
-    presentationFontSizeClass(slide.bodyFontSize, mode),
-  ].join(' ');
-
-  const bulletsClass = [
-    'list-disc space-y-1 pl-5 font-bold',
-    presentationFontSizeClass(slide.bulletsFontSize, mode),
-  ].join(' ');
-
-  const grammarClass = [
-    'font-bold leading-relaxed',
-    presentationFontSizeClass(slide.bodyFontSize, mode),
-  ].join(' ');
+  const bodyPx = presentationFontSizePx(slide.bodyFontSize, mode);
 
   return (
     <div className="space-y-3">
       {body ? (
-        <p className={bodyClass} style={{ color: presentationFontColorCss(slide.bodyColor) }}>
+        <p className="font-bold whitespace-pre-wrap" style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}>
           {body}
         </p>
       ) : (
-        <p className={`${bodyClass} text-[var(--comic-dark)]/50`}>
+        <p
+          className="font-bold whitespace-pre-wrap text-[var(--comic-dark)]/50"
+          style={{ fontSize: `${bodyPx}px`, lineHeight: 1.35 }}
+        >
           Add a definition or explanation…
         </p>
       )}
 
       {slide.bullets.filter((item) => item.trim()).length > 0 ? (
         <ul
-          className={bulletsClass}
-          style={{ color: presentationFontColorCss(slide.bulletsColor) }}
+          className="list-disc space-y-1 pl-5 font-bold"
+          style={textStyle(slide.bulletsFontSize, slide.bulletsColor, mode)}
         >
           {slide.bullets
             .filter((item) => item.trim())
@@ -120,7 +122,8 @@ function ContentBody({
           grammarTarget={slide.grammarTarget}
           editable={liveEditable && Boolean(onGrammarTextChange)}
           onChange={onGrammarTextChange}
-          className={grammarClass}
+          className="font-bold leading-relaxed"
+          style={{ fontSize: `${bodyPx}px`, lineHeight: 1.35 }}
           placeholder={
             slide.grammarCustomPlaceholderEnabled && slide.grammarPlaceholder.trim()
               ? slide.grammarPlaceholder
@@ -197,11 +200,8 @@ export default function SlideCanvas({
             </h2>
             {body ? (
               <p
-                className={[
-                  'max-w-4xl font-bold',
-                  presentationFontSizeClass(slide.bodyFontSize, mode),
-                ].join(' ')}
-                style={{ color: presentationFontColorCss(slide.bodyColor) }}
+                className="max-w-4xl font-bold whitespace-pre-wrap"
+                style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}
               >
                 {body}
               </p>
@@ -257,11 +257,8 @@ export default function SlideCanvas({
               {title}
             </h2>
             <ul
-              className={[
-                'flex-1 space-y-2 overflow-auto font-bold',
-                presentationFontSizeClass(slide.bulletsFontSize, mode),
-              ].join(' ')}
-              style={{ color: presentationFontColorCss(slide.bulletsColor) }}
+              className="flex-1 space-y-2 overflow-auto font-bold"
+              style={textStyle(slide.bulletsFontSize, slide.bulletsColor, mode)}
             >
               {(slide.bullets.length > 0 ? slide.bullets : ['Add bullet points…']).map((item) => (
                 <li
@@ -293,21 +290,16 @@ export default function SlideCanvas({
             />
             {body ? (
               <p
-                className={['font-bold', presentationFontSizeClass(slide.bodyFontSize, mode)].join(
-                  ' '
-                )}
-                style={{ color: presentationFontColorCss(slide.bodyColor) }}
+                className="font-bold whitespace-pre-wrap"
+                style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}
               >
                 {body}
               </p>
             ) : null}
             {slide.bullets.filter((item) => item.trim()).length > 0 ? (
               <ul
-                className={[
-                  'list-disc space-y-1 pl-5 font-bold',
-                  presentationFontSizeClass(slide.bulletsFontSize, mode),
-                ].join(' ')}
-                style={{ color: presentationFontColorCss(slide.bulletsColor) }}
+                className="list-disc space-y-1 pl-5 font-bold"
+                style={textStyle(slide.bulletsFontSize, slide.bulletsColor, mode)}
               >
                 {slide.bullets
                   .filter((item) => item.trim())
