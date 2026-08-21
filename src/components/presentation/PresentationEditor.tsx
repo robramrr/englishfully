@@ -279,6 +279,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
           setDeck(saved);
           setMessage('Presentation saved for sharing.');
         }}
+        onClearDraft={handleReset}
       />
 
       <ComicCard className="comic-shadow-xl space-y-4">
@@ -354,9 +355,6 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
           </ComicButton>
           <ComicButton type="button" variant="accent" size="sm" onClick={() => handleAddSlide('content')}>
             + Add slide
-          </ComicButton>
-          <ComicButton type="button" variant="warning" size="sm" onClick={handleReset}>
-            Clear draft
           </ComicButton>
         </div>
         {message ? (

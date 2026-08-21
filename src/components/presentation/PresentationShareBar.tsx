@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
-import ComicTitle from '../ComicTitle';
 import { generateQrDataUrl, getPresentationUrl } from '@/lib/presentation/qr';
 import { downloadPresentationPdf } from '@/lib/presentation/exportPdf';
 import type { PresentationDeck } from '@/lib/presentation/types';
@@ -12,11 +11,13 @@ import type { PresentationDeck } from '@/lib/presentation/types';
 interface PresentationShareBarProps {
   deck: PresentationDeck;
   onDeckSaved: (deck: PresentationDeck) => void;
+  onClearDraft: () => void;
 }
 
 export default function PresentationShareBar({
   deck,
   onDeckSaved,
+  onClearDraft,
 }: PresentationShareBarProps) {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState('');
@@ -148,87 +149,90 @@ export default function PresentationShareBar({
 
   return (
     <ComicCard className="comic-shadow-xl space-y-4">
-      <ComicTitle level={3} className="text-[var(--comic-primary)]">
-        Publish · Link · QR · PDF · PowerPoint
-      </ComicTitle>
-      <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-        {isPublished
-          ? 'This presentation is published. Update anytime, then publish again to refresh the live link.'
-          : 'Save your draft while editing. Publish when ready to get a share link and QR code.'}
-      </ComicText>
-      <ComicText className="text-sm font-black">
-        Status: {isPublished ? 'Published' : 'Draft'}
-      </ComicText>
-
-      <div className="flex flex-wrap gap-3">
-        <ComicButton
-          type="button"
-          variant="accent"
-          size="md"
-          disabled={saving}
-          onClick={() => void handleSaveDraft()}
-        >
-          {saving ? 'Saving…' : 'Save draft'}
-        </ComicButton>
-        <ComicButton
-          type="button"
-          variant="primary"
-          size="md"
-          disabled={saving}
-          onClick={() => void handlePublish()}
-        >
-          {saving ? 'Publishing…' : isPublished ? 'Publish update' : 'Publish & get link'}
-        </ComicButton>
-        <ComicButton
-          type="button"
-          variant="secondary"
-          size="md"
-          disabled={saving || (!shareUrl && !isPublished)}
-          onClick={() => void handleCopyLink()}
-        >
-          Copy link
-        </ComicButton>
-        <ComicButton
-          type="button"
-          variant="warning"
-          size="md"
-          disabled={Boolean(exporting)}
-          onClick={() => void handlePdf()}
-        >
-          {exporting === 'pdf' ? 'Opening…' : 'Download PDF'}
-        </ComicButton>
-        <ComicButton
-          type="button"
-          variant="accent"
-          size="md"
-          disabled={Boolean(exporting)}
-          onClick={() => void handlePptx()}
-        >
-          {exporting === 'pptx' ? 'Exporting…' : 'Download PowerPoint'}
-        </ComicButton>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <ComicButton type="button" variant="warning" size="md" onClick={onClearDraft}>
+            Clear draft
+          </ComicButton>
+          <ComicButton
+            type="button"
+            variant="accent"
+            size="md"
+            disabled={saving}
+            onClick={() => void handleSaveDraft()}
+          >
+            {saving ? 'Saving…' : 'Save draft'}
+          </ComicButton>
+          <ComicButton
+            type="button"
+            variant="primary"
+            size="md"
+            disabled={saving}
+            onClick={() => void handlePublish()}
+          >
+            {saving ? 'Publishing…' : 'Publish'}
+          </ComicButton>
+        </div>
+        <ComicText className="text-sm font-black">
+          Status: {isPublished ? 'Published' : 'Draft'}
+        </ComicText>
       </div>
 
-      {shareUrl && isPublished ? (
-        <div className="grid gap-4 md:grid-cols-[1fr_auto] items-start">
-          <div className="space-y-2 min-w-0">
-            <ComicText className="text-sm font-bold">Direct link</ComicText>
+      <hr className="border-t-4 border-[var(--comic-black)]" />
+
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          {shareUrl && isPublished ? (
             <a
               href={shareUrl}
               target="_blank"
               rel="noreferrer"
-              className="block break-all font-bold underline text-[var(--comic-secondary)]"
+              className="max-w-full break-all font-bold underline text-[var(--comic-secondary)]"
+              title={shareUrl}
             >
-              {shareUrl}
+              Direct link
             </a>
-          </div>
-          {qrCode ? (
-            <div className="justify-self-start md:justify-self-end border-4 border-[var(--comic-black)] bg-white p-2 comic-shadow-sm">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={qrCode} alt="Presentation QR code" width={160} height={160} />
-            </div>
-          ) : null}
+          ) : (
+            <ComicText className="text-sm font-bold text-[var(--comic-dark)]/60">
+              Direct link (publish to unlock)
+            </ComicText>
+          )}
+          <ComicButton
+            type="button"
+            variant="secondary"
+            size="md"
+            disabled={saving || (!shareUrl && !isPublished)}
+            onClick={() => void handleCopyLink()}
+          >
+            Copy link
+          </ComicButton>
+          <ComicButton
+            type="button"
+            variant="warning"
+            size="md"
+            disabled={Boolean(exporting)}
+            onClick={() => void handlePdf()}
+          >
+            {exporting === 'pdf' ? 'Opening…' : 'Download PDF'}
+          </ComicButton>
+          <ComicButton
+            type="button"
+            variant="accent"
+            size="md"
+            disabled={Boolean(exporting)}
+            onClick={() => void handlePptx()}
+          >
+            {exporting === 'pptx' ? 'Exporting…' : 'Download PowerPoint'}
+          </ComicButton>
         </div>
-      ) : null}
+
+        {shareUrl && isPublished && qrCode ? (
+          <div className="ml-auto shrink-0 border-4 border-[var(--comic-black)] bg-white p-2 comic-shadow-sm">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={qrCode} alt="Presentation QR code" width={120} height={120} />
+          </div>
+        ) : null}
+      </div>
 
       {message ? (
         <ComicText className="font-bold text-[var(--comic-success)]">{message}</ComicText>
