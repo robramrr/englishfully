@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
 import type { PresentationChoiceLetter, PresentationSlide } from '@/lib/presentation/types';
@@ -8,7 +8,7 @@ import {
   getPresentationAudioTracks,
   PRESENTATION_CHOICE_LETTERS,
 } from '@/lib/presentation/types';
-import { isPastClipEnd, seekAudioTo } from '@/lib/audio/clipPlayback';
+import { useAudioClipPlayer } from '@/lib/audio/useAudioClipPlayer';
 
 /** Brand has no green token — use a clear quiz green for correct feedback. */
 const QUIZ_CORRECT = '#15803d';
@@ -68,40 +68,32 @@ function playQuizTone(kind: 'correct' | 'wrong') {
 
 /**
  * Present-mode Audio + image quiz: shared images, multiple tracks with next/prev.
+ * Uses the same clip engine as the editor / Listen & Learn for consistent lengths.
  */
 export default function PresentationAudioMatch({
   slide,
   present = false,
   compact = false,
 }: PresentationAudioMatchProps) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const tracks = getPresentationAudioTracks(slide);
   const [trackIndex, setTrackIndex] = useState(0);
-  const [playing, setPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [selected, setSelected] = useState<PresentationChoiceLetter | null>(null);
-  const [error, setError] = useState('');
 
   const safeIndex = Math.min(Math.max(trackIndex, 0), Math.max(tracks.length - 1, 0));
   const track = tracks[safeIndex] || tracks[0];
   const start = Math.max(0, Number(track?.startSeconds) || 0);
-  const end = Math.max(start + 0.25, Number(track?.endSeconds) || start + 5);
-  const duration = Math.max(0.25, end - start);
+  const end = Math.max(start + 0.05, Number(track?.endSeconds) || start + 5);
   const correctChoice = track?.correctChoice || 'A';
   const images = PRESENTATION_CHOICE_LETTERS.map((letter, index) => ({
     letter,
     url: String(slide.choiceImages[index] ?? '').trim(),
   })).filter((item) => item.url);
 
-  const startRef = useRef(start);
-  const endRef = useRef(end);
-  const durationRef = useRef(duration);
-
-  useEffect(() => {
-    startRef.current = start;
-    endRef.current = end;
-    durationRef.current = duration;
-  }, [start, end, duration]);
+  const { audioRef, src, playing, progress, error, play, stop, seekRatio } = useAudioClipPlayer({
+    audioUrl: slide.audioUrl,
+    startSeconds: start,
+    endSeconds: end,
+  });
 
   useEffect(() => {
     setTrackIndex(0);
@@ -109,90 +101,13 @@ export default function PresentationAudioMatch({
 
   useEffect(() => {
     setSelected(null);
-    setProgress(0);
-    setPlaying(false);
-    setError('');
-    const audio = audioRef.current;
-    if (audio) {
-      audio.pause();
-      void seekAudioTo(audio, start);
-    }
   }, [slide.id, safeIndex, start, end, slide.audioUrl]);
 
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const onEnded = () => {
-      setPlaying(false);
-      void seekAudioTo(audio, startRef.current);
-      setProgress(1);
-    };
-
-    audio.addEventListener('ended', onEnded);
-    return () => {
-      audio.removeEventListener('ended', onEnded);
-    };
-  }, []);
-
-  // Precise end clamp — HTMLAudio timeupdate is too coarse (~4Hz) and overshoots.
-  useEffect(() => {
-    if (!playing) return;
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    let raf = 0;
-    const tick = () => {
-      const t = audio.currentTime;
-      const clipStart = startRef.current;
-      const clipEnd = endRef.current;
-      const clipDuration = durationRef.current;
-      if (isPastClipEnd(t, clipEnd)) {
-        audio.pause();
-        void seekAudioTo(audio, clipStart);
-        setPlaying(false);
-        setProgress(1);
-        return;
-      }
-      setProgress(Math.min(1, Math.max(0, (t - clipStart) / clipDuration)));
-      raf = window.requestAnimationFrame(tick);
-    };
-    raf = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(raf);
-  }, [playing]);
-
-  async function handlePlay() {
-    if (!slide.audioUrl.trim() || !audioRef.current) return;
-    setError('');
-    try {
-      const audio = audioRef.current;
-      await seekAudioTo(audio, start);
-      await audio.play();
-      setPlaying(true);
-      setProgress(0);
-    } catch {
-      setError('Could not play this audio clip.');
-      setPlaying(false);
-    }
-  }
-
-  function handleStop() {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.pause();
-    void seekAudioTo(audio, start);
-    setPlaying(false);
-    setProgress(0);
-  }
-
   function handleSeek(event: MouseEvent<HTMLDivElement>) {
-    const audio = audioRef.current;
-    if (!audio || !slide.audioUrl.trim()) return;
+    if (!slide.audioUrl.trim()) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
-    const next = start + ratio * duration;
-    void seekAudioTo(audio, next);
-    setProgress(ratio);
+    seekRatio(ratio);
   }
 
   function handleSelect(letter: PresentationChoiceLetter) {
@@ -201,18 +116,18 @@ export default function PresentationAudioMatch({
   }
 
   function goPrevTrack() {
-    handleStop();
+    stop();
     setTrackIndex((index) => Math.max(0, index - 1));
   }
 
   function goNextTrack() {
-    handleStop();
+    stop();
     setTrackIndex((index) => Math.min(tracks.length - 1, index + 1));
   }
 
   return (
     <div className={['flex h-full min-h-0 flex-col gap-3', compact ? 'gap-2' : ''].join(' ')}>
-      <audio ref={audioRef} src={slide.audioUrl || undefined} preload="auto" />
+      <audio ref={audioRef} src={src || undefined} preload="auto" />
 
       <div
         className={[
@@ -227,12 +142,12 @@ export default function PresentationAudioMatch({
               variant="secondary"
               size="sm"
               disabled={!slide.audioUrl.trim() || playing}
-              onClick={() => void handlePlay()}
+              onClick={() => void play()}
             >
               {playing ? 'Playing…' : 'Play'}
             </ComicButton>
             {playing ? (
-              <ComicButton type="button" variant="accent" size="sm" onClick={handleStop}>
+              <ComicButton type="button" variant="accent" size="sm" onClick={stop}>
                 Stop
               </ComicButton>
             ) : null}

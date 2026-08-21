@@ -255,11 +255,13 @@ export function stripChoiceLetterPrefix(value: string): string {
 }
 
 export function formatTimestamp(seconds: number): string {
-  const safe = Math.max(0, seconds);
-  const mins = Math.floor(safe / 60);
-  const secs = safe % 60;
-  const whole = Math.floor(secs);
-  const tenths = Math.round((secs - whole) * 10);
+  const safe = Math.max(0, Number(seconds) || 0);
+  // Round to tenths first so 5.96 → 6.0 (not 5.10)
+  const totalTenths = Math.round(safe * 10);
+  const mins = Math.floor(totalTenths / 600);
+  const tenthsInMinute = totalTenths - mins * 600;
+  const whole = Math.floor(tenthsInMinute / 10);
+  const tenths = tenthsInMinute % 10;
   return `${String(mins).padStart(2, '0')}:${String(whole).padStart(2, '0')}.${tenths}`;
 }
 
@@ -272,8 +274,10 @@ export function parseTimestamp(value: string): number {
   }
   const mins = Number(match[1]);
   const secs = Number(match[2]);
-  const frac = match[3] ? Number(`0.${match[3]}`) : 0;
-  return mins * 60 + secs + frac;
+  const fracRaw = match[3] ?? '';
+  // Support ".5", ".50", ".123" without mangling precision
+  const frac = fracRaw ? Number(`0.${fracRaw}`) : 0;
+  return Math.max(0, mins * 60 + secs + (Number.isFinite(frac) ? frac : 0));
 }
 
 export function segmentDuration(start: number, end: number): number {

@@ -154,10 +154,11 @@ export function createEmptyAudioTrack(
   patch: Partial<PresentationAudioTrack> = {}
 ): PresentationAudioTrack {
   const startSeconds = normalizeSeconds(patch.startSeconds, 0);
+  const rawEnd = normalizeSeconds(patch.endSeconds, startSeconds + 5);
   return {
     id: patch.id || createAudioTrackId(),
     startSeconds,
-    endSeconds: Math.max(startSeconds + 0.5, normalizeSeconds(patch.endSeconds, 5)),
+    endSeconds: Math.max(startSeconds + 0.05, rawEnd),
     clipText: String(patch.clipText ?? ''),
     correctChoice: normalizeChoiceLetter(patch.correctChoice),
   };
