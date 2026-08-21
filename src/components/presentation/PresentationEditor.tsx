@@ -17,9 +17,11 @@ import {
   savePresentationDraftById,
 } from '@/lib/presentation/storage';
 import {
+  createEmptyAudioTrack,
   createEmptyDeck,
   createEmptyDescribeWord,
   createEmptySlide,
+  createSlideId,
   normalizeDeck,
   PRESENTATION_CHOICE_LETTERS,
   type PresentationDeck,
@@ -162,6 +164,28 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
     const nextSlides = deck.slides.filter((slide) => slide.id !== slideId);
     setDeck((prev) => ({ ...prev, slides: nextSlides }));
     setSelectedId(nextSlides[Math.max(0, selectedIndex - 1)]?.id || nextSlides[0].id);
+  }
+
+  function handleDuplicateSlide(slideId: string) {
+    const index = deck.slides.findIndex((slide) => slide.id === slideId);
+    if (index < 0) return;
+    const source = deck.slides[index];
+    const copy: PresentationSlide = {
+      ...source,
+      id: createSlideId(),
+      bullets: [...source.bullets],
+      choiceImages: [...source.choiceImages],
+      audioTracks: source.audioTracks.map((track) =>
+        createEmptyAudioTrack({ ...track, id: undefined })
+      ),
+      describeWords: source.describeWords.map((word) =>
+        createEmptyDescribeWord({ text: word.text, matches: word.matches })
+      ),
+    };
+    const next = [...deck.slides];
+    next.splice(index + 1, 0, copy);
+    setDeck((prev) => ({ ...prev, slides: next }));
+    setSelectedId(copy.id);
   }
 
   function handleMoveSlide(slideId: string, direction: -1 | 1) {
@@ -529,6 +553,14 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                       disabled={selectedIndex >= deck.slides.length - 1}
                     >
                       ↓
+                    </ComicButton>
+                    <ComicButton
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleDuplicateSlide(selected.id)}
+                    >
+                      Duplicate
                     </ComicButton>
                     <ComicButton
                       type="button"

@@ -121,14 +121,27 @@ export default function PresentationShareBar({
     }
   }
 
-  return (
-    <ComicCard className="space-y-4">
-      <ComicTitle level={3} className="comic-title-no-shadow text-[var(--comic-secondary)]">
-        Status: {isPublished ? 'Published' : 'Draft'}
-      </ComicTitle>
+  const showQr = Boolean(shareUrl && isPublished && qrCode);
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
-        <div className="flex min-w-0 flex-1 flex-col gap-3">
+  return (
+    <ComicCard className="relative space-y-4">
+      {showQr ? (
+        <div className="absolute right-6 top-6 z-10 border-4 border-[var(--comic-black)] bg-white p-1.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={qrCode}
+            alt="Presentation QR code"
+            className="h-36 w-36 object-contain"
+          />
+        </div>
+      ) : null}
+
+      <div className={showQr ? 'md:pr-44' : ''}>
+        <ComicTitle level={3} className="comic-title-no-shadow text-[var(--comic-secondary)]">
+          Status: {isPublished ? 'Published' : 'Draft'}
+        </ComicTitle>
+
+        <div className="mt-4 flex flex-col gap-3">
           {shareUrl && isPublished ? (
             <ComicText className="text-[var(--comic-dark)] font-bold break-all">
               <a
@@ -175,17 +188,6 @@ export default function PresentationShareBar({
             </ComicButton>
           </div>
         </div>
-
-        {shareUrl && isPublished && qrCode ? (
-          <div className="shrink-0 self-start border-4 border-[var(--comic-black)] bg-white p-1.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={qrCode}
-              alt="Presentation QR code"
-              className="h-36 w-36 object-contain"
-            />
-          </div>
-        ) : null}
       </div>
 
       {message ? (
