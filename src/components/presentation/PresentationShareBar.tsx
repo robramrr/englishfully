@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
+import ComicTitle from '../ComicTitle';
 import { generateQrDataUrl, getPresentationUrl } from '@/lib/presentation/qr';
 import { downloadPresentationPdf } from '@/lib/presentation/exportPdf';
 import type { PresentationDeck } from '@/lib/presentation/types';
@@ -122,30 +123,61 @@ export default function PresentationShareBar({
 
   return (
     <ComicCard className="comic-shadow-xl space-y-4">
-      <ComicText className="font-black">
+      <ComicTitle level={3} className="comic-title-no-shadow text-[var(--comic-secondary)]">
         Status: {isPublished ? 'Published' : 'Draft'}
-      </ComicText>
+      </ComicTitle>
 
-      <div className="flex flex-col gap-3">
-        {shareUrl && isPublished ? (
-          <ComicText className="text-[var(--comic-dark)] font-bold break-all">
-            <a
-              href={shareUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-[var(--comic-secondary)] no-underline [font-size:inherit] [line-height:inherit] [font-weight:inherit] [font-family:inherit]"
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
+          {shareUrl && isPublished ? (
+            <ComicText className="text-[var(--comic-dark)] font-bold break-all">
+              <a
+                href={shareUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[var(--comic-secondary)] no-underline [font-size:inherit] [line-height:inherit] [font-weight:inherit] [font-family:inherit]"
+              >
+                {shareUrl}
+              </a>
+            </ComicText>
+          ) : (
+            <ComicText className="text-[var(--comic-dark)] font-bold">
+              Publish to generate the live link and QR code.
+            </ComicText>
+          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <ComicButton
+              type="button"
+              variant="secondary"
+              size="md"
+              disabled={saving}
+              onClick={() => void handleCopyLink()}
             >
-              {shareUrl}
-            </a>
-          </ComicText>
-        ) : (
-          <ComicText className="text-[var(--comic-dark)] font-bold">
-            Publish to generate the live link and QR code.
-          </ComicText>
-        )}
+              Copy link
+            </ComicButton>
+            <ComicButton
+              type="button"
+              variant="warning"
+              size="md"
+              disabled={Boolean(exporting)}
+              onClick={() => void handlePdf()}
+            >
+              {exporting === 'pdf' ? 'Opening…' : 'Download PDF'}
+            </ComicButton>
+            <ComicButton
+              type="button"
+              variant="accent"
+              size="md"
+              disabled={Boolean(exporting)}
+              onClick={() => void handlePptx()}
+            >
+              {exporting === 'pptx' ? 'Exporting…' : 'Download PowerPoint'}
+            </ComicButton>
+          </div>
+        </div>
 
         {shareUrl && isPublished && qrCode ? (
-          <div className="w-fit border-4 border-[var(--comic-black)] bg-white p-2 comic-shadow-sm">
+          <div className="ml-auto shrink-0 border-4 border-[var(--comic-black)] bg-white p-2 comic-shadow-sm">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={qrCode}
@@ -154,36 +186,6 @@ export default function PresentationShareBar({
             />
           </div>
         ) : null}
-
-        <div className="flex flex-wrap items-center gap-2">
-          <ComicButton
-            type="button"
-            variant="secondary"
-            size="md"
-            disabled={saving}
-            onClick={() => void handleCopyLink()}
-          >
-            Copy link
-          </ComicButton>
-          <ComicButton
-            type="button"
-            variant="warning"
-            size="md"
-            disabled={Boolean(exporting)}
-            onClick={() => void handlePdf()}
-          >
-            {exporting === 'pdf' ? 'Opening…' : 'Download PDF'}
-          </ComicButton>
-          <ComicButton
-            type="button"
-            variant="accent"
-            size="md"
-            disabled={Boolean(exporting)}
-            onClick={() => void handlePptx()}
-          >
-            {exporting === 'pptx' ? 'Exporting…' : 'Download PowerPoint'}
-          </ComicButton>
-        </div>
       </div>
 
       {message ? (
