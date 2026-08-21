@@ -127,62 +127,65 @@ export default function PresentationShareBar({
         Status: {isPublished ? 'Published' : 'Draft'}
       </ComicTitle>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="flex min-w-0 flex-1 flex-col gap-3">
-          {shareUrl && isPublished ? (
-            <ComicText className="text-[var(--comic-dark)] font-bold break-all">
-              <a
-                href={shareUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="text-[var(--comic-secondary)] no-underline [font-size:inherit] [line-height:inherit] [font-weight:inherit] [font-family:inherit]"
-              >
-                {shareUrl}
-              </a>
-            </ComicText>
-          ) : (
-            <ComicText className="text-[var(--comic-dark)] font-bold">
-              Publish to generate the live link and QR code.
-            </ComicText>
-          )}
-          <div className="flex flex-wrap items-center gap-2">
-            <ComicButton
-              type="button"
-              variant="secondary"
-              size="md"
-              disabled={saving}
-              onClick={() => void handleCopyLink()}
+      <div
+        className={[
+          'relative flex flex-col gap-3',
+          shareUrl && isPublished && qrCode ? 'md:pr-44' : '',
+        ].join(' ')}
+      >
+        {shareUrl && isPublished ? (
+          <ComicText className="text-[var(--comic-dark)] font-bold break-all md:max-w-[calc(100%-11.5rem)]">
+            <a
+              href={shareUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-[var(--comic-secondary)] no-underline [font-size:inherit] [line-height:inherit] [font-weight:inherit] [font-family:inherit]"
             >
-              Copy link
-            </ComicButton>
-            <ComicButton
-              type="button"
-              variant="warning"
-              size="md"
-              disabled={Boolean(exporting)}
-              onClick={() => void handlePdf()}
-            >
-              {exporting === 'pdf' ? 'Opening…' : 'Download PDF'}
-            </ComicButton>
-            <ComicButton
-              type="button"
-              variant="accent"
-              size="md"
-              disabled={Boolean(exporting)}
-              onClick={() => void handlePptx()}
-            >
-              {exporting === 'pptx' ? 'Exporting…' : 'Download PowerPoint'}
-            </ComicButton>
-          </div>
+              {shareUrl}
+            </a>
+          </ComicText>
+        ) : (
+          <ComicText className="text-[var(--comic-dark)] font-bold">
+            Publish to generate the live link and QR code.
+          </ComicText>
+        )}
+        <div className="flex flex-wrap items-center gap-2">
+          <ComicButton
+            type="button"
+            variant="secondary"
+            size="md"
+            disabled={saving}
+            onClick={() => void handleCopyLink()}
+          >
+            Copy link
+          </ComicButton>
+          <ComicButton
+            type="button"
+            variant="warning"
+            size="md"
+            disabled={Boolean(exporting)}
+            onClick={() => void handlePdf()}
+          >
+            {exporting === 'pdf' ? 'Opening…' : 'Download PDF'}
+          </ComicButton>
+          <ComicButton
+            type="button"
+            variant="accent"
+            size="md"
+            disabled={Boolean(exporting)}
+            onClick={() => void handlePptx()}
+          >
+            {exporting === 'pptx' ? 'Exporting…' : 'Download PowerPoint'}
+          </ComicButton>
         </div>
 
         {shareUrl && isPublished && qrCode ? (
-          <div className="ml-auto shrink-0 border-4 border-[var(--comic-black)] bg-white p-2 comic-shadow-sm">
+          <div className="w-fit border-4 border-[var(--comic-black)] bg-white p-1.5 comic-shadow-sm md:absolute md:right-0 md:top-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={qrCode}
               alt="Presentation QR code"
-              className="h-48 w-48 object-contain"
+              className="h-36 w-36 object-contain"
             />
           </div>
         ) : null}
