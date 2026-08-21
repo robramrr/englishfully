@@ -318,14 +318,6 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
 
   return (
     <div className="space-y-8">
-      <PresentationShareBar
-        deck={deck}
-        onDeckSaved={(saved) => {
-          setDeck(saved);
-          setMessage('Presentation saved for sharing.');
-        }}
-      />
-
       <ComicCard className="comic-shadow-xl space-y-4">
         <ComicTitle level={3} className="text-[var(--comic-primary)]">
           Presentation
@@ -395,7 +387,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
             size="sm"
             onClick={() => openPreview('fullscreen')}
           >
-            Present fullscreen
+            Fullscreen
           </ComicButton>
           <ComicButton type="button" variant="accent" size="sm" onClick={() => handleAddSlide('content')}>
             + Add slide
@@ -429,6 +421,14 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
           <ComicText className="font-bold text-[var(--comic-danger)]">{error}</ComicText>
         ) : null}
       </ComicCard>
+
+      <PresentationShareBar
+        deck={deck}
+        onDeckSaved={(saved) => {
+          setDeck(saved);
+          setMessage('Presentation saved for sharing.');
+        }}
+      />
 
       <ComicCard className="comic-shadow-xl space-y-3">
         <ComicTitle level={3} className="text-[var(--comic-secondary)]">

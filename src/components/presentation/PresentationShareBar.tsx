@@ -122,19 +122,19 @@ export default function PresentationShareBar({
 
   return (
     <ComicCard className="comic-shadow-xl space-y-4">
-      <ComicText className="text-sm font-black">
+      <ComicText className="font-black">
         Status: {isPublished ? 'Published' : 'Draft'}
       </ComicText>
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-1 flex-col gap-3">
+      <div className="flex flex-col gap-4 md:flex-row md:items-stretch md:justify-between">
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-3">
           {shareUrl && isPublished ? (
             <ComicText className="text-[var(--comic-dark)] font-bold break-all">
               <a
                 href={shareUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="underline text-[var(--comic-secondary)]"
+                className="underline text-[var(--comic-secondary)] [font-size:inherit] [line-height:inherit] [font-weight:inherit] [font-family:inherit]"
               >
                 {shareUrl}
               </a>
@@ -176,9 +176,15 @@ export default function PresentationShareBar({
         </div>
 
         {shareUrl && isPublished && qrCode ? (
-          <div className="ml-auto shrink-0 border-4 border-[var(--comic-black)] bg-white p-2 comic-shadow-sm">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qrCode} alt="Presentation QR code" width={120} height={120} />
+          <div className="ml-auto flex shrink-0 items-stretch self-stretch">
+            <div className="flex aspect-square h-full min-h-[10rem] w-auto max-h-56 border-4 border-[var(--comic-black)] bg-white p-2 comic-shadow-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={qrCode}
+                alt="Presentation QR code"
+                className="h-full w-full object-contain"
+              />
+            </div>
           </div>
         ) : null}
       </div>
