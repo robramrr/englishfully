@@ -458,7 +458,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
         <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
           Paste lesson notes. Separate slides with a blank line, <code>---</code>, or lines like
           <code> Slide 2:</code> / <code># Heading</code>. Bullets and image URLs are detected
-          automatically and cleaned into the comic theme.
+          automatically.
         </ComicText>
         <textarea
           className="comic-textarea w-full min-h-[140px]"
