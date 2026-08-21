@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faVolumeHigh } from '@fortawesome/free-solid-svg-icons';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
@@ -129,7 +131,10 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
             </div>
           ) : null}
           <ComicTitle level={6} className="!text-xl text-[var(--comic-primary)] py-2">
-            🔊 Listen &amp; Answer
+            <span className="inline-flex items-center gap-2">
+              <FontAwesomeIcon icon={faVolumeHigh} aria-hidden className="h-[0.85em] w-[0.85em]" />
+              Listen &amp; Answer
+            </span>
           </ComicTitle>
           {assignment.instructions.trim() ? (
             <>

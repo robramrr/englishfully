@@ -1,6 +1,8 @@
 'use client';
 
 import { Suspense } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChartColumn } from '@fortawesome/free-solid-svg-icons';
 import ComicText from '../../../../components/ComicText';
 import ComicTitle from '../../../../components/ComicTitle';
 import Footer from '../../../../components/Footer';
@@ -16,7 +18,10 @@ export default function GradebookClassPage({ params }: ClassPageProps) {
     <div className="gradebook-page flex flex-col min-h-screen bg-[var(--comic-light)]">
       <section className="comic-bg-secondary py-12 px-4 comic-pattern-dots text-center">
         <ComicTitle level={2} className="comic-text-white mb-2">
-          📊 Class Gradebook
+          <span className="inline-flex items-center justify-center gap-3">
+            <FontAwesomeIcon icon={faChartColumn} aria-hidden className="h-[0.85em] w-[0.85em]" />
+            Class Gradebook
+          </span>
         </ComicTitle>
         <ComicText className="comic-text-white font-bold">
           Enter scores one student at a time. Online Speak submissions are marked for reference.

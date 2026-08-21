@@ -66,6 +66,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
   const [previewIndex, setPreviewIndex] = useState(0);
   const [hydrated, setHydrated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [describeAnalyzing, setDescribeAnalyzing] = useState(false);
   const [newDescribeWord, setNewDescribeWord] = useState('');
   const [newDescribeMatches, setNewDescribeMatches] = useState(true);
@@ -239,6 +240,50 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
     setMessage('Presentation reset locally — save or publish to update the server.');
   }
 
+  async function handleSaveDraft() {
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const response = await fetch(`/api/presentation/decks/${deck.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deck: { ...deck, status: deck.status || 'draft' },
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to save');
+      setDeck(data.presentation as PresentationDeck);
+      setMessage('Saved.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handlePublish() {
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const response = await fetch(`/api/presentation/decks/${deck.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deck, publish: true }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to publish');
+      setDeck(data.presentation as PresentationDeck);
+      setMessage('Published. Share the link or QR above.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to publish');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function openPreview(mode: 'panel' | 'fullscreen') {
     setPreviewIndex(selectedIndex);
     setPreviewMode(mode);
@@ -279,7 +324,6 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
           setDeck(saved);
           setMessage('Presentation saved for sharing.');
         }}
-        onClearDraft={handleReset}
       />
 
       <ComicCard className="comic-shadow-xl space-y-4">
@@ -356,9 +400,33 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
           <ComicButton type="button" variant="accent" size="sm" onClick={() => handleAddSlide('content')}>
             + Add slide
           </ComicButton>
+          <ComicButton type="button" variant="warning" size="sm" onClick={handleReset}>
+            Clear
+          </ComicButton>
+          <ComicButton
+            type="button"
+            variant="accent"
+            size="sm"
+            disabled={saving}
+            onClick={() => void handleSaveDraft()}
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </ComicButton>
+          <ComicButton
+            type="button"
+            variant="primary"
+            size="sm"
+            disabled={saving}
+            onClick={() => void handlePublish()}
+          >
+            {saving ? 'Publishing…' : 'Publish'}
+          </ComicButton>
         </div>
         {message ? (
           <ComicText className="font-bold text-[var(--comic-success)]">{message}</ComicText>
+        ) : null}
+        {error ? (
+          <ComicText className="font-bold text-[var(--comic-danger)]">{error}</ComicText>
         ) : null}
       </ComicCard>
 

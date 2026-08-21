@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { faFaceSmile, faFont, faHashtag, faUser } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
@@ -12,9 +15,9 @@ interface ClassDraft {
   max_student_number: number;
 }
 
-const NAME_MODE_OPTIONS: Array<{ value: NameMode; label: string; emoji: string }> = [
-  { value: 'nickname', label: 'Nickname (1 field)', emoji: '🙂' },
-  { value: 'first_last', label: 'First & last name (2 fields)', emoji: '👤' },
+const NAME_MODE_OPTIONS: Array<{ value: NameMode; label: string; icon: IconDefinition }> = [
+  { value: 'nickname', label: 'Nickname (1 field)', icon: faFaceSmile },
+  { value: 'first_last', label: 'First & last name (2 fields)', icon: faUser },
 ];
 
 export default function StudentEntrySettings() {
@@ -136,7 +139,14 @@ export default function StudentEntrySettings() {
                     : 'bg-white text-[var(--comic-dark)]'
                 }`}
               >
-                {option.emoji} {option.label}
+                <span className="inline-flex items-center gap-2">
+                  <FontAwesomeIcon
+                    icon={option.icon}
+                    aria-hidden
+                    className="h-[1em] w-[1em] shrink-0"
+                  />
+                  {option.label}
+                </span>
               </button>
             ))}
           </div>
@@ -160,7 +170,10 @@ export default function StudentEntrySettings() {
                   : 'bg-white text-[var(--comic-dark)]'
               }`}
             >
-              🔢 Number only
+              <span className="inline-flex items-center gap-2">
+                <FontAwesomeIcon icon={faHashtag} aria-hidden className="h-[1em] w-[1em]" />
+                Number only
+              </span>
             </button>
             <button
               type="button"
@@ -174,7 +187,10 @@ export default function StudentEntrySettings() {
                   : 'bg-white text-[var(--comic-dark)]'
               }`}
             >
-              🔤 Number + A/B ID
+              <span className="inline-flex items-center gap-2">
+                <FontAwesomeIcon icon={faFont} aria-hidden className="h-[1em] w-[1em]" />
+                Number + A/B ID
+              </span>
             </button>
           </div>
         </div>

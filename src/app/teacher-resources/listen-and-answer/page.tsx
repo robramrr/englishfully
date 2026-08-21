@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEarListen } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../../../components/ComicButton';
 import ComicCard from '../../../components/ComicCard';
 import ComicText from '../../../components/ComicText';
@@ -84,7 +86,10 @@ export default function ListenAndAnswerPage() {
     <div className="listen-and-answer-page flex flex-col min-h-screen bg-[var(--comic-light)]">
       <section className="comic-bg-primary py-16 px-4 comic-pattern-dots text-center">
         <ComicTitle level={1} className="comic-text-white mb-4">
-          👂 Listen &amp; Answer
+          <span className="inline-flex items-center justify-center gap-3">
+            <FontAwesomeIcon icon={faEarListen} aria-hidden className="h-[0.85em] w-[0.85em]" />
+            Listen &amp; Answer
+          </span>
         </ComicTitle>
         <ComicText size="lg" className="comic-text-white font-bold max-w-3xl mx-auto">
           Build printable listening worksheets from audio URLs, with optional AI transcripts and comprehension questions.

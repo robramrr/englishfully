@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faLock } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
@@ -61,7 +63,10 @@ export default function TeacherAuthGate({ children }: TeacherAuthGateProps) {
       <section className="max-w-xl mx-auto py-24 px-4">
         <ComicCard className="comic-shadow-xl">
           <ComicTitle level={2} className="mb-4 text-[var(--comic-secondary)]">
-            🔐 Teacher Access
+            <span className="inline-flex items-center gap-2">
+              <FontAwesomeIcon icon={faLock} aria-hidden className="h-[0.85em] w-[0.85em]" />
+              Teacher Access
+            </span>
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold mb-6">
             Enter your teacher password to manage Speak &amp; Submit and Listen &amp; Answer tools.

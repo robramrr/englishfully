@@ -11,13 +11,11 @@ import type { PresentationDeck } from '@/lib/presentation/types';
 interface PresentationShareBarProps {
   deck: PresentationDeck;
   onDeckSaved: (deck: PresentationDeck) => void;
-  onClearDraft: () => void;
 }
 
 export default function PresentationShareBar({
   deck,
   onDeckSaved,
-  onClearDraft,
 }: PresentationShareBarProps) {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState('');
@@ -31,6 +29,8 @@ export default function PresentationShareBar({
   useEffect(() => {
     if (isPublished && deck.id) {
       setShareUrl(getPresentationUrl(deck.id, window.location.origin));
+    } else {
+      setShareUrl('');
     }
   }, [isPublished, deck.id]);
 
@@ -42,10 +42,9 @@ export default function PresentationShareBar({
     void generateQrDataUrl(shareUrl).then(setQrCode).catch(() => setQrCode(''));
   }, [shareUrl]);
 
-  async function handlePublish() {
+  async function ensurePublished(): Promise<string> {
+    if (shareUrl && isPublished) return shareUrl;
     setSaving(true);
-    setError('');
-    setMessage('');
     try {
       const response = await fetch(`/api/presentation/decks/${deck.id}`, {
         method: 'PUT',
@@ -60,47 +59,21 @@ export default function PresentationShareBar({
         getPresentationUrl(saved.id, window.location.origin);
       onDeckSaved(saved);
       setShareUrl(url);
-      setMessage('Published. Share the link or QR below.');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to publish');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleSaveDraft() {
-    setSaving(true);
-    setError('');
-    setMessage('');
-    try {
-      const response = await fetch(`/api/presentation/decks/${deck.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          deck: { ...deck, status: deck.status || 'draft' },
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to save draft');
-      onDeckSaved(data.presentation as PresentationDeck);
-      setMessage('Draft saved.');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save draft');
+      return url;
     } finally {
       setSaving(false);
     }
   }
 
   async function handleCopyLink() {
-    if (!shareUrl) {
-      await handlePublish();
-      return;
-    }
+    setError('');
+    setMessage('');
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      const url = await ensurePublished();
+      await navigator.clipboard.writeText(url);
       setMessage('Link copied.');
-    } catch {
-      setError('Could not copy link.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not copy link.');
     }
   }
 
@@ -149,81 +122,57 @@ export default function PresentationShareBar({
 
   return (
     <ComicCard className="comic-shadow-xl space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <ComicButton type="button" variant="warning" size="md" onClick={onClearDraft}>
-            Clear draft
-          </ComicButton>
-          <ComicButton
-            type="button"
-            variant="accent"
-            size="md"
-            disabled={saving}
-            onClick={() => void handleSaveDraft()}
-          >
-            {saving ? 'Saving…' : 'Save draft'}
-          </ComicButton>
-          <ComicButton
-            type="button"
-            variant="primary"
-            size="md"
-            disabled={saving}
-            onClick={() => void handlePublish()}
-          >
-            {saving ? 'Publishing…' : 'Publish'}
-          </ComicButton>
-        </div>
-        <ComicText className="text-sm font-black">
-          Status: {isPublished ? 'Published' : 'Draft'}
-        </ComicText>
-      </div>
-
-      <hr className="border-t-4 border-[var(--comic-black)]" />
+      <ComicText className="text-sm font-black">
+        Status: {isPublished ? 'Published' : 'Draft'}
+      </ComicText>
 
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
           {shareUrl && isPublished ? (
-            <a
-              href={shareUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="max-w-full break-all font-bold underline text-[var(--comic-secondary)]"
-              title={shareUrl}
-            >
-              Direct link
-            </a>
+            <ComicText className="text-[var(--comic-dark)] font-bold break-all">
+              <a
+                href={shareUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="underline text-[var(--comic-secondary)]"
+              >
+                {shareUrl}
+              </a>
+            </ComicText>
           ) : (
-            <ComicText className="text-sm font-bold text-[var(--comic-dark)]/60">
-              Direct link (publish to unlock)
+            <ComicText className="text-[var(--comic-dark)] font-bold">
+              Publish to generate the live link and QR code.
             </ComicText>
           )}
-          <ComicButton
-            type="button"
-            variant="secondary"
-            size="md"
-            disabled={saving || (!shareUrl && !isPublished)}
-            onClick={() => void handleCopyLink()}
-          >
-            Copy link
-          </ComicButton>
-          <ComicButton
-            type="button"
-            variant="warning"
-            size="md"
-            disabled={Boolean(exporting)}
-            onClick={() => void handlePdf()}
-          >
-            {exporting === 'pdf' ? 'Opening…' : 'Download PDF'}
-          </ComicButton>
-          <ComicButton
-            type="button"
-            variant="accent"
-            size="md"
-            disabled={Boolean(exporting)}
-            onClick={() => void handlePptx()}
-          >
-            {exporting === 'pptx' ? 'Exporting…' : 'Download PowerPoint'}
-          </ComicButton>
+          <div className="flex flex-wrap items-center gap-2">
+            <ComicButton
+              type="button"
+              variant="secondary"
+              size="md"
+              disabled={saving}
+              onClick={() => void handleCopyLink()}
+            >
+              Copy link
+            </ComicButton>
+            <ComicButton
+              type="button"
+              variant="warning"
+              size="md"
+              disabled={Boolean(exporting)}
+              onClick={() => void handlePdf()}
+            >
+              {exporting === 'pdf' ? 'Opening…' : 'Download PDF'}
+            </ComicButton>
+            <ComicButton
+              type="button"
+              variant="accent"
+              size="md"
+              disabled={Boolean(exporting)}
+              onClick={() => void handlePptx()}
+            >
+              {exporting === 'pptx' ? 'Exporting…' : 'Download PowerPoint'}
+            </ComicButton>
+          </div>
         </div>
 
         {shareUrl && isPublished && qrCode ? (

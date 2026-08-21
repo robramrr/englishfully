@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHand, faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
@@ -742,7 +744,10 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
       <div className="max-w-xl mx-auto space-y-6">
         <div className="text-center">
           <ComicTitle level={2} className="text-[var(--comic-secondary)] mb-2">
-            🎙️ Speak &amp; Submit
+            <span className="inline-flex items-center justify-center gap-2">
+              <FontAwesomeIcon icon={faMicrophone} aria-hidden className="h-[0.85em] w-[0.85em]" />
+              Speak &amp; Submit
+            </span>
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold">{task.title}</ComicText>
           <ComicText className="text-[var(--comic-dark)]">Class {task.class_name}</ComicText>
@@ -751,7 +756,10 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
         {step === 'identity' ? (
           <ComicCard>
             <ComicTitle level={6} className="speak-identity-title mb-4 text-[var(--comic-primary)] text-center">
-              👋 Who are you?
+              <span className="inline-flex items-center justify-center gap-2">
+                <FontAwesomeIcon icon={faHand} aria-hidden className="h-[0.85em] w-[0.85em]" />
+                Who are you?
+              </span>
             </ComicTitle>
             <ComicText className="text-[var(--comic-dark)] font-bold mb-4 text-sm">
               Recordings used for class feedback
@@ -968,7 +976,10 @@ export default function StudentSpeakFlow({ taskId }: StudentSpeakFlowProps) {
         {step === 'choose_prompt' ? (
           <ComicCard>
             <ComicTitle level={4} className="mb-1 text-[var(--comic-primary)] text-center">
-              🎙️ Speaking Task
+              <span className="inline-flex items-center justify-center gap-2">
+                <FontAwesomeIcon icon={faMicrophone} aria-hidden className="h-[0.85em] w-[0.85em]" />
+                Speaking Task
+              </span>
             </ComicTitle>
             <p className="student-choose-prompt text-[var(--comic-secondary)] text-center mb-4 mt-2">
               Choose one prompt:

@@ -1,6 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import {
+  faBook,
+  faComment,
+  faFileLines,
+  faMicrophone,
+} from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
@@ -8,11 +16,15 @@ import ComicTitle from '../ComicTitle';
 import type { ItemTaskType } from '@/lib/speak-and-submit/types';
 import { getDefaultMaxRecordingSeconds } from '@/lib/speak-and-submit/types';
 
-const TASK_TYPE_OPTIONS: Array<{ value: ItemTaskType; label: string; emoji: string }> = [
-  { value: 'single_sentence', label: 'Single Sentence', emoji: '💬' },
-  { value: 'sentence_set', label: 'Multiple Sentences', emoji: '📝' },
-  { value: 'vocab_list', label: 'Vocabulary List', emoji: '📚' },
-  { value: 'prompt', label: 'Open Prompt', emoji: '🎤' },
+const TASK_TYPE_OPTIONS: Array<{
+  value: ItemTaskType;
+  label: string;
+  icon: IconDefinition;
+}> = [
+  { value: 'single_sentence', label: 'Single Sentence', icon: faComment },
+  { value: 'sentence_set', label: 'Multiple Sentences', icon: faFileLines },
+  { value: 'vocab_list', label: 'Vocabulary List', icon: faBook },
+  { value: 'prompt', label: 'Open Prompt', icon: faMicrophone },
 ];
 
 interface PromptDraft {
@@ -199,7 +211,10 @@ export default function CreateTaskForm({ onCreated }: CreateTaskFormProps) {
   return (
     <ComicCard className="comic-shadow-xl">
       <ComicTitle level={3} className="mb-4 text-[var(--comic-primary)]">
-        🎙️ Create Speaking Task
+        <span className="inline-flex items-center gap-2">
+          <FontAwesomeIcon icon={faMicrophone} aria-hidden className="h-[0.85em] w-[0.85em]" />
+          Create Speaking Task
+        </span>
       </ComicTitle>
       <ComicText className="text-[var(--comic-dark)] font-bold mb-6">
         Build one QR-code homework task. Add multiple parts if you want — for example, a single
@@ -273,7 +288,14 @@ export default function CreateTaskForm({ onCreated }: CreateTaskFormProps) {
                             : 'bg-white text-[var(--comic-dark)]'
                         }`}
                       >
-                        {option.emoji} {option.label}
+                        <span className="inline-flex items-center gap-2">
+                          <FontAwesomeIcon
+                            icon={option.icon}
+                            aria-hidden
+                            className="h-[1em] w-[1em] shrink-0"
+                          />
+                          {option.label}
+                        </span>
                       </button>
                     ))}
                   </div>

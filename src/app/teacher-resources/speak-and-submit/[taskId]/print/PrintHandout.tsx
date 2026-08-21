@@ -1,5 +1,7 @@
 'use client';
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import ComicText from '../../../../../components/ComicText';
 import ComicTitle from '../../../../../components/ComicTitle';
 import type { SpeakTask, SpeakTaskItem } from '@/lib/speak-and-submit/types';
@@ -185,7 +187,10 @@ export default function PrintHandout({
                 level={6}
                 className="!text-xl text-[var(--comic-primary)]"
               >
-                🎙️ Speaking Task
+                <span className="inline-flex items-center gap-2">
+                  <FontAwesomeIcon icon={faMicrophone} aria-hidden className="h-[0.85em] w-[0.85em]" />
+                  Speaking Task
+                </span>
               </ComicTitle>
               {hasMultiPromptSection ? (
                 <p className="print-choose-prompt text-[var(--comic-secondary)]">

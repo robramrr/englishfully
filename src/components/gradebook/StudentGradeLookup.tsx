@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faGraduationCap } from '@fortawesome/free-solid-svg-icons';
+import { faGraduationCap, faHand } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
@@ -281,7 +281,10 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
               level={6}
               className="speak-identity-title mb-4 text-[var(--comic-primary)] text-center"
             >
-              👋 Who are you?
+              <span className="inline-flex items-center justify-center gap-2">
+                <FontAwesomeIcon icon={faHand} aria-hidden className="h-[0.85em] w-[0.85em]" />
+                Who are you?
+              </span>
             </ComicTitle>
 
             <select

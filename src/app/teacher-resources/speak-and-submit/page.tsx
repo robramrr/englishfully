@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../../../components/ComicButton';
 import ComicCard from '../../../components/ComicCard';
 import ComicText from '../../../components/ComicText';
@@ -34,7 +36,10 @@ export default function SpeakAndSubmitPage() {
     <div className="speak-and-submit-page flex flex-col min-h-screen bg-[var(--comic-light)]">
       <section className="comic-bg-secondary py-16 px-4 comic-pattern-dots text-center">
         <ComicTitle level={1} className="comic-text-white mb-4">
-          🎙️ Speak &amp; Submit
+          <span className="inline-flex items-center justify-center gap-3">
+            <FontAwesomeIcon icon={faMicrophone} aria-hidden className="h-[0.85em] w-[0.85em]" />
+            Speak &amp; Submit
+          </span>
         </ComicTitle>
         <ComicText size="lg" className="comic-text-white font-bold max-w-3xl mx-auto">
           Create one QR-code speaking homework task. Students scan once, record every item, and submit from their phone.

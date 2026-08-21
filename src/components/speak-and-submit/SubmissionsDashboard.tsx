@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHeadphones } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
@@ -225,7 +227,10 @@ export default function SubmissionsDashboard({ taskId }: SubmissionsDashboardPro
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
         <ComicTitle level={3} className="text-[var(--comic-secondary)]">
-          🎧 Submissions
+          <span className="inline-flex items-center gap-2">
+            <FontAwesomeIcon icon={faHeadphones} aria-hidden className="h-[0.85em] w-[0.85em]" />
+            Submissions
+          </span>
         </ComicTitle>
         <div className="flex flex-wrap gap-3">
           <ComicButton

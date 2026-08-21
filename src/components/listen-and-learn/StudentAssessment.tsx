@@ -6,6 +6,8 @@ import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import SegmentAudioPlayer from './SegmentAudioPlayer';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHand } from '@fortawesome/free-solid-svg-icons';
 import type { PublicLearnAssignment, LearnSubmission } from '@/lib/listen-and-learn/types';
 import { stripChoiceLetterPrefix } from '@/lib/listen-and-learn/types';
 import {
@@ -307,7 +309,10 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
         </ComicText>
 
         <ComicTitle level={6} className="speak-identity-title text-[var(--comic-primary)] text-center">
-          👋 Who are you?
+          <span className="inline-flex items-center justify-center gap-2">
+            <FontAwesomeIcon icon={faHand} aria-hidden className="h-[0.85em] w-[0.85em]" />
+            Who are you?
+          </span>
         </ComicTitle>
 
         <div className="space-y-4">

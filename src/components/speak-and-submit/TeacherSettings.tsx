@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChalkboardUser } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
@@ -62,7 +64,10 @@ export default function TeacherSettings() {
   return (
     <ComicCard className="comic-shadow-xl">
       <ComicTitle level={3} className="mb-4 text-[var(--comic-primary)]">
-        👩‍🏫 Teacher settings
+        <span className="inline-flex items-center gap-2">
+          <FontAwesomeIcon icon={faChalkboardUser} aria-hidden className="h-[0.85em] w-[0.85em]" />
+          Teacher settings
+        </span>
       </ComicTitle>
       <ComicText className="text-[var(--comic-dark)] font-bold mb-6">
         Enter your name so it&apos;s saved for your Speak &amp; Submit account.

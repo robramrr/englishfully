@@ -1,6 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheck, faLock } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
@@ -246,7 +248,19 @@ export default function StudentEscapePlayer({
                   </div>
                   <div className="font-bold mt-1">{item.title || ESCAPE_CHALLENGE_TYPE_LABELS[item.type]}</div>
                   <div className="text-sm mt-2">
-                    {done ? '✓ Complete' : unlocked ? 'Ready' : '🔒 Locked'}
+                    {done ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <FontAwesomeIcon icon={faCheck} aria-hidden className="h-[1em] w-[1em]" />
+                        Complete
+                      </span>
+                    ) : unlocked ? (
+                      'Ready'
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5">
+                        <FontAwesomeIcon icon={faLock} aria-hidden className="h-[1em] w-[1em]" />
+                        Locked
+                      </span>
+                    )}
                   </div>
                 </div>
               );

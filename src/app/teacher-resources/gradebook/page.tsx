@@ -1,5 +1,7 @@
 'use client';
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChartColumn } from '@fortawesome/free-solid-svg-icons';
 import ComicText from '../../../components/ComicText';
 import ComicTitle from '../../../components/ComicTitle';
 import Footer from '../../../components/Footer';
@@ -11,7 +13,10 @@ export default function GradebookPage() {
     <div className="gradebook-page flex flex-col min-h-screen bg-[var(--comic-light)]">
       <section className="comic-bg-primary py-16 px-4 comic-pattern-dots text-center">
         <ComicTitle level={1} className="comic-text-white mb-4">
-          📊 Gradebook
+          <span className="inline-flex items-center justify-center gap-3">
+            <FontAwesomeIcon icon={faChartColumn} aria-hidden className="h-[0.85em] w-[0.85em]" />
+            Gradebook
+          </span>
         </ComicTitle>
         <ComicText size="lg" className="comic-text-white font-bold max-w-3xl mx-auto">
           Track Speak &amp; Submit and Listen &amp; Answer grades by class and semester.

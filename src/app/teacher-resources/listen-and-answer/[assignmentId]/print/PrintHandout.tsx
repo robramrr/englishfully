@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faVolumeHigh } from '@fortawesome/free-solid-svg-icons';
 import ComicText from '../../../../../components/ComicText';
 import ComicTitle from '../../../../../components/ComicTitle';
 import TotalTimeDisplay, {
@@ -181,7 +183,10 @@ export default function PrintHandout({ assignment }: PrintHandoutProps) {
               </div>
             ) : null}
             <ComicTitle level={6} className="!text-xl text-[var(--comic-primary)] py-2">
-              🔊 Listen &amp; Answer
+              <span className="inline-flex items-center gap-2">
+                <FontAwesomeIcon icon={faVolumeHigh} aria-hidden className="h-[0.85em] w-[0.85em]" />
+                Listen &amp; Answer
+              </span>
             </ComicTitle>
             {assignment.instructions.trim() ? (
               <>

@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faInbox } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
@@ -18,7 +20,10 @@ export default function TaskList({ tasks, onRefresh }: TaskListProps) {
     return (
       <ComicCard className="comic-shadow-xl text-center">
         <ComicTitle level={3} className="mb-4 text-[var(--comic-secondary)]">
-          📭 No tasks yet
+          <span className="inline-flex items-center justify-center gap-2">
+            <FontAwesomeIcon icon={faInbox} aria-hidden className="h-[0.85em] w-[0.85em]" />
+            No tasks yet
+          </span>
         </ComicTitle>
         <ComicText className="text-[var(--comic-dark)] font-bold">
           Create your first speaking homework task above.
