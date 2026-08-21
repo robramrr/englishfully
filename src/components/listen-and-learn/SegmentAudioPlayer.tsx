@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
+import { isPastClipEnd, seekAudioTo } from '@/lib/audio/clipPlayback';
 
 interface SegmentAudioPlayerProps {
   audioUrl: string;
@@ -25,42 +26,69 @@ export default function SegmentAudioPlayer({
   const [playing, setPlaying] = useState(false);
   const [playCount, setPlayCount] = useState(0);
   const [error, setError] = useState('');
+  const startRef = useRef(startSeconds);
+  const endRef = useRef(endSeconds);
 
   const unlimited = maxReplays === null || maxReplays < 0;
   const remaining = unlimited ? null : Math.max(0, maxReplays - playCount);
   const canPlay = Boolean(audioUrl.trim()) && (unlimited || (remaining ?? 0) > 0);
+  const clipStart = Math.max(0, Number(startSeconds) || 0);
+  const clipEnd = Math.max(clipStart + 0.25, Number(endSeconds) || clipStart + 5);
+
+  useEffect(() => {
+    startRef.current = clipStart;
+    endRef.current = clipEnd;
+  }, [clipStart, clipEnd]);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const handleTimeUpdate = () => {
-      if (audio.currentTime >= endSeconds - 0.05) {
-        audio.pause();
-        audio.currentTime = startSeconds;
-        setPlaying(false);
-      }
-    };
-
     const handleEnded = () => {
       setPlaying(false);
-      audio.currentTime = startSeconds;
+      void seekAudioTo(audio, startRef.current);
     };
 
-    audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('ended', handleEnded);
     return () => {
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, [startSeconds, endSeconds]);
+  }, []);
+
+  // Precise end clamp — timeupdate alone overshoots by ~250ms+ intermittently.
+  useEffect(() => {
+    if (!playing) return;
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    let raf = 0;
+    const tick = () => {
+      if (isPastClipEnd(audio.currentTime, endRef.current)) {
+        audio.pause();
+        void seekAudioTo(audio, startRef.current);
+        setPlaying(false);
+        return;
+      }
+      raf = window.requestAnimationFrame(tick);
+    };
+    raf = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(raf);
+  }, [playing]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.pause();
+    setPlaying(false);
+    void seekAudioTo(audio, clipStart);
+  }, [audioUrl, clipStart, clipEnd]);
 
   async function handlePlay() {
     if (!canPlay || !audioRef.current) return;
     setError('');
     try {
       const audio = audioRef.current;
-      audio.currentTime = Math.max(0, startSeconds);
+      await seekAudioTo(audio, clipStart);
       await audio.play();
       setPlaying(true);
       setPlayCount((count) => count + 1);
@@ -74,13 +102,13 @@ export default function SegmentAudioPlayer({
     const audio = audioRef.current;
     if (!audio) return;
     audio.pause();
-    audio.currentTime = startSeconds;
+    void seekAudioTo(audio, clipStart);
     setPlaying(false);
   }
 
   return (
     <div className={compact ? 'space-y-1' : 'space-y-2'}>
-      <audio ref={audioRef} src={audioUrl || undefined} preload="metadata" />
+      <audio ref={audioRef} src={audioUrl || undefined} preload="auto" />
       <div className="flex flex-wrap items-center gap-2">
         <ComicButton
           variant="secondary"

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState, type CSSProperties } from 'react';
 import {
   presentationFontColorCss,
   presentationFontSizePx,
@@ -9,8 +10,7 @@ import {
 import { GrammarLiveTextBox } from './GrammarHighlight';
 import PresentationAudioMatch from './PresentationAudioMatch';
 import PresentationDescribeImage from './PresentationDescribeImage';
-import type { SlideTimerState } from './PresentationSlideTimer';
-import type { CSSProperties } from 'react';
+import PresentationSlideTimer, { type SlideTimerState } from './PresentationSlideTimer';
 
 interface SlideCanvasProps {
   slide: PresentationSlide;
@@ -26,9 +26,9 @@ interface SlideCanvasProps {
   /** Allow live typing into the grammar practice box during present/preview. */
   liveEditable?: boolean;
   onGrammarTextChange?: (grammarText: string) => void;
-  /** Shared per-slide timer state (from present/preview). */
-  timerState?: SlideTimerState | null;
-  onRequestTimerReset?: () => void;
+  /** Bump to remount/reset the on-slide timer. */
+  timerResetKey?: number;
+  onTimerStateChange?: (state: SlideTimerState) => void;
 }
 
 function sizeMode(
@@ -158,8 +158,8 @@ export default function SlideCanvas({
   showImageSlot = false,
   liveEditable = false,
   onGrammarTextChange,
-  timerState = null,
-  onRequestTimerReset,
+  timerResetKey = 0,
+  onTimerStateChange,
 }: SlideCanvasProps) {
   const title = slide.title || (slide.layout === 'title' ? deck.title : 'Untitled slide');
   const body =
@@ -170,6 +170,21 @@ export default function SlideCanvas({
     Boolean(slide.imageUrl.trim()) ||
     (showImageSlot && (slide.layout === 'content' || slide.layout === 'image'));
   const mode = sizeMode(compact, present);
+  const timerOn = Boolean(slide.timerEnabled);
+  const [timerState, setTimerState] = useState<SlideTimerState>({
+    started: false,
+    secondsLeft: slide.timerSeconds || 60,
+    timeUp: false,
+  });
+  const [localResetKey, setLocalResetKey] = useState(0);
+
+  useEffect(() => {
+    onTimerStateChange?.(timerState);
+  }, [timerState, onTimerStateChange]);
+
+  function handleRequestTimerReset() {
+    setLocalResetKey((value) => value + 1);
+  }
 
   return (
     <article
@@ -183,6 +198,25 @@ export default function SlideCanvas({
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,var(--brand-gray)_0%,var(--brand-white)_45%,color-mix(in_srgb,var(--brand-navy)_8%,white)_100%)]" />
       <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[var(--comic-primary)]/15 border-4 border-[var(--comic-black)]/20" />
       <div className="pointer-events-none absolute -bottom-10 -left-6 h-28 w-28 rounded-full bg-[var(--comic-secondary)]/10 border-4 border-[var(--comic-black)]/15" />
+
+      {timerOn ? (
+        <div
+          className={[
+            'absolute z-20',
+            compact ? 'right-3 top-3' : present ? 'right-6 top-6 md:right-8 md:top-8' : 'right-5 top-5',
+          ].join(' ')}
+        >
+          <PresentationSlideTimer
+            key={`${slide.id}-${timerResetKey}-${localResetKey}`}
+            enabled={timerOn}
+            seconds={slide.timerSeconds || 60}
+            slideId={slide.id}
+            compact={compact}
+            present={present}
+            onStateChange={setTimerState}
+          />
+        </div>
+      ) : null}
 
       <div
         className={[
@@ -376,8 +410,8 @@ export default function SlideCanvas({
                 slide={slide}
                 present={present}
                 compact={compact}
-                timerState={timerState}
-                onRequestTimerReset={onRequestTimerReset}
+                timerState={timerOn ? timerState : null}
+                onRequestTimerReset={timerOn ? handleRequestTimerReset : undefined}
               />
             </div>
           </div>

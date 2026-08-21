@@ -8,6 +8,7 @@ import {
   getPresentationAudioTracks,
   PRESENTATION_CHOICE_LETTERS,
 } from '@/lib/presentation/types';
+import { isPastClipEnd, seekAudioTo } from '@/lib/audio/clipPlayback';
 
 /** Brand has no green token — use a clear quiz green for correct feedback. */
 const QUIZ_CORRECT = '#15803d';
@@ -92,6 +93,16 @@ export default function PresentationAudioMatch({
     url: String(slide.choiceImages[index] ?? '').trim(),
   })).filter((item) => item.url);
 
+  const startRef = useRef(start);
+  const endRef = useRef(end);
+  const durationRef = useRef(duration);
+
+  useEffect(() => {
+    startRef.current = start;
+    endRef.current = end;
+    durationRef.current = duration;
+  }, [start, end, duration]);
+
   useEffect(() => {
     setTrackIndex(0);
   }, [slide.id]);
@@ -104,7 +115,7 @@ export default function PresentationAudioMatch({
     const audio = audioRef.current;
     if (audio) {
       audio.pause();
-      audio.currentTime = start;
+      void seekAudioTo(audio, start);
     }
   }, [slide.id, safeIndex, start, end, slide.audioUrl]);
 
@@ -112,38 +123,50 @@ export default function PresentationAudioMatch({
     const audio = audioRef.current;
     if (!audio) return;
 
-    const onTimeUpdate = () => {
+    const onEnded = () => {
+      setPlaying(false);
+      void seekAudioTo(audio, startRef.current);
+      setProgress(1);
+    };
+
+    audio.addEventListener('ended', onEnded);
+    return () => {
+      audio.removeEventListener('ended', onEnded);
+    };
+  }, []);
+
+  // Precise end clamp — HTMLAudio timeupdate is too coarse (~4Hz) and overshoots.
+  useEffect(() => {
+    if (!playing) return;
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    let raf = 0;
+    const tick = () => {
       const t = audio.currentTime;
-      if (t >= end - 0.05) {
+      const clipStart = startRef.current;
+      const clipEnd = endRef.current;
+      const clipDuration = durationRef.current;
+      if (isPastClipEnd(t, clipEnd)) {
         audio.pause();
-        audio.currentTime = start;
+        void seekAudioTo(audio, clipStart);
         setPlaying(false);
         setProgress(1);
         return;
       }
-      setProgress(Math.min(1, Math.max(0, (t - start) / duration)));
+      setProgress(Math.min(1, Math.max(0, (t - clipStart) / clipDuration)));
+      raf = window.requestAnimationFrame(tick);
     };
-
-    const onEnded = () => {
-      setPlaying(false);
-      audio.currentTime = start;
-      setProgress(1);
-    };
-
-    audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('ended', onEnded);
-    return () => {
-      audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('ended', onEnded);
-    };
-  }, [start, end, duration]);
+    raf = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(raf);
+  }, [playing]);
 
   async function handlePlay() {
     if (!slide.audioUrl.trim() || !audioRef.current) return;
     setError('');
     try {
       const audio = audioRef.current;
-      audio.currentTime = start;
+      await seekAudioTo(audio, start);
       await audio.play();
       setPlaying(true);
       setProgress(0);
@@ -157,7 +180,7 @@ export default function PresentationAudioMatch({
     const audio = audioRef.current;
     if (!audio) return;
     audio.pause();
-    audio.currentTime = start;
+    void seekAudioTo(audio, start);
     setPlaying(false);
     setProgress(0);
   }
@@ -168,7 +191,7 @@ export default function PresentationAudioMatch({
     const rect = event.currentTarget.getBoundingClientRect();
     const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
     const next = start + ratio * duration;
-    audio.currentTime = next;
+    void seekAudioTo(audio, next);
     setProgress(ratio);
   }
 
@@ -189,7 +212,7 @@ export default function PresentationAudioMatch({
 
   return (
     <div className={['flex h-full min-h-0 flex-col gap-3', compact ? 'gap-2' : ''].join(' ')}>
-      <audio ref={audioRef} src={slide.audioUrl || undefined} preload="metadata" />
+      <audio ref={audioRef} src={slide.audioUrl || undefined} preload="auto" />
 
       <div
         className={[
