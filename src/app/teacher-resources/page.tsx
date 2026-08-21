@@ -1,8 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChalkboard, faDoorOpen, faHeadphones } from "@fortawesome/free-solid-svg-icons";
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import {
+  faBagShopping,
+  faBook,
+  faBriefcase,
+  faBullseye,
+  faChalkboard,
+  faChartColumn,
+  faClipboardList,
+  faDoorOpen,
+  faEarListen,
+  faFileLines,
+  faGamepad,
+  faHeadphones,
+  faMicrophone,
+  faMusic,
+  faStar,
+  faUsers,
+} from "@fortawesome/free-solid-svg-icons";
 import ComicButton from "../../components/ComicButton";
 import ComicCard from "../../components/ComicCard";
 import ComicTitle from "../../components/ComicTitle";
@@ -10,6 +29,37 @@ import ComicText from "../../components/ComicText";
 import Footer from "../../components/Footer";
 import { useI18n } from "../../i18n/I18nProvider";
 
+function TitleWithIcon({
+  icon,
+  children,
+  className = "",
+}: {
+  icon: IconDefinition;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <span className={`inline-flex items-center justify-center gap-3 ${className}`.trim()}>
+      <FontAwesomeIcon icon={icon} aria-hidden className="h-[0.85em] w-[0.85em] shrink-0" />
+      {children}
+    </span>
+  );
+}
+
+function ButtonWithIcon({
+  icon,
+  children,
+}: {
+  icon: IconDefinition;
+  children: ReactNode;
+}) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <FontAwesomeIcon icon={icon} aria-hidden className="h-[1em] w-[1em] shrink-0" />
+      {children}
+    </span>
+  );
+}
 
 // Hero Section
 function HeroSection() {
@@ -25,7 +75,9 @@ function HeroSection() {
       
       <div className="relative z-0">
         <ComicTitle level={1} className="comic-text-white mb-8 comic-wiggle">
-          {t.teacherResources.heroTitle}
+          <TitleWithIcon icon={faBagShopping}>
+            {t.teacherResources.heroTitle}
+          </TitleWithIcon>
         </ComicTitle>
         <ComicText size="xl" className="comic-text-white mb-12 font-bold max-w-3xl mx-auto">
           {t.teacherResources.heroDesc}
@@ -37,7 +89,9 @@ function HeroSection() {
               size="lg"
               className="comic-wiggle"
             >
-              {t.teacherResources.joinTeam}
+              <ButtonWithIcon icon={faUsers}>
+                {t.teacherResources.joinTeam}
+              </ButtonWithIcon>
             </ComicButton>
           </Link>
         </div>
@@ -53,7 +107,9 @@ function ResourceCategoriesSection() {
     <section className="max-w-6xl mx-auto py-24 px-4">
       <div className="text-center mb-16">
         <ComicTitle level={2} className="comic-title-no-shadow mb-8 text-[var(--comic-primary)]">
-          {t.teacherResources.categoriesTitle}
+          <TitleWithIcon icon={faBook}>
+            {t.teacherResources.categoriesTitle}
+          </TitleWithIcon>
         </ComicTitle>
         <ComicText size="lg" className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto">
           {t.teacherResources.categoriesDesc}
@@ -63,7 +119,9 @@ function ResourceCategoriesSection() {
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
         <ComicCard className="comic-shadow-xl text-center flex flex-col">
           <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-primary)]">
-            {t.teacherResources.lessonPlansTitle}
+            <TitleWithIcon icon={faClipboardList}>
+              {t.teacherResources.lessonPlansTitle}
+            </TitleWithIcon>
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
             {t.teacherResources.lessonPlansDesc}
@@ -84,7 +142,9 @@ function ResourceCategoriesSection() {
         
         <ComicCard className="comic-shadow-xl text-center flex flex-col">
           <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-secondary)]">
-            {t.teacherResources.worksheetsTitle}
+            <TitleWithIcon icon={faFileLines}>
+              {t.teacherResources.worksheetsTitle}
+            </TitleWithIcon>
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
             {t.teacherResources.worksheetsDesc}
@@ -99,53 +159,44 @@ function ResourceCategoriesSection() {
           <div className="flex flex-col gap-3 items-center">
             <Link href="/teacher-resources/speak-and-submit">
               <ComicButton variant="secondary" size="sm">
-                {t.teacherResources.openSpeakAndSubmit}
+                <ButtonWithIcon icon={faMicrophone}>
+                  {t.teacherResources.openSpeakAndSubmit}
+                </ButtonWithIcon>
               </ComicButton>
             </Link>
             <Link href="/teacher-resources/listen-and-answer">
               <ComicButton variant="primary" size="sm">
-                {t.teacherResources.listenAndAnswerButton}
+                <ButtonWithIcon icon={faEarListen}>
+                  {t.teacherResources.listenAndAnswerButton}
+                </ButtonWithIcon>
               </ComicButton>
             </Link>
             <Link href="/teacher-resources/listen-and-learn">
               <ComicButton variant="warning" size="sm">
-                <span className="inline-flex items-center gap-2">
-                  <FontAwesomeIcon
-                    icon={faHeadphones}
-                    aria-hidden
-                    className="h-[1em] w-[1em] shrink-0"
-                  />
+                <ButtonWithIcon icon={faHeadphones}>
                   {t.teacherResources.listenAndLearnButton}
-                </span>
+                </ButtonWithIcon>
               </ComicButton>
             </Link>
             <Link href="/teacher-resources/gradebook">
               <ComicButton variant="success" size="sm">
-                {t.teacherResources.openGradebook}
+                <ButtonWithIcon icon={faChartColumn}>
+                  {t.teacherResources.openGradebook}
+                </ButtonWithIcon>
               </ComicButton>
             </Link>
             <Link href="/teacher-resources/escape-room">
               <ComicButton variant="danger" size="sm">
-                <span className="inline-flex items-center gap-2">
-                  <FontAwesomeIcon
-                    icon={faDoorOpen}
-                    aria-hidden
-                    className="h-[1em] w-[1em] shrink-0"
-                  />
+                <ButtonWithIcon icon={faDoorOpen}>
                   Escape Room Generator
-                </span>
+                </ButtonWithIcon>
               </ComicButton>
             </Link>
             <Link href="/teacher-resources/presentation">
               <ComicButton variant="secondary" size="sm">
-                <span className="inline-flex items-center gap-2">
-                  <FontAwesomeIcon
-                    icon={faChalkboard}
-                    aria-hidden
-                    className="h-[1em] w-[1em] shrink-0"
-                  />
+                <ButtonWithIcon icon={faChalkboard}>
                   Presentation
-                </span>
+                </ButtonWithIcon>
               </ComicButton>
             </Link>
           </div>
@@ -153,7 +204,9 @@ function ResourceCategoriesSection() {
         
         <ComicCard className="comic-shadow-xl text-center flex flex-col">
           <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-success)]">
-            {t.teacherResources.audioVideoTitle}
+            <TitleWithIcon icon={faMusic}>
+              {t.teacherResources.audioVideoTitle}
+            </TitleWithIcon>
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
             {t.teacherResources.audioVideoDesc}
@@ -184,7 +237,9 @@ function FeaturedResourcesSection() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
           <ComicTitle level={2} className="comic-text-white mb-8">
-            {t.teacherResources.featuredTitle}
+            <TitleWithIcon icon={faStar}>
+              {t.teacherResources.featuredTitle}
+            </TitleWithIcon>
           </ComicTitle>
           <ComicText size="lg" className="comic-text-white font-bold max-w-4xl mx-auto">
             {t.teacherResources.featuredDesc}
@@ -194,7 +249,9 @@ function FeaturedResourcesSection() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
           <ComicCard className="comic-shadow-xl flex flex-col">
             <ComicTitle level={3} className="mb-4 text-[var(--comic-primary)]">
-              {t.teacherResources.grammarSeriesTitle}
+              <TitleWithIcon icon={faBullseye}>
+                {t.teacherResources.grammarSeriesTitle}
+              </TitleWithIcon>
             </ComicTitle>
             <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
               {t.teacherResources.grammarSeriesDesc}
@@ -216,7 +273,9 @@ function FeaturedResourcesSection() {
           
           <ComicCard className="comic-shadow-xl flex flex-col">
             <ComicTitle level={3} className="mb-4 text-[var(--comic-warning)]">
-              {t.teacherResources.businessToolkitTitle}
+              <TitleWithIcon icon={faBriefcase}>
+                {t.teacherResources.businessToolkitTitle}
+              </TitleWithIcon>
             </ComicTitle>
             <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
               {t.teacherResources.businessToolkitDesc}
@@ -238,7 +297,9 @@ function FeaturedResourcesSection() {
           
           <ComicCard className="comic-shadow-xl flex flex-col">
             <ComicTitle level={3} className="mb-4 text-[var(--comic-success)]">
-              {t.teacherResources.gamesPackTitle}
+              <TitleWithIcon icon={faGamepad}>
+                {t.teacherResources.gamesPackTitle}
+              </TitleWithIcon>
             </ComicTitle>
             <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
               {t.teacherResources.gamesPackDesc}
