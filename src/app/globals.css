@@ -194,12 +194,7 @@ body::before {
 
 /* Teacher resources hub — flat cards / buttons / titles */
 .teacher-resources-page .comic-card,
-.teacher-resources-page .comic-button,
-.teacher-resources-page .comic-shadow-sm,
-.teacher-resources-page .comic-shadow-md,
-.teacher-resources-page .comic-shadow-lg,
-.teacher-resources-page .comic-shadow-xl,
-.teacher-resources-page .comic-shadow-2xl {
+.teacher-resources-page .comic-button {
   box-shadow: none !important;
 }
 

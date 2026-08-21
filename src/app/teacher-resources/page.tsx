@@ -72,11 +72,11 @@ function HeroSection() {
   const { t } = useI18n();
   return (
     <section className="flex flex-col items-center justify-center text-center py-24 px-4 comic-bg-danger relative overflow-hidden comic-pattern-zigzag">
-      <div className="absolute top-10 left-10 w-24 h-24 comic-bg-warning rounded-full comic-border-thick comic-bounce"></div>
-      <div className="absolute top-20 right-20 w-20 h-20 comic-bg-success rounded-full comic-border-thick comic-bounce" style={{animationDelay: '0.5s'}}></div>
-      <div className="absolute bottom-20 left-20 w-16 h-16 comic-bg-primary rounded-full comic-border-thick comic-bounce" style={{animationDelay: '1s'}}></div>
-      <div className="absolute top-1/2 right-10 w-12 h-12 comic-bg-secondary rounded-full comic-border-thick comic-bounce" style={{animationDelay: '1.5s'}}></div>
-      <div className="absolute bottom-1/3 right-1/3 w-14 h-14 bg-[var(--comic-yellow)] rounded-full comic-border-thick comic-bounce" style={{animationDelay: '2s'}}></div>
+      <div className="absolute top-10 left-10 w-24 h-24 comic-bg-warning rounded-full comic-border-thick comic-shadow-xl comic-bounce"></div>
+      <div className="absolute top-20 right-20 w-20 h-20 comic-bg-success rounded-full comic-border-thick comic-shadow-xl comic-bounce" style={{animationDelay: '0.5s'}}></div>
+      <div className="absolute bottom-20 left-20 w-16 h-16 comic-bg-primary rounded-full comic-border-thick comic-shadow-xl comic-bounce" style={{animationDelay: '1s'}}></div>
+      <div className="absolute top-1/2 right-10 w-12 h-12 comic-bg-secondary rounded-full comic-border-thick comic-shadow-lg comic-bounce" style={{animationDelay: '1.5s'}}></div>
+      <div className="absolute bottom-1/3 right-1/3 w-14 h-14 bg-[var(--comic-yellow)] rounded-full comic-border-thick comic-shadow-lg comic-bounce" style={{animationDelay: '2s'}}></div>
       
       <div className="relative z-0">
         <ComicTitle level={1} className="comic-title-no-shadow text-[var(--comic-yellow)] mb-8 comic-wiggle">
@@ -238,15 +238,15 @@ function ResourceCategoriesSection() {
 function FeaturedResourcesSection() {
   const { t } = useI18n();
   return (
-    <section className="bg-[var(--comic-light)] py-24 px-4">
+    <section className="comic-bg-secondary py-24 px-4 comic-pattern-stripes">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
-          <ComicTitle level={2} className="comic-title-no-shadow mb-8 text-[var(--comic-primary)]">
+          <ComicTitle level={2} className="comic-title-no-shadow mb-8 text-[var(--comic-yellow)]">
             <TitleWithIcon icon={faStar}>
               {t.teacherResources.featuredTitle}
             </TitleWithIcon>
           </ComicTitle>
-          <ComicText size="lg" className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto">
+          <ComicText size="lg" className="comic-text-white font-bold max-w-4xl mx-auto">
             {t.teacherResources.featuredDesc}
           </ComicText>
         </div>
