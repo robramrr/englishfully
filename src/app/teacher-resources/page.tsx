@@ -32,17 +32,19 @@ import { useI18n } from "../../i18n/I18nProvider";
 function TitleWithIcon({
   icon,
   children,
-  className = "",
 }: {
   icon: IconDefinition;
   children: ReactNode;
-  className?: string;
 }) {
   return (
-    <span className={`inline-flex items-center justify-center gap-3 ${className}`.trim()}>
-      <FontAwesomeIcon icon={icon} aria-hidden className="h-[0.85em] w-[0.85em] shrink-0" />
+    <>
+      <FontAwesomeIcon
+        icon={icon}
+        aria-hidden
+        className="mr-2 inline-block h-[0.85em] w-[0.85em] shrink-0 align-[-0.1em]"
+      />
       {children}
-    </span>
+    </>
   );
 }
 
@@ -54,10 +56,14 @@ function ButtonWithIcon({
   children: ReactNode;
 }) {
   return (
-    <span className="inline-flex items-center gap-2">
-      <FontAwesomeIcon icon={icon} aria-hidden className="h-[1em] w-[1em] shrink-0" />
+    <>
+      <FontAwesomeIcon
+        icon={icon}
+        aria-hidden
+        className="mr-2 inline-block h-[1em] w-[1em] shrink-0 align-[-0.125em]"
+      />
       {children}
-    </span>
+    </>
   );
 }
 
@@ -66,15 +72,14 @@ function HeroSection() {
   const { t } = useI18n();
   return (
     <section className="flex flex-col items-center justify-center text-center py-24 px-4 comic-bg-danger relative overflow-hidden comic-pattern-zigzag">
-      {/* Enhanced comic book style background elements */}
-      <div className="absolute top-10 left-10 w-24 h-24 comic-bg-warning rounded-full comic-border-thick comic-shadow-xl comic-bounce"></div>
-      <div className="absolute top-20 right-20 w-20 h-20 comic-bg-success rounded-full comic-border-thick comic-shadow-xl comic-bounce" style={{animationDelay: '0.5s'}}></div>
-      <div className="absolute bottom-20 left-20 w-16 h-16 comic-bg-primary rounded-full comic-border-thick comic-shadow-xl comic-bounce" style={{animationDelay: '1s'}}></div>
-      <div className="absolute top-1/2 right-10 w-12 h-12 comic-bg-secondary rounded-full comic-border-thick comic-shadow-lg comic-bounce" style={{animationDelay: '1.5s'}}></div>
-      <div className="absolute bottom-1/3 right-1/3 w-14 h-14 bg-[var(--comic-yellow)] rounded-full comic-border-thick comic-shadow-lg comic-bounce" style={{animationDelay: '2s'}}></div>
+      <div className="absolute top-10 left-10 w-24 h-24 comic-bg-warning rounded-full comic-border-thick comic-bounce"></div>
+      <div className="absolute top-20 right-20 w-20 h-20 comic-bg-success rounded-full comic-border-thick comic-bounce" style={{animationDelay: '0.5s'}}></div>
+      <div className="absolute bottom-20 left-20 w-16 h-16 comic-bg-primary rounded-full comic-border-thick comic-bounce" style={{animationDelay: '1s'}}></div>
+      <div className="absolute top-1/2 right-10 w-12 h-12 comic-bg-secondary rounded-full comic-border-thick comic-bounce" style={{animationDelay: '1.5s'}}></div>
+      <div className="absolute bottom-1/3 right-1/3 w-14 h-14 bg-[var(--comic-yellow)] rounded-full comic-border-thick comic-bounce" style={{animationDelay: '2s'}}></div>
       
       <div className="relative z-0">
-        <ComicTitle level={1} className="comic-text-white mb-8 comic-wiggle">
+        <ComicTitle level={1} className="comic-title-no-shadow text-[var(--comic-yellow)] mb-8 comic-wiggle">
           <TitleWithIcon icon={faBagShopping}>
             {t.teacherResources.heroTitle}
           </TitleWithIcon>
@@ -117,8 +122,8 @@ function ResourceCategoriesSection() {
       </div>
       
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-        <ComicCard className="comic-shadow-xl text-center flex flex-col">
-          <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-primary)]">
+        <ComicCard className="text-center flex flex-col">
+          <ComicTitle level={4} className="comic-title-no-shadow mb-4 text-[var(--comic-primary)]">
             <TitleWithIcon icon={faClipboardList}>
               {t.teacherResources.lessonPlansTitle}
             </TitleWithIcon>
@@ -140,8 +145,8 @@ function ResourceCategoriesSection() {
           </ComicButton>
         </ComicCard>
         
-        <ComicCard className="comic-shadow-xl text-center flex flex-col">
-          <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-secondary)]">
+        <ComicCard className="text-center flex flex-col">
+          <ComicTitle level={4} className="comic-title-no-shadow mb-4 text-[var(--comic-secondary)]">
             <TitleWithIcon icon={faFileLines}>
               {t.teacherResources.worksheetsTitle}
             </TitleWithIcon>
@@ -202,8 +207,8 @@ function ResourceCategoriesSection() {
           </div>
         </ComicCard>
         
-        <ComicCard className="comic-shadow-xl text-center flex flex-col">
-          <ComicTitle level={3} className="comic-title-no-shadow mb-4 text-[var(--comic-success)]">
+        <ComicCard className="text-center flex flex-col">
+          <ComicTitle level={4} className="comic-title-no-shadow mb-4 text-[var(--comic-success)]">
             <TitleWithIcon icon={faMusic}>
               {t.teacherResources.audioVideoTitle}
             </TitleWithIcon>
@@ -233,22 +238,22 @@ function ResourceCategoriesSection() {
 function FeaturedResourcesSection() {
   const { t } = useI18n();
   return (
-    <section className="comic-bg-secondary py-24 px-4 comic-pattern-stripes">
+    <section className="bg-[var(--comic-light)] py-24 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
-          <ComicTitle level={2} className="comic-text-white mb-8">
+          <ComicTitle level={2} className="comic-title-no-shadow mb-8 text-[var(--comic-primary)]">
             <TitleWithIcon icon={faStar}>
               {t.teacherResources.featuredTitle}
             </TitleWithIcon>
           </ComicTitle>
-          <ComicText size="lg" className="comic-text-white font-bold max-w-4xl mx-auto">
+          <ComicText size="lg" className="text-[var(--comic-dark)] font-bold max-w-4xl mx-auto">
             {t.teacherResources.featuredDesc}
           </ComicText>
         </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          <ComicCard className="comic-shadow-xl flex flex-col">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-primary)]">
+          <ComicCard className="flex flex-col">
+            <ComicTitle level={4} className="comic-title-no-shadow mb-4 text-[var(--comic-primary)]">
               <TitleWithIcon icon={faBullseye}>
                 {t.teacherResources.grammarSeriesTitle}
               </TitleWithIcon>
@@ -271,8 +276,8 @@ function FeaturedResourcesSection() {
             </ComicButton>
           </ComicCard>
           
-          <ComicCard className="comic-shadow-xl flex flex-col">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-warning)]">
+          <ComicCard className="flex flex-col">
+            <ComicTitle level={4} className="comic-title-no-shadow mb-4 text-[var(--comic-warning)]">
               <TitleWithIcon icon={faBriefcase}>
                 {t.teacherResources.businessToolkitTitle}
               </TitleWithIcon>
@@ -295,8 +300,8 @@ function FeaturedResourcesSection() {
             </ComicButton>
           </ComicCard>
           
-          <ComicCard className="comic-shadow-xl flex flex-col">
-            <ComicTitle level={3} className="mb-4 text-[var(--comic-success)]">
+          <ComicCard className="flex flex-col">
+            <ComicTitle level={4} className="comic-title-no-shadow mb-4 text-[var(--comic-success)]">
               <TitleWithIcon icon={faGamepad}>
                 {t.teacherResources.gamesPackTitle}
               </TitleWithIcon>
@@ -326,7 +331,7 @@ function FeaturedResourcesSection() {
 
 export default function TeacherResources() {
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--comic-light)]">
+    <div className="teacher-resources-page flex flex-col min-h-screen bg-[var(--comic-light)]">
       <HeroSection />
       <ResourceCategoriesSection />
       <FeaturedResourcesSection />

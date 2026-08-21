@@ -192,6 +192,34 @@ body::before {
   text-shadow: none;
 }
 
+/* Teacher resources hub — flat cards / buttons / titles */
+.teacher-resources-page .comic-card,
+.teacher-resources-page .comic-button,
+.teacher-resources-page .comic-shadow-sm,
+.teacher-resources-page .comic-shadow-md,
+.teacher-resources-page .comic-shadow-lg,
+.teacher-resources-page .comic-shadow-xl,
+.teacher-resources-page .comic-shadow-2xl {
+  box-shadow: none !important;
+}
+
+.teacher-resources-page .comic-card:hover,
+.teacher-resources-page .comic-button:hover,
+.teacher-resources-page .comic-button:active {
+  box-shadow: none !important;
+}
+
+.teacher-resources-page .comic-title {
+  text-shadow: none;
+}
+
+.teacher-resources-page .comic-card .comic-title {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+  max-width: 100%;
+}
+
 .speak-page .comic-button:hover,
 .speak-page .comic-button:active,
 .speak-page .comic-audio-player__play:active {
