@@ -168,6 +168,30 @@ body::before {
   box-shadow: none !important;
 }
 
+/* Presentation teacher tools — flat cards / buttons / titles */
+.presentation-page .comic-card,
+.presentation-page .comic-button,
+.presentation-page .comic-input,
+.presentation-page .comic-textarea,
+.presentation-page .comic-shadow-sm,
+.presentation-page .comic-shadow-md,
+.presentation-page .comic-shadow-lg,
+.presentation-page .comic-shadow-xl,
+.presentation-page .comic-shadow-2xl {
+  box-shadow: none !important;
+}
+
+.presentation-page .comic-card:hover,
+.presentation-page .comic-button:hover,
+.presentation-page .comic-button:active,
+.presentation-page .comic-input:focus {
+  box-shadow: none !important;
+}
+
+.presentation-page .comic-title {
+  text-shadow: none;
+}
+
 .speak-page .comic-button:hover,
 .speak-page .comic-button:active,
 .speak-page .comic-audio-player__play:active {

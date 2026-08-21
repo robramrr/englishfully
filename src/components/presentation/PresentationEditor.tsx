@@ -389,9 +389,6 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
           >
             Fullscreen
           </ComicButton>
-          <ComicButton type="button" variant="accent" size="sm" onClick={() => handleAddSlide('content')}>
-            + Add slide
-          </ComicButton>
           <ComicButton type="button" variant="warning" size="sm" onClick={handleReset}>
             Clear
           </ComicButton>
@@ -495,6 +492,15 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
               </button>
             ))}
           </div>
+          <ComicButton
+            type="button"
+            variant="accent"
+            size="sm"
+            className="w-full"
+            onClick={() => handleAddSlide('content')}
+          >
+            + Add slide
+          </ComicButton>
         </ComicCard>
 
         <div className="space-y-6 min-w-0">

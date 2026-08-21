@@ -122,65 +122,62 @@ export default function PresentationShareBar({
   }
 
   return (
-    <ComicCard className="comic-shadow-xl space-y-4">
+    <ComicCard className="space-y-4">
       <ComicTitle level={3} className="comic-title-no-shadow text-[var(--comic-secondary)]">
         Status: {isPublished ? 'Published' : 'Draft'}
       </ComicTitle>
 
-      <div
-        className={[
-          'relative flex flex-col gap-3',
-          shareUrl && isPublished && qrCode ? 'md:pr-44' : '',
-        ].join(' ')}
-      >
-        {shareUrl && isPublished ? (
-          <ComicText className="text-[var(--comic-dark)] font-bold break-all md:max-w-[calc(100%-11.5rem)]">
-            <a
-              href={shareUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-[var(--comic-secondary)] no-underline [font-size:inherit] [line-height:inherit] [font-weight:inherit] [font-family:inherit]"
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
+          {shareUrl && isPublished ? (
+            <ComicText className="text-[var(--comic-dark)] font-bold break-all">
+              <a
+                href={shareUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[var(--comic-secondary)] no-underline [font-size:inherit] [line-height:inherit] [font-weight:inherit] [font-family:inherit]"
+              >
+                {shareUrl}
+              </a>
+            </ComicText>
+          ) : (
+            <ComicText className="text-[var(--comic-dark)] font-bold">
+              Publish to generate the live link and QR code.
+            </ComicText>
+          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <ComicButton
+              type="button"
+              variant="secondary"
+              size="md"
+              disabled={saving}
+              onClick={() => void handleCopyLink()}
             >
-              {shareUrl}
-            </a>
-          </ComicText>
-        ) : (
-          <ComicText className="text-[var(--comic-dark)] font-bold">
-            Publish to generate the live link and QR code.
-          </ComicText>
-        )}
-        <div className="flex flex-wrap items-center gap-2">
-          <ComicButton
-            type="button"
-            variant="secondary"
-            size="md"
-            disabled={saving}
-            onClick={() => void handleCopyLink()}
-          >
-            Copy link
-          </ComicButton>
-          <ComicButton
-            type="button"
-            variant="warning"
-            size="md"
-            disabled={Boolean(exporting)}
-            onClick={() => void handlePdf()}
-          >
-            {exporting === 'pdf' ? 'Opening…' : 'Download PDF'}
-          </ComicButton>
-          <ComicButton
-            type="button"
-            variant="accent"
-            size="md"
-            disabled={Boolean(exporting)}
-            onClick={() => void handlePptx()}
-          >
-            {exporting === 'pptx' ? 'Exporting…' : 'Download PowerPoint'}
-          </ComicButton>
+              Copy link
+            </ComicButton>
+            <ComicButton
+              type="button"
+              variant="warning"
+              size="md"
+              disabled={Boolean(exporting)}
+              onClick={() => void handlePdf()}
+            >
+              {exporting === 'pdf' ? 'Opening…' : 'Download PDF'}
+            </ComicButton>
+            <ComicButton
+              type="button"
+              variant="accent"
+              size="md"
+              disabled={Boolean(exporting)}
+              onClick={() => void handlePptx()}
+            >
+              {exporting === 'pptx' ? 'Exporting…' : 'Download PowerPoint'}
+            </ComicButton>
+          </div>
         </div>
 
         {shareUrl && isPublished && qrCode ? (
-          <div className="w-fit border-4 border-[var(--comic-black)] bg-white p-1.5 comic-shadow-sm md:absolute md:right-0 md:top-0">
+          <div className="shrink-0 self-start border-4 border-[var(--comic-black)] bg-white p-1.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={qrCode}
