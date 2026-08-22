@@ -1,6 +1,8 @@
 'use client';
 
 import Link from "next/link";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import ComicButton from "./ComicButton";
 import ComicCard from "./ComicCard";
 import ComicTitle from "./ComicTitle";
@@ -15,7 +17,10 @@ export default function Footer() {
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           <ComicCard variant="primary" className="text-center comic-shadow-xl">
             <ComicTitle level={3} className="comic-text-white mb-6">
-              {t.footer.getInTouch}
+              <span className="inline-flex items-center justify-center gap-2">
+                <FontAwesomeIcon icon={faEnvelope} aria-hidden className="h-[0.85em] w-[0.85em] shrink-0" />
+                {t.footer.getInTouch}
+              </span>
             </ComicTitle>
             <div className="space-y-3">
               <Link href="/contact">
