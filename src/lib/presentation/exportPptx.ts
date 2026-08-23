@@ -75,18 +75,20 @@ export async function buildPresentationPptxBuffer(
         color: RED,
         fontFace: 'Arial',
       });
-      page.addText(slide.title || deck.title || 'Presentation', {
-        x: 0.7,
-        y: 2.6,
-        w: 12,
-        h: 1.2,
-        fontSize: 40,
-        bold: true,
-        color: NAVY,
-        fontFace: 'Arial',
-      });
+      if (slide.showTitle !== false) {
+        page.addText(slide.title || deck.title || 'Presentation', {
+          x: 0.7,
+          y: 2.6,
+          w: 12,
+          h: 1.2,
+          fontSize: 40,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+        });
+      }
       const subtitle = slide.body || deck.subtitle;
-      if (subtitle) {
+      if (slide.showBody !== false && subtitle) {
         page.addText(subtitle, {
           x: 0.7,
           y: 4.0,
@@ -99,18 +101,21 @@ export async function buildPresentationPptxBuffer(
         });
       }
     } else if (slide.layout === 'audio_image') {
-      page.addText(slide.title || 'Listen and choose', {
-        x: 0.6,
-        y: 0.45,
-        w: 12.1,
-        h: 0.7,
-        fontSize: 28,
-        bold: true,
-        color: NAVY,
-        fontFace: 'Arial',
-      });
-      let y = 1.25;
-      if (slide.body.trim()) {
+      let y = 0.45;
+      if (slide.showTitle !== false) {
+        page.addText(slide.title || 'Listen and choose', {
+          x: 0.6,
+          y,
+          w: 12.1,
+          h: 0.7,
+          fontSize: 28,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+        });
+        y = 1.25;
+      }
+      if (slide.showBody !== false && slide.body.trim()) {
         page.addText(slide.body, {
           x: 0.6,
           y,
@@ -176,18 +181,21 @@ export async function buildPresentationPptxBuffer(
         }
       }
     } else if (slide.layout === 'describe_image') {
-      page.addText(slide.title || 'Describe the image', {
-        x: 0.6,
-        y: 0.45,
-        w: 12.1,
-        h: 0.7,
-        fontSize: 28,
-        bold: true,
-        color: NAVY,
-        fontFace: 'Arial',
-      });
-      let y = 1.25;
-      if (slide.body.trim()) {
+      let y = 0.45;
+      if (slide.showTitle !== false) {
+        page.addText(slide.title || 'Describe the image', {
+          x: 0.6,
+          y,
+          w: 12.1,
+          h: 0.7,
+          fontSize: 28,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+        });
+        y = 1.25;
+      }
+      if (slide.showBody !== false && slide.body.trim()) {
         page.addText(slide.body, {
           x: 0.6,
           y,
@@ -255,20 +263,25 @@ export async function buildPresentationPptxBuffer(
         !dualImages &&
         Boolean(slide.imageUrl.trim() || String(slide.imageUrl2 ?? '').trim());
       const textWidth = sideImage ? 6.8 : 12.1;
+      const showTitle = slide.showTitle !== false;
+      const showBody = slide.showBody !== false;
 
-      page.addText(slide.title || 'Untitled slide', {
-        x: 0.6,
-        y: 0.45,
-        w: 12.1,
-        h: 0.7,
-        fontSize: 28,
-        bold: true,
-        color: NAVY,
-        fontFace: 'Arial',
-      });
+      let y = 0.45;
+      if (showTitle) {
+        page.addText(slide.title || 'Untitled slide', {
+          x: 0.6,
+          y,
+          w: 12.1,
+          h: 0.7,
+          fontSize: 28,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+        });
+        y = 1.35;
+      }
 
-      let y = 1.35;
-      if (slide.body.trim()) {
+      if (showBody && slide.body.trim()) {
         page.addText(slide.body, {
           x: 0.6,
           y,

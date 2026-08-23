@@ -31,6 +31,8 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
         (slide.layout === 'title' ? deck.title : `Slide ${index + 1}`);
       const body =
         slide.layout === 'title' ? slide.body || deck.subtitle : slide.body;
+      const showTitle = slide.showTitle !== false;
+      const showBody = slide.showBody !== false;
       const bullets = slide.bullets.filter((item) => item.trim());
       const brand = deck.brandLabel?.trim() || 'Englishfully';
 
@@ -40,14 +42,14 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
             ${
               slide.layout === 'title'
                 ? `<p class="brand">${escapeHtml(brand)}</p>
-                   <h1>${escapeHtml(title || 'Presentation')}</h1>
-                   ${body ? `<p class="subtitle" style="color:${pdfColor(slide.bodyColor)};font-size:${pdfFontSize(
+                   ${showTitle ? `<h1>${escapeHtml(title || 'Presentation')}</h1>` : ''}
+                   ${showBody && body ? `<p class="subtitle" style="color:${pdfColor(slide.bodyColor)};font-size:${pdfFontSize(
                        slide.bodyFontSize,
                        22
                      )}px">${escapeHtml(body)}</p>` : ''}`
-                : `<h2>${escapeHtml(title)}</h2>
+                : `${showTitle ? `<h2>${escapeHtml(title)}</h2>` : ''}
                    ${
-                     body
+                     showBody && body
                        ? `<p class="body" style="color:${pdfColor(slide.bodyColor)};font-size:${pdfFontSize(
                            slide.bodyFontSize,
                            18

@@ -594,10 +594,27 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                   </select>
                 </label>
 
-                <label className="block space-y-1">
-                  <ComicText className="text-sm font-bold">
-                    {selected.layout === 'title' ? 'Title' : 'Slide title'}
-                  </ComicText>
+                <div className="block space-y-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <ComicText className="text-sm font-bold">
+                      {selected.layout === 'title' ? 'Title' : 'Slide title'}
+                    </ComicText>
+                    <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
+                      <span className="text-sm">{selected.showTitle ? 'On' : 'Off'}</span>
+                      <input
+                        type="checkbox"
+                        className="h-5 w-9 accent-[var(--comic-primary)]"
+                        checked={selected.showTitle}
+                        onChange={(event) =>
+                          setDeck((prev) =>
+                            updateSlide(prev, selected.id, {
+                              showTitle: event.target.checked,
+                            })
+                          )
+                        }
+                      />
+                    </label>
+                  </div>
                   <input
                     className="comic-input w-full"
                     value={selected.title}
@@ -613,20 +630,37 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                     }}
                     placeholder="Slide heading"
                   />
-                </label>
+                </div>
 
                 <div className="block space-y-1">
-                  <ComicText className="text-sm font-bold">
-                    {selected.layout === 'title'
-                      ? 'Subtitle'
-                      : selected.layout === 'content'
-                        ? 'Definition / explanation'
-                        : selected.layout === 'audio_image'
-                          ? 'Prompt (optional)'
-                          : selected.layout === 'describe_image'
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <ComicText className="text-sm font-bold">
+                      {selected.layout === 'title'
+                        ? 'Subtitle'
+                        : selected.layout === 'content'
+                          ? 'Definition / explanation'
+                          : selected.layout === 'audio_image'
                             ? 'Prompt (optional)'
-                            : 'Text'}
-                  </ComicText>
+                            : selected.layout === 'describe_image'
+                              ? 'Prompt (optional)'
+                              : 'Text'}
+                    </ComicText>
+                    <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
+                      <span className="text-sm">{selected.showBody ? 'On' : 'Off'}</span>
+                      <input
+                        type="checkbox"
+                        className="h-5 w-9 accent-[var(--comic-primary)]"
+                        checked={selected.showBody}
+                        onChange={(event) =>
+                          setDeck((prev) =>
+                            updateSlide(prev, selected.id, {
+                              showBody: event.target.checked,
+                            })
+                          )
+                        }
+                      />
+                    </label>
+                  </div>
                   <textarea
                     className="comic-textarea w-full min-h-[120px]"
                     value={selected.body}

@@ -218,8 +218,12 @@ export interface PresentationSlide {
   id: string;
   layout: PresentationSlideLayout;
   title: string;
+  /** When false, title is hidden on the slide (editor fields still keep the text). */
+  showTitle: boolean;
   /** Definition / explanation — always separate from grammar practice. */
   body: string;
+  /** When false, definition/body text is hidden on the slide. */
+  showBody: boolean;
   bullets: string[];
   imageUrl: string;
   imageAlt: string;
@@ -319,7 +323,9 @@ export function createEmptySlide(
     id: createSlideId(),
     layout,
     title: '',
+    showTitle: true,
     body: '',
+    showBody: true,
     bullets: [],
     imageUrl: '',
     imageAlt: '',
@@ -369,7 +375,9 @@ export function normalizeSlide(
     id: slide.id || base.id,
     layout: (slide.layout as PresentationSlideLayout) || base.layout,
     title: String(slide.title ?? ''),
+    showTitle: slide.showTitle !== false,
     body: String(slide.body ?? ''),
+    showBody: slide.showBody !== false,
     bullets: Array.isArray(slide.bullets)
       ? slide.bullets.map((item) => String(item ?? '').trim()).filter(Boolean)
       : [],

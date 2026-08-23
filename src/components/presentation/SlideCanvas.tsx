@@ -92,23 +92,31 @@ function ContentBody({
     slide.layout === 'content' && slide.grammarHighlighterEnabled;
   const mode = sizeMode(compact, present);
   const bodyPx = presentationFontSizePx(slide.bodyFontSize, mode);
+  const showBody = slide.showBody !== false;
+  const hasBullets = slide.bullets.filter((item) => item.trim()).length > 0;
+
+  if (!showBody && !hasBullets && !grammarOn) {
+    return null;
+  }
 
   return (
     <div className="space-y-3">
-      {body ? (
-        <p className="font-bold whitespace-pre-wrap" style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}>
-          {body}
-        </p>
-      ) : (
-        <p
-          className="font-bold whitespace-pre-wrap text-[var(--comic-dark)]/50"
-          style={{ fontSize: `${bodyPx}px`, lineHeight: 1.35 }}
-        >
-          Add a definition or explanation…
-        </p>
-      )}
+      {showBody ? (
+        body ? (
+          <p className="font-bold whitespace-pre-wrap" style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}>
+            {body}
+          </p>
+        ) : (
+          <p
+            className="font-bold whitespace-pre-wrap text-[var(--comic-dark)]/50"
+            style={{ fontSize: `${bodyPx}px`, lineHeight: 1.35 }}
+          >
+            Add a definition or explanation…
+          </p>
+        )
+      ) : null}
 
-      {slide.bullets.filter((item) => item.trim()).length > 0 ? (
+      {hasBullets ? (
         <ul className="space-y-1 font-bold">
           {slide.bullets
             .filter((item) => item.trim())
@@ -166,6 +174,8 @@ export default function SlideCanvas({
     slide.layout === 'title'
       ? slide.body || deck.subtitle
       : slide.body;
+  const showTitle = slide.showTitle !== false;
+  const showBody = slide.showBody !== false;
   const contentImages =
     slide.layout === 'content'
       ? [
@@ -251,15 +261,17 @@ export default function SlideCanvas({
             >
               {deck.brandLabel?.trim() || 'Englishfully'}
             </p>
-            <h2
-              className={[
-                'font-bungee leading-tight text-[var(--comic-secondary)]',
-                compact ? 'text-xl' : present ? 'text-4xl md:text-6xl' : 'text-3xl md:text-5xl',
-              ].join(' ')}
-            >
-              {title || 'Presentation title'}
-            </h2>
-            {body ? (
+            {showTitle ? (
+              <h2
+                className={[
+                  'font-bungee leading-tight text-[var(--comic-secondary)]',
+                  compact ? 'text-xl' : present ? 'text-4xl md:text-6xl' : 'text-3xl md:text-5xl',
+                ].join(' ')}
+              >
+                {title || 'Presentation title'}
+              </h2>
+            ) : null}
+            {showBody && body ? (
               <p
                 className="max-w-4xl font-bold whitespace-pre-wrap"
                 style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}
@@ -272,14 +284,16 @@ export default function SlideCanvas({
 
         {slide.layout === 'content' ? (
           <div className="flex flex-1 min-h-0 flex-col gap-4">
-            <h2
-              className={[
-                'font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
-                compact ? 'text-base' : present ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl',
-              ].join(' ')}
-            >
-              {title}
-            </h2>
+            {showTitle ? (
+              <h2
+                className={[
+                  'font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
+                  compact ? 'text-base' : present ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl',
+                ].join(' ')}
+              >
+                {title}
+              </h2>
+            ) : null}
             {dualContentImages ? (
               <>
                 <div className="min-h-0 overflow-auto">
@@ -339,14 +353,16 @@ export default function SlideCanvas({
 
         {slide.layout === 'bullets' ? (
           <div className="flex flex-1 min-h-0 flex-col gap-4">
-            <h2
-              className={[
-                'font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
-                compact ? 'text-base' : present ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl',
-              ].join(' ')}
-            >
-              {title}
-            </h2>
+            {showTitle ? (
+              <h2
+                className={[
+                  'font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
+                  compact ? 'text-base' : present ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl',
+                ].join(' ')}
+              >
+                {title}
+              </h2>
+            ) : null}
             <ul className="flex-1 space-y-2 overflow-auto font-bold">
               {(slide.bullets.length > 0 ? slide.bullets : ['Add bullet points…']).map((item) => (
                 <li
@@ -364,20 +380,22 @@ export default function SlideCanvas({
 
         {slide.layout === 'image' ? (
           <div className="flex flex-1 min-h-0 flex-col gap-3">
-            <h2
-              className={[
-                'font-bungee text-[var(--comic-secondary)] leading-tight',
-                compact ? 'text-base' : present ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl',
-              ].join(' ')}
-            >
-              {title}
-            </h2>
+            {showTitle ? (
+              <h2
+                className={[
+                  'font-bungee text-[var(--comic-secondary)] leading-tight',
+                  compact ? 'text-base' : present ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl',
+                ].join(' ')}
+              >
+                {title}
+              </h2>
+            ) : null}
             <SlideImage
               url={slide.imageUrl}
               alt={slide.imageAlt || title}
               className="min-h-0 flex-1 w-full"
             />
-            {body ? (
+            {showBody && body ? (
               <p
                 className="font-bold whitespace-pre-wrap"
                 style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}
@@ -408,15 +426,17 @@ export default function SlideCanvas({
 
         {slide.layout === 'audio_image' ? (
           <div className="flex flex-1 min-h-0 flex-col gap-3">
-            <h2
-              className={[
-                'font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
-                compact ? 'text-base' : present ? 'text-2xl md:text-4xl' : 'text-xl md:text-3xl',
-              ].join(' ')}
-            >
-              {title || 'Listen and choose'}
-            </h2>
-            {body ? (
+            {showTitle ? (
+              <h2
+                className={[
+                  'font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
+                  compact ? 'text-base' : present ? 'text-2xl md:text-4xl' : 'text-xl md:text-3xl',
+                ].join(' ')}
+              >
+                {title || 'Listen and choose'}
+              </h2>
+            ) : null}
+            {showBody && body ? (
               <p
                 className="font-bold whitespace-pre-wrap"
                 style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}
@@ -432,15 +452,17 @@ export default function SlideCanvas({
 
         {slide.layout === 'describe_image' ? (
           <div className="flex flex-1 min-h-0 flex-col gap-3">
-            <h2
-              className={[
-                'font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
-                compact ? 'text-base' : present ? 'text-2xl md:text-4xl' : 'text-xl md:text-3xl',
-              ].join(' ')}
-            >
-              {title || 'Describe the image'}
-            </h2>
-            {body ? (
+            {showTitle ? (
+              <h2
+                className={[
+                  'font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
+                  compact ? 'text-base' : present ? 'text-2xl md:text-4xl' : 'text-xl md:text-3xl',
+                ].join(' ')}
+              >
+                {title || 'Describe the image'}
+              </h2>
+            ) : null}
+            {showBody && body ? (
               <p
                 className="font-bold whitespace-pre-wrap"
                 style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}
