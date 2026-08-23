@@ -248,6 +248,21 @@ export default function About() {
       <OurStorySection />
       <TeamSection />
       <ValuesSection />
+      <section className="max-w-6xl mx-auto px-4 pb-16">
+        <ComicCard className="comic-shadow-xl text-center space-y-4">
+          <ComicTitle level={3} className="comic-title-no-shadow text-[var(--comic-secondary)]">
+            Company documents
+          </ComicTitle>
+          <ComicText className="text-[var(--comic-dark)] font-bold">
+            Startup pitch deck prepared for BOI Smart Visa (Digital Industry).
+          </ComicText>
+          <Link href="/about/pitch-deck">
+            <ComicButton variant="secondary" size="sm">
+              View Pitch Deck
+            </ComicButton>
+          </Link>
+        </ComicCard>
+      </section>
       <div className="flex-grow" />
       <Footer />
     </div>

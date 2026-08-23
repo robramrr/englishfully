@@ -133,10 +133,23 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                      slide.layout !== 'audio_image' &&
                      slide.layout !== 'describe_image' &&
                      slide.imageUrl.trim()
-                       ? `<img src="${escapeAttr(slide.imageUrl)}" alt="${escapeAttr(
-                           slide.imageAlt || title
-                         )}" />`
-                       : ''
+                       ? slide.layout === 'content' && slide.imageUrl2?.trim()
+                         ? `<div style="display:flex;gap:12px;margin-top:12px;">
+                              <img src="${escapeAttr(slide.imageUrl)}" alt="${escapeAttr(
+                                slide.imageAlt || title
+                              )}" style="width:48%;max-height:220px;object-fit:cover;" />
+                              <img src="${escapeAttr(slide.imageUrl2)}" alt="${escapeAttr(
+                                slide.imageAlt2 || title
+                              )}" style="width:48%;max-height:220px;object-fit:cover;" />
+                            </div>`
+                         : `<img src="${escapeAttr(slide.imageUrl)}" alt="${escapeAttr(
+                             slide.imageAlt || title
+                           )}" />`
+                       : slide.layout === 'content' && slide.imageUrl2?.trim()
+                         ? `<img src="${escapeAttr(slide.imageUrl2)}" alt="${escapeAttr(
+                             slide.imageAlt2 || title
+                           )}" />`
+                         : ''
                    }`
             }
             <div class="footer">

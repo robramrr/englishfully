@@ -166,9 +166,22 @@ export default function SlideCanvas({
     slide.layout === 'title'
       ? slide.body || deck.subtitle
       : slide.body;
-  const showImage =
-    Boolean(slide.imageUrl.trim()) ||
-    (showImageSlot && (slide.layout === 'content' || slide.layout === 'image'));
+  const contentImages =
+    slide.layout === 'content'
+      ? [
+          slide.imageUrl.trim()
+            ? { url: slide.imageUrl.trim(), alt: slide.imageAlt || title }
+            : null,
+          slide.imageUrl2.trim()
+            ? { url: slide.imageUrl2.trim(), alt: slide.imageAlt2 || title }
+            : null,
+        ].filter((item): item is { url: string; alt: string } => Boolean(item))
+      : [];
+  const dualContentImages = contentImages.length >= 2;
+  const showContentImageColumn =
+    slide.layout === 'content' &&
+    !dualContentImages &&
+    (contentImages.length === 1 || showImageSlot);
   const mode = sizeMode(compact, present);
   const timerOn = Boolean(slide.timerEnabled);
   const [timerState, setTimerState] = useState<SlideTimerState>({
@@ -267,30 +280,60 @@ export default function SlideCanvas({
             >
               {title}
             </h2>
-            <div
-              className={[
-                'grid flex-1 min-h-0 gap-4',
-                showImage ? 'md:grid-cols-2' : 'grid-cols-1',
-              ].join(' ')}
-            >
-              <div className="min-h-0 overflow-auto">
-                <ContentBody
-                  slide={slide}
-                  body={body}
-                  compact={compact}
-                  present={present}
-                  liveEditable={liveEditable}
-                  onGrammarTextChange={onGrammarTextChange}
-                />
+            {dualContentImages ? (
+              <>
+                <div className="min-h-0 overflow-auto">
+                  <ContentBody
+                    slide={slide}
+                    body={body}
+                    compact={compact}
+                    present={present}
+                    liveEditable={liveEditable}
+                    onGrammarTextChange={onGrammarTextChange}
+                  />
+                </div>
+                <div
+                  className={[
+                    'grid min-h-0 grid-cols-2 gap-3',
+                    compact ? 'max-h-32' : present ? 'flex-1' : 'max-h-56 md:max-h-72',
+                  ].join(' ')}
+                >
+                  {contentImages.map((image) => (
+                    <SlideImage
+                      key={image.url}
+                      url={image.url}
+                      alt={image.alt}
+                      className="h-full max-h-full w-full min-h-0"
+                    />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div
+                className={[
+                  'grid flex-1 min-h-0 gap-4',
+                  showContentImageColumn ? 'md:grid-cols-2' : 'grid-cols-1',
+                ].join(' ')}
+              >
+                <div className="min-h-0 overflow-auto">
+                  <ContentBody
+                    slide={slide}
+                    body={body}
+                    compact={compact}
+                    present={present}
+                    liveEditable={liveEditable}
+                    onGrammarTextChange={onGrammarTextChange}
+                  />
+                </div>
+                {showContentImageColumn ? (
+                  <SlideImage
+                    url={contentImages[0]?.url || slide.imageUrl}
+                    alt={contentImages[0]?.alt || slide.imageAlt || title}
+                    className={compact ? 'h-full max-h-40 w-full' : 'h-full max-h-full w-full'}
+                  />
+                ) : null}
               </div>
-              {showImage ? (
-                <SlideImage
-                  url={slide.imageUrl}
-                  alt={slide.imageAlt || title}
-                  className={compact ? 'h-full max-h-40 w-full' : 'h-full max-h-full w-full'}
-                />
-              ) : null}
-            </div>
+            )}
           </div>
         ) : null}
 

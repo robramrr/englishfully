@@ -215,6 +215,253 @@ body::before {
   max-width: 100%;
 }
 
+/* BOI pitch deck — document-first, print-friendly */
+.pitch-deck-page .comic-card,
+.pitch-deck-page .comic-button {
+  box-shadow: none !important;
+}
+
+.pitch-deck-page .comic-card:hover,
+.pitch-deck-page .comic-button:hover,
+.pitch-deck-page .comic-button:active {
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.pitch-deck-page .comic-title {
+  text-shadow: none;
+}
+
+/* Word / Google Docs–like type scale (screen + print) */
+.pitch-deck-page .comic-text,
+.pitch-deck-page .comic-text-bold,
+.pitch-deck-page li,
+.pitch-deck-page p,
+.pitch-deck-page a {
+  font-size: 11pt !important;
+  line-height: 1.5 !important;
+  letter-spacing: normal !important;
+}
+
+/* Body copy: regular weight like Word/Google Docs (not comic bold) */
+.pitch-deck-page .pitch-deck-body,
+.pitch-deck-page .pitch-deck-body.comic-text,
+.pitch-deck-page .pitch-deck-body.comic-text-bold,
+.pitch-deck-page .pitch-deck-section li,
+.pitch-deck-page .pitch-deck-section p.pitch-deck-body {
+  font-weight: 400 !important;
+}
+
+.pitch-deck-page .pitch-deck-section strong {
+  font-weight: 700 !important;
+}
+
+.pitch-deck-page h1.comic-title {
+  font-size: 22pt !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0.02em !important;
+}
+
+.pitch-deck-page h2.comic-title {
+  font-size: 14pt !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0.02em !important;
+}
+
+.pitch-deck-page h3.comic-title {
+  font-size: 13pt !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0.02em !important;
+}
+
+.pitch-deck-page h4.comic-title {
+  font-size: 12pt !important;
+  line-height: 1.35 !important;
+  letter-spacing: 0.02em !important;
+}
+
+.pitch-deck-page .comic-card {
+  padding: 1.25rem !important;
+}
+
+/* Contents block: keep rounded card + soft gray fill + blue border */
+.pitch-deck-page .pitch-deck-toc.comic-card {
+  background: #e1e1e1 !important;
+  border-radius: 0.75rem !important;
+  border: 4px solid var(--brand-navy) !important;
+}
+
+/* Section blocks: seamless — no rounded border; tame horizontal rule */
+.pitch-deck-page .pitch-deck-section.comic-card {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 1.5rem 0 !important;
+  border-bottom: 1px solid #d0d0d0 !important;
+}
+
+.pitch-deck-page .pitch-deck-section.comic-card:last-of-type {
+  border-bottom: none !important;
+}
+
+.pitch-deck-page .pitch-deck-section {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+@media print {
+  .pitch-deck-page .print\:hidden {
+    display: none !important;
+  }
+
+  /* Keep footer logo centered; hide footer action cards */
+  .pitch-deck-page footer .grid {
+    display: none !important;
+  }
+
+  .pitch-deck-page footer {
+    display: block !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+
+  .pitch-deck-page footer .text-center {
+    text-align: center !important;
+  }
+
+  .pitch-deck-page footer img {
+    display: block !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    max-width: 160px !important;
+  }
+
+  /* Site header: hide nav (was printing as a square); center logo */
+  .pitch-deck-site-header {
+    justify-content: center !important;
+    box-shadow: none !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+
+  .pitch-deck-site-header a {
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .pitch-deck-site-header img {
+    max-width: 180px !important;
+    height: auto !important;
+  }
+
+  .pitch-deck-page {
+    background: white !important;
+  }
+
+  /* Balanced print rhythm — denser than screen, not cramped */
+  .pitch-deck-page .pitch-deck-hero {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+
+  .pitch-deck-page .pitch-deck-hero .space-y-4 > * + * {
+    margin-top: 0.4rem !important;
+  }
+
+  .pitch-deck-page .pitch-deck-content {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+
+  .pitch-deck-page .pitch-deck-content.space-y-10 > * + * {
+    margin-top: 0.85rem !important;
+  }
+
+  .pitch-deck-page .comic-card {
+    border-color: transparent !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    padding: 0.65rem 0 !important;
+  }
+
+  .pitch-deck-page .pitch-deck-section.comic-card {
+    border-bottom: 1px solid #d0d0d0 !important;
+    padding-top: 0.85rem !important;
+    padding-bottom: 0.85rem !important;
+    margin: 0 !important;
+  }
+
+  .pitch-deck-page .pitch-deck-section .scroll-mt-28 {
+    scroll-margin-top: 0 !important;
+  }
+
+  .pitch-deck-page .pitch-deck-section h2.comic-title {
+    margin-bottom: 0.5rem !important;
+  }
+
+  .pitch-deck-page .pitch-deck-section h4.comic-title {
+    margin-top: 0.7rem !important;
+    margin-bottom: 0.35rem !important;
+  }
+
+  .pitch-deck-page .pitch-deck-body {
+    margin-bottom: 0.5rem !important;
+  }
+
+  .pitch-deck-page .pitch-deck-section ul {
+    margin-bottom: 0.5rem !important;
+  }
+
+  .pitch-deck-page .pitch-deck-section li {
+    margin-top: 0.2rem !important;
+    margin-bottom: 0.2rem !important;
+  }
+
+  .pitch-deck-page .pitch-deck-toc.comic-card {
+    background: #e1e1e1 !important;
+    border-radius: 0.75rem !important;
+    border: 4px solid var(--brand-navy) !important;
+    padding: 0.75rem !important;
+  }
+
+  .pitch-deck-page .comic-text,
+  .pitch-deck-page .comic-text-bold,
+  .pitch-deck-page li,
+  .pitch-deck-page p {
+    font-size: 11pt !important;
+  }
+
+  .pitch-deck-page .pitch-deck-body,
+  .pitch-deck-page .pitch-deck-section li {
+    font-weight: 400 !important;
+  }
+
+  .pitch-deck-page h1.comic-title {
+    font-size: 18pt !important;
+    margin-bottom: 0 !important;
+    font-family: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em !important;
+  }
+
+  .pitch-deck-page h2.comic-title {
+    font-size: 13pt !important;
+    font-family: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em !important;
+  }
+
+  .pitch-deck-page h3.comic-title,
+  .pitch-deck-page h4.comic-title {
+    font-size: 12pt !important;
+    font-family: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em !important;
+  }
+}
+
 .speak-page .comic-button:hover,
 .speak-page .comic-button:active,
 .speak-page .comic-audio-player__play:active {

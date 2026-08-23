@@ -713,7 +713,9 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                 {(selected.layout === 'content' || selected.layout === 'image') && (
                   <>
                     <label className="block space-y-1">
-                      <ComicText className="text-sm font-bold">Image URL</ComicText>
+                      <ComicText className="text-sm font-bold">
+                        {selected.layout === 'content' ? 'Image 1 URL' : 'Image URL'}
+                      </ComicText>
                       <input
                         className="comic-input w-full"
                         value={selected.imageUrl}
@@ -728,7 +730,9 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                       />
                     </label>
                     <label className="block space-y-1">
-                      <ComicText className="text-sm font-bold">Image alt text</ComicText>
+                      <ComicText className="text-sm font-bold">
+                        {selected.layout === 'content' ? 'Image 1 alt text' : 'Image alt text'}
+                      </ComicText>
                       <input
                         className="comic-input w-full"
                         value={selected.imageAlt}
@@ -742,6 +746,40 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                         placeholder="Describe the image"
                       />
                     </label>
+                    {selected.layout === 'content' ? (
+                      <>
+                        <label className="block space-y-1">
+                          <ComicText className="text-sm font-bold">Image 2 URL</ComicText>
+                          <input
+                            className="comic-input w-full"
+                            value={selected.imageUrl2}
+                            onChange={(event) =>
+                              setDeck((prev) =>
+                                updateSlide(prev, selected.id, {
+                                  imageUrl2: event.target.value.trim(),
+                                })
+                              )
+                            }
+                            placeholder="Optional — two images sit below the text"
+                          />
+                        </label>
+                        <label className="block space-y-1">
+                          <ComicText className="text-sm font-bold">Image 2 alt text</ComicText>
+                          <input
+                            className="comic-input w-full"
+                            value={selected.imageAlt2}
+                            onChange={(event) =>
+                              setDeck((prev) =>
+                                updateSlide(prev, selected.id, {
+                                  imageAlt2: event.target.value,
+                                })
+                              )
+                            }
+                            placeholder="Describe the second image"
+                          />
+                        </label>
+                      </>
+                    ) : null}
                   </>
                 )}
 

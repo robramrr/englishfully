@@ -247,6 +247,15 @@ export async function buildPresentationPptxBuffer(
         }
       }
     } else {
+      const dualImages =
+        slide.layout === 'content' &&
+        Boolean(slide.imageUrl.trim()) &&
+        Boolean(String(slide.imageUrl2 ?? '').trim());
+      const sideImage =
+        !dualImages &&
+        Boolean(slide.imageUrl.trim() || String(slide.imageUrl2 ?? '').trim());
+      const textWidth = sideImage ? 6.8 : 12.1;
+
       page.addText(slide.title || 'Untitled slide', {
         x: 0.6,
         y: 0.45,
@@ -263,15 +272,15 @@ export async function buildPresentationPptxBuffer(
         page.addText(slide.body, {
           x: 0.6,
           y,
-          w: slide.imageUrl.trim() ? 6.8 : 12.1,
-          h: 2.2,
+          w: textWidth,
+          h: dualImages ? 1.6 : 2.2,
           fontSize: pptxFontSize(slide.bodyFontSize, 18),
           bold: true,
           color: pptxFontColor(slide.bodyColor),
           fontFace: 'Arial',
           valign: 'top',
         });
-        y += 2.3;
+        y += dualImages ? 1.7 : 2.3;
       }
 
       const bullets = slide.bullets.filter((item) => item.trim());
@@ -281,8 +290,8 @@ export async function buildPresentationPptxBuffer(
           {
             x: 0.6,
             y,
-            w: slide.imageUrl.trim() ? 6.8 : 12.1,
-            h: Math.min(2.8, bullets.length * 0.45 + 0.3),
+            w: textWidth,
+            h: Math.min(dualImages ? 1.6 : 2.8, bullets.length * 0.45 + 0.3),
             fontSize: pptxFontSize(slide.bulletsFontSize, 18),
             bold: true,
             color: pptxFontColor(slide.bulletsColor),
@@ -290,33 +299,57 @@ export async function buildPresentationPptxBuffer(
             valign: 'top',
           }
         );
-        y += Math.min(2.8, bullets.length * 0.45 + 0.4);
+        y += Math.min(dualImages ? 1.6 : 2.8, bullets.length * 0.45 + 0.4);
       }
 
       if (slide.grammarHighlighterEnabled && slide.grammarText.trim()) {
         page.addShape(pptx.ShapeType.roundRect, {
           x: 0.6,
-          y: Math.min(y, 5.2),
-          w: slide.imageUrl.trim() ? 6.8 : 12.1,
-          h: 1.3,
+          y: Math.min(y, dualImages ? 3.6 : 5.2),
+          w: textWidth,
+          h: 1.1,
           fill: { color: GRAY },
           line: { color: NAVY, width: 1.5 },
         });
         page.addText(slide.grammarText, {
           x: 0.75,
-          y: Math.min(y, 5.2) + 0.15,
-          w: slide.imageUrl.trim() ? 6.5 : 11.8,
-          h: 1.0,
+          y: Math.min(y, dualImages ? 3.6 : 5.2) + 0.15,
+          w: textWidth - 0.3,
+          h: 0.85,
           fontSize: 16,
           bold: true,
           color: NAVY,
           fontFace: 'Arial',
           valign: 'top',
         });
+        y = Math.min(y, dualImages ? 3.6 : 5.2) + 1.25;
       }
 
-      if (slide.imageUrl.trim()) {
-        const imageData = await fetchImageAsBase64(slide.imageUrl);
+      if (dualImages) {
+        const leftData = await fetchImageAsBase64(slide.imageUrl);
+        const rightData = await fetchImageAsBase64(slide.imageUrl2);
+        const imageY = Math.min(Math.max(y, 4.0), 4.4);
+        if (leftData) {
+          page.addImage({
+            data: leftData,
+            x: 0.6,
+            y: imageY,
+            w: 5.9,
+            h: 2.4,
+          });
+        }
+        if (rightData) {
+          page.addImage({
+            data: rightData,
+            x: 6.8,
+            y: imageY,
+            w: 5.9,
+            h: 2.4,
+          });
+        }
+      } else if (slide.imageUrl.trim() || String(slide.imageUrl2 ?? '').trim()) {
+        const imageSrc = slide.imageUrl.trim() || slide.imageUrl2.trim();
+        const imageData = await fetchImageAsBase64(imageSrc);
         if (imageData) {
           page.addImage({
             data: imageData,
@@ -326,7 +359,7 @@ export async function buildPresentationPptxBuffer(
             h: 4.8,
           });
         } else {
-          page.addText(slide.imageUrl, {
+          page.addText(imageSrc, {
             x: 7.8,
             y: 1.35,
             w: 4.8,

@@ -223,6 +223,9 @@ export interface PresentationSlide {
   bullets: string[];
   imageUrl: string;
   imageAlt: string;
+  /** Text + image: optional second image (two images → row below text). */
+  imageUrl2: string;
+  imageAlt2: string;
   /** Font size for definition / explanation. */
   bodyFontSize: PresentationFontSize;
   /** Theme color for definition / explanation. */
@@ -320,6 +323,8 @@ export function createEmptySlide(
     bullets: [],
     imageUrl: '',
     imageAlt: '',
+    imageUrl2: '',
+    imageAlt2: '',
     bodyFontSize: 'md',
     bodyColor: 'navy',
     bulletsFontSize: 'md',
@@ -370,6 +375,8 @@ export function normalizeSlide(
       : [],
     imageUrl: String(slide.imageUrl ?? ''),
     imageAlt: String(slide.imageAlt ?? ''),
+    imageUrl2: String(slide.imageUrl2 ?? ''),
+    imageAlt2: String(slide.imageAlt2 ?? ''),
     bodyFontSize: normalizeFontSize(slide.bodyFontSize),
     bodyColor: normalizeFontColor(slide.bodyColor),
     bulletsFontSize: normalizeFontSize(slide.bulletsFontSize),
