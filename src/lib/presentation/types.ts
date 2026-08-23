@@ -227,9 +227,12 @@ export interface PresentationSlide {
   bullets: string[];
   imageUrl: string;
   imageAlt: string;
-  /** Text + image: optional second image (two images → row below text). */
+  /** Text + image: optional second image (2+ images → row below text). */
   imageUrl2: string;
   imageAlt2: string;
+  /** Text + image: optional third image. */
+  imageUrl3: string;
+  imageAlt3: string;
   /** Font size for definition / explanation. */
   bodyFontSize: PresentationFontSize;
   /** Theme color for definition / explanation. */
@@ -316,6 +319,37 @@ export function createDeckId(): string {
   return `deck_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+export function getContentSlideImages(
+  slide: Pick<
+    PresentationSlide,
+    'imageUrl' | 'imageAlt' | 'imageUrl2' | 'imageAlt2' | 'imageUrl3' | 'imageAlt3'
+  >,
+  titleFallback = ''
+): { url: string; alt: string }[] {
+  return [
+    { url: slide.imageUrl, alt: slide.imageAlt },
+    { url: slide.imageUrl2, alt: slide.imageAlt2 },
+    { url: slide.imageUrl3, alt: slide.imageAlt3 },
+  ]
+    .map((item) => {
+      const url = String(item.url ?? '').trim();
+      if (!url) return null;
+      return {
+        url,
+        alt: String(item.alt ?? '').trim() || titleFallback,
+      };
+    })
+    .filter((item): item is { url: string; alt: string } => Boolean(item));
+}
+
+export function countFilledContentImages(
+  slide: Pick<PresentationSlide, 'imageUrl' | 'imageUrl2' | 'imageUrl3'>
+): number {
+  return [slide.imageUrl, slide.imageUrl2, slide.imageUrl3].filter((url) =>
+    String(url ?? '').trim()
+  ).length;
+}
+
 export function createEmptySlide(
   layout: PresentationSlideLayout = 'content'
 ): PresentationSlide {
@@ -331,6 +365,8 @@ export function createEmptySlide(
     imageAlt: '',
     imageUrl2: '',
     imageAlt2: '',
+    imageUrl3: '',
+    imageAlt3: '',
     bodyFontSize: 'md',
     bodyColor: 'navy',
     bulletsFontSize: 'md',
@@ -385,6 +421,8 @@ export function normalizeSlide(
     imageAlt: String(slide.imageAlt ?? ''),
     imageUrl2: String(slide.imageUrl2 ?? ''),
     imageAlt2: String(slide.imageAlt2 ?? ''),
+    imageUrl3: String(slide.imageUrl3 ?? ''),
+    imageAlt3: String(slide.imageAlt3 ?? ''),
     bodyFontSize: normalizeFontSize(slide.bodyFontSize),
     bodyColor: normalizeFontColor(slide.bodyColor),
     bulletsFontSize: normalizeFontSize(slide.bulletsFontSize),

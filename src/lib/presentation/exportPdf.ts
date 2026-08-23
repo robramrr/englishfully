@@ -3,6 +3,7 @@ import type {
   PresentationFontColor,
   PresentationFontSize,
 } from './types';
+import { getContentSlideImages } from './types';
 
 function safeFilename(value: string): string {
   return (value || 'presentation').replace(/[^\w.-]+/g, '_').slice(0, 80);
@@ -132,26 +133,42 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                        : ''
                    }
                    ${
-                     slide.layout !== 'audio_image' &&
-                     slide.layout !== 'describe_image' &&
-                     slide.imageUrl.trim()
-                       ? slide.layout === 'content' && slide.imageUrl2?.trim()
-                         ? `<div style="display:flex;gap:12px;margin-top:12px;">
-                              <img src="${escapeAttr(slide.imageUrl)}" alt="${escapeAttr(
-                                slide.imageAlt || title
-                              )}" style="width:48%;max-height:220px;object-fit:cover;" />
-                              <img src="${escapeAttr(slide.imageUrl2)}" alt="${escapeAttr(
-                                slide.imageAlt2 || title
-                              )}" style="width:48%;max-height:220px;object-fit:cover;" />
-                            </div>`
-                         : `<img src="${escapeAttr(slide.imageUrl)}" alt="${escapeAttr(
-                             slide.imageAlt || title
-                           )}" />`
-                       : slide.layout === 'content' && slide.imageUrl2?.trim()
-                         ? `<img src="${escapeAttr(slide.imageUrl2)}" alt="${escapeAttr(
-                             slide.imageAlt2 || title
-                           )}" />`
-                         : ''
+                     (() => {
+                       if (
+                         slide.layout === 'audio_image' ||
+                         slide.layout === 'describe_image'
+                       ) {
+                         return '';
+                       }
+                       if (slide.layout === 'content') {
+                         const images = getContentSlideImages(slide, title);
+                         if (images.length >= 2) {
+                           const width = images.length >= 3 ? '32%' : '48%';
+                           return `<div style="display:flex;gap:12px;margin-top:12px;">
+                              ${images
+                                .map(
+                                  (image) =>
+                                    `<img src="${escapeAttr(image.url)}" alt="${escapeAttr(
+                                      image.alt
+                                    )}" style="width:${width};max-height:220px;object-fit:cover;" />`
+                                )
+                                .join('')}
+                            </div>`;
+                         }
+                         if (images.length === 1) {
+                           return `<img src="${escapeAttr(images[0].url)}" alt="${escapeAttr(
+                             images[0].alt
+                           )}" />`;
+                         }
+                         return '';
+                       }
+                       if (slide.imageUrl.trim()) {
+                         return `<img src="${escapeAttr(slide.imageUrl)}" alt="${escapeAttr(
+                           slide.imageAlt || title
+                         )}" />`;
+                       }
+                       return '';
+                     })()
                    }`
             }
             <div class="footer">

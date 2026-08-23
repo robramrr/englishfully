@@ -135,6 +135,19 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
     );
   }, [deck.slides, selected]);
 
+  const [contentImageSlots, setContentImageSlots] = useState(1);
+
+  useEffect(() => {
+    if (!selected || selected.layout !== 'content') {
+      setContentImageSlots(1);
+      return;
+    }
+    const filled = [selected.imageUrl, selected.imageUrl2, selected.imageUrl3].filter((url) =>
+      String(url ?? '').trim()
+    ).length;
+    setContentImageSlots(Math.max(1, filled));
+  }, [selected?.id, selected?.layout]);
+
   function handleStructurePaste() {
     const next = structurePastedContent(pasteText);
     setDeck((prev) =>
@@ -745,76 +758,163 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                 )}
 
                 {(selected.layout === 'content' || selected.layout === 'image') && (
-                  <>
-                    <label className="block space-y-1">
-                      <ComicText className="text-sm font-bold">
-                        {selected.layout === 'content' ? 'Image 1 URL' : 'Image URL'}
-                      </ComicText>
-                      <input
-                        className="comic-input w-full"
-                        value={selected.imageUrl}
-                        onChange={(event) =>
-                          setDeck((prev) =>
-                            updateSlide(prev, selected.id, {
-                              imageUrl: event.target.value.trim(),
-                            })
-                          )
-                        }
-                        placeholder="https://…"
-                      />
-                    </label>
-                    <label className="block space-y-1">
-                      <ComicText className="text-sm font-bold">
-                        {selected.layout === 'content' ? 'Image 1 alt text' : 'Image alt text'}
-                      </ComicText>
-                      <input
-                        className="comic-input w-full"
-                        value={selected.imageAlt}
-                        onChange={(event) =>
-                          setDeck((prev) =>
-                            updateSlide(prev, selected.id, {
-                              imageAlt: event.target.value,
-                            })
-                          )
-                        }
-                        placeholder="Describe the image"
-                      />
-                    </label>
-                    {selected.layout === 'content' ? (
+                  <div className="space-y-3">
+                    {selected.layout === 'image' ? (
                       <>
                         <label className="block space-y-1">
-                          <ComicText className="text-sm font-bold">Image 2 URL</ComicText>
+                          <ComicText className="text-sm font-bold">Image URL</ComicText>
                           <input
                             className="comic-input w-full"
-                            value={selected.imageUrl2}
+                            value={selected.imageUrl}
                             onChange={(event) =>
                               setDeck((prev) =>
                                 updateSlide(prev, selected.id, {
-                                  imageUrl2: event.target.value.trim(),
+                                  imageUrl: event.target.value.trim(),
                                 })
                               )
                             }
-                            placeholder="Optional — two images sit below the text"
+                            placeholder="https://…"
                           />
                         </label>
                         <label className="block space-y-1">
-                          <ComicText className="text-sm font-bold">Image 2 alt text</ComicText>
+                          <ComicText className="text-sm font-bold">Image alt text</ComicText>
                           <input
                             className="comic-input w-full"
-                            value={selected.imageAlt2}
+                            value={selected.imageAlt}
                             onChange={(event) =>
                               setDeck((prev) =>
                                 updateSlide(prev, selected.id, {
-                                  imageAlt2: event.target.value,
+                                  imageAlt: event.target.value,
                                 })
                               )
                             }
-                            placeholder="Describe the second image"
+                            placeholder="Describe the image"
                           />
                         </label>
                       </>
-                    ) : null}
-                  </>
+                    ) : (
+                      <>
+                        {(
+                          [
+                            {
+                              index: 1,
+                              urlKey: 'imageUrl' as const,
+                              altKey: 'imageAlt' as const,
+                              url: selected.imageUrl,
+                              alt: selected.imageAlt,
+                            },
+                            {
+                              index: 2,
+                              urlKey: 'imageUrl2' as const,
+                              altKey: 'imageAlt2' as const,
+                              url: selected.imageUrl2,
+                              alt: selected.imageAlt2,
+                            },
+                            {
+                              index: 3,
+                              urlKey: 'imageUrl3' as const,
+                              altKey: 'imageAlt3' as const,
+                              url: selected.imageUrl3,
+                              alt: selected.imageAlt3,
+                            },
+                          ] as const
+                        )
+                          .slice(0, contentImageSlots)
+                          .map((slot) => (
+                            <div
+                              key={slot.index}
+                              className="space-y-2 border-4 border-[var(--comic-black)]/20 bg-[var(--comic-light)]/30 p-3"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <ComicText className="text-sm font-black">
+                                  Image {slot.index}
+                                </ComicText>
+                                {slot.index > 1 ? (
+                                  <button
+                                    type="button"
+                                    className="text-sm font-bold text-[var(--comic-primary)] underline-offset-2 hover:underline"
+                                    onClick={() => {
+                                      const urls = [
+                                        selected.imageUrl,
+                                        selected.imageUrl2,
+                                        selected.imageUrl3,
+                                      ];
+                                      const alts = [
+                                        selected.imageAlt,
+                                        selected.imageAlt2,
+                                        selected.imageAlt3,
+                                      ];
+                                      urls.splice(slot.index - 1, 1);
+                                      alts.splice(slot.index - 1, 1);
+                                      while (urls.length < 3) urls.push('');
+                                      while (alts.length < 3) alts.push('');
+                                      setDeck((prev) =>
+                                        updateSlide(prev, selected.id, {
+                                          imageUrl: urls[0] || '',
+                                          imageAlt: alts[0] || '',
+                                          imageUrl2: urls[1] || '',
+                                          imageAlt2: alts[1] || '',
+                                          imageUrl3: urls[2] || '',
+                                          imageAlt3: alts[2] || '',
+                                        })
+                                      );
+                                      setContentImageSlots((count) => Math.max(1, count - 1));
+                                    }}
+                                  >
+                                    Remove
+                                  </button>
+                                ) : null}
+                              </div>
+                              <label className="block space-y-1">
+                                <ComicText className="text-sm font-bold">Image URL</ComicText>
+                                <input
+                                  className="comic-input w-full"
+                                  value={slot.url}
+                                  onChange={(event) =>
+                                    setDeck((prev) =>
+                                      updateSlide(prev, selected.id, {
+                                        [slot.urlKey]: event.target.value.trim(),
+                                      })
+                                    )
+                                  }
+                                  placeholder="https://…"
+                                />
+                              </label>
+                              <label className="block space-y-1">
+                                <ComicText className="text-sm font-bold">Image alt text</ComicText>
+                                <input
+                                  className="comic-input w-full"
+                                  value={slot.alt}
+                                  onChange={(event) =>
+                                    setDeck((prev) =>
+                                      updateSlide(prev, selected.id, {
+                                        [slot.altKey]: event.target.value,
+                                      })
+                                    )
+                                  }
+                                  placeholder="Describe the image"
+                                />
+                              </label>
+                            </div>
+                          ))}
+                        {contentImageSlots < 3 ? (
+                          <ComicButton
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() =>
+                              setContentImageSlots((count) => Math.min(3, count + 1))
+                            }
+                          >
+                            + Add image
+                          </ComicButton>
+                        ) : null}
+                        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+                          One image sits beside the text. Two or three sit in a row below.
+                        </ComicText>
+                      </>
+                    )}
+                  </div>
                 )}
 
                 {selected.layout === 'audio_image' ? (

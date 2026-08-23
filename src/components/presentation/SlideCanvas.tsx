@@ -4,6 +4,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import {
   presentationFontColorCss,
   presentationFontSizePx,
+  getContentSlideImages,
   type PresentationDeck,
   type PresentationSlide,
 } from '@/lib/presentation/types';
@@ -177,20 +178,11 @@ export default function SlideCanvas({
   const showTitle = slide.showTitle !== false;
   const showBody = slide.showBody !== false;
   const contentImages =
-    slide.layout === 'content'
-      ? [
-          slide.imageUrl.trim()
-            ? { url: slide.imageUrl.trim(), alt: slide.imageAlt || title }
-            : null,
-          slide.imageUrl2.trim()
-            ? { url: slide.imageUrl2.trim(), alt: slide.imageAlt2 || title }
-            : null,
-        ].filter((item): item is { url: string; alt: string } => Boolean(item))
-      : [];
-  const dualContentImages = contentImages.length >= 2;
+    slide.layout === 'content' ? getContentSlideImages(slide, title) : [];
+  const multiContentImages = contentImages.length >= 2;
   const showContentImageColumn =
     slide.layout === 'content' &&
-    !dualContentImages &&
+    !multiContentImages &&
     (contentImages.length === 1 || showImageSlot);
   const mode = sizeMode(compact, present);
   const timerOn = Boolean(slide.timerEnabled);
@@ -294,7 +286,7 @@ export default function SlideCanvas({
                 {title}
               </h2>
             ) : null}
-            {dualContentImages ? (
+            {multiContentImages ? (
               <>
                 <div className="min-h-0 overflow-auto">
                   <ContentBody
@@ -308,7 +300,8 @@ export default function SlideCanvas({
                 </div>
                 <div
                   className={[
-                    'grid min-h-0 grid-cols-2 gap-3',
+                    'grid min-h-0 gap-3',
+                    contentImages.length >= 3 ? 'grid-cols-3' : 'grid-cols-2',
                     compact ? 'max-h-32' : present ? 'flex-1' : 'max-h-56 md:max-h-72',
                   ].join(' ')}
                 >

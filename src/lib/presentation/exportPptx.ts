@@ -5,6 +5,7 @@ import type {
   PresentationFontColor,
   PresentationFontSize,
 } from './types';
+import { getContentSlideImages } from './types';
 
 const NAVY = '001a48';
 const RED = 'EA1225';
@@ -255,13 +256,13 @@ export async function buildPresentationPptxBuffer(
         }
       }
     } else {
-      const dualImages =
-        slide.layout === 'content' &&
-        Boolean(slide.imageUrl.trim()) &&
-        Boolean(String(slide.imageUrl2 ?? '').trim());
+      const contentImages =
+        slide.layout === 'content' ? getContentSlideImages(slide) : [];
+      const multiImages = contentImages.length >= 2;
       const sideImage =
-        !dualImages &&
-        Boolean(slide.imageUrl.trim() || String(slide.imageUrl2 ?? '').trim());
+        !multiImages &&
+        (contentImages.length === 1 ||
+          Boolean(slide.imageUrl.trim() || String(slide.imageUrl2 ?? '').trim()));
       const textWidth = sideImage ? 6.8 : 12.1;
       const showTitle = slide.showTitle !== false;
       const showBody = slide.showBody !== false;
@@ -286,14 +287,14 @@ export async function buildPresentationPptxBuffer(
           x: 0.6,
           y,
           w: textWidth,
-          h: dualImages ? 1.6 : 2.2,
+          h: multiImages ? 1.5 : 2.2,
           fontSize: pptxFontSize(slide.bodyFontSize, 18),
           bold: true,
           color: pptxFontColor(slide.bodyColor),
           fontFace: 'Arial',
           valign: 'top',
         });
-        y += dualImages ? 1.7 : 2.3;
+        y += multiImages ? 1.6 : 2.3;
       }
 
       const bullets = slide.bullets.filter((item) => item.trim());
@@ -304,7 +305,7 @@ export async function buildPresentationPptxBuffer(
             x: 0.6,
             y,
             w: textWidth,
-            h: Math.min(dualImages ? 1.6 : 2.8, bullets.length * 0.45 + 0.3),
+            h: Math.min(multiImages ? 1.4 : 2.8, bullets.length * 0.45 + 0.3),
             fontSize: pptxFontSize(slide.bulletsFontSize, 18),
             bold: true,
             color: pptxFontColor(slide.bulletsColor),
@@ -312,13 +313,13 @@ export async function buildPresentationPptxBuffer(
             valign: 'top',
           }
         );
-        y += Math.min(dualImages ? 1.6 : 2.8, bullets.length * 0.45 + 0.4);
+        y += Math.min(multiImages ? 1.4 : 2.8, bullets.length * 0.45 + 0.4);
       }
 
       if (slide.grammarHighlighterEnabled && slide.grammarText.trim()) {
         page.addShape(pptx.ShapeType.roundRect, {
           x: 0.6,
-          y: Math.min(y, dualImages ? 3.6 : 5.2),
+          y: Math.min(y, multiImages ? 3.4 : 5.2),
           w: textWidth,
           h: 1.1,
           fill: { color: GRAY },
@@ -326,7 +327,7 @@ export async function buildPresentationPptxBuffer(
         });
         page.addText(slide.grammarText, {
           x: 0.75,
-          y: Math.min(y, dualImages ? 3.6 : 5.2) + 0.15,
+          y: Math.min(y, multiImages ? 3.4 : 5.2) + 0.15,
           w: textWidth - 0.3,
           h: 0.85,
           fontSize: 16,
@@ -335,33 +336,32 @@ export async function buildPresentationPptxBuffer(
           fontFace: 'Arial',
           valign: 'top',
         });
-        y = Math.min(y, dualImages ? 3.6 : 5.2) + 1.25;
+        y = Math.min(y, multiImages ? 3.4 : 5.2) + 1.25;
       }
 
-      if (dualImages) {
-        const leftData = await fetchImageAsBase64(slide.imageUrl);
-        const rightData = await fetchImageAsBase64(slide.imageUrl2);
+      if (multiImages) {
         const imageY = Math.min(Math.max(y, 4.0), 4.4);
-        if (leftData) {
-          page.addImage({
-            data: leftData,
-            x: 0.6,
-            y: imageY,
-            w: 5.9,
-            h: 2.4,
-          });
+        const count = contentImages.length;
+        const gap = 0.25;
+        const totalW = 12.1;
+        const imgW = (totalW - gap * (count - 1)) / count;
+        for (let i = 0; i < count; i += 1) {
+          const imageData = await fetchImageAsBase64(contentImages[i].url);
+          if (imageData) {
+            page.addImage({
+              data: imageData,
+              x: 0.6 + i * (imgW + gap),
+              y: imageY,
+              w: imgW,
+              h: 2.4,
+            });
+          }
         }
-        if (rightData) {
-          page.addImage({
-            data: rightData,
-            x: 6.8,
-            y: imageY,
-            w: 5.9,
-            h: 2.4,
-          });
-        }
-      } else if (slide.imageUrl.trim() || String(slide.imageUrl2 ?? '').trim()) {
-        const imageSrc = slide.imageUrl.trim() || slide.imageUrl2.trim();
+      } else if (contentImages[0] || slide.imageUrl.trim() || String(slide.imageUrl2 ?? '').trim()) {
+        const imageSrc =
+          contentImages[0]?.url ||
+          slide.imageUrl.trim() ||
+          slide.imageUrl2.trim();
         const imageData = await fetchImageAsBase64(imageSrc);
         if (imageData) {
           page.addImage({
