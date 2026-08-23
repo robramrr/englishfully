@@ -349,8 +349,8 @@ export default function SlideCanvas({
               <>
                 <div
                   className={[
-                    'grid min-h-0 flex-1 gap-4',
-                    showTable ? 'md:grid-cols-2' : 'grid-cols-1',
+                    'grid min-h-0 gap-4',
+                    showTable ? 'md:grid-cols-2 flex-1' : 'grid-cols-1',
                   ].join(' ')}
                 >
                   <div className="min-h-0 overflow-auto">
@@ -371,7 +371,15 @@ export default function SlideCanvas({
                   className={[
                     'grid min-h-0 gap-3',
                     contentImages.length >= 3 ? 'grid-cols-3' : 'grid-cols-2',
-                    compact ? 'max-h-32' : present ? 'max-h-[40%]' : 'max-h-56 md:max-h-72',
+                    compact
+                      ? 'max-h-32'
+                      : showTable
+                        ? present
+                          ? 'max-h-[40%]'
+                          : 'max-h-56 md:max-h-72'
+                        : present
+                          ? 'flex-1'
+                          : 'max-h-56 md:max-h-72',
                   ].join(' ')}
                 >
                   {contentImages.map((image) => (
