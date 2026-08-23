@@ -21,6 +21,8 @@ import {
   createEmptyDeck,
   createEmptyDescribeWord,
   createEmptySlide,
+  createEmptyTableHeaders,
+  createEmptyTableRows,
   createSlideId,
   normalizeDeck,
   PRESENTATION_CHOICE_LETTERS,
@@ -916,6 +918,192 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                     )}
                   </div>
                 )}
+
+                {selected.layout === 'content' ? (
+                  <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <ComicText className="font-black">Table</ComicText>
+                        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+                          Optional table on the right (heading row on top), same side as a single
+                          image.
+                        </ComicText>
+                      </div>
+                      <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
+                        <span className="text-sm">
+                          {selected.tableEnabled ? 'On' : 'Off'}
+                        </span>
+                        <input
+                          type="checkbox"
+                          className="h-5 w-9 accent-[var(--comic-primary)]"
+                          checked={selected.tableEnabled}
+                          onChange={(event) =>
+                            setDeck((prev) =>
+                              updateSlide(prev, selected.id, {
+                                tableEnabled: event.target.checked,
+                                ...(event.target.checked &&
+                                selected.tableHeaders.every((cell) => !cell.trim())
+                                  ? {
+                                      tableHeaders: createEmptyTableHeaders(2),
+                                      tableRows: createEmptyTableRows(2, 2),
+                                    }
+                                  : {}),
+                              })
+                            )
+                          }
+                        />
+                      </label>
+                    </div>
+                    {selected.tableEnabled ? (
+                      <div className="space-y-3">
+                        <div className="overflow-x-auto">
+                          <table className="w-full min-w-[280px] border-collapse border-2 border-[var(--comic-black)] bg-white">
+                            <thead>
+                              <tr className="bg-[var(--comic-light)]">
+                                {selected.tableHeaders.map((cell, colIndex) => (
+                                  <th key={`th-${colIndex}`} className="border border-[var(--comic-black)] p-1">
+                                    <input
+                                      className="comic-input w-full min-w-[5rem] text-sm font-black"
+                                      value={cell}
+                                      onChange={(event) => {
+                                        const next = [...selected.tableHeaders];
+                                        next[colIndex] = event.target.value;
+                                        setDeck((prev) =>
+                                          updateSlide(prev, selected.id, {
+                                            tableHeaders: next,
+                                          })
+                                        );
+                                      }}
+                                      placeholder={`Heading ${colIndex + 1}`}
+                                    />
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {selected.tableRows.map((row, rowIndex) => (
+                                <tr key={`tr-${rowIndex}`}>
+                                  {selected.tableHeaders.map((_, colIndex) => (
+                                    <td
+                                      key={`td-${rowIndex}-${colIndex}`}
+                                      className="border border-[var(--comic-black)] p-1"
+                                    >
+                                      <input
+                                        className="comic-input w-full min-w-[5rem] text-sm"
+                                        value={row[colIndex] ?? ''}
+                                        onChange={(event) => {
+                                          const nextRows = selected.tableRows.map((item) => [
+                                            ...item,
+                                          ]);
+                                          while (nextRows[rowIndex].length < selected.tableHeaders.length) {
+                                            nextRows[rowIndex].push('');
+                                          }
+                                          nextRows[rowIndex][colIndex] = event.target.value;
+                                          setDeck((prev) =>
+                                            updateSlide(prev, selected.id, {
+                                              tableRows: nextRows,
+                                            })
+                                          );
+                                        }}
+                                        placeholder="…"
+                                      />
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <ComicButton
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                              const cols = selected.tableHeaders.length;
+                              if (selected.tableRows.length >= 12) return;
+                              setDeck((prev) =>
+                                updateSlide(prev, selected.id, {
+                                  tableRows: [
+                                    ...selected.tableRows,
+                                    createEmptyTableHeaders(cols),
+                                  ],
+                                })
+                              );
+                            }}
+                          >
+                            + Row
+                          </ComicButton>
+                          <ComicButton
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                              if (selected.tableHeaders.length >= 6) return;
+                              setDeck((prev) =>
+                                updateSlide(prev, selected.id, {
+                                  tableHeaders: [...selected.tableHeaders, ''],
+                                  tableRows: selected.tableRows.map((row) => [...row, '']),
+                                })
+                              );
+                            }}
+                          >
+                            + Column
+                          </ComicButton>
+                          {selected.tableRows.length > 1 ? (
+                            <ComicButton
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() =>
+                                setDeck((prev) =>
+                                  updateSlide(prev, selected.id, {
+                                    tableRows: selected.tableRows.slice(0, -1),
+                                  })
+                                )
+                              }
+                            >
+                              − Row
+                            </ComicButton>
+                          ) : null}
+                          {selected.tableHeaders.length > 1 ? (
+                            <ComicButton
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() =>
+                                setDeck((prev) =>
+                                  updateSlide(prev, selected.id, {
+                                    tableHeaders: selected.tableHeaders.slice(0, -1),
+                                    tableRows: selected.tableRows.map((row) =>
+                                      row.slice(0, -1)
+                                    ),
+                                  })
+                                )
+                              }
+                            >
+                              − Column
+                            </ComicButton>
+                          ) : null}
+                        </div>
+                        <SlideTextStyleControls
+                          fontSize={selected.tableFontSize}
+                          color={selected.tableColor}
+                          onFontSizeChange={(tableFontSize) =>
+                            setDeck((prev) =>
+                              updateSlide(prev, selected.id, { tableFontSize })
+                            )
+                          }
+                          onColorChange={(tableColor) =>
+                            setDeck((prev) =>
+                              updateSlide(prev, selected.id, { tableColor })
+                            )
+                          }
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 {selected.layout === 'audio_image' ? (
                   <div className="space-y-4">

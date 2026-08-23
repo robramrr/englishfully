@@ -259,11 +259,13 @@ export async function buildPresentationPptxBuffer(
       const contentImages =
         slide.layout === 'content' ? getContentSlideImages(slide) : [];
       const multiImages = contentImages.length >= 2;
+      const showTable = slide.layout === 'content' && Boolean(slide.tableEnabled);
       const sideImage =
         !multiImages &&
         (contentImages.length === 1 ||
           Boolean(slide.imageUrl.trim() || String(slide.imageUrl2 ?? '').trim()));
-      const textWidth = sideImage ? 6.8 : 12.1;
+      const showRight = showTable || sideImage;
+      const textWidth = showRight ? 6.8 : 12.1;
       const showTitle = slide.showTitle !== false;
       const showBody = slide.showBody !== false;
 
@@ -339,8 +341,46 @@ export async function buildPresentationPptxBuffer(
         y = Math.min(y, multiImages ? 3.4 : 5.2) + 1.25;
       }
 
+      if (showTable) {
+        const headers = slide.tableHeaders?.length
+          ? slide.tableHeaders
+          : ['', ''];
+        const rows = slide.tableRows?.length
+          ? slide.tableRows
+          : [headers.map(() => '')];
+        const tableRows = [
+          headers.map((cell) => ({
+            text: cell || 'Heading',
+            options: { bold: true, color: pptxFontColor(slide.tableColor), align: 'left' as const },
+          })),
+          ...rows.map((row) =>
+            headers.map((_, colIndex) => ({
+              text: row[colIndex] || '',
+              options: { color: pptxFontColor(slide.tableColor), align: 'left' as const },
+            }))
+          ),
+        ];
+        page.addTable(tableRows, {
+          x: 7.6,
+          y: 1.35,
+          w: 5.1,
+          colW: headers.map(() => 5.1 / headers.length),
+          border: [
+            { pt: 1.5, color: NAVY },
+            { pt: 1.5, color: NAVY },
+            { pt: 1.5, color: NAVY },
+            { pt: 1.5, color: NAVY },
+          ],
+          fontFace: 'Arial',
+          fontSize: pptxFontSize(slide.tableFontSize, 14),
+          bold: true,
+          color: pptxFontColor(slide.tableColor),
+          valign: 'middle',
+        });
+      }
+
       if (multiImages) {
-        const imageY = Math.min(Math.max(y, 4.0), 4.4);
+        const imageY = Math.min(Math.max(y, showTable ? 4.2 : 4.0), 4.5);
         const count = contentImages.length;
         const gap = 0.25;
         const totalW = 12.1;
@@ -353,11 +393,11 @@ export async function buildPresentationPptxBuffer(
               x: 0.6 + i * (imgW + gap),
               y: imageY,
               w: imgW,
-              h: 2.4,
+              h: showTable ? 2.0 : 2.4,
             });
           }
         }
-      } else if (contentImages[0] || slide.imageUrl.trim() || String(slide.imageUrl2 ?? '').trim()) {
+      } else if (!showTable && (contentImages[0] || slide.imageUrl.trim() || String(slide.imageUrl2 ?? '').trim())) {
         const imageSrc =
           contentImages[0]?.url ||
           slide.imageUrl.trim() ||
@@ -380,6 +420,17 @@ export async function buildPresentationPptxBuffer(
             fontSize: 11,
             color: NAVY,
             fontFace: 'Arial',
+          });
+        }
+      } else if (showTable && sideImage && contentImages[0]) {
+        const imageData = await fetchImageAsBase64(contentImages[0].url);
+        if (imageData) {
+          page.addImage({
+            data: imageData,
+            x: 7.6,
+            y: 5.0,
+            w: 5.1,
+            h: 1.6,
           });
         }
       }

@@ -241,6 +241,14 @@ export interface PresentationSlide {
   bulletsFontSize: PresentationFontSize;
   /** Theme color for bullets. */
   bulletsColor: PresentationFontColor;
+  /** Text + image: optional table in the right column (heading row on top). */
+  tableEnabled: boolean;
+  /** Heading / top row cells. */
+  tableHeaders: string[];
+  /** Body rows (each row matches header column count). */
+  tableRows: string[][];
+  tableFontSize: PresentationFontSize;
+  tableColor: PresentationFontColor;
   /** Text + image only: show a separate practice box with yellow grammar highlights. */
   grammarHighlighterEnabled: boolean;
   /** e.g. "Possessive Adjectives" */
@@ -350,6 +358,48 @@ export function countFilledContentImages(
   ).length;
 }
 
+const DEFAULT_TABLE_COLS = 2;
+const DEFAULT_TABLE_ROWS = 2;
+const MAX_TABLE_COLS = 6;
+const MAX_TABLE_ROWS = 12;
+
+export function createEmptyTableHeaders(cols = DEFAULT_TABLE_COLS): string[] {
+  return Array.from({ length: Math.max(1, cols) }, () => '');
+}
+
+export function createEmptyTableRows(
+  rows = DEFAULT_TABLE_ROWS,
+  cols = DEFAULT_TABLE_COLS
+): string[][] {
+  return Array.from({ length: Math.max(1, rows) }, () =>
+    createEmptyTableHeaders(cols)
+  );
+}
+
+function normalizeTableHeaders(value: unknown, fallbackCols = DEFAULT_TABLE_COLS): string[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    return createEmptyTableHeaders(fallbackCols);
+  }
+  return value
+    .slice(0, MAX_TABLE_COLS)
+    .map((cell) => String(cell ?? ''));
+}
+
+function normalizeTableRows(
+  value: unknown,
+  cols: number
+): string[][] {
+  const width = Math.max(1, Math.min(MAX_TABLE_COLS, cols));
+  if (!Array.isArray(value) || value.length === 0) {
+    return createEmptyTableRows(DEFAULT_TABLE_ROWS, width);
+  }
+  return value.slice(0, MAX_TABLE_ROWS).map((row) => {
+    const cells = Array.isArray(row) ? row.map((cell) => String(cell ?? '')) : [];
+    while (cells.length < width) cells.push('');
+    return cells.slice(0, width);
+  });
+}
+
 export function createEmptySlide(
   layout: PresentationSlideLayout = 'content'
 ): PresentationSlide {
@@ -371,6 +421,11 @@ export function createEmptySlide(
     bodyColor: 'navy',
     bulletsFontSize: 'md',
     bulletsColor: 'navy',
+    tableEnabled: false,
+    tableHeaders: createEmptyTableHeaders(),
+    tableRows: createEmptyTableRows(),
+    tableFontSize: 'md',
+    tableColor: 'navy',
     grammarHighlighterEnabled: false,
     grammarTarget: '',
     grammarText: '',
@@ -427,6 +482,14 @@ export function normalizeSlide(
     bodyColor: normalizeFontColor(slide.bodyColor),
     bulletsFontSize: normalizeFontSize(slide.bulletsFontSize),
     bulletsColor: normalizeFontColor(slide.bulletsColor),
+    tableEnabled: Boolean(slide.tableEnabled),
+    tableHeaders: normalizeTableHeaders(slide.tableHeaders),
+    tableRows: normalizeTableRows(
+      slide.tableRows,
+      normalizeTableHeaders(slide.tableHeaders).length
+    ),
+    tableFontSize: normalizeFontSize(slide.tableFontSize),
+    tableColor: normalizeFontColor(slide.tableColor),
     grammarHighlighterEnabled: Boolean(slide.grammarHighlighterEnabled),
     grammarTarget: String(slide.grammarTarget ?? ''),
     grammarText: String(slide.grammarText ?? ''),

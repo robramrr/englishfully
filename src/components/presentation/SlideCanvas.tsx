@@ -74,6 +74,61 @@ function SlideImage({ url, alt, className = '' }: { url: string; alt: string; cl
   );
 }
 
+function SlideTable({
+  slide,
+  compact,
+  present,
+}: {
+  slide: PresentationSlide;
+  compact: boolean;
+  present: boolean;
+}) {
+  const mode = sizeMode(compact, present);
+  const style = textStyle(slide.tableFontSize, slide.tableColor, mode);
+  const headers =
+    slide.tableHeaders.length > 0 ? slide.tableHeaders : ['', ''];
+  const rows =
+    slide.tableRows.length > 0
+      ? slide.tableRows
+      : [headers.map(() => ''), headers.map(() => '')];
+
+  return (
+    <div className="min-h-0 overflow-auto">
+      <table
+        className="w-full border-collapse border-4 border-[var(--comic-black)] bg-white comic-shadow-md"
+        style={style}
+      >
+        <thead>
+          <tr className="bg-[var(--comic-light)]">
+            {headers.map((cell, index) => (
+              <th
+                key={`h-${index}`}
+                className="border-2 border-[var(--comic-black)] px-2 py-1.5 text-left font-black"
+              >
+                {cell.trim() || (compact ? '…' : 'Heading')}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, rowIndex) => (
+            <tr key={`r-${rowIndex}`}>
+              {headers.map((_, colIndex) => (
+                <td
+                  key={`c-${rowIndex}-${colIndex}`}
+                  className="border-2 border-[var(--comic-black)] px-2 py-1.5 font-bold align-top"
+                >
+                  {row[colIndex]?.trim() || ''}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function ContentBody({
   slide,
   body,
@@ -180,10 +235,14 @@ export default function SlideCanvas({
   const contentImages =
     slide.layout === 'content' ? getContentSlideImages(slide, title) : [];
   const multiContentImages = contentImages.length >= 2;
+  const showTable =
+    slide.layout === 'content' && Boolean(slide.tableEnabled);
   const showContentImageColumn =
     slide.layout === 'content' &&
     !multiContentImages &&
-    (contentImages.length === 1 || showImageSlot);
+    (contentImages.length === 1 ||
+      (showImageSlot && !showTable && contentImages.length === 0));
+  const showRightColumn = showTable || showContentImageColumn;
   const mode = sizeMode(compact, present);
   const timerOn = Boolean(slide.timerEnabled);
   const [timerState, setTimerState] = useState<SlideTimerState>({
@@ -288,21 +347,31 @@ export default function SlideCanvas({
             ) : null}
             {multiContentImages ? (
               <>
-                <div className="min-h-0 overflow-auto">
-                  <ContentBody
-                    slide={slide}
-                    body={body}
-                    compact={compact}
-                    present={present}
-                    liveEditable={liveEditable}
-                    onGrammarTextChange={onGrammarTextChange}
-                  />
+                <div
+                  className={[
+                    'grid min-h-0 flex-1 gap-4',
+                    showTable ? 'md:grid-cols-2' : 'grid-cols-1',
+                  ].join(' ')}
+                >
+                  <div className="min-h-0 overflow-auto">
+                    <ContentBody
+                      slide={slide}
+                      body={body}
+                      compact={compact}
+                      present={present}
+                      liveEditable={liveEditable}
+                      onGrammarTextChange={onGrammarTextChange}
+                    />
+                  </div>
+                  {showTable ? (
+                    <SlideTable slide={slide} compact={compact} present={present} />
+                  ) : null}
                 </div>
                 <div
                   className={[
                     'grid min-h-0 gap-3',
                     contentImages.length >= 3 ? 'grid-cols-3' : 'grid-cols-2',
-                    compact ? 'max-h-32' : present ? 'flex-1' : 'max-h-56 md:max-h-72',
+                    compact ? 'max-h-32' : present ? 'max-h-[40%]' : 'max-h-56 md:max-h-72',
                   ].join(' ')}
                 >
                   {contentImages.map((image) => (
@@ -319,7 +388,7 @@ export default function SlideCanvas({
               <div
                 className={[
                   'grid flex-1 min-h-0 gap-4',
-                  showContentImageColumn ? 'md:grid-cols-2' : 'grid-cols-1',
+                  showRightColumn ? 'md:grid-cols-2' : 'grid-cols-1',
                 ].join(' ')}
               >
                 <div className="min-h-0 overflow-auto">
@@ -332,12 +401,27 @@ export default function SlideCanvas({
                     onGrammarTextChange={onGrammarTextChange}
                   />
                 </div>
-                {showContentImageColumn ? (
-                  <SlideImage
-                    url={contentImages[0]?.url || slide.imageUrl}
-                    alt={contentImages[0]?.alt || slide.imageAlt || title}
-                    className={compact ? 'h-full max-h-40 w-full' : 'h-full max-h-full w-full'}
-                  />
+                {showRightColumn ? (
+                  <div className="flex min-h-0 flex-col gap-3">
+                    {showContentImageColumn ? (
+                      <SlideImage
+                        url={contentImages[0]?.url || slide.imageUrl}
+                        alt={contentImages[0]?.alt || slide.imageAlt || title}
+                        className={
+                          showTable
+                            ? compact
+                              ? 'h-24 w-full shrink-0'
+                              : 'max-h-[45%] w-full shrink-0'
+                            : compact
+                              ? 'h-full max-h-40 w-full'
+                              : 'h-full max-h-full w-full'
+                        }
+                      />
+                    ) : null}
+                    {showTable ? (
+                      <SlideTable slide={slide} compact={compact} present={present} />
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
             )}

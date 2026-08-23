@@ -133,6 +133,35 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                        : ''
                    }
                    ${
+                     slide.layout === 'content' && slide.tableEnabled
+                       ? `<table style="width:100%;border-collapse:collapse;margin-top:12px;color:${pdfColor(
+                           slide.tableColor
+                         )};font-size:${pdfFontSize(slide.tableFontSize, 16)}px;">
+                            <thead><tr>${(slide.tableHeaders || [])
+                              .map(
+                                (cell) =>
+                                  `<th style="border:2px solid #001a48;padding:6px;text-align:left;background:#e5e5e4;">${escapeHtml(
+                                    cell || 'Heading'
+                                  )}</th>`
+                              )
+                              .join('')}</tr></thead>
+                            <tbody>${(slide.tableRows || [])
+                              .map(
+                                (row) =>
+                                  `<tr>${(slide.tableHeaders || [])
+                                    .map(
+                                      (_, colIndex) =>
+                                        `<td style="border:2px solid #001a48;padding:6px;">${escapeHtml(
+                                          row[colIndex] || ''
+                                        )}</td>`
+                                    )
+                                    .join('')}</tr>`
+                              )
+                              .join('')}</tbody>
+                          </table>`
+                       : ''
+                   }
+                   ${
                      (() => {
                        if (
                          slide.layout === 'audio_image' ||
