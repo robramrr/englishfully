@@ -93,9 +93,12 @@ function SlideTable({
       : [headers.map(() => ''), headers.map(() => '')];
 
   return (
-    <div className="min-h-0 overflow-auto">
+    <div className="flex w-full shrink-0 justify-center overflow-auto">
       <table
-        className="w-full border-collapse border-4 border-[var(--comic-black)] bg-white comic-shadow-md"
+        className={[
+          'border-collapse border-4 border-[var(--comic-black)] bg-white comic-shadow-md',
+          compact ? 'w-full max-w-full' : 'w-auto max-w-full min-w-[50%]',
+        ].join(' ')}
         style={style}
       >
         <thead>
@@ -241,8 +244,8 @@ export default function SlideCanvas({
     slide.layout === 'content' &&
     !multiContentImages &&
     (contentImages.length === 1 ||
-      (showImageSlot && !showTable && contentImages.length === 0));
-  const showRightColumn = showTable || showContentImageColumn;
+      (showImageSlot && contentImages.length === 0));
+  const showRightColumn = showContentImageColumn;
   const mode = sizeMode(compact, present);
   const timerOn = Boolean(slide.timerEnabled);
   const [timerState, setTimerState] = useState<SlideTimerState>({
@@ -349,39 +352,28 @@ export default function SlideCanvas({
             ) : null}
             {multiContentImages ? (
               <>
-                <div
-                  className={[
-                    'grid min-h-0 gap-4',
-                    showTable ? 'md:grid-cols-2 flex-1' : 'grid-cols-1',
-                  ].join(' ')}
-                >
-                  <div className="min-h-0 overflow-auto">
-                    <ContentBody
-                      slide={slide}
-                      body={body}
-                      compact={compact}
-                      present={present}
-                      liveEditable={liveEditable}
-                      onGrammarTextChange={onGrammarTextChange}
-                    />
-                  </div>
-                  {showTable ? (
-                    <SlideTable slide={slide} compact={compact} present={present} />
-                  ) : null}
+                <div className="min-h-0 overflow-auto">
+                  <ContentBody
+                    slide={slide}
+                    body={body}
+                    compact={compact}
+                    present={present}
+                    liveEditable={liveEditable}
+                    onGrammarTextChange={onGrammarTextChange}
+                  />
                 </div>
+                {showTable ? (
+                  <SlideTable slide={slide} compact={compact} present={present} />
+                ) : null}
                 <div
                   className={[
                     'grid min-h-0 gap-3',
                     contentImages.length >= 3 ? 'grid-cols-3' : 'grid-cols-2',
                     compact
                       ? 'max-h-32'
-                      : showTable
-                        ? present
-                          ? 'max-h-[40%]'
-                          : 'max-h-56 md:max-h-72'
-                        : present
-                          ? 'flex-1'
-                          : 'max-h-56 md:max-h-72',
+                      : present
+                        ? 'flex-1'
+                        : 'max-h-56 md:max-h-72',
                   ].join(' ')}
                 >
                   {contentImages.map((image) => (
@@ -395,45 +387,35 @@ export default function SlideCanvas({
                 </div>
               </>
             ) : (
-              <div
-                className={[
-                  'grid flex-1 min-h-0 gap-4',
-                  showRightColumn ? 'md:grid-cols-2' : 'grid-cols-1',
-                ].join(' ')}
-              >
-                <div className="min-h-0 overflow-auto">
-                  <ContentBody
-                    slide={slide}
-                    body={body}
-                    compact={compact}
-                    present={present}
-                    liveEditable={liveEditable}
-                    onGrammarTextChange={onGrammarTextChange}
-                  />
-                </div>
-                {showRightColumn ? (
-                  <div className="flex min-h-0 flex-col gap-3">
-                    {showContentImageColumn ? (
-                      <SlideImage
-                        url={contentImages[0]?.url || slide.imageUrl}
-                        alt={contentImages[0]?.alt || slide.imageAlt || title}
-                        className={
-                          showTable
-                            ? compact
-                              ? 'h-24 w-full shrink-0'
-                              : 'max-h-[45%] w-full shrink-0'
-                            : compact
-                              ? 'h-full max-h-40 w-full'
-                              : 'h-full max-h-full w-full'
-                        }
-                      />
-                    ) : null}
-                    {showTable ? (
-                      <SlideTable slide={slide} compact={compact} present={present} />
-                    ) : null}
+              <>
+                <div
+                  className={[
+                    'grid min-h-0 gap-4',
+                    showRightColumn ? 'flex-1 md:grid-cols-2' : 'grid-cols-1',
+                  ].join(' ')}
+                >
+                  <div className="min-h-0 overflow-auto">
+                    <ContentBody
+                      slide={slide}
+                      body={body}
+                      compact={compact}
+                      present={present}
+                      liveEditable={liveEditable}
+                      onGrammarTextChange={onGrammarTextChange}
+                    />
                   </div>
+                  {showRightColumn ? (
+                    <SlideImage
+                      url={contentImages[0]?.url || slide.imageUrl}
+                      alt={contentImages[0]?.alt || slide.imageAlt || title}
+                      className={compact ? 'h-full max-h-40 w-full' : 'h-full max-h-full w-full'}
+                    />
+                  ) : null}
+                </div>
+                {showTable ? (
+                  <SlideTable slide={slide} compact={compact} present={present} />
                 ) : null}
-              </div>
+              </>
             )}
           </div>
         ) : null}

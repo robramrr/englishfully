@@ -264,8 +264,7 @@ export async function buildPresentationPptxBuffer(
         !multiImages &&
         (contentImages.length === 1 ||
           Boolean(slide.imageUrl.trim() || String(slide.imageUrl2 ?? '').trim()));
-      const showRight = showTable || sideImage;
-      const textWidth = showRight ? 6.8 : 12.1;
+      const textWidth = sideImage ? 6.8 : 12.1;
       const showTitle = slide.showTitle !== false;
       const showBody = slide.showBody !== false;
 
@@ -289,14 +288,14 @@ export async function buildPresentationPptxBuffer(
           x: 0.6,
           y,
           w: textWidth,
-          h: multiImages ? 1.5 : 2.2,
+          h: multiImages || showTable ? 1.4 : 2.2,
           fontSize: pptxFontSize(slide.bodyFontSize, 18),
           bold: true,
           color: pptxFontColor(slide.bodyColor),
           fontFace: 'Arial',
           valign: 'top',
         });
-        y += multiImages ? 1.6 : 2.3;
+        y += multiImages || showTable ? 1.5 : 2.3;
       }
 
       const bullets = slide.bullets.filter((item) => item.trim());
@@ -307,7 +306,7 @@ export async function buildPresentationPptxBuffer(
             x: 0.6,
             y,
             w: textWidth,
-            h: Math.min(multiImages ? 1.4 : 2.8, bullets.length * 0.45 + 0.3),
+            h: Math.min(multiImages || showTable ? 1.2 : 2.8, bullets.length * 0.45 + 0.3),
             fontSize: pptxFontSize(slide.bulletsFontSize, 18),
             bold: true,
             color: pptxFontColor(slide.bulletsColor),
@@ -315,30 +314,30 @@ export async function buildPresentationPptxBuffer(
             valign: 'top',
           }
         );
-        y += Math.min(multiImages ? 1.4 : 2.8, bullets.length * 0.45 + 0.4);
+        y += Math.min(multiImages || showTable ? 1.2 : 2.8, bullets.length * 0.45 + 0.4);
       }
 
       if (slide.grammarHighlighterEnabled && slide.grammarText.trim()) {
         page.addShape(pptx.ShapeType.roundRect, {
           x: 0.6,
-          y: Math.min(y, multiImages ? 3.4 : 5.2),
+          y: Math.min(y, multiImages || showTable ? 3.2 : 5.2),
           w: textWidth,
-          h: 1.1,
+          h: 1.0,
           fill: { color: GRAY },
           line: { color: NAVY, width: 1.5 },
         });
         page.addText(slide.grammarText, {
           x: 0.75,
-          y: Math.min(y, multiImages ? 3.4 : 5.2) + 0.15,
+          y: Math.min(y, multiImages || showTable ? 3.2 : 5.2) + 0.12,
           w: textWidth - 0.3,
-          h: 0.85,
+          h: 0.75,
           fontSize: 16,
           bold: true,
           color: NAVY,
           fontFace: 'Arial',
           valign: 'top',
         });
-        y = Math.min(y, multiImages ? 3.4 : 5.2) + 1.25;
+        y = Math.min(y, multiImages || showTable ? 3.2 : 5.2) + 1.15;
       }
 
       if (showTable) {
@@ -360,11 +359,13 @@ export async function buildPresentationPptxBuffer(
             }))
           ),
         ];
+        const tableWidth = Math.min(10, 2.2 * headers.length);
+        const tableX = 0.6 + (12.1 - tableWidth) / 2;
         page.addTable(tableRows, {
-          x: 7.6,
-          y: 1.35,
-          w: 5.1,
-          colW: headers.map(() => 5.1 / headers.length),
+          x: tableX,
+          y: Math.min(y, 4.0),
+          w: tableWidth,
+          colW: headers.map(() => tableWidth / headers.length),
           border: [
             { pt: 1.5, color: NAVY },
             { pt: 1.5, color: NAVY },
@@ -377,10 +378,11 @@ export async function buildPresentationPptxBuffer(
           color: pptxFontColor(slide.tableColor),
           valign: 'middle',
         });
+        y = Math.min(y, 4.0) + 0.45 * (1 + rows.length) + 0.3;
       }
 
       if (multiImages) {
-        const imageY = Math.min(Math.max(y, showTable ? 4.2 : 4.0), 4.5);
+        const imageY = Math.min(Math.max(y, 4.2), 4.8);
         const count = contentImages.length;
         const gap = 0.25;
         const totalW = 12.1;
@@ -393,11 +395,11 @@ export async function buildPresentationPptxBuffer(
               x: 0.6 + i * (imgW + gap),
               y: imageY,
               w: imgW,
-              h: showTable ? 2.0 : 2.4,
+              h: 2.0,
             });
           }
         }
-      } else if (!showTable && (contentImages[0] || slide.imageUrl.trim() || String(slide.imageUrl2 ?? '').trim())) {
+      } else if (sideImage && (contentImages[0] || slide.imageUrl.trim() || String(slide.imageUrl2 ?? '').trim())) {
         const imageSrc =
           contentImages[0]?.url ||
           slide.imageUrl.trim() ||
@@ -409,7 +411,7 @@ export async function buildPresentationPptxBuffer(
             x: 7.8,
             y: 1.35,
             w: 4.8,
-            h: 4.8,
+            h: showTable ? 3.2 : 4.8,
           });
         } else {
           page.addText(imageSrc, {
@@ -420,17 +422,6 @@ export async function buildPresentationPptxBuffer(
             fontSize: 11,
             color: NAVY,
             fontFace: 'Arial',
-          });
-        }
-      } else if (showTable && sideImage && contentImages[0]) {
-        const imageData = await fetchImageAsBase64(contentImages[0].url);
-        if (imageData) {
-          page.addImage({
-            data: imageData,
-            x: 7.6,
-            y: 5.0,
-            w: 5.1,
-            h: 1.6,
           });
         }
       }

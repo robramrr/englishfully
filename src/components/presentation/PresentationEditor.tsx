@@ -925,8 +925,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                       <div>
                         <ComicText className="font-black">Table</ComicText>
                         <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                          Optional table on the right (heading row on top), same side as a single
-                          image.
+                          Optional table on its own centered row (heading row on top).
                         </ComicText>
                       </div>
                       <label className="inline-flex cursor-pointer items-center gap-2 font-bold">

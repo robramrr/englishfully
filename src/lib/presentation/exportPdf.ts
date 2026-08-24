@@ -134,9 +134,10 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                    }
                    ${
                      slide.layout === 'content' && slide.tableEnabled
-                       ? `<table style="width:100%;border-collapse:collapse;margin-top:12px;color:${pdfColor(
-                           slide.tableColor
-                         )};font-size:${pdfFontSize(slide.tableFontSize, 16)}px;">
+                       ? `<div style="display:flex;justify-content:center;margin-top:12px;">
+                            <table style="width:auto;min-width:50%;max-width:100%;border-collapse:collapse;color:${pdfColor(
+                              slide.tableColor
+                            )};font-size:${pdfFontSize(slide.tableFontSize, 16)}px;">
                             <thead><tr>${(slide.tableHeaders || [])
                               .map(
                                 (cell) =>
@@ -158,7 +159,7 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                                     .join('')}</tr>`
                               )
                               .join('')}</tbody>
-                          </table>`
+                          </table></div>`
                        : ''
                    }
                    ${
