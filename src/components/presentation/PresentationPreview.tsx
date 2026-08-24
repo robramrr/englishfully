@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
+import PresentSlideStage from './PresentSlideStage';
 import SlideCanvas from './SlideCanvas';
 import type { PresentationDeck } from '@/lib/presentation/types';
 
@@ -236,37 +237,44 @@ export default function PresentationPreview({
       <div
         className={[
           'mx-auto flex w-full flex-1 items-center justify-center',
-          presentMode ? 'h-full min-h-0 p-2 md:p-4' : '',
+          presentMode ? 'h-full min-h-0 p-0' : '',
         ].join(' ')}
       >
-        <div
-          className={[
-            'w-full',
-            presentMode
-              ? 'flex h-full max-h-full items-center justify-center'
-              : 'max-w-6xl',
-          ].join(' ')}
-        >
-          <SlideCanvas
-            slide={slide}
-            deck={deck}
-            slideNumber={safeIndex + 1}
-            totalSlides={total}
-            present={presentMode}
-            className={
-              presentMode
-                ? 'h-auto max-h-full w-auto max-w-full !aspect-[16/9] [width:min(100%,calc(100vh*16/9))]'
-                : undefined
-            }
-            liveEditable={liveGrammar}
-            timerResetKey={timerEpoch}
-            onGrammarTextChange={
-              liveGrammar && onGrammarTextChange
-                ? (grammarText) => onGrammarTextChange(slide.id, grammarText)
-                : undefined
-            }
-          />
-        </div>
+        {presentMode ? (
+          <PresentSlideStage>
+            <SlideCanvas
+              slide={slide}
+              deck={deck}
+              slideNumber={safeIndex + 1}
+              totalSlides={total}
+              present
+              className="h-full w-full"
+              liveEditable={liveGrammar}
+              timerResetKey={timerEpoch}
+              onGrammarTextChange={
+                liveGrammar && onGrammarTextChange
+                  ? (grammarText) => onGrammarTextChange(slide.id, grammarText)
+                  : undefined
+              }
+            />
+          </PresentSlideStage>
+        ) : (
+          <div className="w-full max-w-6xl">
+            <SlideCanvas
+              slide={slide}
+              deck={deck}
+              slideNumber={safeIndex + 1}
+              totalSlides={total}
+              liveEditable={liveGrammar}
+              timerResetKey={timerEpoch}
+              onGrammarTextChange={
+                liveGrammar && onGrammarTextChange
+                  ? (grammarText) => onGrammarTextChange(slide.id, grammarText)
+                  : undefined
+              }
+            />
+          </div>
+        )}
       </div>
     </div>
   );

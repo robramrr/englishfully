@@ -263,9 +263,11 @@ export default function SlideCanvas({
   return (
     <article
       className={[
-        'presentation-slide relative overflow-hidden border-4 border-[var(--comic-black)] comic-shadow-xl',
+        'presentation-slide relative overflow-hidden',
         'bg-[var(--comic-white)] text-[var(--comic-dark)]',
-        'aspect-[16/9] w-full',
+        present
+          ? 'h-full w-full'
+          : 'aspect-[16/9] w-full border-4 border-[var(--comic-black)] comic-shadow-xl',
         className,
       ].join(' ')}
     >
