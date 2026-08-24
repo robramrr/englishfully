@@ -342,11 +342,11 @@ export default function SlideCanvas({
         ) : null}
 
         {slide.layout === 'content' ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+          <div className="flex flex-1 min-h-0 flex-col gap-4">
             {showTitle ? (
               <h2
                 className={[
-                  'shrink-0 font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
+                  'font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
                   compact ? 'text-base' : present ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl',
                 ].join(' ')}
               >
@@ -355,7 +355,7 @@ export default function SlideCanvas({
             ) : null}
             {multiContentImages ? (
               <>
-                <div className="shrink-0">
+                <div className="min-h-0 overflow-auto">
                   <ContentBody
                     slide={slide}
                     body={body}
@@ -367,9 +367,13 @@ export default function SlideCanvas({
                 </div>
                 <div
                   className={[
-                    'grid shrink-0 gap-3',
+                    'grid min-h-0 gap-3',
                     contentImages.length >= 3 ? 'grid-cols-3' : 'grid-cols-2',
-                    compact ? 'h-28' : present ? 'h-56' : 'h-44 md:h-52',
+                    compact
+                      ? 'max-h-32'
+                      : present
+                        ? 'flex-1'
+                        : 'max-h-56 md:max-h-72',
                   ].join(' ')}
                 >
                   {contentImages.map((image) => (
@@ -377,7 +381,7 @@ export default function SlideCanvas({
                       key={image.url}
                       url={image.url}
                       alt={image.alt}
-                      className="h-full w-full min-h-0"
+                      className="h-full max-h-full w-full min-h-0"
                     />
                   ))}
                 </div>
