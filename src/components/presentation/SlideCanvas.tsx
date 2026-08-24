@@ -181,12 +181,11 @@ function ContentBody({
       ) : null}
 
       {hasBullets ? (
-        <ul className="space-y-1 font-bold">
-          {slide.bullets
-            .filter((item) => item.trim())
-            .map((item) => (
+        <ul className="space-y-2 font-bold">
+          {slide.bullets.map((item, index) =>
+            item.trim() ? (
               <li
-                key={item}
+                key={`b-${index}-${item}`}
                 className="flex items-start gap-[0.55em]"
                 style={textStyle(slide.bulletsFontSize, slide.bulletsColor, mode)}
               >
@@ -195,7 +194,15 @@ function ContentBody({
                 </span>
                 <span className="min-w-0 flex-1 leading-[1.35]">{item}</span>
               </li>
-            ))}
+            ) : (
+              <li
+                key={`gap-${index}`}
+                className="list-none"
+                style={{ height: `${Math.round(presentationFontSizePx(slide.bulletsFontSize, mode) * 0.7)}px` }}
+                aria-hidden
+              />
+            )
+          )}
         </ul>
       ) : null}
 
@@ -429,16 +436,28 @@ export default function SlideCanvas({
               </h2>
             ) : null}
             <ul className="flex-1 space-y-2 overflow-auto font-bold">
-              {(slide.bullets.length > 0 ? slide.bullets : ['Add bullet points…']).map((item) => (
-                <li
-                  key={item}
-                  className="flex gap-3 border-4 border-[var(--comic-black)] bg-white/80 px-3 py-2 comic-shadow-sm"
-                  style={textStyle(slide.bulletsFontSize, slide.bulletsColor, mode)}
-                >
-                  <span className="text-[var(--comic-primary)]">●</span>
-                  <span>{item}</span>
-                </li>
-              ))}
+              {(slide.bullets.length > 0 ? slide.bullets : ['Add bullet points…']).map(
+                (item, index) =>
+                  item.trim() ? (
+                    <li
+                      key={`b-${index}-${item}`}
+                      className="flex gap-3 border-4 border-[var(--comic-black)] bg-white/80 px-3 py-2 comic-shadow-sm"
+                      style={textStyle(slide.bulletsFontSize, slide.bulletsColor, mode)}
+                    >
+                      <span className="text-[var(--comic-primary)]">●</span>
+                      <span>{item}</span>
+                    </li>
+                  ) : (
+                    <li
+                      key={`gap-${index}`}
+                      className="list-none"
+                      style={{
+                        height: `${Math.round(presentationFontSizePx(slide.bulletsFontSize, mode) * 0.7)}px`,
+                      }}
+                      aria-hidden
+                    />
+                  )
+              )}
             </ul>
           </div>
         ) : null}
@@ -469,12 +488,11 @@ export default function SlideCanvas({
               </p>
             ) : null}
             {slide.bullets.filter((item) => item.trim()).length > 0 ? (
-              <ul className="space-y-1 font-bold">
-                {slide.bullets
-                  .filter((item) => item.trim())
-                  .map((item) => (
+              <ul className="space-y-2 font-bold">
+                {slide.bullets.map((item, index) =>
+                  item.trim() ? (
                     <li
-                      key={item}
+                      key={`b-${index}-${item}`}
                       className="flex items-start gap-[0.55em]"
                       style={textStyle(slide.bulletsFontSize, slide.bulletsColor, mode)}
                     >
@@ -483,7 +501,17 @@ export default function SlideCanvas({
                       </span>
                       <span className="min-w-0 flex-1 leading-[1.35]">{item}</span>
                     </li>
-                  ))}
+                  ) : (
+                    <li
+                      key={`gap-${index}`}
+                      className="list-none"
+                      style={{
+                        height: `${Math.round(presentationFontSizePx(slide.bulletsFontSize, mode) * 0.7)}px`,
+                      }}
+                      aria-hidden
+                    />
+                  )
+                )}
               </ul>
             ) : null}
           </div>

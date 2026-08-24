@@ -34,7 +34,7 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
         slide.layout === 'title' ? slide.body || deck.subtitle : slide.body;
       const showTitle = slide.showTitle !== false;
       const showBody = slide.showBody !== false;
-      const bullets = slide.bullets.filter((item) => item.trim());
+      const bullets = slide.bullets;
       const brand = deck.brandLabel?.trim() || 'Englishfully';
 
       return `
@@ -88,12 +88,16 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                        : ''
                    }
                    ${
-                     bullets.length
+                     bullets.some((item) => item.trim())
                        ? `<ul style="color:${pdfColor(slide.bulletsColor)};font-size:${pdfFontSize(
                            slide.bulletsFontSize,
                            18
                          )}px">${bullets
-                           .map((item) => `<li>${escapeHtml(item)}</li>`)
+                           .map((item) =>
+                             item.trim()
+                               ? `<li>${escapeHtml(item)}</li>`
+                               : `<li style="list-style:none;height:0.7em"></li>`
+                           )
                            .join('')}</ul>`
                        : ''
                    }

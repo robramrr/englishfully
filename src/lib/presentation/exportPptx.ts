@@ -347,10 +347,14 @@ export async function buildPresentationPptxBuffer(
         y = Math.min(y, 4.0) + 0.45 * (1 + rows.length) + 0.3;
       }
 
-      const bullets = slide.bullets.filter((item) => item.trim());
-      if (bullets.length > 0) {
+      const bullets = slide.bullets;
+      if (bullets.some((item) => item.trim())) {
         page.addText(
-          bullets.map((item) => ({ text: item, options: { bullet: true } })),
+          bullets.map((item) =>
+            item.trim()
+              ? { text: item, options: { bullet: true } }
+              : { text: ' ', options: { bullet: false } }
+          ),
           {
             x: 0.6,
             y,

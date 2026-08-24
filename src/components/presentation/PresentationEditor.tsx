@@ -24,6 +24,7 @@ import {
   createEmptyTableHeaders,
   createEmptyTableRows,
   createSlideId,
+  normalizeBulletsKeepGaps,
   normalizeDeck,
   PRESENTATION_CHOICE_LETTERS,
   type PresentationDeck,
@@ -721,13 +722,16 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                   selected.layout === 'bullets') && (
                   <div className="block space-y-1">
                     <ComicText className="text-sm font-bold">Bullets (one per line)</ComicText>
+                    <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
+                      Leave a blank line between points for extra spacing.
+                    </ComicText>
                     <textarea
                       className="comic-textarea w-full min-h-[100px]"
                       value={selected.bullets.join('\n')}
                       onChange={(event) =>
                         setDeck((prev) =>
                           updateSlide(prev, selected.id, {
-                            // Keep blank lines while typing so Enter can start the next bullet
+                            // Keep blank lines so Enter Enter adds spacing between bullets
                             bullets: event.target.value.split(/\r?\n/),
                           })
                         )
@@ -735,16 +739,16 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                       onBlur={() =>
                         setDeck((prev) =>
                           updateSlide(prev, selected.id, {
-                            bullets: (
+                            bullets: normalizeBulletsKeepGaps(
                               prev.slides.find((slide) => slide.id === selected.id)?.bullets || []
-                            )
-                              .map((line) => line.trim())
-                              .filter(Boolean),
+                            ),
                           })
                         )
                       }
                       onKeyDown={(event) => event.stopPropagation()}
-                      placeholder={'- I wake up at 6.\n- I eat breakfast.'}
+                      placeholder={
+                        '- I wake up at 6.\n\n- I eat breakfast.'
+                      }
                     />
                     <SlideTextStyleControls
                       fontSize={selected.bulletsFontSize}

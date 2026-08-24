@@ -359,6 +359,15 @@ export function countFilledContentImages(
   ).length;
 }
 
+/** Keep blank lines between bullets for extra vertical spacing; drop only edge empties. */
+export function normalizeBulletsKeepGaps(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const mapped = value.map((item) => String(item ?? '').trim());
+  while (mapped.length > 0 && mapped[0] === '') mapped.shift();
+  while (mapped.length > 0 && mapped[mapped.length - 1] === '') mapped.pop();
+  return mapped;
+}
+
 const DEFAULT_TABLE_COLS = 2;
 const DEFAULT_TABLE_ROWS = 2;
 const MAX_TABLE_COLS = 6;
@@ -471,7 +480,7 @@ export function normalizeSlide(
     body: String(slide.body ?? ''),
     showBody: slide.showBody !== false,
     bullets: Array.isArray(slide.bullets)
-      ? slide.bullets.map((item) => String(item ?? '').trim()).filter(Boolean)
+      ? normalizeBulletsKeepGaps(slide.bullets)
       : [],
     imageUrl: String(slide.imageUrl ?? ''),
     imageAlt: String(slide.imageAlt ?? ''),
