@@ -102,7 +102,7 @@ function SlideTable({
         style={style}
       >
         <thead>
-          <tr className="bg-[var(--comic-light)]">
+          <tr className="bg-[#d0d0d0]">
             {headers.map((cell, index) => (
               <th
                 key={`h-${index}`}

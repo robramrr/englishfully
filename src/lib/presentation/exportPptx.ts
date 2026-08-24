@@ -308,12 +308,21 @@ export async function buildPresentationPptxBuffer(
         const tableRows = [
           headers.map((cell) => ({
             text: cell || 'Heading',
-            options: { bold: true, color: pptxFontColor(slide.tableColor), align: 'left' as const },
+            options: {
+              bold: true,
+              color: pptxFontColor(slide.tableColor),
+              align: 'left' as const,
+              fill: { color: 'D0D0D0' },
+            },
           })),
           ...rows.map((row) =>
             headers.map((_, colIndex) => ({
               text: row[colIndex] || '',
-              options: { color: pptxFontColor(slide.tableColor), align: 'left' as const },
+              options: {
+                color: pptxFontColor(slide.tableColor),
+                align: 'left' as const,
+                fill: { color: WHITE },
+              },
             }))
           ),
         ];

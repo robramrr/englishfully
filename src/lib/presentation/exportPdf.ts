@@ -66,7 +66,7 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                             <thead><tr>${(slide.tableHeaders || [])
                               .map(
                                 (cell) =>
-                                  `<th style="border:2px solid #001a48;padding:6px;text-align:left;background:#e5e5e4;">${escapeHtml(
+                                  `<th style="border:2px solid #001a48;padding:6px;text-align:left;background:#d0d0d0;">${escapeHtml(
                                     cell || 'Heading'
                                   )}</th>`
                               )

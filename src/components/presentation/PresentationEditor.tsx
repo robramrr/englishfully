@@ -958,7 +958,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                         <div className="overflow-x-auto">
                           <table className="w-full min-w-[280px] border-collapse border-2 border-[var(--comic-black)] bg-white">
                             <thead>
-                              <tr className="bg-[var(--comic-light)]">
+                              <tr className="bg-[#d0d0d0]">
                                 {selected.tableHeaders.map((cell, colIndex) => (
                                   <th key={`th-${colIndex}`} className="border border-[var(--comic-black)] p-1">
                                     <input
