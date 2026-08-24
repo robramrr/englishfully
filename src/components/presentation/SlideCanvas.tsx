@@ -93,7 +93,7 @@ function SlideTable({
       : [headers.map(() => ''), headers.map(() => '')];
 
   return (
-    <div className="flex w-full shrink-0 justify-center overflow-auto">
+    <div className="flex w-full shrink-0 justify-start overflow-auto">
       <table
         className={[
           'border-collapse border-4 border-[var(--comic-black)] bg-white comic-shadow-md',
@@ -153,8 +153,9 @@ function ContentBody({
   const bodyPx = presentationFontSizePx(slide.bodyFontSize, mode);
   const showBody = slide.showBody !== false;
   const hasBullets = slide.bullets.filter((item) => item.trim()).length > 0;
+  const showTable = Boolean(slide.tableEnabled);
 
-  if (!showBody && !hasBullets && !grammarOn) {
+  if (!showBody && !hasBullets && !grammarOn && !showTable) {
     return null;
   }
 
@@ -173,6 +174,10 @@ function ContentBody({
             Add a definition or explanation…
           </p>
         )
+      ) : null}
+
+      {showTable ? (
+        <SlideTable slide={slide} compact={compact} present={present} />
       ) : null}
 
       {hasBullets ? (
@@ -238,8 +243,6 @@ export default function SlideCanvas({
   const contentImages =
     slide.layout === 'content' ? getContentSlideImages(slide, title) : [];
   const multiContentImages = contentImages.length >= 2;
-  const showTable =
-    slide.layout === 'content' && Boolean(slide.tableEnabled);
   const showContentImageColumn =
     slide.layout === 'content' &&
     !multiContentImages &&
@@ -362,9 +365,6 @@ export default function SlideCanvas({
                     onGrammarTextChange={onGrammarTextChange}
                   />
                 </div>
-                {showTable ? (
-                  <SlideTable slide={slide} compact={compact} present={present} />
-                ) : null}
                 <div
                   className={[
                     'grid min-h-0 gap-3',
@@ -387,35 +387,30 @@ export default function SlideCanvas({
                 </div>
               </>
             ) : (
-              <>
-                <div
-                  className={[
-                    'grid min-h-0 gap-4',
-                    showRightColumn ? 'flex-1 md:grid-cols-2' : 'grid-cols-1',
-                  ].join(' ')}
-                >
-                  <div className="min-h-0 overflow-auto">
-                    <ContentBody
-                      slide={slide}
-                      body={body}
-                      compact={compact}
-                      present={present}
-                      liveEditable={liveEditable}
-                      onGrammarTextChange={onGrammarTextChange}
-                    />
-                  </div>
-                  {showRightColumn ? (
-                    <SlideImage
-                      url={contentImages[0]?.url || slide.imageUrl}
-                      alt={contentImages[0]?.alt || slide.imageAlt || title}
-                      className={compact ? 'h-full max-h-40 w-full' : 'h-full max-h-full w-full'}
-                    />
-                  ) : null}
+              <div
+                className={[
+                  'grid min-h-0 gap-4',
+                  showRightColumn ? 'flex-1 md:grid-cols-2' : 'grid-cols-1',
+                ].join(' ')}
+              >
+                <div className="min-h-0 overflow-auto">
+                  <ContentBody
+                    slide={slide}
+                    body={body}
+                    compact={compact}
+                    present={present}
+                    liveEditable={liveEditable}
+                    onGrammarTextChange={onGrammarTextChange}
+                  />
                 </div>
-                {showTable ? (
-                  <SlideTable slide={slide} compact={compact} present={present} />
+                {showRightColumn ? (
+                  <SlideImage
+                    url={contentImages[0]?.url || slide.imageUrl}
+                    alt={contentImages[0]?.alt || slide.imageAlt || title}
+                    className={compact ? 'h-full max-h-40 w-full' : 'h-full max-h-full w-full'}
+                  />
                 ) : null}
-              </>
+              </div>
             )}
           </div>
         ) : null}

@@ -58,6 +58,36 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                        : ''
                    }
                    ${
+                     slide.layout === 'content' && slide.tableEnabled
+                       ? `<div style="display:flex;justify-content:flex-start;margin:12px 0;">
+                            <table style="width:auto;min-width:50%;max-width:100%;border-collapse:collapse;color:${pdfColor(
+                              slide.tableColor
+                            )};font-size:${pdfFontSize(slide.tableFontSize, 16)}px;">
+                            <thead><tr>${(slide.tableHeaders || [])
+                              .map(
+                                (cell) =>
+                                  `<th style="border:2px solid #001a48;padding:6px;text-align:left;background:#e5e5e4;">${escapeHtml(
+                                    cell || 'Heading'
+                                  )}</th>`
+                              )
+                              .join('')}</tr></thead>
+                            <tbody>${(slide.tableRows || [])
+                              .map(
+                                (row) =>
+                                  `<tr>${(slide.tableHeaders || [])
+                                    .map(
+                                      (_, colIndex) =>
+                                        `<td style="border:2px solid #001a48;padding:6px;">${escapeHtml(
+                                          row[colIndex] || ''
+                                        )}</td>`
+                                    )
+                                    .join('')}</tr>`
+                              )
+                              .join('')}</tbody>
+                          </table></div>`
+                       : ''
+                   }
+                   ${
                      bullets.length
                        ? `<ul style="color:${pdfColor(slide.bulletsColor)};font-size:${pdfFontSize(
                            slide.bulletsFontSize,
@@ -130,36 +160,6 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                        ? `<div class="grammar"><strong>Practice:</strong> ${escapeHtml(
                            slide.grammarText
                          )}</div>`
-                       : ''
-                   }
-                   ${
-                     slide.layout === 'content' && slide.tableEnabled
-                       ? `<div style="display:flex;justify-content:center;margin-top:12px;">
-                            <table style="width:auto;min-width:50%;max-width:100%;border-collapse:collapse;color:${pdfColor(
-                              slide.tableColor
-                            )};font-size:${pdfFontSize(slide.tableFontSize, 16)}px;">
-                            <thead><tr>${(slide.tableHeaders || [])
-                              .map(
-                                (cell) =>
-                                  `<th style="border:2px solid #001a48;padding:6px;text-align:left;background:#e5e5e4;">${escapeHtml(
-                                    cell || 'Heading'
-                                  )}</th>`
-                              )
-                              .join('')}</tr></thead>
-                            <tbody>${(slide.tableRows || [])
-                              .map(
-                                (row) =>
-                                  `<tr>${(slide.tableHeaders || [])
-                                    .map(
-                                      (_, colIndex) =>
-                                        `<td style="border:2px solid #001a48;padding:6px;">${escapeHtml(
-                                          row[colIndex] || ''
-                                        )}</td>`
-                                    )
-                                    .join('')}</tr>`
-                              )
-                              .join('')}</tbody>
-                          </table></div>`
                        : ''
                    }
                    ${

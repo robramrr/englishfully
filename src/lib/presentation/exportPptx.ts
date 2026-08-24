@@ -298,6 +298,46 @@ export async function buildPresentationPptxBuffer(
         y += multiImages || showTable ? 1.5 : 2.3;
       }
 
+      if (showTable) {
+        const headers = slide.tableHeaders?.length
+          ? slide.tableHeaders
+          : ['', ''];
+        const rows = slide.tableRows?.length
+          ? slide.tableRows
+          : [headers.map(() => '')];
+        const tableRows = [
+          headers.map((cell) => ({
+            text: cell || 'Heading',
+            options: { bold: true, color: pptxFontColor(slide.tableColor), align: 'left' as const },
+          })),
+          ...rows.map((row) =>
+            headers.map((_, colIndex) => ({
+              text: row[colIndex] || '',
+              options: { color: pptxFontColor(slide.tableColor), align: 'left' as const },
+            }))
+          ),
+        ];
+        const tableWidth = Math.min(textWidth, 2.2 * headers.length);
+        page.addTable(tableRows, {
+          x: 0.6,
+          y: Math.min(y, 4.0),
+          w: tableWidth,
+          colW: headers.map(() => tableWidth / headers.length),
+          border: [
+            { pt: 1.5, color: NAVY },
+            { pt: 1.5, color: NAVY },
+            { pt: 1.5, color: NAVY },
+            { pt: 1.5, color: NAVY },
+          ],
+          fontFace: 'Arial',
+          fontSize: pptxFontSize(slide.tableFontSize, 14),
+          bold: true,
+          color: pptxFontColor(slide.tableColor),
+          valign: 'middle',
+        });
+        y = Math.min(y, 4.0) + 0.45 * (1 + rows.length) + 0.3;
+      }
+
       const bullets = slide.bullets.filter((item) => item.trim());
       if (bullets.length > 0) {
         page.addText(
@@ -338,47 +378,6 @@ export async function buildPresentationPptxBuffer(
           valign: 'top',
         });
         y = Math.min(y, multiImages || showTable ? 3.2 : 5.2) + 1.15;
-      }
-
-      if (showTable) {
-        const headers = slide.tableHeaders?.length
-          ? slide.tableHeaders
-          : ['', ''];
-        const rows = slide.tableRows?.length
-          ? slide.tableRows
-          : [headers.map(() => '')];
-        const tableRows = [
-          headers.map((cell) => ({
-            text: cell || 'Heading',
-            options: { bold: true, color: pptxFontColor(slide.tableColor), align: 'left' as const },
-          })),
-          ...rows.map((row) =>
-            headers.map((_, colIndex) => ({
-              text: row[colIndex] || '',
-              options: { color: pptxFontColor(slide.tableColor), align: 'left' as const },
-            }))
-          ),
-        ];
-        const tableWidth = Math.min(10, 2.2 * headers.length);
-        const tableX = 0.6 + (12.1 - tableWidth) / 2;
-        page.addTable(tableRows, {
-          x: tableX,
-          y: Math.min(y, 4.0),
-          w: tableWidth,
-          colW: headers.map(() => tableWidth / headers.length),
-          border: [
-            { pt: 1.5, color: NAVY },
-            { pt: 1.5, color: NAVY },
-            { pt: 1.5, color: NAVY },
-            { pt: 1.5, color: NAVY },
-          ],
-          fontFace: 'Arial',
-          fontSize: pptxFontSize(slide.tableFontSize, 14),
-          bold: true,
-          color: pptxFontColor(slide.tableColor),
-          valign: 'middle',
-        });
-        y = Math.min(y, 4.0) + 0.45 * (1 + rows.length) + 0.3;
       }
 
       if (multiImages) {
