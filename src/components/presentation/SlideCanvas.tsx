@@ -310,6 +310,7 @@ export default function SlideCanvas({
               : 'p-8 md:p-10 gap-4',
         ].join(' ')}
       >
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {slide.layout === 'title' ? (
           <div className="flex flex-1 flex-col items-center justify-center text-center gap-4">
             <p
@@ -545,10 +546,11 @@ export default function SlideCanvas({
             </div>
           </div>
         ) : null}
+        </div>
 
         <div
           className={[
-            'mt-auto flex items-center justify-between border-t-2 border-[var(--comic-black)]/30 pt-2 font-bold text-[var(--comic-dark)]/70',
+            'relative z-[2] mt-2 flex shrink-0 items-center justify-between border-t-2 border-[var(--comic-black)]/30 pt-2 font-bold text-[var(--comic-dark)]/70',
             compact ? 'text-[10px]' : present ? 'text-base md:text-lg' : 'text-sm',
           ].join(' ')}
         >
