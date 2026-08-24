@@ -141,7 +141,7 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                             <thead><tr>${(slide.tableHeaders || [])
                               .map(
                                 (cell) =>
-                                  `<th style="border:2px solid #ea1225;padding:6px;text-align:left;background:#e5e5e4;">${escapeHtml(
+                                  `<th style="border:2px solid #001a48;padding:6px;text-align:left;background:#e5e5e4;">${escapeHtml(
                                     cell || 'Heading'
                                   )}</th>`
                               )
@@ -152,7 +152,7 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                                   `<tr>${(slide.tableHeaders || [])
                                     .map(
                                       (_, colIndex) =>
-                                        `<td style="border:2px solid #ea1225;padding:6px;">${escapeHtml(
+                                        `<td style="border:2px solid #001a48;padding:6px;">${escapeHtml(
                                           row[colIndex] || ''
                                         )}</td>`
                                     )

@@ -93,10 +93,10 @@ function SlideTable({
       : [headers.map(() => ''), headers.map(() => '')];
 
   return (
-    <div className="flex w-full shrink-0 justify-center">
+    <div className="flex w-full shrink-0 justify-center overflow-auto">
       <table
         className={[
-          'border-collapse border-4 border-[var(--comic-primary)] bg-white comic-shadow-md',
+          'border-collapse border-4 border-[var(--comic-black)] bg-white comic-shadow-md',
           compact ? 'w-full max-w-full' : 'w-auto max-w-full min-w-[50%]',
         ].join(' ')}
         style={style}
@@ -106,7 +106,7 @@ function SlideTable({
             {headers.map((cell, index) => (
               <th
                 key={`h-${index}`}
-                className="border-2 border-[var(--comic-primary)] px-2 py-1.5 text-left font-black"
+                className="border-2 border-[var(--comic-black)] px-2 py-1.5 text-left font-black"
               >
                 {cell.trim() || (compact ? '…' : 'Heading')}
               </th>
@@ -119,7 +119,7 @@ function SlideTable({
               {headers.map((_, colIndex) => (
                 <td
                   key={`c-${rowIndex}-${colIndex}`}
-                  className="border-2 border-[var(--comic-primary)] px-2 py-1.5 font-bold align-top"
+                  className="border-2 border-[var(--comic-black)] px-2 py-1.5 font-bold align-top"
                 >
                   {row[colIndex]?.trim() || ''}
                 </td>
@@ -339,11 +339,11 @@ export default function SlideCanvas({
         ) : null}
 
         {slide.layout === 'content' ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+          <div className="flex flex-1 min-h-0 flex-col gap-4">
             {showTitle ? (
               <h2
                 className={[
-                  'shrink-0 font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
+                  'font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
                   compact ? 'text-base' : present ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl',
                 ].join(' ')}
               >
@@ -352,7 +352,7 @@ export default function SlideCanvas({
             ) : null}
             {multiContentImages ? (
               <>
-                <div className="shrink-0">
+                <div className="min-h-0 overflow-auto">
                   <ContentBody
                     slide={slide}
                     body={body}
@@ -370,10 +370,10 @@ export default function SlideCanvas({
                     'grid min-h-0 gap-3',
                     contentImages.length >= 3 ? 'grid-cols-3' : 'grid-cols-2',
                     compact
-                      ? 'max-h-32 shrink-0'
+                      ? 'max-h-32'
                       : present
-                        ? 'min-h-0 flex-1'
-                        : 'max-h-56 shrink-0 md:max-h-72',
+                        ? 'flex-1'
+                        : 'max-h-56 md:max-h-72',
                   ].join(' ')}
                 >
                   {contentImages.map((image) => (
@@ -390,11 +390,11 @@ export default function SlideCanvas({
               <>
                 <div
                   className={[
-                    'grid shrink-0 gap-4',
-                    showRightColumn ? 'md:grid-cols-2' : 'grid-cols-1',
+                    'grid min-h-0 gap-4',
+                    showRightColumn ? 'flex-1 md:grid-cols-2' : 'grid-cols-1',
                   ].join(' ')}
                 >
-                  <div className="min-w-0">
+                  <div className="min-h-0 overflow-auto">
                     <ContentBody
                       slide={slide}
                       body={body}
@@ -408,7 +408,7 @@ export default function SlideCanvas({
                     <SlideImage
                       url={contentImages[0]?.url || slide.imageUrl}
                       alt={contentImages[0]?.alt || slide.imageAlt || title}
-                      className={compact ? 'h-40 w-full' : 'max-h-64 w-full md:max-h-80'}
+                      className={compact ? 'h-full max-h-40 w-full' : 'h-full max-h-full w-full'}
                     />
                   ) : null}
                 </div>
