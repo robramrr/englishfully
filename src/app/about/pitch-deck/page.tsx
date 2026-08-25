@@ -186,20 +186,36 @@ export default function PitchDeckPage() {
         <ComicCard className="pitch-deck-section">
           <SectionHeading id="management-team">d. Management Team</SectionHeading>
           <SubHeading>Robert — Founder</SubHeading>
-          <Body>
-            Robert leads product strategy, technology development, and business operations for
-            Englishfully. He combines classroom teaching experience with education-technology and
-            web development expertise. A certified English instructor who has taught learners across
-            ages and levels, he also works as a developer and business consultant building digital
-            tools for learning.
-          </Body>
-          <Body>
-            He holds degrees in Sociology and Business Administration from California State
-            University, Fullerton. Originally from California, USA, and a fluent Spanish speaker, he
-            lived in Monterrey, Mexico before making Thailand home. That international path informs
-            Englishfully’s emphasis on accessible language learning, cultural connection, and
-            products designed for real classrooms—not only consumer apps.
-          </Body>
+          <div className="pitch-deck-founder clearfix">
+            <div className="pitch-deck-founder-photos float-right ml-6 mb-3 flex flex-col items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1783439716/englishfully/company/Robert.jpg"
+                alt="Robert, founder of Englishfully"
+                className="h-36 w-36 object-cover object-top border-2 border-[var(--comic-black)]"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1783440767/englishfully/company/university.jpg"
+                alt="California State University, Fullerton"
+                className="h-16 w-16 object-contain"
+              />
+            </div>
+            <Body>
+              Robert leads product strategy, technology development, and business operations for
+              Englishfully. He combines classroom teaching experience with education-technology and
+              web development expertise. A certified English instructor who has taught learners across
+              ages and levels, he also works as a developer and business consultant building digital
+              tools for learning.
+            </Body>
+            <Body>
+              He holds degrees in Sociology and Business Administration from California State
+              University, Fullerton. Originally from California, USA, and a fluent Spanish speaker, he
+              lived in Monterrey, Mexico before making Thailand home. That international path informs
+              Englishfully’s emphasis on accessible language learning, cultural connection, and
+              products designed for real classrooms—not only consumer apps.
+            </Body>
+          </div>
         </ComicCard>
 
         {/* e. Products */}

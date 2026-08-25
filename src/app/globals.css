@@ -311,6 +311,21 @@ body::before {
   page-break-inside: avoid;
 }
 
+.pitch-deck-page .pitch-deck-founder::after {
+  content: '';
+  display: table;
+  clear: both;
+}
+
+@media (max-width: 640px) {
+  .pitch-deck-page .pitch-deck-founder-photos {
+    float: none;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 1rem;
+  }
+}
+
 @media print {
   .pitch-deck-page .print\:hidden {
     display: none !important;
