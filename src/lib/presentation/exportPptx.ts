@@ -255,6 +255,77 @@ export async function buildPresentationPptxBuffer(
           });
         }
       }
+    } else if (slide.layout === 'match_text_image') {
+      const pairs = (slide.matchPairs || []).filter(
+        (pair) => pair.word.trim() && pair.imageUrl.trim()
+      );
+      let y = 0.45;
+      if (slide.showTitle !== false) {
+        page.addText(slide.title || 'Match the words', {
+          x: 0.6,
+          y,
+          w: 12.1,
+          h: 0.7,
+          fontSize: 28,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+        });
+        y = 1.25;
+      }
+      if (slide.showBody !== false && slide.body.trim()) {
+        page.addText(slide.body, {
+          x: 0.6,
+          y,
+          w: 12.1,
+          h: 0.5,
+          fontSize: 16,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+        });
+        y += 0.6;
+      }
+      page.addText(pairs.map((pair) => pair.word).join('  ·  ') || 'No pairs yet', {
+        x: 0.6,
+        y,
+        w: 12.1,
+        h: 0.5,
+        fontSize: 18,
+        bold: true,
+        color: NAVY,
+        fontFace: 'Arial',
+      });
+      y += 0.7;
+      const cols = Math.min(3, Math.max(1, pairs.length));
+      const cellW = 12.1 / cols;
+      for (let i = 0; i < pairs.length; i += 1) {
+        const pair = pairs[i];
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const x = 0.6 + col * cellW;
+        const imgY = y + row * 2.4;
+        const imageData = await fetchImageAsBase64(pair.imageUrl);
+        if (imageData) {
+          page.addImage({
+            data: imageData,
+            x: x + 0.1,
+            y: imgY,
+            w: cellW - 0.3,
+            h: 1.8,
+          });
+        }
+        page.addText(pair.word, {
+          x: x + 0.1,
+          y: imgY + 1.85,
+          w: cellW - 0.3,
+          h: 0.35,
+          fontSize: 14,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+        });
+      }
     } else {
       const contentImages =
         slide.layout === 'content' ? getContentSlideImages(slide) : [];

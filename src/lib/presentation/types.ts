@@ -4,7 +4,8 @@ export type PresentationSlideLayout =
   | 'bullets'
   | 'image'
   | 'audio_image'
-  | 'describe_image';
+  | 'describe_image'
+  | 'match_text_image';
 
 export type PresentationChoiceLetter = 'A' | 'B' | 'C' | 'D';
 
@@ -13,6 +14,45 @@ export interface PresentationDescribeWord {
   text: string;
   /** True = matches the image (green). False = distractor (red). */
   matches: boolean;
+}
+
+/** Match text → image: one vocabulary word paired with one image (max 6). */
+export interface PresentationMatchPair {
+  id: string;
+  word: string;
+  imageUrl: string;
+}
+
+export const MAX_MATCH_PAIRS = 6;
+
+export function createMatchPairId(): string {
+  return `mp_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function createEmptyMatchPair(
+  patch: Partial<PresentationMatchPair> = {}
+): PresentationMatchPair {
+  return {
+    id: patch.id || createMatchPairId(),
+    word: String(patch.word ?? '').trim(),
+    imageUrl: String(patch.imageUrl ?? '').trim(),
+  };
+}
+
+function normalizeMatchPairs(value: unknown): PresentationMatchPair[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .slice(0, MAX_MATCH_PAIRS)
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const raw = item as Partial<PresentationMatchPair>;
+      return createEmptyMatchPair({
+        id: raw.id,
+        word: raw.word,
+        imageUrl: raw.imageUrl,
+      });
+    })
+    .filter((item): item is PresentationMatchPair => Boolean(item));
 }
 
 export function createDescribeWordId(): string {
@@ -283,6 +323,8 @@ export interface PresentationSlide {
   describeWords: PresentationDescribeWord[];
   /** How many matching words students must find to complete. */
   describeWordsNeeded: number;
+  /** Match text → image: up to 6 word/image pairs. */
+  matchPairs: PresentationMatchPair[];
   /**
    * Optional countdown on any slide (think / speak / activity time).
    * Started from present mode.
@@ -294,6 +336,15 @@ export interface PresentationSlide {
   describeTimerEnabled?: boolean;
   /** @deprecated Migrated into timerSeconds. */
   describeTimerSeconds?: number;
+}
+
+/** Pairs ready to play (both word and image filled). */
+export function getFilledMatchPairs(
+  slide: Pick<PresentationSlide, 'matchPairs'>
+): PresentationMatchPair[] {
+  return (slide.matchPairs || []).filter(
+    (pair) => pair.word.trim() && pair.imageUrl.trim()
+  );
 }
 
 export type PresentationStatus = 'draft' | 'published';
@@ -451,6 +502,7 @@ export function createEmptySlide(
     correctChoice: 'A',
     describeWords: [],
     describeWordsNeeded: 10,
+    matchPairs: [],
     timerEnabled: false,
     timerSeconds: 60,
   };
@@ -515,6 +567,7 @@ export function normalizeSlide(
     correctChoice: first.correctChoice,
     describeWords: normalizeDescribeWords(slide.describeWords),
     describeWordsNeeded: normalizePositiveInt(slide.describeWordsNeeded, 10),
+    matchPairs: normalizeMatchPairs(slide.matchPairs),
     timerEnabled: Boolean(
       slide.timerEnabled ?? slide.describeTimerEnabled ?? false
     ),

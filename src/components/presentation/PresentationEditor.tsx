@@ -20,10 +20,12 @@ import {
   createEmptyAudioTrack,
   createEmptyDeck,
   createEmptyDescribeWord,
+  createEmptyMatchPair,
   createEmptySlide,
   createEmptyTableHeaders,
   createEmptyTableRows,
   createSlideId,
+  MAX_MATCH_PAIRS,
   normalizeBulletsKeepGaps,
   normalizeDeck,
   PRESENTATION_CHOICE_LETTERS,
@@ -40,6 +42,7 @@ const LAYOUT_OPTIONS: { value: PresentationSlideLayout; label: string }[] = [
   { value: 'image', label: 'Image focus' },
   { value: 'audio_image', label: 'Audio + image' },
   { value: 'describe_image', label: 'Describe + image' },
+  { value: 'match_text_image', label: 'Match text → image' },
 ];
 
 function updateSlide(
@@ -196,6 +199,9 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
       ),
       describeWords: source.describeWords.map((word) =>
         createEmptyDescribeWord({ text: word.text, matches: word.matches })
+      ),
+      matchPairs: (source.matchPairs || []).map((pair) =>
+        createEmptyMatchPair({ word: pair.word, imageUrl: pair.imageUrl })
       ),
     };
     const next = [...deck.slides];
@@ -655,11 +661,11 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                         ? 'Subtitle'
                         : selected.layout === 'content'
                           ? 'Definition / explanation'
-                          : selected.layout === 'audio_image'
+                          : selected.layout === 'audio_image' ||
+                              selected.layout === 'describe_image' ||
+                              selected.layout === 'match_text_image'
                             ? 'Prompt (optional)'
-                            : selected.layout === 'describe_image'
-                              ? 'Prompt (optional)'
-                              : 'Text'}
+                            : 'Text'}
                     </ComicText>
                     <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
                       <span className="text-sm">{selected.showBody ? 'On' : 'Off'}</span>
@@ -1334,6 +1340,117 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                           ))}
                         </ul>
                       )}
+                    </div>
+                  </div>
+                ) : null}
+
+                {selected.layout === 'match_text_image' ? (
+                  <div className="space-y-4">
+                    <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
+                      <div>
+                        <ComicText className="font-black">
+                          Match pairs ({selected.matchPairs.length}/{MAX_MATCH_PAIRS})
+                        </ComicText>
+                        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+                          Add a vocabulary word and its image URL on the same row — that locks the
+                          match. On the slide, words appear on top and images below (shuffled).
+                          Students tap a word, then the matching picture.
+                        </ComicText>
+                      </div>
+
+                      <div className="space-y-3">
+                        {selected.matchPairs.map((pair, index) => (
+                          <div
+                            key={pair.id}
+                            className="space-y-2 border-4 border-[var(--comic-black)] bg-white p-3"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <ComicText className="text-sm font-black">
+                                Pair {index + 1}
+                              </ComicText>
+                              <ComicButton
+                                type="button"
+                                variant="danger"
+                                size="sm"
+                                onClick={() =>
+                                  setDeck((prev) =>
+                                    updateSlide(prev, selected.id, {
+                                      matchPairs: selected.matchPairs.filter(
+                                        (item) => item.id !== pair.id
+                                      ),
+                                    })
+                                  )
+                                }
+                              >
+                                Remove
+                              </ComicButton>
+                            </div>
+                            <label className="block space-y-1">
+                              <ComicText className="text-sm font-bold">Vocabulary word</ComicText>
+                              <input
+                                className="comic-input w-full"
+                                value={pair.word}
+                                onChange={(event) => {
+                                  const word = event.target.value;
+                                  setDeck((prev) =>
+                                    updateSlide(prev, selected.id, {
+                                      matchPairs: selected.matchPairs.map((item) =>
+                                        item.id === pair.id ? { ...item, word } : item
+                                      ),
+                                    })
+                                  );
+                                }}
+                                placeholder="e.g. apple"
+                              />
+                            </label>
+                            <label className="block space-y-1">
+                              <ComicText className="text-sm font-bold">Image URL</ComicText>
+                              <input
+                                className="comic-input w-full"
+                                value={pair.imageUrl}
+                                onChange={(event) => {
+                                  const imageUrl = event.target.value.trim();
+                                  setDeck((prev) =>
+                                    updateSlide(prev, selected.id, {
+                                      matchPairs: selected.matchPairs.map((item) =>
+                                        item.id === pair.id ? { ...item, imageUrl } : item
+                                      ),
+                                    })
+                                  );
+                                }}
+                                placeholder="https://…"
+                              />
+                            </label>
+                            {pair.imageUrl.trim() ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={pair.imageUrl}
+                                alt={pair.word || `Pair ${index + 1}`}
+                                className="h-20 w-20 border-4 border-[var(--comic-black)] object-cover"
+                              />
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+
+                      <ComicButton
+                        type="button"
+                        variant="accent"
+                        size="sm"
+                        disabled={selected.matchPairs.length >= MAX_MATCH_PAIRS}
+                        onClick={() =>
+                          setDeck((prev) =>
+                            updateSlide(prev, selected.id, {
+                              matchPairs: [
+                                ...selected.matchPairs,
+                                createEmptyMatchPair(),
+                              ].slice(0, MAX_MATCH_PAIRS),
+                            })
+                          )
+                        }
+                      >
+                        + Add pair
+                      </ComicButton>
                     </div>
                   </div>
                 ) : null}

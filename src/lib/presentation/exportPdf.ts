@@ -157,8 +157,44 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                        : ''
                    }
                    ${
+                     slide.layout === 'match_text_image'
+                       ? `<p class="body"><strong>Match text → image</strong> — ${
+                           (slide.matchPairs || []).filter(
+                             (pair) => pair.word.trim() && pair.imageUrl.trim()
+                           ).length
+                         } pairs</p>
+                          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+                            ${(slide.matchPairs || [])
+                              .filter((pair) => pair.word.trim() && pair.imageUrl.trim())
+                              .map(
+                                (pair) =>
+                                  `<span style="border:3px solid #001a48;padding:4px 10px;font-weight:700;">${escapeHtml(
+                                    pair.word
+                                  )}</span>`
+                              )
+                              .join('')}
+                          </div>
+                          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            ${(slide.matchPairs || [])
+                              .filter((pair) => pair.word.trim() && pair.imageUrl.trim())
+                              .map(
+                                (pair) =>
+                                  `<div style="width:15%;min-width:100px;"><strong>${escapeHtml(
+                                    pair.word
+                                  )}</strong><br/><img src="${escapeAttr(
+                                    pair.imageUrl
+                                  )}" alt="${escapeAttr(
+                                    pair.word
+                                  )}" style="max-width:100%;max-height:120px;object-fit:cover;border:3px solid #001a48;" /></div>`
+                              )
+                              .join('')}
+                          </div>`
+                       : ''
+                   }
+                   ${
                      slide.layout !== 'audio_image' &&
                      slide.layout !== 'describe_image' &&
+                     slide.layout !== 'match_text_image' &&
                      slide.grammarHighlighterEnabled &&
                      slide.grammarText.trim()
                        ? `<div class="grammar"><strong>Practice:</strong> ${escapeHtml(
@@ -170,7 +206,8 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                      (() => {
                        if (
                          slide.layout === 'audio_image' ||
-                         slide.layout === 'describe_image'
+                         slide.layout === 'describe_image' ||
+                         slide.layout === 'match_text_image'
                        ) {
                          return '';
                        }

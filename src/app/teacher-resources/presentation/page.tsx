@@ -111,6 +111,7 @@ function PresentationHomeContent() {
           tableRows: (slide.tableRows || []).map((row) => [...row]),
           audioTracks: (slide.audioTracks || []).map((track) => ({ ...track })),
           describeWords: (slide.describeWords || []).map((word) => ({ ...word })),
+          matchPairs: (slide.matchPairs || []).map((pair) => ({ ...pair })),
         })),
       };
       const saveResponse = await fetch('/api/presentation/decks', {

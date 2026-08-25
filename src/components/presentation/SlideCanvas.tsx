@@ -11,6 +11,7 @@ import {
 import { GrammarLiveTextBox } from './GrammarHighlight';
 import PresentationAudioMatch from './PresentationAudioMatch';
 import PresentationDescribeImage from './PresentationDescribeImage';
+import PresentationMatchTextImage from './PresentationMatchTextImage';
 import PresentationSlideTimer, { type SlideTimerState } from './PresentationSlideTimer';
 
 interface SlideCanvasProps {
@@ -565,6 +566,38 @@ export default function SlideCanvas({
             ) : null}
             <div className="min-h-0 flex-1">
               <PresentationDescribeImage
+                slide={slide}
+                present={present}
+                compact={compact}
+                timerState={timerOn ? timerState : null}
+                onRequestTimerReset={timerOn ? handleRequestTimerReset : undefined}
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {slide.layout === 'match_text_image' ? (
+          <div className="flex flex-1 min-h-0 flex-col gap-3">
+            {showTitle ? (
+              <h2
+                className={[
+                  'font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
+                  compact ? 'text-base' : present ? 'text-2xl md:text-4xl' : 'text-xl md:text-3xl',
+                ].join(' ')}
+              >
+                {title || 'Match the words'}
+              </h2>
+            ) : null}
+            {showBody && body ? (
+              <p
+                className="font-bold whitespace-pre-wrap"
+                style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}
+              >
+                {body}
+              </p>
+            ) : null}
+            <div className="min-h-0 flex-1">
+              <PresentationMatchTextImage
                 slide={slide}
                 present={present}
                 compact={compact}
