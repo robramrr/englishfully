@@ -723,7 +723,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                   <div className="block space-y-1">
                     <ComicText className="text-sm font-bold">Bullets (one per line)</ComicText>
                     <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
-                      Leave a blank line between points for extra spacing.
+                      Leave a blank line before or between points for extra spacing.
                     </ComicText>
                     <textarea
                       className="comic-textarea w-full min-h-[100px]"

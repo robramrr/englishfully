@@ -359,11 +359,11 @@ export function countFilledContentImages(
   ).length;
 }
 
-/** Keep blank lines between bullets for extra vertical spacing; drop only edge empties. */
+/** Keep blank lines for extra vertical spacing (including before the first bullet). */
 export function normalizeBulletsKeepGaps(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   const mapped = value.map((item) => String(item ?? '').trim());
-  while (mapped.length > 0 && mapped[0] === '') mapped.shift();
+  // Drop only trailing empties from the textarea end — keep leading gaps for top spacing.
   while (mapped.length > 0 && mapped[mapped.length - 1] === '') mapped.pop();
   return mapped;
 }

@@ -7,6 +7,7 @@ import ComicCard from '../../../components/ComicCard';
 import ComicText from '../../../components/ComicText';
 import ComicTitle from '../../../components/ComicTitle';
 import Footer from '../../../components/Footer';
+import TeacherAuthGate from '../../../components/speak-and-submit/TeacherAuthGate';
 
 const TOC = [
   { id: 'executive-summary', label: 'a. Executive Summary' },
@@ -62,6 +63,7 @@ function Body({ children }: { children: ReactNode }) {
 export default function PitchDeckPage() {
   return (
     <div className="pitch-deck-page flex flex-col min-h-screen bg-[var(--comic-light)]">
+      <TeacherAuthGate>
       <section className="pitch-deck-hero comic-bg-secondary py-16 px-4 text-center print:py-8">
         <div className="max-w-4xl mx-auto space-y-4">
           <ComicText className="comic-text-white font-bold text-sm uppercase tracking-wide">
@@ -630,6 +632,8 @@ export default function PitchDeckPage() {
           </Link>
         </div>
       </div>
+
+      </TeacherAuthGate>
 
       <div className="flex-grow" />
       <Footer />
