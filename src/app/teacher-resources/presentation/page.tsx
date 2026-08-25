@@ -110,10 +110,7 @@ function PresentationHomeContent() {
           tableHeaders: [...(slide.tableHeaders || [])],
           tableRows: (slide.tableRows || []).map((row) => [...row]),
           audioTracks: (slide.audioTracks || []).map((track) => ({ ...track })),
-          describeWords: (slide.describeWords || []).map((word) => ({
-            ...word,
-            matches: [...(word.matches || [])],
-          })),
+          describeWords: (slide.describeWords || []).map((word) => ({ ...word })),
         })),
       };
       const saveResponse = await fetch('/api/presentation/decks', {
