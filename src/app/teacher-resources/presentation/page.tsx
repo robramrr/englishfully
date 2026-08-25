@@ -9,7 +9,8 @@ import ComicText from '../../../components/ComicText';
 import ComicTitle from '../../../components/ComicTitle';
 import Footer from '../../../components/Footer';
 import TeacherAuthGate from '../../../components/speak-and-submit/TeacherAuthGate';
-import type { PresentationListItem } from '@/lib/presentation/types';
+import type { PresentationDeck, PresentationListItem } from '@/lib/presentation/types';
+import { createDeckId, createSlideId } from '@/lib/presentation/types';
 import {
   clearLegacyPresentationDraft,
   loadLegacyPresentationDraft,
@@ -21,6 +22,7 @@ function PresentationHomeContent() {
   const [items, setItems] = useState<PresentationListItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [duplicatingId, setDuplicatingId] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
@@ -79,6 +81,56 @@ function PresentationHomeContent() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create presentation');
       setCreating(false);
+    }
+  }
+
+  async function handleDuplicate(id: string) {
+    setDuplicatingId(id);
+    setError('');
+    try {
+      const loadResponse = await fetch(`/api/presentation/decks/${id}`, {
+        cache: 'no-store',
+      });
+      const loadData = await loadResponse.json().catch(() => ({}));
+      if (!loadResponse.ok) {
+        throw new Error(loadData.error || 'Failed to load presentation');
+      }
+      const source = loadData.presentation as PresentationDeck;
+      const copy: PresentationDeck = {
+        ...source,
+        id: createDeckId(),
+        title: `${source.title?.trim() || 'Untitled presentation'} (copy)`,
+        status: 'draft',
+        updatedAt: new Date().toISOString(),
+        slides: (source.slides || []).map((slide) => ({
+          ...slide,
+          id: createSlideId(),
+          bullets: [...(slide.bullets || [])],
+          choiceImages: [...(slide.choiceImages || [])],
+          tableHeaders: [...(slide.tableHeaders || [])],
+          tableRows: (slide.tableRows || []).map((row) => [...row]),
+          audioTracks: (slide.audioTracks || []).map((track) => ({ ...track })),
+          describeWords: (slide.describeWords || []).map((word) => ({
+            ...word,
+            matches: [...(word.matches || [])],
+          })),
+        })),
+      };
+      const saveResponse = await fetch('/api/presentation/decks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deck: copy }),
+      });
+      const saveData = await saveResponse.json().catch(() => ({}));
+      if (!saveResponse.ok) {
+        throw new Error(saveData.error || 'Failed to duplicate presentation');
+      }
+      setMessage('Presentation duplicated.');
+      await loadList();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to duplicate');
+    } finally {
+      setDuplicatingId('');
     }
   }
 
@@ -180,6 +232,15 @@ function PresentationHomeContent() {
                       </ComicButton>
                     </Link>
                   ) : null}
+                  <ComicButton
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={duplicatingId === item.id}
+                    onClick={() => void handleDuplicate(item.id)}
+                  >
+                    {duplicatingId === item.id ? 'Duplicating…' : 'Duplicate'}
+                  </ComicButton>
                   <ComicButton
                     type="button"
                     variant="danger"
