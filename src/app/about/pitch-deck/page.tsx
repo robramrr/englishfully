@@ -118,7 +118,7 @@ export default function PitchDeckPage() {
             <div className="pitch-deck-exec-summary-image float-right ml-6 mb-3 w-[11.5rem] sm:w-[13rem]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="https://res.cloudinary.com/ktg8khoq/image/upload/v1787821272/englishfeed-app_enivsd.png"
+                src="https://res.cloudinary.com/ktg8khoq/image/upload/v1787822534/englishfeed-login_ojxbnl.jpg"
                 alt="EnglishFeed app"
                 className="w-full h-auto object-contain border-2 border-[var(--comic-black)]"
               />
