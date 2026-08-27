@@ -120,7 +120,7 @@ export default function PitchDeckPage() {
               <img
                 src="https://res.cloudinary.com/ktg8khoq/image/upload/v1787821272/englishfeed-app_enivsd.png"
                 alt="EnglishFeed app"
-                className="w-full h-auto object-contain"
+                className="w-full h-auto object-contain border-2 border-[var(--comic-black)]"
               />
             </div>
             <Body>
