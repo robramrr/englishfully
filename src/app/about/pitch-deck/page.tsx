@@ -114,29 +114,39 @@ export default function PitchDeckPage() {
         {/* a. Executive Summary */}
         <ComicCard className="pitch-deck-section">
           <SectionHeading id="executive-summary">a. Executive Summary</SectionHeading>
-          <Body>
-            Englishfully Co., Ltd. is a Thailand-based education technology startup founded in 2026.
-            The company builds a complete English-learning ecosystem centered on{' '}
-            <strong>EnglishFeed</strong>, the learner-facing digital learning application, a
-            swipe-based learning feed for immersive, skill-focused English without distractions.
-          </Body>
-          <Body>
-            Our mission is to make English learning complete—covering fundamentals, skills practice,
-            assessment, and classroom management—through innovative and engaging digital products designed for Thai
-            and regional learners, and for teachers who need practical EdTech that fits real
-            classrooms.
-          </Body>
-          <Body>
-            The business operates in the Digital Industry. Core offerings include free and paid
-            EnglishFeed app access with online and offline membership support plans, and{' '}
-            <strong>Englishfully&apos;s Teacher Resources</strong> membership, a suite of
-            teacher-facing EdTech classroom tools. Initial capital is provided from personal funds.
-            Over the next two years, Englishfully will deepen product capability; grow learner and
-            teacher adoption in Thailand; hire local staff; partner with private schools, small
-            language schools, and government schools to introduce a more effective way to deliver and
-            present English learning; and build an independently operable platform suitable for
-            long-term growth or acquisition.
-          </Body>
+          <div className="pitch-deck-exec-summary clearfix">
+            <div className="pitch-deck-exec-summary-image float-right ml-6 mb-3 w-[11.5rem] sm:w-[13rem]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://res.cloudinary.com/ktg8khoq/image/upload/v1787821272/englishfeed-app_enivsd.png"
+                alt="EnglishFeed app"
+                className="w-full h-auto object-contain"
+              />
+            </div>
+            <Body>
+              Englishfully Co., Ltd. is a Thailand-based education technology startup founded in 2026.
+              The company builds a complete English-learning ecosystem centered on{' '}
+              <strong>EnglishFeed</strong>, the learner-facing digital learning application, a
+              swipe-based learning feed for immersive, skill-focused English without distractions.
+            </Body>
+            <Body>
+              Our mission is to make English learning complete—covering fundamentals, skills practice,
+              assessment, and classroom management—through innovative and engaging digital products designed for Thai
+              and regional learners, and for teachers who need practical EdTech that fits real
+              classrooms.
+            </Body>
+            <Body>
+              The business operates in the Digital Industry. Core offerings include free and paid
+              EnglishFeed app access with online and offline membership support plans, and{' '}
+              <strong>Englishfully&apos;s Teacher Resources</strong> membership, a suite of
+              teacher-facing EdTech classroom tools. Initial capital is provided from personal funds.
+              Over the next two years, Englishfully will deepen product capability; grow learner and
+              teacher adoption in Thailand; hire local staff; partner with private schools, small
+              language schools, and government schools to introduce a more effective way to deliver and
+              present English learning; and build an independently operable platform suitable for
+              long-term growth or acquisition.
+            </Body>
+          </div>
         </ComicCard>
 
         {/* b. Company */}
