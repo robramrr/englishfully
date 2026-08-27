@@ -120,7 +120,7 @@ export default function PitchDeckPage() {
               <img
                 src="https://res.cloudinary.com/ktg8khoq/image/upload/v1787822534/englishfeed-login_ojxbnl.jpg"
                 alt="EnglishFeed app"
-                className="w-full h-auto object-contain border-2 border-[var(--comic-black)]"
+                className="w-full h-auto object-contain border-2 border-[var(--comic-black)] rounded-xl"
               />
             </div>
             <Body>
@@ -146,6 +146,20 @@ export default function PitchDeckPage() {
               present English learning; and build an independently operable platform suitable for
               long-term growth or acquisition.
             </Body>
+            <div className="mt-3 flex flex-wrap items-center gap-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1783143201/englishfeed/logo/englishfeed-logo.png"
+                alt="EnglishFeed"
+                className="h-8 w-auto object-contain"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://res.cloudinary.com/ktg8khoq/image/upload/v1787824446/chalkboard_diyqvg.png"
+                alt="Teacher Resources"
+                className="h-8 w-auto object-contain"
+              />
+            </div>
           </div>
         </ComicCard>
 
