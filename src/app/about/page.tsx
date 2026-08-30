@@ -159,7 +159,7 @@ function TeamSection() {
               />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1783440767/englishfully/company/university.jpg"
+                src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788097274/university-csuf_ycyyv7.png"
                 alt="California State University, Fullerton"
                 className="w-20 h-20 object-contain"
               />

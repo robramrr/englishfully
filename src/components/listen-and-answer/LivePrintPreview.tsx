@@ -95,6 +95,13 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
             font-weight: 400 !important;
             line-height: 1.5 !important;
           }
+          .listen-and-answer-page .listen-print-instructions {
+            background: #e1e1e1;
+            padding: 0.5rem 0.75rem 1rem;
+            margin-bottom: 0.75rem;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
         `}</style>
         <div className="grid grid-cols-3 items-center gap-3 mb-6 border-b-4 border-[var(--comic-black)] pb-4">
           <ComicText className="font-bold text-lg text-left">{assignment.teacher_name || 'Teacher'}</ComicText>
@@ -138,9 +145,11 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
           </ComicTitle>
           {assignment.instructions.trim() ? (
             <>
-              <p className="text-sm font-bold leading-relaxed text-[var(--comic-dark)] mb-1">
-                Instructions: {assignment.instructions.trim()}
-              </p>
+              <div className="listen-print-instructions">
+                <p className="text-sm font-bold leading-relaxed text-[var(--comic-dark)]">
+                  Instructions: {assignment.instructions.trim()}
+                </p>
+              </div>
               {!hasTotalTimeContent(
                 assignment.total_questions,
                 assignment.time_amount,
@@ -186,9 +195,11 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
 
               {part.instructions.trim() ? (
                 <>
-                  <p className="text-sm font-medium leading-relaxed text-[var(--comic-dark)] mb-1">
-                    {part.instructions.trim()}
-                  </p>
+                  <div className="listen-print-instructions">
+                    <p className="text-sm font-medium leading-relaxed text-[var(--comic-dark)]">
+                      {part.instructions.trim()}
+                    </p>
+                  </div>
                   {!hasTotalTimeContent(part.total_questions, part.time_amount, part.time_unit) ? (
                     <ListenMetaDivider />
                   ) : null}

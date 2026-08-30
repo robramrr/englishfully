@@ -252,6 +252,28 @@ body::before {
   font-weight: 400 !important;
 }
 
+.pitch-deck-page p.pitch-deck-callout-heading {
+  display: inline-block;
+  margin: 0 0 0.55rem;
+  padding: 0.4rem 0.8rem 0.5rem;
+  transform: rotate(-2.5deg);
+  border: 2.5px solid var(--comic-black);
+  border-radius: 0.7rem;
+  background: var(--comic-primary);
+  color: var(--comic-white);
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 12pt !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.06em !important;
+  line-height: 1.1 !important;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow:
+    4px 4px 0 var(--comic-black),
+    0 0 0 2px var(--comic-white);
+  text-shadow: 1px 1px 0 rgba(0, 26, 72, 0.35);
+}
+
 .pitch-deck-page .pitch-deck-section strong {
   font-weight: 700 !important;
 }
@@ -311,19 +333,2072 @@ body::before {
   page-break-inside: avoid;
 }
 
-.pitch-deck-page .pitch-deck-founder::after {
+.pitch-deck-page .pitch-deck-founder-lead .pitch-deck-body,
+.pitch-deck-page .pitch-deck-founder-edu .pitch-deck-body {
+  margin-bottom: 0 !important;
+}
+
+.pitch-deck-page .pitch-deck-founder h4.comic-title {
+  margin-top: 0 !important;
+}
+
+.pitch-deck-page .pitch-deck-founder-bio::after {
   content: '';
   display: table;
   clear: both;
 }
 
-.pitch-deck-page .pitch-deck-exec-summary::after {
+.pitch-deck-page .pitch-deck-founder-teaching {
+  float: right;
+  width: 11rem;
+  margin: 0.15rem 0 0.75rem 0.7rem;
+}
+
+.pitch-deck-page .pitch-deck-founder-teaching img {
+  display: block;
+  width: 100%;
+  border-radius: 0.75rem;
+  object-fit: cover;
+  transform: rotate(-4deg);
+  filter:
+    drop-shadow(4px 5px 0 var(--brand-navy))
+    drop-shadow(-1px -1px 0 color-mix(in srgb, var(--brand-navy) 35%, transparent));
+}
+
+.pitch-deck-page .pitch-deck-founder-teaching figcaption {
+  margin: 0.85rem 0 0;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 0.68rem !important;
+  font-weight: 400 !important;
+  line-height: 1.25 !important;
+  color: var(--brand-navy);
+  text-align: center;
+}
+
+.pitch-deck-page .pitch-deck-exec-summary::after,
+.pitch-deck-page .pitch-deck-product-englishfeed::after,
+.pitch-deck-page .pitch-deck-product-homeroom::after,
+.pitch-deck-page .pitch-deck-company::after,
+.pitch-deck-page .pitch-deck-thailand::after,
+.pitch-deck-page .pitch-deck-market-presence::after {
   content: '';
   display: table;
   clear: both;
+}
+
+.pitch-deck-page .pitch-deck-company-thai {
+  float: left;
+  width: 7.4rem;
+  margin: 0.1rem 0.9rem 0.45rem 0;
+}
+
+.pitch-deck-page .pitch-deck-company-thai-flag {
+  width: 72%;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 2.5px solid var(--brand-navy);
+  border-radius: 0.55rem;
+  box-shadow: 3px 3px 0 var(--brand-navy);
+  transform: rotate(-8deg);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.pitch-deck-page .pitch-deck-company-thai-flag svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.pitch-deck-page .pitch-deck-company-thai figcaption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.28rem;
+  margin: 0.45rem 0 0;
+}
+
+.pitch-deck-page .pitch-deck-company-thai-stamp,
+.pitch-deck-page p.pitch-deck-company-thai-stamp {
+  display: inline-flex;
+  margin: 0;
+  padding: 0.18rem 0.42rem 0.16rem;
+  transform: rotate(-1.5deg);
+  border: 2px solid var(--comic-black);
+  border-radius: 0.45rem;
+  background: var(--brand-red);
+  color: var(--comic-white);
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.04em !important;
+  line-height: 1.4 !important;
+  text-transform: uppercase;
+  box-shadow: 2px 2px 0 var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-company-thai-copy,
+.pitch-deck-page p.pitch-deck-company-thai-copy {
+  margin: 0;
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.04em !important;
+  line-height: 1.3 !important;
+  text-transform: uppercase;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-thailand-image {
+  float: right;
+  width: 16.5rem;
+  margin: 0.1rem 0 0.55rem 1rem;
+}
+
+.pitch-deck-page .pitch-deck-thailand-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  transform: rotate(-4deg);
+  filter:
+    drop-shadow(4px 5px 0 var(--brand-navy))
+    drop-shadow(-1px -1px 0 color-mix(in srgb, var(--brand-navy) 35%, transparent));
+}
+
+@media (min-width: 640px) {
+  .pitch-deck-page .pitch-deck-thailand-image {
+    width: 20rem;
+  }
+}
+
+.pitch-deck-page .pitch-deck-thailand-points {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+  margin: 0.35rem 0 0.15rem;
+  padding: 0;
+  list-style: none;
+}
+
+.pitch-deck-page .pitch-deck-thailand-point,
+.pitch-deck-page li.pitch-deck-thailand-point {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  text-align: center;
+}
+
+.pitch-deck-page .pitch-deck-thailand-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.15rem;
+  height: 4.15rem;
+  overflow: hidden;
+  border: 2.5px solid var(--brand-navy);
+  border-radius: 999px;
+  background: var(--comic-white);
+  color: var(--brand-navy);
+  box-shadow: 3px 3px 0 var(--brand-navy);
+  font-size: 1.45rem;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.pitch-deck-page .pitch-deck-thailand-circle--flag {
+  padding: 0;
+}
+
+.pitch-deck-page .pitch-deck-thailand-circle--flag svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pitch-deck-page .pitch-deck-thailand-point-copy,
+.pitch-deck-page p.pitch-deck-thailand-point-copy {
+  margin: 0;
+  max-width: 14rem;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  line-height: 1.45 !important;
+  color: var(--brand-navy);
+}
+
+@media (max-width: 699px) {
+  .pitch-deck-page .pitch-deck-thailand-points {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pitch-deck-page .pitch-deck-feature-table-wrap {
+  border: 2.5px solid var(--comic-black);
+  border-radius: 0.85rem;
+  background: var(--comic-white);
+  box-shadow: 4px 4px 0 var(--comic-black);
+}
+
+.pitch-deck-page .pitch-deck-feature-table {
+  font-size: 0.95em;
+  line-height: 1.4;
+}
+
+.pitch-deck-page .pitch-deck-compete {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin: 0.45rem 0 1.2rem;
+}
+
+.pitch-deck-page .pitch-deck-compete-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 2.5px solid var(--brand-navy);
+  border-radius: 0.85rem;
+  background: var(--comic-white);
+  box-shadow: 4px 4px 0 var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-compete-typical,
+.pitch-deck-page p.pitch-deck-compete-typical {
+  margin: 0;
+  padding: 0.55rem 0.7rem 0.6rem;
+  background: #e5e5e4;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-compete-typical span {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--brand-navy) 72%, #6b6b6b);
+}
+
+.pitch-deck-page .pitch-deck-compete-win {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.65rem 0.7rem 0.75rem;
+}
+
+.pitch-deck-page .pitch-deck-compete-stamp,
+.pitch-deck-page p.pitch-deck-compete-stamp {
+  display: inline-flex;
+  align-self: flex-start;
+  margin: 0;
+  padding: 0.22rem 0.5rem 0.2rem;
+  transform: rotate(-1.5deg);
+  border: 2px solid var(--comic-black);
+  border-radius: 0.5rem;
+  background: var(--brand-red);
+  color: var(--comic-white);
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.04em !important;
+  line-height: 1.5 !important;
+  text-transform: uppercase;
+  box-shadow: 2px 2px 0 var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-compete-copy,
+.pitch-deck-page p.pitch-deck-compete-copy {
+  margin: 0;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  color: var(--comic-dark);
+}
+
+@media (max-width: 699px) {
+  .pitch-deck-page .pitch-deck-compete {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Marketing & Sales: who we serve, reach, convert */
+.pitch-deck-page .pitch-deck-market {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  margin: 0.7rem 0 0.15rem;
+}
+
+.pitch-deck-page .pitch-deck-market-band {
+  min-width: 0;
+}
+
+.pitch-deck-page .pitch-deck-market-label,
+.pitch-deck-page p.pitch-deck-market-label {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-market-audiences,
+.pitch-deck-page .pitch-deck-market-channels,
+.pitch-deck-page .pitch-deck-market-outcomes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.55rem;
+  margin: -0.15rem 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.pitch-deck-page .pitch-deck-market-channels {
+  padding-bottom: 0.55rem;
+}
+
+.pitch-deck-page .pitch-deck-market-stamp,
+.pitch-deck-page p.pitch-deck-market-stamp,
+.pitch-deck-page li.pitch-deck-market-stamp {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 0.22rem 0.5rem 0.2rem;
+  transform: rotate(-1.5deg);
+  border: 2px solid var(--comic-black);
+  border-radius: 0.5rem;
+  background: var(--brand-red);
+  color: var(--comic-white);
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.04em !important;
+  line-height: 1.5 !important;
+  text-transform: uppercase;
+  box-shadow: 2px 2px 0 var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-market-stamp:nth-child(even) {
+  transform: rotate(1.2deg);
+}
+
+.pitch-deck-page .pitch-deck-market-copy,
+.pitch-deck-page p.pitch-deck-market-copy {
+  margin: 0;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-market .pitch-deck-market-outcomes {
+  margin: 0;
+}
+
+.pitch-deck-page .pitch-deck-market-channel,
+.pitch-deck-page li.pitch-deck-market-channel {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 0.32rem 0.62rem 0.28rem;
+  border: 2.5px solid var(--brand-navy);
+  border-radius: 0.7rem;
+  background: var(--comic-white);
+  color: var(--brand-navy);
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  box-shadow: 3px 3px 0 var(--brand-navy);
+  transform: rotate(-1.5deg);
+}
+
+.pitch-deck-page .pitch-deck-market-channel:nth-child(even) {
+  transform: rotate(1.8deg);
+}
+
+.pitch-deck-page .pitch-deck-market-steps {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.pitch-deck-page .pitch-deck-market-step,
+.pitch-deck-page li.pitch-deck-market-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0.55rem 0.6rem 0.6rem;
+  border: 2.5px solid var(--brand-navy);
+  border-radius: 0.85rem;
+  background: var(--comic-white);
+  box-shadow: 3px 3px 0 var(--brand-navy);
+  text-align: center;
+}
+
+.pitch-deck-page .pitch-deck-market-step-head {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.pitch-deck-page .pitch-deck-market-step-n {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  background: var(--brand-navy);
+  color: var(--comic-white);
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+}
+
+.pitch-deck-page .pitch-deck-market-step-title,
+.pitch-deck-page p.pitch-deck-market-step-title {
+  margin: 0;
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase;
+  color: var(--brand-navy);
+  white-space: nowrap;
+}
+
+.pitch-deck-page .pitch-deck-market-outcome,
+.pitch-deck-page li.pitch-deck-market-outcome {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 0.22rem 0.5rem 0.2rem;
+  transform: rotate(-1.2deg);
+  border: 2px solid var(--comic-black);
+  border-radius: 0.5rem;
+  background: var(--brand-red);
+  color: var(--comic-white);
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.04em !important;
+  line-height: 1.5 !important;
+  text-transform: uppercase;
+  box-shadow: 2px 2px 0 var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-market-outcome:nth-child(even) {
+  transform: rotate(1.4deg);
+}
+
+@media (max-width: 699px) {
+  .pitch-deck-page .pitch-deck-market-steps {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .pitch-deck-page .pitch-deck-market-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  .pitch-deck-page .pitch-deck-market-stamp,
+  .pitch-deck-page .pitch-deck-market-channel,
+  .pitch-deck-page .pitch-deck-market-step,
+  .pitch-deck-page .pitch-deck-market-step-n,
+  .pitch-deck-page .pitch-deck-market-outcome,
+  .pitch-deck-page .pitch-deck-market-flow-stamp,
+  .pitch-deck-page .pitch-deck-market-flow-arrow {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+.pitch-deck-page .pitch-deck-market-presence {
+  margin: 0.15rem 0 0.35rem;
+}
+
+.pitch-deck-page .pitch-deck-market-presence-copy {
+  display: flow-root;
+}
+
+.pitch-deck-page .pitch-deck-market-presence-copy .pitch-deck-body {
+  margin-bottom: 0.55rem !important;
+}
+
+.pitch-deck-page .pitch-deck-market-location {
+  float: left;
+  width: 15.5rem;
+  margin: 0.1rem 1rem 0.45rem 0;
+}
+
+.pitch-deck-page .pitch-deck-market-location img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter:
+    drop-shadow(4px 5px 0 var(--brand-navy))
+    drop-shadow(-1px -1px 0 color-mix(in srgb, var(--brand-navy) 35%, transparent));
+}
+
+.pitch-deck-page .pitch-deck-market-location figcaption {
+  margin: 0.4rem 0 0;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+  color: var(--brand-navy);
+  text-align: center;
+}
+
+.pitch-deck-page .pitch-deck-market-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.15rem 0.1rem;
+  margin: 0;
+  padding: 0.35rem 0.35rem 0.7rem 0.15rem;
+  list-style: none;
+  overflow: visible;
+}
+
+.pitch-deck-page .pitch-deck-market-flow-item,
+.pitch-deck-page li.pitch-deck-market-flow-item {
+  display: flex;
+  align-items: center;
+  gap: 0.12rem;
+  margin: 0;
+}
+
+.pitch-deck-page .pitch-deck-market-flow-stamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 9.6rem;
+  padding: 0.32rem 0.5rem 0.28rem;
+  border: 2.5px solid var(--brand-navy);
+  border-radius: 0.7rem;
+  background: var(--comic-white);
+  color: var(--brand-navy);
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  text-align: center;
+  box-shadow: 3px 3px 0 var(--brand-navy);
+  transform: rotate(-1.4deg);
+}
+
+.pitch-deck-page .pitch-deck-market-flow-item:nth-child(even) .pitch-deck-market-flow-stamp {
+  transform: rotate(1.6deg);
+}
+
+.pitch-deck-page .pitch-deck-market-flow-arrow {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  width: 1.85rem;
+  margin: 0 -0.12rem;
+}
+
+.pitch-deck-page .pitch-deck-market-flow-arrow svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
 }
 
 @media (max-width: 640px) {
+  .pitch-deck-page .pitch-deck-market-location {
+    float: none;
+    width: 100%;
+    max-width: 18rem;
+    margin: 0 auto 0.75rem;
+  }
+}
+
+.pitch-deck-page .pitch-deck-case-subhead,
+.pitch-deck-page p.pitch-deck-case-subhead {
+  margin: -0.35rem 0 0.75rem;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0.01em !important;
+  text-transform: none;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-case {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  margin: 0.2rem 0 0.15rem;
+}
+
+.pitch-deck-page .pitch-deck-case-band {
+  min-width: 0;
+}
+
+.pitch-deck-page .pitch-deck-case-setup,
+.pitch-deck-page .pitch-deck-case-workflow {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.pitch-deck-page .pitch-deck-case-setup {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.pitch-deck-page .pitch-deck-case-practice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.5rem;
+  margin: 0.1rem 0 0.15rem;
+  padding: 0.2rem 0.15rem 0.45rem 0;
+  list-style: none;
+  overflow: visible;
+}
+
+.pitch-deck-page .pitch-deck-case-workflow {
+  grid-template-columns: 1fr 1.2fr 1fr;
+}
+
+.pitch-deck-page .pitch-deck-case-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0.65rem 0.7rem 0.75rem;
+  border: 2.5px solid var(--brand-navy);
+  border-radius: 0.85rem;
+  background: var(--comic-white);
+  box-shadow: 4px 4px 0 var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-case-card--before {
+  background: #f3f3f2;
+}
+
+.pitch-deck-page .pitch-deck-case-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.55rem;
+}
+
+.pitch-deck-page .pitch-deck-case-stamp,
+.pitch-deck-page p.pitch-deck-case-stamp {
+  display: inline-flex;
+  margin: 0;
+  padding: 0.2rem 0.48rem 0.18rem;
+  transform: rotate(-1.4deg);
+  border: 2px solid var(--comic-black);
+  border-radius: 0.45rem;
+  background: var(--brand-red);
+  color: var(--comic-white);
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.04em !important;
+  line-height: 1.4 !important;
+  text-transform: uppercase;
+  box-shadow: 2px 2px 0 var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-case-stamp--muted {
+  background: #6b6b6b;
+}
+
+.pitch-deck-page .pitch-deck-case-label,
+.pitch-deck-page p.pitch-deck-case-label {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-case-copy,
+.pitch-deck-page p.pitch-deck-case-copy {
+  margin: 0;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-case-copy strong {
+  font-weight: 700 !important;
+}
+
+.pitch-deck-page .pitch-deck-case .pitch-deck-market-flow {
+  justify-content: flex-start;
+  padding: 0.25rem 0.25rem 0.65rem 0;
+}
+
+.pitch-deck-page .pitch-deck-case-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pitch-deck-page .pitch-deck-case-metric,
+.pitch-deck-page li.pitch-deck-case-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.28rem;
+  margin: 0;
+  padding: 0.55rem 0.4rem 0.5rem;
+  border: 2.5px solid var(--brand-navy);
+  border-radius: 0.85rem;
+  background: var(--comic-white);
+  box-shadow: 3px 3px 0 var(--brand-navy);
+  text-align: center;
+}
+
+.pitch-deck-page .pitch-deck-case-metric-value,
+.pitch-deck-page p.pitch-deck-case-metric-value {
+  margin: 0;
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 1.35rem !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.02em !important;
+  color: var(--brand-red);
+}
+
+.pitch-deck-page .pitch-deck-case-metric-label,
+.pitch-deck-page p.pitch-deck-case-metric-label {
+  margin: 0;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  line-height: 1.25 !important;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-case-metric-bar {
+  width: 100%;
+  height: 0.45rem;
+  overflow: hidden;
+  border: 2px solid var(--brand-navy);
+  border-radius: 999px;
+  background: #e5e5e4;
+}
+
+.pitch-deck-page .pitch-deck-case-metric-bar span {
+  display: block;
+  height: 100%;
+  background: var(--brand-red);
+}
+
+@media (max-width: 699px) {
+  .pitch-deck-page .pitch-deck-case-setup,
+  .pitch-deck-page .pitch-deck-case-workflow,
+  .pitch-deck-page .pitch-deck-case-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .pitch-deck-page .pitch-deck-case-setup,
+  .pitch-deck-page .pitch-deck-case-workflow,
+  .pitch-deck-page .pitch-deck-case-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Homeroom demos: accent-style navy→blue gradient, dark enough for white captions */
+.pitch-deck-page .pitch-deck-homeroom-demos {
+  background: transparent;
+}
+
+.pitch-deck-page .pitch-deck-homeroom-demos .pitch-deck-body,
+.pitch-deck-page .pitch-deck-homeroom-demos figcaption,
+.pitch-deck-page .pitch-deck-homeroom-demos li,
+.pitch-deck-page .pitch-deck-homeroom-demos p.pitch-deck-also-included-label {
+  color: var(--brand-navy) !important;
+}
+
+/* Technology section: EnglishFeed copy, then phone + tablet pair */
+.pitch-deck-page .pitch-deck-tech-englishfeed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.pitch-deck-page .pitch-deck-tech-stack {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  margin: 0.35rem 0 1.15rem;
+}
+
+.pitch-deck-page .pitch-deck-tech-stack-card {
+  margin: 0;
+  padding: 0.65rem 0.75rem 0.7rem;
+  border: 2.5px solid var(--brand-navy);
+  border-radius: 0.75rem;
+  background: var(--comic-white);
+  box-shadow: 3px 3px 0 var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-tech-stack--panel {
+  grid-template-columns: 1fr;
+  gap: 0;
+  padding: 0.15rem 0.85rem;
+  border: 2.5px solid var(--brand-navy);
+  border-radius: 0.85rem;
+  background: var(--comic-white);
+  box-shadow: 3px 3px 0 var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-tech-stack--panel .pitch-deck-tech-stack-card {
+  padding: 0.7rem 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pitch-deck-page .pitch-deck-tech-stack--panel .pitch-deck-tech-stack-card + .pitch-deck-tech-stack-card {
+  border-top: 1px solid color-mix(in srgb, var(--brand-navy) 18%, #e5e5e4);
+}
+
+.pitch-deck-page .pitch-deck-tech-stack-title,
+.pitch-deck-page h5.pitch-deck-tech-stack-title {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  letter-spacing: 0.02em !important;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-tech-stack-copy,
+.pitch-deck-page p.pitch-deck-tech-stack-copy {
+  margin: 0;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  color: var(--comic-dark);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-shell {
+  width: 100%;
+  margin: 1.75rem 0 2.25rem;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: 1.15rem;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-main {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  grid-template-rows: max-content max-content;
+  align-items: start;
+  align-content: start;
+  justify-content: center;
+  column-gap: 0;
+  row-gap: 0;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-main > .pitch-deck-tech-flow-col:not(.pitch-deck-tech-flow-col--app) {
+  width: 12.75rem;
+  max-width: 12.75rem;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-col--app {
+  grid-row: 1 / span 2;
+  gap: 0;
+  width: max-content;
+  padding-right: 0.75rem;
+  margin-right: 0;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-col--roles {
+  padding-bottom: 0;
+  margin-bottom: -0.45rem;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-col--analytics {
+  gap: 0.25rem;
+  margin-top: -0.55rem;
+  padding-top: 0;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-col--analytics .pitch-deck-tech-flow-head,
+.pitch-deck-page .pitch-deck-tech-flow-col--analytics .pitch-deck-tech-flow-title,
+.pitch-deck-page .pitch-deck-tech-flow-col--analytics h3.pitch-deck-tech-flow-title {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-col--analytics .pitch-deck-tech-flow-title,
+.pitch-deck-page .pitch-deck-tech-flow-col--analytics h3.pitch-deck-tech-flow-title {
+  margin-bottom: 0.18rem;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-head {
+  position: relative;
+  text-align: center;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-title,
+.pitch-deck-page h3.pitch-deck-tech-flow-title {
+  margin: 0 0 0.3rem;
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 0.82rem !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0.02em !important;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-sub,
+.pitch-deck-page p.pitch-deck-tech-flow-sub {
+  margin: 0;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 0.68rem !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0.01em !important;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-col--ai {
+  width: 100%;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-ai {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  gap: 0.55rem 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-ai li {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.35rem 0.65rem 0.3rem;
+  list-style: none;
+  border: 2.5px solid var(--comic-black);
+  border-radius: 0.7rem;
+  background: var(--comic-white);
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em;
+  line-height: 1.1 !important;
+  color: var(--comic-secondary);
+  white-space: nowrap;
+  transform: rotate(-2deg);
+  box-shadow: 4px 4px 0 var(--comic-black);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-ai li:nth-child(even) {
+  transform: rotate(2deg);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-mark-svg {
+  flex: 0 0 1.05rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-app-stage {
+  display: flex;
+  justify-content: flex-start;
+  width: calc(31.25rem * 0.96);
+  padding-right: 0;
+  overflow: visible;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-app-stage .pitch-deck-tech-devices {
+  justify-content: flex-start;
+  align-items: stretch;
+  width: max-content;
+  transform: scale(0.96);
+  transform-origin: top left;
+  margin-bottom: 0;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-app-stage .pitch-deck-iphone-figure {
+  display: flex;
+  align-items: flex-end;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-app-stage .pitch-deck-tablet-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-app-stage .pitch-deck-tablet-figure .pitch-deck-tech-flow-head {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  align-self: stretch;
+  width: 100%;
+  text-align: center;
+  padding: 0 0.35rem 0 0.9rem;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-app-stage .pitch-deck-tablet-figure .pitch-deck-callout-heading {
+  margin: 0;
+  background: var(--comic-white);
+  color: var(--brand-navy);
+  text-shadow: none;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-shots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-shot {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.85rem;
+  border: 2.5px solid var(--brand-navy);
+  background: #d9d9d8;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-shot-image {
+  display: block;
+  width: 100%;
+  height: 6.15rem;
+  object-fit: cover;
+  object-position: left center;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-shot-image--teacher {
+  object-position: 18% 36%;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-shot-card {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  transform: translateY(-50%);
+  width: 48%;
+  padding: 0.45rem 0.5rem 0.5rem;
+  border-radius: 0.55rem;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 2px 2px 0 var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-shot-heading,
+.pitch-deck-page p.pitch-deck-tech-flow-shot-heading {
+  margin: 0 0 0.28rem;
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 0.68rem !important;
+  font-weight: 400 !important;
+  line-height: 1.15 !important;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-checks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-checks li {
+  display: flex;
+  align-items: center;
+  gap: 0.32rem;
+  margin: 0 0 0.18rem;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 0.62rem !important;
+  font-weight: 800 !important;
+  line-height: 1.15 !important;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-checks li:last-child {
+  margin-bottom: 0;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-checks svg {
+  flex: 0 0 0.72rem;
+  width: 0.72rem;
+  height: 0.72rem;
+  color: var(--brand-red);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-block-label,
+.pitch-deck-page p.pitch-deck-tech-flow-block-label {
+  margin: 0 0 0.28rem;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 0.7rem !important;
+  font-weight: 800 !important;
+  line-height: 1.15 !important;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-chart {
+  position: relative;
+  padding: 0.45rem 0.4rem 0.25rem;
+  border: 2px solid var(--brand-navy);
+  border-radius: 0.55rem;
+  background: var(--brand-white);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-chart .pitch-deck-tech-flow-metrics {
+  position: absolute;
+  top: 0.45rem;
+  left: 0.5rem;
+  z-index: 1;
+  margin: 0;
+  max-width: 62%;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-tubes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-tube {
+  overflow: hidden;
+  height: 0.72rem;
+  border-radius: 999px;
+  border: 2px solid var(--brand-navy);
+  background: var(--brand-white);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-tube-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand-red);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  margin: 0.15rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-metrics li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 0.66rem !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-metrics svg {
+  flex: 0 0 0.85rem;
+  width: 0.85rem;
+  height: 0.85rem;
+  color: var(--brand-red);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-closer {
+  margin: 0 0 1.5rem;
+  text-align: center;
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-closer-title,
+.pitch-deck-page h3.pitch-deck-tech-flow-closer-title {
+  margin: 0 0 0.45rem;
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 1.55rem !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0.01em !important;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-tech-flow-closer-sub,
+.pitch-deck-page p.pitch-deck-tech-flow-closer-sub {
+  margin: 0;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+  color: var(--brand-navy);
+}
+
+@media (max-width: 699px) {
+  .pitch-deck-page .pitch-deck-tech-stack {
+    grid-template-columns: 1fr;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-row,
+  .pitch-deck-page .pitch-deck-tech-flow-main {
+    grid-template-columns: 1fr;
+    gap: 1.15rem;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-col--app {
+    grid-row: auto;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-main > .pitch-deck-tech-flow-col:not(.pitch-deck-tech-flow-col--app) {
+    width: 100%;
+    max-width: none;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-ai {
+    flex-direction: column;
+    align-items: flex-start;
+    width: max-content;
+    margin: 0 auto;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-app-stage .pitch-deck-tech-devices {
+    transform: none;
+    margin-bottom: 0;
+    zoom: 0.62;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-shot-image {
+    height: 11rem;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-closer-title,
+  .pitch-deck-page h3.pitch-deck-tech-flow-closer-title {
+    font-size: 1.2rem !important;
+  }
+}
+
+.pitch-deck-page .pitch-deck-tech-devices {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0;
+  width: 100%;
+}
+
+.pitch-deck-page .pitch-deck-iphone-figure {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  max-width: 17.75rem;
+  flex: 0 1 17.75rem;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.pitch-deck-page .pitch-deck-tablet-figure {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 0 -1.35rem;
+  max-width: 21.5rem;
+  flex: 0 1 21.5rem;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.pitch-deck-page .pitch-deck-iphone-caption {
+  margin: 0.65rem 0 0;
+  text-align: center;
+  font-size: 10pt !important;
+  line-height: 1.35 !important;
+  font-weight: 700 !important;
+}
+
+.pitch-deck-page .pitch-deck-iphone-figure .pitch-deck-iphone-caption {
+  padding-right: 1rem;
+}
+
+.pitch-deck-page .pitch-deck-tablet-figure .pitch-deck-iphone-caption {
+  padding-left: 1.5rem;
+}
+
+.pitch-deck-iphone {
+  width: 100%;
+  max-width: 17.75rem;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.pitch-deck-iphone-bezel {
+  position: relative;
+  padding: 0.72rem 0.58rem 0.7rem;
+  border-radius: 2.55rem;
+  background:
+    linear-gradient(180deg, #3a3a3e 0%, #1c1c1f 18%, #111114 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 0 2px #0a0a0c,
+    0 10px 0 #0a0a0c,
+    0 16px 28px rgba(0, 26, 72, 0.28);
+}
+
+.pitch-deck-iphone-button {
+  position: absolute;
+  background: #2a2a2e;
+  box-shadow: inset 0 0 0 1px #0a0a0c;
+}
+
+.pitch-deck-iphone-button--silent {
+  top: 6.1rem;
+  left: -0.16rem;
+  width: 0.16rem;
+  height: 1.05rem;
+  border-radius: 2px 0 0 2px;
+}
+
+.pitch-deck-iphone-button--volume-up,
+.pitch-deck-iphone-button--volume-down {
+  left: -0.16rem;
+  width: 0.16rem;
+  height: 1.55rem;
+  border-radius: 2px 0 0 2px;
+}
+
+.pitch-deck-iphone-button--volume-up {
+  top: 8.15rem;
+}
+
+.pitch-deck-iphone-button--volume-down {
+  top: 10.05rem;
+}
+
+.pitch-deck-iphone-button--power {
+  top: 8.35rem;
+  right: -0.16rem;
+  width: 0.16rem;
+  height: 2.55rem;
+  border-radius: 0 2px 2px 0;
+}
+
+.pitch-deck-iphone-screen {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: 9 / 19.4;
+  border-radius: 1.95rem;
+  background: #fff;
+  isolation: isolate;
+}
+
+.pitch-deck-iphone-island {
+  position: absolute;
+  z-index: 4;
+  top: 0.55rem;
+  left: 50%;
+  width: 5.15rem;
+  height: 1.12rem;
+  border-radius: 999px;
+  background: #0a0a0c;
+  transform: translateX(-50%);
+  box-shadow: inset 0 0 0 1px #1a1a1d;
+}
+
+.pitch-deck-iphone-status {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 1.85rem;
+  padding: 0 1.15rem 0.2rem;
+  background: var(--brand-white);
+}
+
+.pitch-deck-iphone-time,
+.pitch-deck-page .pitch-deck-iphone-time {
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.02em !important;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-iphone-status-icons {
+  display: flex;
+  align-items: center;
+  gap: 0.22rem;
+}
+
+.pitch-deck-iphone-signal {
+  width: 0.72rem;
+  height: 0.5rem;
+  background:
+    linear-gradient(90deg, var(--brand-navy) 18%, transparent 18% 24%, var(--brand-navy) 24% 42%, transparent 42% 48%, var(--brand-navy) 48% 66%, transparent 66% 72%, var(--brand-navy) 72%);
+  clip-path: polygon(0 100%, 22% 55%, 22% 100%, 40% 40%, 40% 100%, 62% 20%, 62% 100%, 82% 0, 82% 100%, 100% 0, 100% 100%);
+}
+
+.pitch-deck-iphone-wifi {
+  width: 0.62rem;
+  height: 0.48rem;
+  border: 2px solid var(--brand-navy);
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  transform: translateY(0.08rem);
+}
+
+.pitch-deck-iphone-battery {
+  width: 1.05rem;
+  height: 0.5rem;
+  border: 1.5px solid var(--brand-navy);
+  border-radius: 2px;
+  position: relative;
+  box-shadow: inset 2px 0 0 7px var(--brand-navy);
+}
+
+.pitch-deck-iphone-battery::after {
+  content: '';
+  position: absolute;
+  top: 0.1rem;
+  right: -0.18rem;
+  width: 0.12rem;
+  height: 0.22rem;
+  border-radius: 0 1px 1px 0;
+  background: var(--brand-navy);
+}
+
+.pitch-deck-iphone-site-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 2.5rem 0.5rem;
+  border-bottom: 3px solid var(--brand-navy);
+}
+
+.pitch-deck-iphone-logo {
+  display: block;
+  height: 1.95rem;
+  width: auto;
+  max-width: 10.8rem;
+  object-fit: contain;
+}
+
+.pitch-deck-iphone-burger {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.16rem;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 0.4rem;
+  background: var(--brand-red);
+  border: 2.5px solid var(--brand-navy);
+  box-shadow: 2px 2px 0 var(--brand-navy);
+  transform: translateY(-50%);
+}
+
+.pitch-deck-iphone-burger span {
+  display: block;
+  width: 0.95rem;
+  height: 0.14rem;
+  border-radius: 999px;
+  background: #fff;
+}
+
+.pitch-deck-iphone-hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0.65rem 0 1.15rem;
+  background: linear-gradient(
+    135deg,
+    var(--brand-navy) 0%,
+    color-mix(in srgb, var(--brand-navy) 78%, var(--brand-gray)) 100%
+  );
+}
+
+.pitch-deck-iphone-hero-title,
+.pitch-deck-page .pitch-deck-iphone-hero-title {
+  margin: 0 0 0.5rem;
+  padding: 0 0.65rem;
+  text-align: center;
+  color: var(--comic-white);
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 1.02rem !important;
+  font-weight: 700 !important;
+  line-height: 1.15 !important;
+  letter-spacing: 0.02em !important;
+}
+
+.pitch-deck-iphone-demo {
+  flex: 0 0 6.85rem;
+  width: 100%;
+  margin: 0.4rem 0 0.55rem;
+  overflow: hidden;
+  border-radius: 0;
+  background: var(--brand-white);
+  border-top: 2px solid var(--brand-red);
+  border-bottom: 2px solid var(--brand-red);
+}
+
+.pitch-deck-iphone-demo-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 28%;
+}
+
+.pitch-deck-iphone-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  padding: 0 0.65rem;
+  align-content: center;
+}
+
+.pitch-deck-iphone-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  aspect-ratio: 1;
+  min-height: 0;
+  padding: 0.4rem 0.25rem;
+  border-radius: 0.55rem;
+  background: var(--brand-white);
+  border: 2.5px solid var(--brand-navy);
+  box-shadow: 3px 3px 0 var(--brand-navy);
+}
+
+.pitch-deck-iphone-action-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--brand-red);
+}
+
+.pitch-deck-iphone-action-label,
+.pitch-deck-page .pitch-deck-iphone-action-label {
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 0.95rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.02em !important;
+  color: var(--brand-navy) !important;
+}
+
+.pitch-deck-iphone-home-indicator {
+  position: absolute;
+  left: 50%;
+  bottom: 0.88rem;
+  width: 5.4rem;
+  height: 0.26rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  transform: translateX(-50%);
+  z-index: 5;
+}
+
+.pitch-deck-tablet {
+  width: 100%;
+  max-width: 21.5rem;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.pitch-deck-tablet-bezel {
+  position: relative;
+  padding: 0.95rem 0.82rem 0.9rem;
+  border-radius: 1.55rem;
+  background:
+    linear-gradient(180deg, #3a3a3e 0%, #1c1c1f 18%, #111114 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 0 2px #0a0a0c,
+    0 10px 0 #0a0a0c,
+    0 16px 28px rgba(0, 26, 72, 0.22);
+}
+
+.pitch-deck-tablet-camera {
+  position: absolute;
+  z-index: 4;
+  top: 0.42rem;
+  left: 50%;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: #2a2a2e;
+  box-shadow: inset 0 0 0 2px #0a0a0c;
+  transform: translateX(-50%);
+}
+
+.pitch-deck-tablet-screen {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: 3 / 4.15;
+  border-radius: 0.85rem;
+  background-color: #e5e5e4;
+}
+
+.pitch-deck-tablet-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
+  padding: 1rem 1rem 1.1rem;
+  background-color: #e5e5e4;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 14px,
+      rgba(0, 26, 72, 0.05) 14px,
+      rgba(0, 26, 72, 0.05) 28px
+    ),
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #e5e5e4 42%,
+      color-mix(in srgb, #001a48 14%, #e5e5e4) 100%
+    );
+}
+
+.pitch-deck-tablet-logo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 0.35rem;
+  margin: 0.35rem 0 0.35rem;
+}
+
+.pitch-deck-tablet-logo {
+  display: block;
+  height: 2.85rem;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.pitch-deck-tablet-kicker,
+.pitch-deck-page .pitch-deck-tablet-kicker {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  line-height: 1.15 !important;
+  letter-spacing: 0.04em !important;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-tablet-list {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: stretch;
+  flex: 1;
+  width: max-content;
+  max-width: 100%;
+  gap: 0;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.pitch-deck-page .pitch-deck-tablet-list {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 0;
+}
+
+.pitch-deck-tablet-item,
+.pitch-deck-page .pitch-deck-tablet-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.7rem;
+  flex: 1 1 auto;
+  width: 100%;
+  margin: 0;
+  padding: 1.05rem 0.15rem;
+  list-style: none;
+  background: none;
+  border: none;
+  box-shadow: none;
+}
+
+.pitch-deck-tablet-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 2.15rem;
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 0.5rem;
+  background: var(--brand-red);
+  color: #fff;
+}
+
+.pitch-deck-tablet-item-icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.pitch-deck-tablet-item-label,
+.pitch-deck-page .pitch-deck-tablet-item-label {
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 0.95rem !important;
+  font-weight: 800 !important;
+  line-height: 1.15 !important;
+  letter-spacing: 0.01em !important;
+  color: var(--brand-navy);
+}
+
+@media (min-width: 640px) {
+  .pitch-deck-page .pitch-deck-tablet-figure {
+    max-width: 15.35rem;
+    flex: 0 1 15.35rem;
+    margin-left: -1.85rem;
+  }
+
+  .pitch-deck-tablet {
+    overflow: visible;
+    width: 15.35rem;
+    max-width: 15.35rem;
+  }
+
+  .pitch-deck-tablet-body {
+    padding: 1.05rem 0.85rem 1.15rem;
+  }
+
+  .pitch-deck-tablet-screen {
+    aspect-ratio: 1 / 1.9;
+  }
+}
+
+@media (max-width: 639px) {
+  .pitch-deck-page .pitch-deck-tech-devices,
+  .pitch-deck-page .pitch-deck-tech-flow-app-stage .pitch-deck-tech-devices {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  .pitch-deck-page .pitch-deck-iphone-figure,
+  .pitch-deck-page .pitch-deck-tablet-figure {
+    margin: 0 auto;
+    width: 100%;
+    overflow: visible;
+  }
+}
+
+.pitch-deck-page .pitch-deck-feature-table th:first-child,
+.pitch-deck-page .pitch-deck-feature-table td:first-child {
+  width: 32%;
+  min-width: 9rem;
+}
+
+.pitch-deck-page .pitch-deck-image-badge {
+  position: absolute;
+  top: 0.7rem;
+  left: 0.7rem;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: max-content;
+  max-width: calc(100% - 1.25rem);
+  transform: rotate(-3deg);
+  padding: 0.5rem 0.85rem 0.45rem;
+  border: 3px solid var(--comic-black);
+  border-radius: 0.85rem;
+  background: var(--comic-white);
+  color: var(--comic-secondary);
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.1;
+  text-align: center;
+  pointer-events: none;
+  box-shadow: 5px 5px 0 var(--comic-black);
+}
+
+.pitch-deck-page .pitch-deck-image-badge span {
+  display: block;
+  font-size: 1.2em;
+  letter-spacing: 0.04em;
+}
+
+.pitch-deck-page .pitch-deck-image-badge--sm {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.6rem 0.3rem;
+  border-width: 2.5px;
+  border-radius: 0.7rem;
+  box-shadow: 4px 4px 0 var(--comic-black);
+}
+
+.pitch-deck-page .pitch-deck-image-badge--red {
+  background: var(--comic-primary);
+  color: var(--comic-white);
+  box-shadow:
+    5px 5px 0 var(--comic-black),
+    0 0 0 3px var(--comic-white);
+  text-shadow: 1px 1px 0 rgba(0, 26, 72, 0.4);
+}
+
+.pitch-deck-page .pitch-deck-image-badge--sm.pitch-deck-image-badge--red {
+  box-shadow:
+    4px 4px 0 var(--comic-black),
+    0 0 0 2px var(--comic-white);
+}
+
+.pitch-deck-page .pitch-deck-image-badge--navy {
+  background: var(--brand-navy);
+  color: var(--comic-white);
+  box-shadow:
+    5px 5px 0 #e5e5e4,
+    0 0 0 3px var(--comic-white);
+  text-shadow: 1px 1px 0 rgba(0, 26, 72, 0.4);
+}
+
+.pitch-deck-page .pitch-deck-image-badge--sm.pitch-deck-image-badge--navy {
+  box-shadow:
+    4px 4px 0 #e5e5e4,
+    0 0 0 2px var(--comic-white);
+}
+
+.pitch-deck-page .pitch-deck-image-badge--nudge-top {
+  top: 1.05rem;
+  white-space: nowrap;
+}
+
+.pitch-deck-page .pitch-deck-image-badge--top-right {
+  top: 0.7rem;
+  right: 0.7rem;
+  left: auto;
+}
+
+.pitch-deck-page .pitch-deck-image-badge--bottom-right {
+  top: auto;
+  right: 0.7rem;
+  bottom: 0.7rem;
+  left: auto;
+}
+
+.pitch-deck-page .pitch-deck-callout-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem 0.7rem;
+  margin-bottom: 0.35rem;
+}
+
+.pitch-deck-page .pitch-deck-callout-row .pitch-deck-callout-heading {
+  margin: 0;
+}
+
+.pitch-deck-page .pitch-deck-logo-stamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0.45rem 0.85rem 0.4rem;
+  transform: rotate(-2.5deg);
+  border: 3px solid var(--comic-black);
+  border-radius: 0.85rem;
+  background: var(--comic-white);
+  box-shadow: 5px 5px 0 var(--comic-black);
+}
+
+.pitch-deck-page .pitch-deck-logo-stamp img {
+  display: block;
+  height: 2.95rem;
+  width: auto;
+  object-fit: contain;
+}
+
+.pitch-deck-page .pitch-deck-also-included {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem 0.65rem;
+}
+
+.pitch-deck-page .pitch-deck-also-included--column {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  margin-top: 0.75rem;
+}
+
+.pitch-deck-page .pitch-deck-also-included--column .pitch-deck-also-included-stamps {
+  justify-content: flex-start;
+}
+
+.pitch-deck-page p.pitch-deck-also-included-label {
+  margin: 0;
+  color: var(--comic-white);
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 12pt !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0.02em !important;
+  white-space: nowrap;
+}
+
+.pitch-deck-page .pitch-deck-also-included-stamps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 0.55rem;
+}
+
+.pitch-deck-page .pitch-deck-feature-stamp {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.65rem 0.3rem;
+  border: 2.5px solid var(--comic-black);
+  border-radius: 0.7rem;
+  background: var(--comic-white);
+  color: var(--comic-secondary);
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  white-space: nowrap;
+  transform: rotate(-2deg);
+  box-shadow: 4px 4px 0 var(--comic-black);
+}
+
+.pitch-deck-page .pitch-deck-feature-stamp:nth-child(even) {
+  transform: rotate(2deg);
+}
+
+@media (min-width: 640px) {
+  .pitch-deck-page .pitch-deck-image-badge {
+    font-size: 1.15rem;
+    padding: 0.55rem 1rem 0.5rem;
+  }
+
+  .pitch-deck-page .pitch-deck-image-badge--sm {
+    font-size: 0.88rem;
+    padding: 0.4rem 0.7rem 0.35rem;
+  }
+
+  .pitch-deck-page .pitch-deck-logo-stamp img {
+    height: 3.3rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .pitch-deck-page .pitch-deck-founder-teaching {
+    float: none;
+    display: block;
+    width: 100%;
+    max-width: 14rem;
+    margin: 0 auto 1rem;
+  }
+
   .pitch-deck-page .pitch-deck-founder-photos {
     float: none;
     margin-left: auto;
@@ -331,7 +2406,32 @@ body::before {
     margin-bottom: 1rem;
   }
 
-  .pitch-deck-page .pitch-deck-exec-summary-image {
+  .pitch-deck-page .pitch-deck-founder-lead,
+  .pitch-deck-page .pitch-deck-founder-edu {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .pitch-deck-page .pitch-deck-founder-portrait,
+  .pitch-deck-page .pitch-deck-founder-uni {
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    width: 9rem;
+    height: 9rem;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 1rem;
+  }
+
+  .pitch-deck-page .pitch-deck-exec-summary-image,
+  .pitch-deck-page .pitch-deck-product-englishfeed-image,
+  .pitch-deck-page .pitch-deck-product-homeroom-image,
+  .pitch-deck-page .pitch-deck-company-image,
+  .pitch-deck-page .pitch-deck-company-thai,
+  .pitch-deck-page .pitch-deck-thailand-image {
     float: none;
     margin-left: auto;
     margin-right: auto;
@@ -364,6 +2464,130 @@ body::before {
     margin-left: auto !important;
     margin-right: auto !important;
     max-width: 160px !important;
+  }
+
+  .pitch-deck-page .pitch-deck-image-badge {
+    font-size: 10pt;
+    padding: 0.3rem 0.65rem;
+    box-shadow: 3px 3px 0 var(--comic-black);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .pitch-deck-page .pitch-deck-image-badge--sm {
+    font-size: 8pt;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .pitch-deck-page .pitch-deck-logo-stamp {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .pitch-deck-page .pitch-deck-feature-stamp,
+  .pitch-deck-page p.pitch-deck-also-included-label {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-devices {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+
+  .pitch-deck-page .pitch-deck-iphone-figure {
+    position: relative;
+    max-width: 13.25rem;
+    flex-basis: 13.25rem;
+  }
+
+  .pitch-deck-page .pitch-deck-tablet-figure {
+    margin-left: -1rem;
+    max-width: 13.35rem;
+    flex-basis: 13.35rem;
+  }
+
+  .pitch-deck-tablet {
+    overflow: visible;
+    width: 13.35rem;
+    max-width: 13.35rem;
+  }
+
+  .pitch-deck-tablet-screen {
+    aspect-ratio: 1 / 1.6;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-shell {
+    width: 100%;
+    margin: 0.7rem 0 0.9rem;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7rem;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-main {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    grid-template-rows: auto auto;
+    column-gap: 0;
+    row-gap: 0.7rem;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-col--app {
+    grid-row: 1 / span 2;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-app-stage .pitch-deck-tech-devices {
+    transform: scale(0.72);
+    transform-origin: top left;
+    margin-bottom: calc(-0.28 * 24rem);
+    zoom: 1;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-shot-image {
+    height: 7.5rem;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-closer-title,
+  .pitch-deck-page h3.pitch-deck-tech-flow-closer-title {
+    font-size: 13pt !important;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-closer-sub,
+  .pitch-deck-page p.pitch-deck-tech-flow-closer-sub {
+    font-size: 10pt !important;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-tube-fill,
+  .pitch-deck-page .pitch-deck-tech-flow-chart,
+  .pitch-deck-page .pitch-deck-tech-flow-shot-card,
+  .pitch-deck-page .pitch-deck-tech-stack-card {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .pitch-deck-iphone,
+  .pitch-deck-iphone-bezel,
+  .pitch-deck-iphone-hero,
+  .pitch-deck-iphone-demo,
+  .pitch-deck-iphone-action,
+  .pitch-deck-iphone-burger,
+  .pitch-deck-tablet,
+  .pitch-deck-tablet-bezel,
+  .pitch-deck-tablet-body,
+  .pitch-deck-tablet-item,
+  .pitch-deck-tablet-item-icon {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   /* Site header: hide nav (was printing as a square); center logo */
@@ -459,6 +2683,16 @@ body::before {
   .pitch-deck-page li,
   .pitch-deck-page p {
     font-size: 11pt !important;
+  }
+
+  .pitch-deck-page p.pitch-deck-callout-heading {
+    font-size: 11pt !important;
+    font-weight: 400 !important;
+    line-height: 1.1 !important;
+    padding: 0.3rem 0.65rem 0.25rem;
+    box-shadow: 3px 3px 0 var(--comic-black);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .pitch-deck-page .pitch-deck-body,

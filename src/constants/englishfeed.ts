@@ -7,7 +7,7 @@ export const ENGLISHFEED_HOMEPAGE_VIMEO_EMBED_SRC =
 
 /** /app hero — demo screenshots (left column circles, in order). */
 export const ENGLISHFEED_APP_HERO_CIRCLE_URLS = [
-  "https://res.cloudinary.com/dkbf7tvcx/image/upload/v1779869118/englishfully/hero/englishfeed-demo-video-lesson.png",
+  "https://res.cloudinary.com/ktg8khoq/image/upload/v1788094066/kid-usingenglishfeed_k07dot.jpg",
   "https://res.cloudinary.com/dkbf7tvcx/image/upload/v1779869118/englishfully/hero/englishfeed-demo-flashcards.png",
   "https://res.cloudinary.com/dkbf7tvcx/image/upload/v1779869118/englishfully/hero/englishfeed-demo-ai-practice.png",
   "https://res.cloudinary.com/dkbf7tvcx/image/upload/v1779869118/englishfully/hero/englishfeed-demo-review.png",

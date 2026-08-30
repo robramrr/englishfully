@@ -7,6 +7,15 @@ import ComicCard from '../../../components/ComicCard';
 import ComicText from '../../../components/ComicText';
 import ComicTitle from '../../../components/ComicTitle';
 import Footer from '../../../components/Footer';
+import HomeroomCaseStudy from '../../../components/pitch-deck/HomeroomCaseStudy';
+import MarketingSalesVisual, {
+  MarketAudienceStamps,
+  MarketChannelStamps,
+  StampFlow,
+} from '../../../components/pitch-deck/MarketingSalesVisual';
+import TechInnovationFlow from '../../../components/pitch-deck/TechInnovationFlow';
+import ThailandBenefitVisual from '../../../components/pitch-deck/ThailandBenefitVisual';
+import { ENGLISHFEED_APP_HERO_CIRCLE_URLS } from '../../../constants/englishfeed';
 
 const TOC = [
   { id: 'executive-summary', label: 'a. Executive Summary' },
@@ -120,6 +129,12 @@ export default function PitchDeckPage() {
                 alt="EnglishFeed app"
                 className="w-full h-auto object-contain border-2 border-[var(--comic-black)] rounded-xl"
               />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1783143201/englishfeed/logo/englishfeed-logo.png"
+                alt="EnglishFeed"
+                className="mt-3 mx-auto block h-10 w-auto object-contain"
+              />
             </div>
             <Body>
               Englishfully Co., Ltd. is a Thailand-based education technology startup founded in 2026.
@@ -136,55 +151,72 @@ export default function PitchDeckPage() {
             <Body>
               The business operates in the Digital Industry. Core offerings include free and paid
               EnglishFeed app access with online and offline membership support plans, and{' '}
-              <strong>Englishfully&apos;s Teacher Resources</strong> membership, a suite of
-              teacher-facing EdTech classroom tools. Initial capital is provided from personal funds.
+              <strong>Homeroom Tools</strong>, a membership suite of teacher-facing EdTech
+              workflow tools. Initial capital is provided from personal funds.
               Over the next two years, Englishfully will deepen product capability; grow learner and
               teacher adoption in Thailand; hire local staff; partner with private schools, small
               language schools, and government schools to introduce a more effective way to deliver and
               present English learning; and build an independently operable platform suitable for
               long-term growth or acquisition.
             </Body>
-            <div className="mt-3 flex clear-both flex-wrap items-center gap-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1783143201/englishfeed/logo/englishfeed-logo.png"
-                alt="EnglishFeed"
-                className="h-10 w-auto object-contain"
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="https://res.cloudinary.com/ktg8khoq/image/upload/v1787824446/chalkboard_diyqvg.png"
-                alt="Teacher Resources"
-                className="h-10 w-auto object-contain"
-              />
-            </div>
           </div>
         </ComicCard>
 
         {/* b. Company */}
         <ComicCard className="pitch-deck-section">
           <SectionHeading id="company-background">b. The Company / Background</SectionHeading>
-          <Body>
-            Englishfully Co., Ltd. was established in 2026 in Thailand to address a persistent gap:
-            English education is widely available, but few solutions provide an innovative platform
-            for structured learning, teacher workflow, and measurable classroom outcomes within one
-            coherent system.
-          </Body>
-          <Body>
-            The company develops and operates digital learning and teaching products. On the learner
-            side, EnglishFeed provides AI-powered, interactive and immersive English learning in a
-            structured swipe-based format. Its content delivers engaging video and audio designed for
-            today&apos;s social media user. On the teacher side, Teacher Resources
-            provides a Classroom System—tools for class management, lesson and presentation creation,
-            speaking and listening assessment, and interactive practice activities—so schools and
-            independent teachers can run modern English instruction without assembling disconnected
-            apps.
-          </Body>
-          <Body>
-            Englishfully’s headquarters and primary market focus are in Thailand, with a product
-            roadmap oriented toward Thai-language learner backgrounds, local classroom realities, and
-            the country’s digital education priorities.
-          </Body>
+          <div className="pitch-deck-company clearfix">
+            <div className="pitch-deck-company-image float-right ml-6 mb-3 w-[11.5rem] sm:w-[14rem]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788104162/students-using-englishfully_atx3yu.jpg"
+                alt="Students using Englishfully"
+                className="w-full h-auto object-cover border-2 border-[var(--comic-black)] rounded-xl"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1779780445/englishfully/logo/englishfully-01.png"
+                alt="Englishfully"
+                className="mt-3 mx-auto block h-10 w-auto object-contain"
+              />
+            </div>
+            <Body>
+              Englishfully Co., Ltd. was established in 2026 in Thailand to address a persistent gap:
+              English education is widely available, but few solutions provide an innovative platform
+              for structured learning, teacher workflow, and measurable classroom outcomes within one
+              coherent system.
+            </Body>
+            <figure className="pitch-deck-company-thai">
+              <div className="pitch-deck-company-thai-flag" aria-hidden="true">
+                <svg viewBox="0 0 90 60" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="90" height="10" y="0" fill="#A51931" />
+                  <rect width="90" height="10" y="10" fill="#FFFFFF" />
+                  <rect width="90" height="20" y="20" fill="#2D2A4A" />
+                  <rect width="90" height="10" y="40" fill="#FFFFFF" />
+                  <rect width="90" height="10" y="50" fill="#A51931" />
+                </svg>
+              </div>
+              <figcaption>
+                <p className="pitch-deck-company-thai-stamp">Thailand</p>
+                <p className="pitch-deck-company-thai-copy">EdTech</p>
+              </figcaption>
+            </figure>
+            <Body>
+              The company develops and operates digital learning and teaching products. On the learner
+              side, EnglishFeed provides AI-powered, interactive and immersive English learning in a
+              structured swipe-based format. Its content delivers engaging video and audio designed for
+              today&apos;s social media user. On the teacher side, Homeroom Tools
+              provides a Classroom System—tools for class management, lesson and presentation creation,
+              speaking and listening assessment, and interactive practice activities—so schools and
+              independent teachers can run modern English instruction without assembling disconnected
+              apps.
+            </Body>
+            <Body>
+              Englishfully’s headquarters and primary market focus are in Thailand, with a product
+              roadmap oriented toward Thai-language learner backgrounds, local classroom realities, and
+              the country’s digital education priorities.
+            </Body>
+          </div>
         </ComicCard>
 
         {/* c. Mission & Vision */}
@@ -192,51 +224,65 @@ export default function PitchDeckPage() {
           <SectionHeading id="mission-vision">c. Mission &amp; Vision</SectionHeading>
           <SubHeading>Mission</SubHeading>
           <Body>
-            To deliver complete English learning through innovative digital tools and practical
-            classroom systems that help learners build real communication skills and help teachers
-            create, assign, assess, and manage learning with clarity and ease.
+            To deliver complete English learning through innovative digital tools that transform
+            familiar digital habits into structured, immersive, and skill-focused learning experiences,
+            and practical classroom systems that help learners build real communication skills and help
+            teachers create, assign, assess, and manage learning with clarity and ease.
           </Body>
           <SubHeading>Vision</SubHeading>
           <Body>
-            To become Thailand’s trusted English learning and teaching platform—where learners
-            progress from fundamentals to fluent use, and teachers run engaging, effective classes
-            end to end through one integrated EdTech ecosystem.
+            To become Thailand’s trusted English learning and teaching platform where learners
+            progress from fundamentals to fluent use through engaging, personalized, and interactive
+            learning, and teachers run engaging, effective classes end to end through one integrated
+            EdTech ecosystem.
           </Body>
         </ComicCard>
 
         {/* d. Management Team */}
         <ComicCard className="pitch-deck-section">
           <SectionHeading id="management-team">d. Management Team</SectionHeading>
-          <SubHeading>Robert — Founder</SubHeading>
-          <div className="pitch-deck-founder clearfix">
-            <div className="pitch-deck-founder-photos float-right ml-6 mb-3 flex flex-col items-center gap-3">
+          <div className="pitch-deck-founder grid items-start gap-8 md:grid-cols-[auto_1fr]">
+            <div className="mx-auto flex flex-col items-center gap-4 md:mx-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1783439716/englishfully/company/Robert.jpg"
                 alt="Robert, founder of Englishfully"
-                className="h-36 w-36 object-cover object-top border-2 border-[var(--comic-black)]"
+                className="h-40 w-40 rounded-xl border-2 border-[var(--brand-navy)] object-cover object-top md:h-48 md:w-48"
               />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1783440767/englishfully/company/university.jpg"
+                src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788097274/university-csuf_ycyyv7.png"
                 alt="California State University, Fullerton"
-                className="h-16 w-16 object-contain"
+                className="h-20 w-20 object-contain"
               />
             </div>
-            <Body>
-              Robert leads product strategy, technology development, and business operations for
-              Englishfully. He combines classroom teaching experience with education-technology and
-              web development expertise. A certified English instructor who has taught learners across
-              ages and levels, he also works as a developer and business consultant building digital
-              tools for learning.
-            </Body>
-            <Body>
-              He holds degrees in Sociology and Business Administration from California State
-              University, Fullerton. Originally from California, USA, and a fluent Spanish speaker, he
-              lived in Monterrey, Mexico before making Thailand home. That international path informs
-              Englishfully’s emphasis on accessible language learning, cultural connection, and
-              products designed for real classrooms—not only consumer apps.
-            </Body>
+            <div>
+              <SubHeading>Robert — Founder</SubHeading>
+              <div className="pitch-deck-founder-bio">
+                <figure className="pitch-deck-founder-teaching">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="https://res.cloudinary.com/ktg8khoq/image/upload/v1787643151/teaching_tyrmwq.jpg"
+                    alt="Robert teaching English in the classroom"
+                  />
+                  <figcaption>Thai Government Primary School</figcaption>
+                </figure>
+                <Body>
+                  Robert leads product strategy, technology development, and business operations for
+                  Englishfully. He combines classroom teaching experience with education-technology and
+                  web development expertise. A certified English instructor who has taught learners across
+                  ages and levels, he also works as a developer and business consultant building digital
+                  tools for learning.
+                </Body>
+                <Body>
+                  He holds degrees in Sociology and Business Administration from California State
+                  University, Fullerton. Originally from California, USA, and a fluent Spanish speaker, he
+                  lived in Monterrey, Mexico before making Thailand home. That international path informs
+                  Englishfully’s emphasis on accessible language learning, cultural connection, and
+                  products designed for real classrooms.
+                </Body>
+              </div>
+            </div>
           </div>
         </ComicCard>
 
@@ -249,192 +295,676 @@ export default function PitchDeckPage() {
             complete English journey.
           </Body>
 
-          <SubHeading>1. EnglishFeed (Learner Application &amp; Memberships)</SubHeading>
-          <Body>
-            EnglishFeed is a swipe-based digital English learning app built for productive habit
-            learning—familiar feed flow, but structured and interactive to keep learners focused,
-            progressing, and coming back daily. Membership tiers (such as App,
-            Lite, and Pro) unlock app practice and, at higher tiers, live online coaching and onsite
-            practice.
-          </Body>
-          <Body>Key features include:</Body>
-          <ul className="list-disc pl-6 mb-4 space-y-2 text-[var(--comic-dark)] pitch-deck-body">
-            <li>
-              <strong>Six-skill English immersion</strong> — listening, speaking, reading, writing,
-              grammar, and vocabulary practice that adapts and evolves with learner progress.
-            </li>
-            <li>
-              <strong>Video lessons</strong> — immersive video learning with AI visuals,
-              interactivity, and content spanning foundations, daily life, business, and culture.
-            </li>
-            <li>
-              <strong>Interactive subtitles</strong> — tap any word for instant meaning,
-              pronunciation, examples, synonyms, and save-to-vocabulary while watching.
-            </li>
-            <li>
-              <strong>Pronunciation practice</strong> — speak target lesson sentences with speech
-              recognition, word-level scoring, and real-time correction feedback.
-            </li>
-            <li>
-              <strong>AI Quiz</strong> — lesson-grounded multiple-choice checks covering grammar,
-              vocabulary, and comprehension with fast feedback.
-            </li>
-            <li>
-              <strong>AI Vocabulary &amp; Grammar</strong> — lesson-based vocabulary cards and
-              grammar practice with smart AI feedback and clear explanations.
-            </li>
-            <li>
-              <strong>AI Tutor</strong> — lesson-grounded role-play dialogue with guided responses,
-              spelling/pronunciation checks, and adaptive conversational difficulty.
-            </li>
-            <li>
-              <strong>AI Flashcards</strong> — camera-based image-word challenges with timed rounds
-              and speak-the-word checks.
-            </li>
-            <li>
-              <strong>Like, Save &amp; Tags</strong> — save lessons, follow topics, and discover
-              content by interest for faster, more intentional review.
-            </li>
-            <li>
-              <strong>Thai support</strong> — bilingual help with Thai translations where available,
-              so learners confirm meaning without leaving the lesson.
-            </li>
-            <li>
-              <strong>AI personalization &amp; learning analytics</strong> — level filters,
-              engagement-based feed ranking, topic preferences, and activity tracking for smarter
-              progress insights.
-            </li>
-          </ul>
-          <Body>
-            Benefit: learners practice in the app and can add mentor-led online or onsite support
-            through the same membership path.
-          </Body>
+          <SubHeading>
+            1.{' '}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1783143201/englishfeed/logo/englishfeed-logo.png"
+              alt="EnglishFeed"
+              className="mx-1 inline-block h-9 w-auto align-middle object-contain sm:h-11"
+            />
+          </SubHeading>
+          <div className="pitch-deck-product-englishfeed">
+            <Body>
+              EnglishFeed is a swipe-based digital English learning app built for productive habit
+              learning—familiar feed flow, but structured and interactive to keep learners focused,
+              progressing, and coming back daily. Membership tiers (such as App,
+              Lite, and Pro) unlock app practice and, at higher tiers, live online coaching and onsite
+              practice.
+            </Body>
+            <Body>
+              <strong>Benefit:</strong> learners practice in the app and can add mentor-led online or
+              onsite support through the same membership path.
+            </Body>
+            <div className="mb-4 flex justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://res.cloudinary.com/ktg8khoq/image/upload/v1787847387/prototype-englishfeed_o62i1e.jpg"
+                alt="EnglishFeed prototype"
+                className="mx-auto block w-full max-w-3xl h-auto object-contain border-2 border-[var(--comic-black)] rounded-xl"
+              />
+            </div>
+            <Body>Key features include:</Body>
+            <div className="pitch-deck-feature-table-wrap mb-4 overflow-x-auto">
+                <table className="pitch-deck-feature-table w-full border-collapse text-left text-[var(--comic-dark)]">
+                  <thead>
+                    <tr className="bg-[#d0d0d0]">
+                      <th className="border border-[var(--comic-black)] px-3 py-2 font-black whitespace-nowrap">
+                        Feature
+                      </th>
+                      <th className="border border-[var(--comic-black)] px-3 py-2 font-black">
+                        What it does
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="pitch-deck-body">
+                    <tr>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                        Six-skill English immersion
+                      </td>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                        Listening, speaking, reading, writing, grammar, and vocabulary practice that
+                        adapts and evolves with learner progress.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                        Video lessons
+                      </td>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                        Immersive video learning with AI visuals, interactivity, and content spanning
+                        foundations, daily life, business, and culture.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                        Interactive subtitles
+                      </td>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                        Tap any word for instant meaning, pronunciation, examples, synonyms, and
+                        save-to-vocabulary while watching.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                        Pronunciation practice
+                      </td>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                        Speak target lesson sentences with speech recognition, word-level scoring, and
+                        real-time correction feedback.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                        AI Quiz
+                      </td>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                        Lesson-grounded multiple-choice checks covering grammar, vocabulary, and
+                        comprehension with fast feedback.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                        AI Vocabulary &amp; Grammar
+                      </td>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                        Lesson-based vocabulary cards and grammar practice with smart AI feedback and
+                        clear explanations.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                        AI Tutor
+                      </td>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                        Lesson-grounded role-play dialogue with guided responses, spelling/pronunciation
+                        checks, and adaptive conversational difficulty.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                        AI Flashcards
+                      </td>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                        Camera-based image-word challenges with timed rounds and speak-the-word checks.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                        Like, Save &amp; Tags
+                      </td>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                        Save lessons, follow topics, and discover content by interest for faster, more
+                        intentional review.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                        Thai support
+                      </td>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                        Bilingual help with Thai translations where available, so learners confirm
+                        meaning without leaving the lesson.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                        AI personalization &amp; learning analytics
+                      </td>
+                      <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                        Level filters, engagement-based feed ranking, topic preferences, and activity
+                        tracking for smarter progress insights.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+            </div>
+            <div className="mt-4 rounded-2xl border-2 border-[var(--comic-black)] comic-bg-purple comic-pattern-zigzag p-4 sm:p-5">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:items-start">
+                <div className="space-y-4">
+                  <div className="text-sm font-bold leading-snug text-white pitch-deck-body space-y-2">
+                    <div className="pitch-deck-callout-row">
+                      <div className="pitch-deck-logo-stamp">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1783143201/englishfeed/logo/englishfeed-logo.png"
+                          alt="EnglishFeed"
+                        />
+                      </div>
+                      <p className="pitch-deck-callout-heading">How It Works</p>
+                    </div>
+                    <ul className="m-0 list-disc space-y-1.5 pl-5 pt-3">
+                      <li>Swipe a structured video feed of lessons at your level</li>
+                      <li>Lesson practice: tap vocab, speak, quiz, role-play with AI</li>
+                      <li>Personalized learning feed with instant feedback</li>
+                    </ul>
+                  </div>
+                  <div className="flex flex-nowrap items-start justify-between gap-1.5 sm:gap-2">
+                    {(
+                      [
+                        { src: ENGLISHFEED_APP_HERO_CIRCLE_URLS[0], label: 'Speak' },
+                        { src: ENGLISHFEED_APP_HERO_CIRCLE_URLS[1], label: 'Practice' },
+                        { src: ENGLISHFEED_APP_HERO_CIRCLE_URLS[2], label: 'Feedback' },
+                        { src: ENGLISHFEED_APP_HERO_CIRCLE_URLS[3], label: 'Assess' },
+                      ] as const
+                    ).map((item) => (
+                      <div key={item.src} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full comic-border-thick comic-shadow-sm sm:h-14 sm:w-14">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={item.src}
+                            alt={item.label}
+                            className="h-full w-full object-cover object-center"
+                          />
+                        </div>
+                        <ComicText className="text-center text-[10px] font-bold leading-tight text-white sm:text-xs">
+                          {item.label}
+                        </ComicText>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <figure className="m-0">
+                  <div className="pitch-deck-image-overlay relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://res.cloudinary.com/ktg8khoq/image/upload/c_crop,w_500,h_703,y_50,g_north/v1787821272/englishfeed-app_enivsd.png"
+                      alt="EnglishFeed interactive subtitles on phone"
+                      className="w-full h-auto object-contain border-2 border-[var(--comic-black)] rounded-xl bg-white"
+                    />
+                    <div
+                      className="pitch-deck-image-badge pitch-deck-image-badge--sm pitch-deck-image-badge--red"
+                      aria-hidden="true"
+                    >
+                      Interactive
+                      <span>Subtitles</span>
+                    </div>
+                  </div>
+                  <figcaption className="mt-2 text-sm font-bold leading-snug text-white pitch-deck-body">
+                    Tap any word to understand it in context.
+                  </figcaption>
+                </figure>
+                <div>
+                  <figure className="m-0">
+                    <div className="pitch-deck-image-overlay relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788003701/ai-tutor-01_bmlwdf.png"
+                        alt="EnglishFeed AI tutor role-play"
+                        className="w-full h-auto object-contain border-2 border-[var(--comic-black)] rounded-xl bg-white"
+                      />
+                      <div
+                        className="pitch-deck-image-badge pitch-deck-image-badge--sm pitch-deck-image-badge--nudge-top"
+                        aria-hidden="true"
+                      >
+                        AI Roleplay Tutor
+                      </div>
+                    </div>
+                  </figure>
+                  <div className="pitch-deck-also-included pitch-deck-also-included--column">
+                    <p className="pitch-deck-also-included-label">Also included:</p>
+                    <div className="pitch-deck-also-included-stamps">
+                      {[
+                        'Immersive Video',
+                        'AI Flashcards',
+                        'Like, Save, Tags',
+                        'Thai Support',
+                      ].map((label) => (
+                        <span key={label} className="pitch-deck-feature-stamp">
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                <figure className="m-0">
+                  <div className="pitch-deck-image-overlay relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788002412/pronunciation-01_m9ctrx.png"
+                      alt="EnglishFeed pronunciation practice"
+                      className="w-full h-auto object-contain border-2 border-[var(--comic-black)] rounded-xl bg-white"
+                    />
+                    <div className="pitch-deck-image-badge pitch-deck-image-badge--sm" aria-hidden="true">
+                      Pronunciation
+                    </div>
+                  </div>
+                  <figcaption className="mt-2 text-sm font-bold leading-snug text-white pitch-deck-body">
+                    Practice on terms with instant feedback.
+                  </figcaption>
+                </figure>
+                <figure className="m-0">
+                  <div className="pitch-deck-image-overlay relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788003630/vocab-02_jbppku.png"
+                      alt="EnglishFeed AI vocabulary"
+                      className="w-full h-auto object-contain border-2 border-[var(--comic-black)] rounded-xl bg-white"
+                    />
+                    <div className="pitch-deck-image-badge pitch-deck-image-badge--sm" aria-hidden="true">
+                      Vocabulary
+                    </div>
+                  </div>
+                  <figcaption className="mt-2 text-sm font-bold leading-snug text-white pitch-deck-body">
+                    Drill vocab meaning, form, and examples.
+                  </figcaption>
+                </figure>
+                <figure className="m-0">
+                  <div className="pitch-deck-image-overlay relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788002412/quiz-01_ehz92q.png"
+                      alt="EnglishFeed interactive quiz"
+                      className="w-full h-auto object-contain border-2 border-[var(--comic-black)] rounded-xl bg-white"
+                    />
+                    <div className="pitch-deck-image-badge pitch-deck-image-badge--sm" aria-hidden="true">
+                      Quiz
+                    </div>
+                  </div>
+                  <figcaption className="mt-2 text-sm font-bold leading-snug text-white pitch-deck-body">
+                    AI-powered, level-adaptive quizzes.
+                  </figcaption>
+                </figure>
+              </div>
+            </div>
+          </div>
 
-          <SubHeading>2. Teacher Resources (EdTech Classroom System)</SubHeading>
-          <Body>
-            A membership for teachers and schools to use Englishfully’s classroom tools, including:
-          </Body>
-          <ul className="list-disc pl-6 mb-4 space-y-2 text-[var(--comic-dark)] pitch-deck-body">
-            <li>
-              <strong>Gradebook</strong> — the classroom hub for tracking student progress across
-              speaking and listening assessments, with clear grade views and PDF/Excel export.
-            </li>
-            <li>
-              <strong>Presentation Generator</strong> — turn lesson notes into interactive slides:
-              multi-track audio–image matching quizzes, AI grammar highlighting for explanations,
-              describe-the-image practice with word banks, built-in timers for classroom games, QR
-              share for student devices, and PDF/PPTX export.
-            </li>
-            <li>
-              <strong>QR Speaking Assessment (Speak &amp; Submit)</strong> — assign speaking
-              homework students complete on their phones via QR; teachers review recordings and
-              assess fluency and accuracy.
-            </li>
-            <li>
-              <strong>Listen &amp; Learn</strong> — turn audio into phone-ready listening quizzes
-              with AI vocabulary and comprehension questions grounded in real clips.
-            </li>
-            <li>
-              <strong>Listen &amp; Answer</strong> — build printable multi-part listening
-              worksheets with AI-assisted questions, answer keys, and scantron-ready formats.
-            </li>
-            <li>
-              <strong>Escape Room Generator</strong> — create topic-based classroom escape
-              missions with mixed challenges (vocabulary, listening, matching, code locks, and
-              more) that students play through to a final escape.
-            </li>
-            <li>
-              <strong>Lesson Plan Generator</strong> (roadmap) — customizable plans by teaching
-              method, topic, and level, linked to the classroom tools above.
-            </li>
-          </ul>
-          <Body>
-            Benefit: teachers reduce prep time, deliver more interactive lessons, and keep grading
-            and assessment in one system aligned to Digital Industry education goals.
-          </Body>
+          <SubHeading>
+            2.{' '}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://res.cloudinary.com/ktg8khoq/image/upload/f_png/v1788022325/homeroomtools4_oacwhe.psd"
+              alt="Homeroom Tools"
+              className="mx-1 inline-block h-12 w-auto align-middle object-contain sm:h-14"
+            />
+          </SubHeading>
+          <div className="pitch-deck-product-homeroom clearfix">
+            <div className="pitch-deck-product-homeroom-image float-right ml-6 mb-3 w-[11.5rem] sm:w-[13rem]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://res.cloudinary.com/ktg8khoq/image/upload/v1787836741/exercises_uljmwm.jpg"
+                alt="Homeroom Tools classroom exercises"
+                className="w-full h-auto object-contain border-2 border-[var(--comic-black)] rounded-xl"
+              />
+            </div>
+            <Body>
+              Homeroom Tools is Englishfully’s teacher resources product—an EdTech classroom system
+              built for real English teaching workflows. A membership for teachers and schools to
+              use Englishfully’s classroom tools.
+            </Body>
+            <Body>
+              <strong>Benefit:</strong> teachers reduce prep time, deliver more interactive lessons, and keep grading
+              and assessment in one system aligned to Digital Industry education goals. What makes
+              Homeroom Tools powerful is adaptability—AI assistance across quizzes, Listen &amp;
+              Learn, Escape Room, and related generators can target teaching methodology and precise
+              English levels from A1 through C2, so every activity fits the class in front of you.
+            </Body>
+            <Body>Key features include:</Body>
+            <div className="pitch-deck-feature-table-wrap mb-4 overflow-x-auto clear-both">
+              <table className="pitch-deck-feature-table w-full border-collapse text-left text-[var(--comic-dark)]">
+                <thead>
+                  <tr className="bg-[#d0d0d0]">
+                    <th className="border border-[var(--comic-black)] px-3 py-2 font-black whitespace-nowrap">
+                      Feature
+                    </th>
+                    <th className="border border-[var(--comic-black)] px-3 py-2 font-black">
+                      What it does
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="pitch-deck-body">
+                  <tr>
+                    <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                      Gradebook
+                    </td>
+                    <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                      The classroom hub for tracking student progress across speaking and listening
+                      assessments, with clear grade views and PDF/Excel export.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                      Presentation Generator
+                    </td>
+                    <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                      Turn lesson notes into interactive slides: multi-track audio–image matching
+                      quizzes, AI grammar highlighting for explanations, describe-the-image practice
+                      with word banks, built-in timers for classroom games, QR share for student
+                      devices, and PDF/PPTX export.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                      QR Speaking Assessment (Speak &amp; Submit)
+                    </td>
+                    <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                      Assign speaking homework students complete on their phones via QR; teachers
+                      review recordings and assess fluency and accuracy.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                      Listen &amp; Learn
+                    </td>
+                    <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                      Turn audio into phone-ready listening quizzes with AI vocabulary and
+                      comprehension questions grounded in real clips.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                      Listen &amp; Answer
+                    </td>
+                    <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                      Build printable multi-part listening worksheets with AI-assisted questions,
+                      answer keys, and scantron-ready formats.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                      Escape Room Generator
+                    </td>
+                    <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                      Create topic-based classroom escape missions with mixed challenges
+                      (vocabulary, listening, matching, code locks, and more) that students play
+                      through to a final escape.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border border-[var(--comic-black)] px-3 py-2 font-bold align-top">
+                      Lesson Plan Generator
+                    </td>
+                    <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
+                      Customizable plans by teaching method, topic, and level, linked to the
+                      classroom tools above.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="pitch-deck-homeroom-demos mt-4 clear-both p-4 sm:p-5">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:items-start">
+                <div className="space-y-4 sm:row-span-2">
+                  <div className="text-sm font-bold leading-snug text-white pitch-deck-body space-y-2">
+                    <div className="pitch-deck-callout-row">
+                      <div className="pitch-deck-logo-stamp">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="https://res.cloudinary.com/ktg8khoq/image/upload/f_png/v1788022325/homeroomtools4_oacwhe.psd"
+                          alt="Homeroom Tools"
+                        />
+                      </div>
+                      <p className="pitch-deck-callout-heading">How It Works</p>
+                    </div>
+                    <ul className="m-0 list-disc space-y-1.5 pl-5 pt-3">
+                      <li>Create listening, speaking, and slide activities with AI assist</li>
+                      <li>Assign practice to student phones or tablets via QR for class, homework</li>
+                      <li>Track and export results from one classroom Gradebook</li>
+                    </ul>
+                  </div>
+                  <figure className="m-0">
+                    <div className="pitch-deck-image-overlay relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788093490/listen-learn-test_iynlhw.png"
+                        alt="Homeroom Tools Listen and Learn on tablet"
+                        className="w-full h-auto object-contain bg-transparent"
+                      />
+                      <div className="pitch-deck-image-badge pitch-deck-image-badge--sm pitch-deck-image-badge--navy pitch-deck-image-badge--bottom-right" aria-hidden="true">
+                        Listen &amp; Learn
+                      </div>
+                    </div>
+                    <figcaption className="mt-2 text-sm font-bold leading-snug text-white pitch-deck-body">
+                      Mobile-ready listening quizzes, reviews.
+                    </figcaption>
+                  </figure>
+                  <div className="pitch-deck-also-included pitch-deck-also-included--column">
+                    <p className="pitch-deck-also-included-label">Also included:</p>
+                    <div className="pitch-deck-also-included-stamps">
+                      {['Escape Room', 'Lesson Plans'].map((label) => (
+                        <span key={label} className="pitch-deck-feature-stamp">
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <figure className="m-0">
+                  <div className="pitch-deck-image-overlay relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://res.cloudinary.com/ktg8khoq/image/upload/v1787851330/grades-demo-1_kuddy9.png"
+                      alt="Homeroom Tools gradebook class overview"
+                      className="w-full h-auto object-contain border-2 border-[var(--comic-black)] rounded-xl bg-white"
+                    />
+                    <div className="pitch-deck-image-badge pitch-deck-image-badge--sm pitch-deck-image-badge--navy pitch-deck-image-badge--top-right" aria-hidden="true">
+                      Gradebook
+                    </div>
+                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788017614/grade-01_hzlh2c.png"
+                    alt="Homeroom Tools gradebook export and detail"
+                    className="mt-3 w-full h-auto object-contain border-2 border-[var(--comic-black)] rounded-xl bg-white"
+                  />
+                  <figcaption className="mt-2 text-sm font-bold leading-snug text-white pitch-deck-body">
+                    Manage classes, assignments, and grades
+                  </figcaption>
+                </figure>
+                <figure className="m-0">
+                  <div className="pitch-deck-image-overlay relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788092380/listen-answer-2_rphg4a.png"
+                      alt="Homeroom Tools Listen and Answer teacher assessment"
+                      className="w-full h-auto object-contain border-2 border-[var(--comic-black)] rounded-xl bg-white"
+                    />
+                    <div className="pitch-deck-image-badge pitch-deck-image-badge--sm pitch-deck-image-badge--navy pitch-deck-image-badge--bottom-right" aria-hidden="true">
+                      Listen &amp; Answer
+                    </div>
+                  </div>
+                  <figcaption className="mt-2 text-sm font-bold leading-snug text-white pitch-deck-body">
+                    Teachers build printable listening tests with AI-assisted questions, CEFR levels, frameworks, and answer formats.
+                  </figcaption>
+                </figure>
+                <figure className="m-0">
+                  <div className="pitch-deck-image-overlay relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://res.cloudinary.com/ktg8khoq/image/upload/v1787850604/presentation-demo_jcwzqr.png"
+                      alt="Homeroom Tools presentation demo"
+                      className="w-full h-auto object-contain border-2 border-[var(--comic-black)] rounded-xl bg-white"
+                    />
+                    <div className="pitch-deck-image-badge pitch-deck-image-badge--sm pitch-deck-image-badge--navy" aria-hidden="true">
+                      Presentation
+                    </div>
+                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788021420/presentation-04_eyrkzc.png"
+                    alt="Homeroom Tools presentation slide activity demo"
+                    className="mt-3 w-full h-auto object-contain border-2 border-[var(--comic-black)] rounded-xl bg-white"
+                  />
+                  <figcaption className="mt-2 text-sm font-bold leading-snug text-white pitch-deck-body">
+                    Interactive slides with multi-track audio and built-in assessment questions.
+                  </figcaption>
+                </figure>
+                <figure className="m-0">
+                  <div className="pitch-deck-image-overlay relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788018163/speak-04_bfm2gd.png"
+                      alt="Homeroom Tools speaking practice demo"
+                      className="w-full h-auto object-contain border-2 border-[var(--comic-black)] rounded-xl bg-white"
+                    />
+                    <div className="pitch-deck-image-badge pitch-deck-image-badge--sm pitch-deck-image-badge--navy" aria-hidden="true">
+                      Speak &amp; Submit
+                    </div>
+                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788017445/speak-02_xzq9g0.png"
+                    alt="Homeroom Tools speaking submission demo"
+                    className="mt-3 w-full h-auto object-contain border-2 border-[var(--comic-black)] rounded-xl bg-white"
+                  />
+                  <figcaption className="mt-2 text-sm font-bold leading-snug text-white pitch-deck-body">
+                    Interactive speaking exercises designed to build confidence and for feedback.
+                  </figcaption>
+                </figure>
+              </div>
+            </div>
+            <SubHeading>Real-World Classroom Validation</SubHeading>
+            <p className="pitch-deck-case-subhead">Founder-Led Product Demo</p>
+            <HomeroomCaseStudy />
+          </div>
         </ComicCard>
 
         {/* f. Technology */}
         <ComicCard className="pitch-deck-section">
           <SectionHeading id="technology">f. Technology and Innovation Applied</SectionHeading>
           <Body>
-            Englishfully applies modern web and AI technologies across learner and teacher products.
-            Innovation is practical: each capability is tied to self-study or classroom outcomes.
+            Englishfully applies modern web and AI technologies across its learner and teacher
+            products. Innovation is integrated directly into learning and teaching workflows—not
+            simply added as a standalone AI feature. Each capability serves a practical purpose
+            tied to self-study, classroom engagement, assessment, or learning outcomes.
           </Body>
 
           <SubHeading>EnglishFeed</SubHeading>
-          <Body>
-            EnglishFeed combines video content delivery, artificial intelligence (AI), computer
-            vision, cloud infrastructure, and data analytics to automate lesson creation,
-            personalize learning, and measure learner engagement at scale.
-          </Body>
-          <ul className="list-disc pl-6 mb-4 space-y-2 text-[var(--comic-dark)] pitch-deck-body">
-            <li>
-              <strong>Artificial Intelligence (AI) and Machine Learning</strong> — OpenAI Whisper,
-              GPT-4o-mini, and DALL·E, plus browser speech recognition, power transcription,
-              tutoring dialogue, content generation, and speaking feedback.
-            </li>
-            <li>
-              <strong>Computer Vision and Augmented Reality (AR)</strong> — Google MediaPipe Face
-              Landmarker and the device camera enable face-aware interactive practice such as
-              camera-based flashcard challenges.
-            </li>
-            <li>
-              <strong>Cloud Infrastructure and Media Delivery</strong> — Cloudflare R2
-              (S3-compatible object storage) and the AWS SDK deliver lesson media at scale, with
-              Next.js hosted on Vercel.
-            </li>
-            <li>
-              <strong>Database, Authentication, and Analytics Platform</strong> — Supabase
-              (PostgreSQL, authentication, and Row Level Security) supports secure learner accounts,
-              progress data, and engagement analytics.
-            </li>
-            <li>
-              <strong>Modern Web Application Platform</strong> — Next.js (App Router), React,
-              TypeScript, and Tailwind CSS deliver a fast, mobile-first learning experience.
-            </li>
-            <li>
-              <strong>Automated Content Production Pipeline</strong> — Node.js CLI scripts with
-              OpenAI APIs and R2 storage automate lesson creation and media preparation for the
-              feed.
-            </li>
-          </ul>
+          <div className="pitch-deck-tech-englishfeed">
+            <Body>
+              EnglishFeed combines video content delivery, artificial intelligence (AI), computer
+              vision, cloud infrastructure, and data analytics to automate lesson creation,
+              personalize learning, and measure learner engagement at scale.
+            </Body>
+            <div className="pitch-deck-tech-stack pitch-deck-tech-stack--panel">
+              <article className="pitch-deck-tech-stack-card">
+                <h5 className="pitch-deck-tech-stack-title">
+                  Artificial Intelligence (AI) and Machine Learning
+                </h5>
+                <p className="pitch-deck-tech-stack-copy">
+                  OpenAI Whisper, GPT-4o-mini, and DALL·E, plus browser speech recognition, power
+                  transcription, tutoring dialogue, content generation, and speaking feedback.
+                </p>
+              </article>
+              <article className="pitch-deck-tech-stack-card">
+                <h5 className="pitch-deck-tech-stack-title">
+                  Computer Vision and Augmented Reality (AR)
+                </h5>
+                <p className="pitch-deck-tech-stack-copy">
+                  Google MediaPipe Face Landmarker and the device camera enable face-aware
+                  interactive practice such as camera-based flashcard challenges.
+                </p>
+              </article>
+              <article className="pitch-deck-tech-stack-card">
+                <h5 className="pitch-deck-tech-stack-title">
+                  Cloud Infrastructure and Media Delivery
+                </h5>
+                <p className="pitch-deck-tech-stack-copy">
+                  Cloudflare R2 (S3-compatible object storage) and the AWS SDK deliver lesson media
+                  at scale, with Next.js hosted on Vercel.
+                </p>
+              </article>
+              <article className="pitch-deck-tech-stack-card">
+                <h5 className="pitch-deck-tech-stack-title">
+                  Database, Authentication, and Analytics Platform
+                </h5>
+                <p className="pitch-deck-tech-stack-copy">
+                  Supabase (PostgreSQL, authentication, and Row Level Security) supports secure
+                  learner accounts, progress data, and engagement analytics.
+                </p>
+              </article>
+              <article className="pitch-deck-tech-stack-card">
+                <h5 className="pitch-deck-tech-stack-title">Modern Web Application Platform</h5>
+                <p className="pitch-deck-tech-stack-copy">
+                  Next.js (App Router), React, TypeScript, and Tailwind CSS deliver a fast,
+                  mobile-first learning experience.
+                </p>
+              </article>
+              <article className="pitch-deck-tech-stack-card">
+                <h5 className="pitch-deck-tech-stack-title">
+                  Automated Content Production Pipeline
+                </h5>
+                <p className="pitch-deck-tech-stack-copy">
+                  Node.js CLI scripts with OpenAI APIs and R2 storage automate lesson creation and
+                  media preparation for the feed.
+                </p>
+              </article>
+            </div>
+          </div>
 
-          <SubHeading>Teacher Resources</SubHeading>
+          <SubHeading>Homeroom Tools</SubHeading>
           <Body>
-            Teacher Resources uses AI, cloud media storage, and a modern web platform so teachers
+            Homeroom Tools uses AI, cloud media storage, and a modern web platform so teachers
             can create, assign, assess, and export interactive lessons—reducing manual workload
             while improving learner engagement and measurement.
           </Body>
-          <ul className="list-disc pl-6 mb-4 space-y-2 text-[var(--comic-dark)] pitch-deck-body">
-            <li>
-              <strong>Artificial Intelligence (AI) and Machine Learning</strong> — OpenAI Whisper
-              and GPT-4o-mini transcribe lesson audio, clip listening segments, generate
-              comprehension questions and vocabulary from source audio, support presentation
-              grammar highlighting and image-describe practice, and assist escape-room and
-              worksheet content creation.
-            </li>
-            <li>
-              <strong>Speech Capture and Media Storage</strong> — browser recording on student
-              phones, with Cloudflare R2 (S3-compatible) storing speaking submissions and listening
-              media for teacher review and replay.
-            </li>
-            <li>
-              <strong>Classroom Data and Access Control</strong> — PostgreSQL-backed class rosters,
-              assignments, grades, and results, with authenticated teacher tools and public QR
-              student links for phone-ready participation.
-            </li>
-            <li>
-              <strong>Modern Web Application Platform</strong> — Next.js, React, TypeScript, and
-              Tailwind CSS deliver present-mode slides, QR speaking/listening flows, and gradebook
-              workflows on phones and classroom devices—no complex student installs.
-            </li>
-            <li>
-              <strong>Document and Export Pipelines</strong> — PDF, PowerPoint, and Excel export
-              turn digital lessons, worksheets, and grade records into printable and shareable class
-              assets.
-            </li>
-          </ul>
+          <div className="pitch-deck-tech-stack pitch-deck-tech-stack--panel">
+            <article className="pitch-deck-tech-stack-card">
+              <h5 className="pitch-deck-tech-stack-title">
+                Artificial Intelligence (AI) and Machine Learning
+              </h5>
+              <p className="pitch-deck-tech-stack-copy">
+                OpenAI Whisper and GPT-4o-mini transcribe lesson audio, clip listening segments,
+                generate comprehension questions and vocabulary from source audio, support
+                presentation grammar highlighting and image-describe practice, and assist
+                escape-room and worksheet content creation.
+              </p>
+            </article>
+            <article className="pitch-deck-tech-stack-card">
+              <h5 className="pitch-deck-tech-stack-title">Speech Capture and Media Storage</h5>
+              <p className="pitch-deck-tech-stack-copy">
+                Browser recording on student phones, with Cloudflare R2 (S3-compatible) storing
+                speaking submissions and listening media for teacher review and replay.
+              </p>
+            </article>
+            <article className="pitch-deck-tech-stack-card">
+              <h5 className="pitch-deck-tech-stack-title">Classroom Data and Access Control</h5>
+              <p className="pitch-deck-tech-stack-copy">
+                PostgreSQL-backed class rosters, assignments, grades, and results, with
+                authenticated teacher tools and public QR student links for phone-ready
+                participation.
+              </p>
+            </article>
+            <article className="pitch-deck-tech-stack-card">
+              <h5 className="pitch-deck-tech-stack-title">Modern Web Application Platform</h5>
+              <p className="pitch-deck-tech-stack-copy">
+                Next.js, React, TypeScript, and Tailwind CSS deliver present-mode slides, QR
+                speaking/listening flows, and gradebook workflows on phones and classroom
+                devices—no complex student installs.
+              </p>
+            </article>
+            <article className="pitch-deck-tech-stack-card">
+              <h5 className="pitch-deck-tech-stack-title">Document and Export Pipelines</h5>
+              <p className="pitch-deck-tech-stack-copy">
+                PDF, PowerPoint, and Excel export turn digital lessons, worksheets, and grade
+                records into printable and shareable class assets.
+              </p>
+            </article>
+          </div>
+
+          <TechInnovationFlow />
         </ComicCard>
 
         {/* g. Industry */}
@@ -453,24 +983,64 @@ export default function PitchDeckPage() {
           <Body>
             Competitors include global language apps (for example, Duolingo and similar consumer
             platforms), general learning management systems used by schools, and local tutoring
-            businesses that rely on offline-only delivery. Englishfully differs by integrating:
+            businesses that rely on offline-only delivery. Englishfully products differ by:
           </Body>
-          <ul className="list-disc pl-6 mb-4 space-y-2 text-[var(--comic-dark)] pitch-deck-body">
-            <li>
-              EnglishFeed’s swipe-based six-skill practice (listening, speaking, reading, writing,
-              grammar, vocabulary) with AI tutoring, interactive video lessons, and progress
-              personalization—not only gamified vocabulary drills
-            </li>
-            <li>
-              Teacher classroom tools teachers can run immediately (QR speaking, audio clipping,
-              gradebook, presentations, escape-room missions)
-            </li>
-            <li>Learner practice and teacher systems in one ecosystem, with shared membership paths</li>
-            <li>
-              Thailand-focused product design, including Thai-language learner support and
-              online/onsite coaching options through EnglishFeed memberships
-            </li>
-          </ul>
+          <div className="pitch-deck-compete">
+            <article className="pitch-deck-compete-card">
+              <p className="pitch-deck-compete-typical">
+                <span>Typical language apps</span>
+                Gamified vocab drills and entertainment feeds—not a full skills path.
+              </p>
+              <div className="pitch-deck-compete-win">
+                <p className="pitch-deck-compete-stamp">EnglishFeed wins</p>
+                <p className="pitch-deck-compete-copy">
+                  EnglishFeed is designed around how students already consume digital media,
+                  transforming familiar formats into structured, engaging, and challenging learning
+                  with six-skill practice.
+                </p>
+              </div>
+            </article>
+            <article className="pitch-deck-compete-card">
+              <p className="pitch-deck-compete-typical">
+                <span>Apps vs tutoring</span>
+                Practice stays on-screen. Speaking with a real teacher is a separate product.
+              </p>
+              <div className="pitch-deck-compete-win">
+                <p className="pitch-deck-compete-stamp">Coaching wins</p>
+                <p className="pitch-deck-compete-copy">
+                  EnglishFeed members can extend learning beyond the screen through online and
+                  onsite coaching, building confidence with native English speakers—from digital
+                  learning to real-world communication.
+                </p>
+              </div>
+            </article>
+            <article className="pitch-deck-compete-card">
+              <p className="pitch-deck-compete-typical">
+                <span>Student apps + school LMS</span>
+                Teachers work across disconnected tools, making lesson prep and student practice less seamless.
+              </p>
+              <div className="pitch-deck-compete-win">
+                <p className="pitch-deck-compete-stamp">One ecosystem</p>
+                <p className="pitch-deck-compete-copy">
+                  Homeroom Tools brings teacher tools and student practice into one ecosystem,
+                  helping teachers quickly create structured, engaging activities and assessments
+                  while reducing preparation time.
+                </p>
+              </div>
+            </article>
+            <article className="pitch-deck-compete-card">
+              <p className="pitch-deck-compete-typical">
+                <span>Global one-size products</span>
+                Built for everywhere, so Thai learners get generic content and weak local support.
+              </p>
+              <div className="pitch-deck-compete-win">
+                <p className="pitch-deck-compete-stamp">Thailand-first</p>
+                <p className="pitch-deck-compete-copy">
+                  Thailand-focused product design, including Thai-language learner support.
+                </p>
+              </div>
+            </article>
+          </div>
           <Body>
             What matters to customers and profitability is daily learner engagement and clearer
             outcomes in the app, time saved for teachers in the classroom, and recurring membership
@@ -479,13 +1049,111 @@ export default function PitchDeckPage() {
 
           <SubHeading>Trends</SubHeading>
           <Body>
-            Relevant trends include rising demand for mobile, habit-forming language learning;
-            AI-assisted practice, tutoring, and assessment; personalized content feeds; digital
-            classroom tools that are easy to deploy (not only content libraries); and Thailand’s
-            continued push for digital skills and English capability as economic infrastructure.
-            Learners want daily practice that feels modern and measurable, while schools and
-            independent teachers need tools they can run immediately in real classrooms.
+            Current social-media trends show Thai students already learn on the same
+            phones they scroll for entertainment. A 2023 northern Thailand university smartphone
+            study found social networking (~93%), education (~90%), and entertainment (~90%) as the
+            top reasons for use—evidence that learning intent sits next to distraction on the same
+            device, so attention fragments. EnglishFeed is designed for that reality: it keeps the
+            habit-forming swipe-and-scroll delivery people already know, while replacing irrelevant
+            feed noise with structured, skill-focused English practice—so daily mobile use becomes
+            productive learning instead of a distraction loop.
           </Body>
+          <Body>
+            In the classroom, a major trend in Thailand is the rapid adoption of tablets and laptops in
+            government secondary schools. Under the Ministry of Education’s{' '}
+            <strong>Anywhere Anytime</strong> program, Cabinet-approved funding supports large-scale
+            device distribution so students and teachers can learn and teach digitally beyond the
+            chalkboard. Public reporting indicates roughly <strong>608,000 devices</strong> for upper
+            secondary students and teachers in the first major wave (2025), with plans to expand by
+            about <strong>1.2 million</strong> more learners in 2026 and a multi-year pathway toward
+            roughly <strong>2.6 million</strong> tablets/laptops across public schools.
+          </Body>
+          <div className="mb-4 flex flex-col items-stretch gap-4 lg:flex-row lg:items-end lg:gap-6">
+            <div className="w-full shrink-0 rounded-xl border-2 border-[var(--comic-black)] bg-white p-3 comic-shadow-sm lg:w-72">
+              <ComicText className="mb-1 text-center text-sm font-black text-[var(--comic-secondary)]">
+                Classroom device rollout
+              </ComicText>
+              <ComicText className="mb-3 text-center text-[10px] font-bold text-[var(--comic-dark)]">
+                Thailand public schools · Anywhere Anytime (approx. devices)
+              </ComicText>
+              <div className="flex h-44 items-end justify-between gap-2 px-1">
+                {(
+                  [
+                    {
+                      label: 'Before',
+                      sub: '~limited',
+                      height: '10%',
+                      color: 'var(--comic-secondary)',
+                    },
+                    {
+                      label: '2025',
+                      sub: '~0.6M',
+                      height: '28%',
+                      color: 'var(--comic-primary)',
+                    },
+                    {
+                      label: '2026',
+                      sub: '~1.8M',
+                      height: '68%',
+                      color: 'var(--comic-secondary)',
+                    },
+                    {
+                      label: '2031',
+                      sub: '~2.6M',
+                      height: '100%',
+                      color: 'var(--comic-primary)',
+                    },
+                  ] as const
+                ).map((bar) => (
+                  <div
+                    key={bar.label}
+                    className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1"
+                  >
+                    <span className="text-[9px] font-black text-[var(--comic-dark)]">{bar.sub}</span>
+                    <div
+                      className="w-full max-w-[3rem] rounded-lg border-2 border-[var(--comic-black)]"
+                      style={{
+                        height: bar.height,
+                        backgroundColor: bar.color,
+                        boxShadow: 'var(--comic-shadow-sm)',
+                      }}
+                      title={`${bar.label}: ${bar.sub}`}
+                    />
+                    <span className="w-full text-center text-[9px] font-black leading-tight text-[var(--comic-dark)] sm:text-[10px]">
+                      {bar.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <ComicText className="mt-2 text-center text-[9px] font-bold text-[var(--comic-dark)]">
+                Source: MoE / Cabinet reporting on Anywhere Anytime (2025–2031)
+              </ComicText>
+            </div>
+            <div className="min-w-0 flex-1 space-y-0">
+              <Body>
+                As government secondary classrooms move onto tablets, demand shifts from device
+                access alone to <strong>what students and teachers do on those devices</strong>.
+                Englishfully’s two offerings complement this trend directly:
+              </Body>
+              <ul className="list-disc pl-6 mb-4 space-y-2 text-[var(--comic-dark)] pitch-deck-body">
+                <li>
+                  <strong>EnglishFeed</strong> — swipe-based, skill-focused English practice designed
+                  for phone and tablet habits, so secondary learners can use school devices for daily
+                  immersive learning, not only content consumption
+                </li>
+                <li>
+                  <strong>Homeroom Tools</strong> — teacher-facing classroom workflow (presentations,
+                  QR speaking, listening tasks, gradebook, interactive missions) that turns tablet
+                  classrooms into structured English lessons with measurable outcomes
+                </li>
+              </ul>
+              <Body>
+                Together, learner practice and teacher systems turn Thailand’s classroom iPad/tablet
+                wave into a complete English-learning stack for public and private secondary
+                settings—aligned with Digital Industry education goals.
+              </Body>
+            </div>
+          </div>
         </ComicCard>
 
         {/* h. Marketing & Sales */}
@@ -496,28 +1164,60 @@ export default function PitchDeckPage() {
           <Body>
             <strong>Target customers:</strong> (1) English learners in Thailand seeking structured
             digital practice through EnglishFeed, with optional online/onsite coaching; (2) English
-            teachers, tutors, and schools needing classroom EdTech for lessons, assessments, and
-            grade management; (3) parents and adult professionals seeking measurable progress.
+            teachers, tutors, and schools (government, international, private)
+            needing classroom EdTech for lessons, assessments, and grade
+            management; (3) parents and adult professionals seeking measurable
+            progress.
           </Body>
+          <MarketAudienceStamps />
           <Body>
             <strong>Promotion and distribution:</strong> digital channels (website, social media,
             content marketing) that showcase EnglishFeed’s swipe-based practice and AI features;
-            teacher community outreach and school partnerships; and product-led demos of Teacher
-            Resources tools. Distribution is primarily online via englishfully.com, with onsite
+            teacher community outreach and school partnerships; and product-led demos of teacher
+            resources tools. Distribution is primarily online via englishfully.com, with onsite
             support services delivered in Thailand for EnglishFeed membership customers who choose
             offline practice.
           </Body>
+          <MarketChannelStamps />
+          <div className="pitch-deck-market-presence clearfix">
+            <figure className="pitch-deck-market-location">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788108390/location_ep5nnq.png"
+                alt="Illustrative EnglishFeed location concept"
+              />
+              <figcaption>Illustrative EnglishFeed Location Concept</figcaption>
+            </figure>
+            <div className="pitch-deck-market-presence-copy">
+              <Body>
+                Englishfully plans to establish selected physical
+                EnglishFeed locations in high-traffic commercial areas. These locations would provide
+                onsite practice and coaching for members while also serving as product demonstration
+                and customer-acquisition centers.
+              </Body>
+              <StampFlow
+                steps={[
+                  'EnglishFeed coaching / practice center',
+                  'High-traffic location',
+                  'Product demonstration',
+                  'Customer acquisition',
+                  'Membership conversion',
+                ]}
+              />
+            </div>
+          </div>
 
           <SubHeading>Sales Strategy</SubHeading>
           <Body>
             Customers convert through freemium or trial access where appropriate, clear EnglishFeed
-            and Teacher Resources membership plans on the website, direct consultation via contact
+            and Homeroom Tools membership plans on the website, direct consultation via contact
             and messaging channels, and teacher-led adoption when classroom tools prove immediate
             value (for example, QR speaking homework or listening assessments). Sales emphasize
             outcomes: daily learner engagement and clearer skill progress in EnglishFeed, plus
             faster prep and simpler grading for teachers—then expand into higher EnglishFeed tiers
-            (with coaching support) and Teacher Resources memberships.
+            (with coaching support) and Homeroom Tools memberships.
           </Body>
+          <MarketingSalesVisual />
         </ComicCard>
 
         {/* i. Financial Plan */}
@@ -536,7 +1236,7 @@ export default function PitchDeckPage() {
           <Body>
             Income is generated through: (1) EnglishFeed memberships (app access, with higher tiers
             including online and onsite coaching support as part of the same membership); and (2)
-            Teacher Resources memberships for EdTech classroom tools.
+            Homeroom Tools memberships for EdTech classroom tools.
           </Body>
           <Body>
             Capital and operating expenditure priorities include technology development and
@@ -546,7 +1246,7 @@ export default function PitchDeckPage() {
 
           <SubHeading>Financial Projection</SubHeading>
           <Body>
-            We forecast revenue growth from EnglishFeed memberships and from Teacher Resources EdTech
+            We forecast revenue growth from EnglishFeed memberships and from Homeroom Tools EdTech
             tools as learner and teacher adoption expand. Projected expenses will concentrate on
             operating overhead, technology upgrades, and staffing. Detailed multi-year numeric
             schedules will be maintained internally and updated as membership metrics mature.
@@ -555,7 +1255,7 @@ export default function PitchDeckPage() {
           <SubHeading>Exit Strategy</SubHeading>
           <Body>
             Englishfully intends to build a cohesive, independently operable ecosystem—EnglishFeed
-            plus Teacher Resources EdTech tools—that can run with clear processes and recurring
+            plus Homeroom Tools EdTech tools—that can run with clear processes and recurring
             revenue. This design makes the business an attractive candidate for strategic investment
             or acquisition by an appropriate investor seeking a Thailand-ready digital education
             platform.
@@ -574,14 +1274,14 @@ export default function PitchDeckPage() {
               tiers, live online coaching and onsite practice included with EnglishFeed Pro access).
             </li>
             <li>
-              <strong>Teacher Resources memberships</strong> — teachers and institutions pay for
+              <strong>Homeroom Tools memberships</strong> — teachers and institutions pay for
               EdTech classroom tools (assessment, presentation, gradebook, games, and related
               workflows).
             </li>
           </ul>
           <Body>
             Revenue is received from learners, parents (for younger students), independent teachers,
-            and schools. Average revenue depends on EnglishFeed plan tier and Teacher Resources
+            and schools. Average revenue depends on EnglishFeed plan tier and Homeroom Tools
             adoption; the model prioritizes predictable recurring income over one-off content sales.
           </Body>
         </ComicCard>
@@ -600,8 +1300,8 @@ export default function PitchDeckPage() {
             and engagement loops; growing App, Lite, and Pro memberships (including online/onsite
             coaching); completing high-demand teacher tools (such as Lesson Plan Generator);
             improving AI-assisted creation and assessment flows; strengthening Gradebook as the
-            classroom hub; and packaging Teacher Resources as a clear membership offering.
-            Go-to-market growth will use EnglishFeed product marketing, Teacher Resources demos,
+            classroom hub; and packaging Homeroom Tools as a clear membership offering.
+            Go-to-market growth will use EnglishFeed product marketing, Homeroom Tools demos,
             school partnerships, and digital campaigns targeted at English learners, teachers, and
             adult professionals in Thailand.
           </Body>
@@ -613,7 +1313,7 @@ export default function PitchDeckPage() {
           <ul className="list-disc pl-6 mb-4 space-y-2 text-[var(--comic-dark)] pitch-deck-body">
             <li>
               <strong>Year 1:</strong> Strengthen EnglishFeed’s core practice experience and grow
-              App, Lite, and Pro memberships; stabilize the Teacher Resources suite; refine
+              App, Lite, and Pro memberships; stabilize the Homeroom Tools suite; refine
               AI-assisted learning, lesson creation, listening, and speaking workflows; establish
               marketing channels and customer support processes in Thailand.
             </li>
@@ -637,13 +1337,22 @@ export default function PitchDeckPage() {
           <SectionHeading id="thailand-benefit">m. Thailand&apos;s Benefit</SectionHeading>
 
           <SubHeading>Thailand Destination</SubHeading>
-          <Body>
-            Thailand is Englishfully’s home market and destination by design. The founder is based in
-            Thailand and builds EnglishFeed and Teacher Resources for Thai learner needs, classroom
-            conditions, and digital infrastructure. Thailand offers a large demand for English
-            improvement, a growing digital economy, and a policy environment that supports innovative
-            Digital Industry startups through mechanisms such as the BOI Smart Visa.
-          </Body>
+          <div className="pitch-deck-thailand clearfix">
+            <div className="pitch-deck-thailand-image">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788105535/thailand_dyknr2.png"
+                alt="Thailand"
+              />
+            </div>
+            <Body>
+              Thailand is Englishfully’s home market and destination by design. The founder is based in
+              Thailand and builds EnglishFeed and Homeroom Tools for Thai learner needs, classroom
+              conditions, and digital infrastructure. Thailand offers a large demand for English
+              improvement, a growing digital economy, and a policy environment that supports innovative
+              Digital Industry startups through mechanisms such as the BOI Smart Visa.
+            </Body>
+          </div>
 
           <SubHeading>Benefit to Thailand</SubHeading>
           <Body>
@@ -655,6 +1364,7 @@ export default function PitchDeckPage() {
             Improved English capability for students and professionals supports Thailand’s
             competitiveness in tourism, services, trade, and international collaboration.
           </Body>
+          <ThailandBenefitVisual />
         </ComicCard>
 
         <div className="flex flex-wrap gap-3 print:hidden pb-8">
