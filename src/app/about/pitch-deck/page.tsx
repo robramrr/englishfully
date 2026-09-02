@@ -1184,16 +1184,17 @@ export default function PitchDeckPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788108390/location_ep5nnq.png"
-                alt="Illustrative EnglishFeed location concept"
+                alt="Illustrative location concept"
               />
-              <figcaption>Illustrative EnglishFeed Location Concept</figcaption>
+              <figcaption>Illustrative Location Concept</figcaption>
             </figure>
             <div className="pitch-deck-market-presence-copy">
               <Body>
-                Englishfully plans to establish selected physical
-                EnglishFeed locations in high-traffic commercial areas. These locations would provide
-                onsite practice and coaching for members while also serving as product demonstration
-                and customer-acquisition centers.
+                Englishfully plans to establish an initial physical location in a high-traffic
+                commercial area. The location would provide onsite practice and coaching for members
+                while also serving as a product demonstration and customer-acquisition center. As the
+                business grows, additional locations may be considered based on demand and
+                performance.
               </Body>
               <StampFlow
                 steps={[

@@ -84,7 +84,7 @@ export default function MarketingSalesVisual() {
         <p className="pitch-deck-market-label">How they convert</p>
         <ol className="pitch-deck-market-steps">
           {STEPS.map((step) => (
-            <li key={step.n} className="pitch-deck-market-step">
+            <li key={step.n} className="pitch-deck-market-step comic-bg-header-stripes">
               <div className="pitch-deck-market-step-head">
                 <span className="pitch-deck-market-step-n" aria-hidden="true">
                   {step.n}

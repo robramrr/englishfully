@@ -753,9 +753,10 @@ body::before {
   padding: 0.55rem 0.6rem 0.6rem;
   border: 2.5px solid var(--brand-navy);
   border-radius: 0.85rem;
-  background: var(--comic-white);
   box-shadow: 3px 3px 0 var(--brand-navy);
   text-align: center;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
 .pitch-deck-page .pitch-deck-market-step-head {
@@ -980,7 +981,8 @@ body::before {
 }
 
 .pitch-deck-page .pitch-deck-case-setup {
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1.55fr 1fr;
+  align-items: stretch;
 }
 
 .pitch-deck-page .pitch-deck-case-practice {
@@ -1070,6 +1072,57 @@ body::before {
   font-weight: 700 !important;
 }
 
+.pitch-deck-page .pitch-deck-case-challenge-points {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0.35rem 0.4rem;
+  width: 100%;
+  margin: 0.2rem 0 0;
+  padding: 0.15rem 0 0.55rem;
+  list-style: none;
+}
+
+.pitch-deck-page .pitch-deck-case-challenge-point,
+.pitch-deck-page li.pitch-deck-case-challenge-point {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.22rem;
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  text-align: center;
+}
+
+.pitch-deck-page .pitch-deck-case-challenge-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  overflow: hidden;
+  border: 2px solid var(--brand-navy);
+  border-radius: 999px;
+  background: var(--comic-white);
+  color: var(--brand-navy);
+  box-shadow: 2px 2px 0 var(--brand-navy);
+  font-size: 0.82rem;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.pitch-deck-page .pitch-deck-case-challenge-copy,
+.pitch-deck-page p.pitch-deck-case-challenge-copy {
+  margin: 0;
+  max-width: 6.5rem;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
+  color: var(--brand-navy);
+}
+
 .pitch-deck-page .pitch-deck-case .pitch-deck-market-flow {
   justify-content: flex-start;
   padding: 0.25rem 0.25rem 0.65rem 0;
@@ -1094,9 +1147,10 @@ body::before {
   padding: 0.55rem 0.4rem 0.5rem;
   border: 2.5px solid var(--brand-navy);
   border-radius: 0.85rem;
-  background: var(--comic-white);
   box-shadow: 3px 3px 0 var(--brand-navy);
   text-align: center;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
 .pitch-deck-page .pitch-deck-case-metric-value,
@@ -1148,6 +1202,134 @@ body::before {
   .pitch-deck-page .pitch-deck-case-workflow,
   .pitch-deck-page .pitch-deck-case-metrics {
     grid-template-columns: 1fr;
+  }
+}
+
+.pitch-deck-page .pitch-deck-case-stamp--combo-follow {
+  margin-top: 1.2rem;
+  padding-top: 0.45rem;
+}
+
+.pitch-deck-page .pitch-deck-case-card--environment {
+  min-height: 0;
+}
+
+.pitch-deck-page .pitch-deck-case-class-photo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 11 / 8;
+  margin: 0.15rem 0 0;
+  overflow: hidden;
+  border: 2.5px solid var(--brand-navy);
+  border-radius: 0.7rem;
+  background: #111;
+}
+
+.pitch-deck-page .pitch-deck-case-class-photo > img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.pitch-deck-page .pitch-deck-case-handout {
+  position: absolute;
+  right: 3%;
+  bottom: 11.5%;
+  z-index: 1;
+  width: 52%;
+  height: 78%;
+  overflow: hidden;
+  pointer-events: none;
+  container-type: size;
+  transform: rotate(3.5deg) translateZ(0);
+  backface-visibility: hidden;
+  border: 2px solid var(--brand-navy);
+  border-radius: 0.12rem;
+  background: #fff;
+  box-shadow: 3px 4px 0 rgba(0, 26, 72, 0.82);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.pitch-deck-page .pitch-deck-case-handout-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  padding: 5.5cqi 5.5cqi 6cqi;
+  color: var(--brand-navy);
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+}
+
+.pitch-deck-page .pitch-deck-case-handout p,
+.pitch-deck-page .pitch-deck-case-handout span,
+.pitch-deck-page .pitch-deck-case-handout strong,
+.pitch-deck-page .pitch-deck-case-handout li {
+  font-size: 6.8cqi !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0 !important;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-case-handout-head,
+.pitch-deck-page p.pitch-deck-case-handout-head {
+  display: block;
+  width: 100%;
+  margin: 0 0 3cqi !important;
+  padding-bottom: 2.8cqi;
+  border-bottom: 2px solid var(--brand-navy);
+  text-align: center;
+  color: var(--brand-red) !important;
+  font-family: var(--font-bungee), var(--font-fredoka), system-ui, sans-serif;
+  font-size: 7.4cqi !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.03em !important;
+  line-height: 1.15 !important;
+  text-transform: uppercase;
+}
+
+.pitch-deck-page .pitch-deck-case-handout-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.8cqi;
+  margin: 0 0 4cqi;
+}
+
+.pitch-deck-page .pitch-deck-case-handout-qr-img {
+  display: block;
+  width: 30cqi;
+  height: 30cqi;
+}
+
+.pitch-deck-page .pitch-deck-case-handout-questions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pitch-deck-page .pitch-deck-case-handout-questions li {
+  margin: 0;
+}
+
+.pitch-deck-page .pitch-deck-case-handout-questions li span {
+  display: block;
+  padding-left: 0.1rem;
+}
+
+.pitch-deck-page .pitch-deck-case-handout strong {
+  font-weight: 700 !important;
+}
+
+@media print {
+  .pitch-deck-page .pitch-deck-case-handout,
+  .pitch-deck-page .pitch-deck-case-class-photo {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
 
