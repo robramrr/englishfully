@@ -49,9 +49,18 @@ function SectionHeading({
   );
 }
 
-function SubHeading({ children }: { children: ReactNode }) {
+function SubHeading({
+  children,
+  className = '',
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <ComicTitle level={4} className="comic-title-no-shadow mb-3 mt-8 text-[var(--comic-secondary)]">
+    <ComicTitle
+      level={4}
+      className={`comic-title-no-shadow mb-3 mt-8 text-[var(--comic-secondary)] ${className}`.trim()}
+    >
       {children}
     </ComicTitle>
   );
@@ -71,7 +80,7 @@ function Body({ children }: { children: ReactNode }) {
 export default function PitchDeckPage() {
   return (
     <div className="pitch-deck-page flex flex-col min-h-screen bg-[var(--comic-light)]">
-      <section className="pitch-deck-hero comic-bg-secondary py-16 px-4 text-center print:py-8">
+      <section className="pitch-deck-hero comic-bg-secondary py-16 px-4 text-center">
         <div className="max-w-4xl mx-auto space-y-4">
           <ComicText className="comic-text-white font-bold text-sm uppercase tracking-wide">
             Englishfully Co., Ltd. · Digital Industry · BOI Smart Visa
@@ -85,6 +94,11 @@ export default function PitchDeckPage() {
                 ← About Us
               </ComicButton>
             </Link>
+            <Link href="/about/company-profile">
+              <ComicButton variant="secondary" size="sm">
+                Company Profile
+              </ComicButton>
+            </Link>
             <ComicButton
               variant="accent"
               size="sm"
@@ -94,6 +108,9 @@ export default function PitchDeckPage() {
               Print / Save PDF
             </ComicButton>
           </div>
+          <p className="print:hidden text-white/90 text-sm font-bold">
+            In the print dialog, turn on Background graphics and use A4 at 100% scale.
+          </p>
         </div>
       </section>
 
@@ -239,7 +256,7 @@ export default function PitchDeckPage() {
         </ComicCard>
 
         {/* d. Management Team */}
-        <ComicCard className="pitch-deck-section">
+        <ComicCard className="pitch-deck-section pitch-deck-print-break">
           <SectionHeading id="management-team">d. Management Team</SectionHeading>
           <div className="pitch-deck-founder grid items-start gap-8 md:grid-cols-[auto_1fr]">
             <div className="mx-auto flex flex-col items-center gap-4 md:mx-0">
@@ -287,7 +304,7 @@ export default function PitchDeckPage() {
         </ComicCard>
 
         {/* e. Products */}
-        <ComicCard className="pitch-deck-section">
+        <ComicCard className="pitch-deck-section pitch-deck-section--products">
           <SectionHeading id="products">e. Products</SectionHeading>
           <Body>
             Englishfully’s products fall into two complementary lines. Features create clear learner
@@ -316,7 +333,7 @@ export default function PitchDeckPage() {
               <strong>Benefit:</strong> learners practice in the app and can add mentor-led online or
               onsite support through the same membership path.
             </Body>
-            <div className="mb-4 flex justify-center">
+            <div className="mb-4 flex justify-center pitch-deck-englishfeed-hero">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="https://res.cloudinary.com/ktg8khoq/image/upload/v1787847387/prototype-englishfeed_o62i1e.jpg"
@@ -440,7 +457,7 @@ export default function PitchDeckPage() {
                 </table>
             </div>
             <div className="mt-4 rounded-2xl border-2 border-[var(--comic-black)] comic-bg-purple comic-pattern-zigzag p-4 sm:p-5">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:items-start">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:items-start pitch-deck-product-tools">
                 <div className="space-y-4">
                   <div className="text-sm font-bold leading-snug text-white pitch-deck-body space-y-2">
                     <div className="pitch-deck-callout-row">
@@ -538,7 +555,7 @@ export default function PitchDeckPage() {
                   </div>
                 </div>
               </div>
-              <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              <div className="mt-4 grid gap-4 sm:grid-cols-3 pitch-deck-product-tools">
                 <figure className="m-0">
                   <div className="pitch-deck-image-overlay relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -591,6 +608,7 @@ export default function PitchDeckPage() {
             </div>
           </div>
 
+          <div className="pitch-deck-homeroom-intro">
           <SubHeading>
             2.{' '}
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -622,7 +640,7 @@ export default function PitchDeckPage() {
               English levels from A1 through C2, so every activity fits the class in front of you.
             </Body>
             <Body>Key features include:</Body>
-            <div className="pitch-deck-feature-table-wrap mb-4 overflow-x-auto clear-both">
+            <div className="pitch-deck-feature-table-wrap pitch-deck-feature-table-wrap--split mb-4 overflow-x-auto clear-both">
               <table className="pitch-deck-feature-table w-full border-collapse text-left text-[var(--comic-dark)]">
                 <thead>
                   <tr className="bg-[#d0d0d0]">
@@ -687,9 +705,8 @@ export default function PitchDeckPage() {
                       Escape Room Generator
                     </td>
                     <td className="border border-[var(--comic-black)] px-3 py-2 align-top">
-                      Create topic-based classroom escape missions with mixed challenges
-                      (vocabulary, listening, matching, code locks, and more) that students play
-                      through to a final escape.
+                      Create topic-based classroom escape missions with mixed interactive
+                      challenges.
                     </td>
                   </tr>
                   <tr>
@@ -704,8 +721,10 @@ export default function PitchDeckPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+          </div>
             <div className="pitch-deck-homeroom-demos mt-4 clear-both p-4 sm:p-5">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:items-start">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:items-start pitch-deck-product-tools pitch-deck-homeroom-tools">
                 <div className="space-y-4 sm:row-span-2">
                   <div className="text-sm font-bold leading-snug text-white pitch-deck-body space-y-2">
                     <div className="pitch-deck-callout-row">
@@ -835,10 +854,9 @@ export default function PitchDeckPage() {
                 </figure>
               </div>
             </div>
-            <SubHeading>Real-World Classroom Validation</SubHeading>
+            <SubHeading className="pitch-deck-print-break">Real-World Classroom Validation</SubHeading>
             <p className="pitch-deck-case-subhead">Founder-Led Product Demo</p>
             <HomeroomCaseStudy />
-          </div>
         </ComicCard>
 
         {/* f. Technology */}
@@ -914,7 +932,7 @@ export default function PitchDeckPage() {
             </div>
           </div>
 
-          <SubHeading>Homeroom Tools</SubHeading>
+          <SubHeading className="pitch-deck-print-break">Homeroom Tools</SubHeading>
           <Body>
             Homeroom Tools uses AI, cloud media storage, and a modern web platform so teachers
             can create, assign, assess, and export interactive lessons—reducing manual workload
@@ -968,7 +986,7 @@ export default function PitchDeckPage() {
         </ComicCard>
 
         {/* g. Industry */}
-        <ComicCard className="pitch-deck-section">
+        <ComicCard className="pitch-deck-section pitch-deck-print-break">
           <SectionHeading id="industry">g. Industry Description / Competition / Trends</SectionHeading>
 
           <SubHeading>Industry Description</SubHeading>
@@ -1047,7 +1065,7 @@ export default function PitchDeckPage() {
             revenue across learner and teacher segments.
           </Body>
 
-          <SubHeading>Trends</SubHeading>
+          <SubHeading className="pitch-deck-print-break">Trends</SubHeading>
           <Body>
             Current social-media trends show Thai students already learn on the same
             phones they scroll for entertainment. A 2023 northern Thailand university smartphone
@@ -1068,7 +1086,7 @@ export default function PitchDeckPage() {
             about <strong>1.2 million</strong> more learners in 2026 and a multi-year pathway toward
             roughly <strong>2.6 million</strong> tablets/laptops across public schools.
           </Body>
-          <div className="mb-4 flex flex-col items-stretch gap-4 lg:flex-row lg:items-end lg:gap-6">
+          <div className="pitch-deck-device-rollout mb-4 flex flex-col items-stretch gap-4 lg:flex-row lg:items-end lg:gap-6">
             <div className="w-full shrink-0 rounded-xl border-2 border-[var(--comic-black)] bg-white p-3 comic-shadow-sm lg:w-72">
               <ComicText className="mb-1 text-center text-sm font-black text-[var(--comic-secondary)]">
                 Classroom device rollout
@@ -1157,7 +1175,7 @@ export default function PitchDeckPage() {
         </ComicCard>
 
         {/* h. Marketing & Sales */}
-        <ComicCard className="pitch-deck-section">
+        <ComicCard className="pitch-deck-section pitch-deck-print-break">
           <SectionHeading id="marketing-sales">h. Marketing &amp; Sales Strategy</SectionHeading>
 
           <SubHeading>Marketing Strategy</SubHeading>
@@ -1208,7 +1226,7 @@ export default function PitchDeckPage() {
             </div>
           </div>
 
-          <SubHeading>Sales Strategy</SubHeading>
+          <SubHeading className="pitch-deck-print-break">Sales Strategy</SubHeading>
           <Body>
             Customers convert through freemium or trial access where appropriate, clear EnglishFeed
             and Homeroom Tools membership plans on the website, direct consultation via contact
@@ -1222,7 +1240,7 @@ export default function PitchDeckPage() {
         </ComicCard>
 
         {/* i. Financial Plan */}
-        <ComicCard className="pitch-deck-section">
+        <ComicCard className="pitch-deck-section pitch-deck-print-break">
           <SectionHeading id="financial-plan">i. Financial Plan</SectionHeading>
 
           <SubHeading>Funds Required</SubHeading>
@@ -1264,7 +1282,7 @@ export default function PitchDeckPage() {
         </ComicCard>
 
         {/* j. Revenue Model */}
-        <ComicCard className="pitch-deck-section">
+        <ComicCard className="pitch-deck-section pitch-deck-print-break">
           <SectionHeading id="revenue-model">j. Revenue Model</SectionHeading>
           <Body>
             Englishfully generates revenue primarily through recurring memberships and subscriptions:
@@ -1288,6 +1306,7 @@ export default function PitchDeckPage() {
         </ComicCard>
 
         {/* k. Growth Strategy */}
+        <div className="pitch-deck-print-flow">
         <ComicCard className="pitch-deck-section">
           <SectionHeading id="growth-strategy">k. Growth Strategy</SectionHeading>
           <Body>
@@ -1332,6 +1351,7 @@ export default function PitchDeckPage() {
             clearer learning outcomes.
           </Body>
         </ComicCard>
+        </div>
 
         {/* m. Thailand */}
         <ComicCard className="pitch-deck-section">
@@ -1372,6 +1392,11 @@ export default function PitchDeckPage() {
           <Link href="/about">
             <ComicButton variant="secondary" size="sm">
               ← Back to About
+            </ComicButton>
+          </Link>
+          <Link href="/about/company-profile">
+            <ComicButton variant="secondary" size="sm">
+              Company Profile
             </ComicButton>
           </Link>
           <Link href="/contact">

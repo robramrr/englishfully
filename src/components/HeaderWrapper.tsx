@@ -23,7 +23,9 @@ function Logo() {
 
 export default function HeaderWrapper() {
   const pathname = usePathname();
-  const isPitchDeck = pathname.startsWith('/about/pitch-deck');
+  const isFormalDoc =
+    pathname.startsWith('/about/pitch-deck') ||
+    pathname.startsWith('/about/company-profile');
   const hideHeader =
     pathname.startsWith('/speak/') ||
     pathname.startsWith('/listen-learn/') ||
@@ -41,11 +43,11 @@ export default function HeaderWrapper() {
     <header
       className={[
         'w-full flex items-center justify-between py-6 px-8 comic-bg-header-stripes comic-border-b-4 border-b-6 border-[var(--comic-black)] comic-shadow-xl',
-        isPitchDeck ? 'pitch-deck-site-header' : '',
+        isFormalDoc ? 'pitch-deck-site-header' : '',
       ].join(' ')}
     >
       <Logo />
-      <div className={isPitchDeck ? 'print:hidden' : undefined}>
+      <div className={isFormalDoc ? 'print:hidden' : undefined}>
         <ResponsiveNav />
       </div>
     </header>

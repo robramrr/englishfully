@@ -53,6 +53,10 @@ export const ONLINE_SUBSCRIPTION_ONE_ON_ONE_URL =
 export const HOME_ONLINE_ONE_ON_ONE_COACHING_URL =
   "https://res.cloudinary.com/dkbf7tvcx/image/upload/v1777851566/englishfully/service/english-learning-1-on-1.png";
 
+/** Company profile coaching pair — filled to the onsite 1-on-1 photo size (1000×752). */
+export const COMPANY_PROFILE_ONLINE_COACHING_URL =
+  "https://res.cloudinary.com/dkbf7tvcx/image/upload/c_fill,g_auto,w_1000,h_752/v1777851566/englishfully/service/english-learning-1-on-1.png";
+
 /** Homepage AI video-lesson card: phone showing an in-app vertical video lesson. */
 export const HOME_VIDEO_LESSON_PROMO_URL =
   "https://res.cloudinary.com/dkbf7tvcx/image/upload/c_crop,x_0.15,y_0.15,w_0.7,h_0.7/v1777960128/englishfully/service/english-video-lesson-2.png";

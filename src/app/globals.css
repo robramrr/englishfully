@@ -529,7 +529,7 @@ body::before {
   color: var(--brand-navy);
 }
 
-@media (max-width: 699px) {
+@media screen and (max-width: 699px) {
   .pitch-deck-page .pitch-deck-thailand-points {
     grid-template-columns: 1fr;
   }
@@ -626,7 +626,7 @@ body::before {
   color: var(--comic-dark);
 }
 
-@media (max-width: 699px) {
+@media screen and (max-width: 699px) {
   .pitch-deck-page .pitch-deck-compete {
     grid-template-columns: 1fr;
   }
@@ -821,13 +821,13 @@ body::before {
   transform: rotate(1.4deg);
 }
 
-@media (max-width: 699px) {
+@media screen and (max-width: 699px) {
   .pitch-deck-page .pitch-deck-market-steps {
     grid-template-columns: 1fr 1fr;
   }
 }
 
-@media (max-width: 520px) {
+@media screen and (max-width: 520px) {
   .pitch-deck-page .pitch-deck-market-steps {
     grid-template-columns: 1fr;
   }
@@ -942,7 +942,7 @@ body::before {
   overflow: visible;
 }
 
-@media (max-width: 640px) {
+@media screen and (max-width: 640px) {
   .pitch-deck-page .pitch-deck-market-location {
     float: none;
     width: 100%;
@@ -990,9 +990,69 @@ body::before {
   flex-wrap: wrap;
   gap: 0.45rem 0.5rem;
   margin: 0.1rem 0 0.15rem;
-  padding: 0.2rem 0.15rem 0.45rem 0;
+  padding: 0.2rem 0.15rem 0.2rem 0;
   list-style: none;
   overflow: visible;
+}
+
+.pitch-deck-page .pitch-deck-case-quote,
+.pitch-deck-page blockquote.pitch-deck-case-quote {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0.15rem 0 0;
+  padding: 0.45rem 0.15rem 0.35rem 0;
+  border: 0;
+  background: transparent;
+}
+
+.pitch-deck-page .pitch-deck-case-quote::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+
+.pitch-deck-page .pitch-deck-market-flow-stamp.pitch-deck-case-quote-stamp {
+  float: left;
+  margin: 0.05rem 0.5rem 0.28rem 0.05rem;
+  font-style: normal;
+  font-weight: 400 !important;
+  transform: none;
+}
+
+.pitch-deck-page .pitch-deck-case-quote-text {
+  position: relative;
+  padding-left: 0.85rem;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+  font-style: italic;
+  line-height: 1.4 !important;
+  color: var(--brand-navy);
+}
+
+.pitch-deck-page .pitch-deck-case-quote-text::before,
+.pitch-deck-page .pitch-deck-case-quote-text::after {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.85rem;
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1;
+  color: var(--brand-red);
+}
+
+.pitch-deck-page .pitch-deck-case-quote-text::before {
+  content: "“";
+  position: absolute;
+  top: -0.2rem;
+  left: 0;
+}
+
+.pitch-deck-page .pitch-deck-case-quote-text::after {
+  content: "”";
+  display: inline-block;
+  margin-left: 0.08em;
+  vertical-align: -0.55rem;
 }
 
 .pitch-deck-page .pitch-deck-case-workflow {
@@ -1189,7 +1249,7 @@ body::before {
   background: var(--brand-red);
 }
 
-@media (max-width: 699px) {
+@media screen and (max-width: 699px) {
   .pitch-deck-page .pitch-deck-case-setup,
   .pitch-deck-page .pitch-deck-case-workflow,
   .pitch-deck-page .pitch-deck-case-metrics {
@@ -1197,7 +1257,7 @@ body::before {
   }
 }
 
-@media (max-width: 520px) {
+@media screen and (max-width: 520px) {
   .pitch-deck-page .pitch-deck-case-setup,
   .pitch-deck-page .pitch-deck-case-workflow,
   .pitch-deck-page .pitch-deck-case-metrics {
@@ -1797,7 +1857,7 @@ body::before {
   color: var(--brand-navy);
 }
 
-@media (max-width: 699px) {
+@media screen and (max-width: 699px) {
   .pitch-deck-page .pitch-deck-tech-stack {
     grid-template-columns: 1fr;
   }
@@ -2353,7 +2413,7 @@ body::before {
   }
 }
 
-@media (max-width: 639px) {
+@media screen and (max-width: 639px) {
   .pitch-deck-page .pitch-deck-tech-devices,
   .pitch-deck-page .pitch-deck-tech-flow-app-stage .pitch-deck-tech-devices {
     flex-direction: column;
@@ -2556,7 +2616,7 @@ body::before {
   transform: rotate(2deg);
 }
 
-@media (min-width: 640px) {
+@media screen and (min-width: 640px), print {
   .pitch-deck-page .pitch-deck-image-badge {
     font-size: 1.15rem;
     padding: 0.55rem 1rem 0.5rem;
@@ -2572,7 +2632,7 @@ body::before {
   }
 }
 
-@media (max-width: 640px) {
+@media screen and (max-width: 640px) {
   .pitch-deck-page .pitch-deck-founder-teaching {
     float: none;
     display: block;
@@ -2621,163 +2681,494 @@ body::before {
   }
 }
 
-@media print {
-  .pitch-deck-page .print\:hidden {
-    display: none !important;
-  }
+/* Company Profile — formal document / catalogue (BOI Smart Visa) */
+.company-profile-page {
+  color: var(--brand-navy);
+  font-family: Georgia, "Times New Roman", Times, serif;
+  background: #fff;
+}
 
-  /* Keep footer logo centered; hide footer action cards */
-  .pitch-deck-page footer .grid {
-    display: none !important;
-  }
+.company-profile-page .comic-card,
+.company-profile-page .comic-button {
+  box-shadow: none !important;
+}
 
-  .pitch-deck-page footer {
-    display: block !important;
-    padding-top: 1rem !important;
-    padding-bottom: 1rem !important;
-  }
+.company-profile-page .comic-card:hover,
+.company-profile-page .comic-button:hover,
+.company-profile-page .comic-button:active {
+  box-shadow: none !important;
+  transform: none !important;
+}
 
-  .pitch-deck-page footer .text-center {
-    text-align: center !important;
-  }
+.company-profile-page .comic-title {
+  text-shadow: none;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  letter-spacing: 0.01em;
+}
 
-  .pitch-deck-page footer img {
-    display: block !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    max-width: 160px !important;
-  }
+.company-profile-page .comic-text,
+.company-profile-page .comic-text-bold,
+.company-profile-page .company-profile-toc li,
+.company-profile-page .company-profile-toc a,
+.company-profile-page dt,
+.company-profile-page dd,
+.company-profile-page th,
+.company-profile-page td,
+.company-profile-page caption {
+  font-size: 11pt !important;
+  line-height: 1.5 !important;
+  letter-spacing: normal !important;
+}
 
-  .pitch-deck-page .pitch-deck-image-badge {
-    font-size: 10pt;
-    padding: 0.3rem 0.65rem;
-    box-shadow: 3px 3px 0 var(--comic-black);
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+.company-profile-page .company-profile-body,
+.company-profile-page .company-profile-body.comic-text,
+.company-profile-page .company-profile-list li {
+  font-weight: 400 !important;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 11pt !important;
+  line-height: 1.5 !important;
+  letter-spacing: normal !important;
+}
 
-  .pitch-deck-page .pitch-deck-image-badge--sm {
-    font-size: 8pt;
-    padding: 0.25rem 0.5rem;
-  }
+.company-profile-page .company-profile-section strong {
+  font-weight: 700 !important;
+}
 
-  .pitch-deck-page .pitch-deck-logo-stamp {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+.company-profile-page h1.comic-title {
+  font-size: 22pt !important;
+  line-height: 1.25 !important;
+}
 
-  .pitch-deck-page .pitch-deck-feature-stamp,
-  .pitch-deck-page p.pitch-deck-also-included-label {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+.company-profile-page h2.comic-title {
+  font-size: 14pt !important;
+  line-height: 1.3 !important;
+  padding-top: 0;
+  padding-bottom: 0.85rem;
+  margin-top: 0;
+  margin-bottom: 1.75rem;
+  border-bottom: 1.5px solid var(--brand-red);
+}
 
-  .pitch-deck-page .pitch-deck-tech-devices {
-    flex-direction: row;
-    align-items: flex-end;
-  }
+.company-profile-page h3.comic-title {
+  font-size: 13pt !important;
+  line-height: 1.3 !important;
+}
 
-  .pitch-deck-page .pitch-deck-iphone-figure {
-    position: relative;
-    max-width: 13.25rem;
-    flex-basis: 13.25rem;
-  }
+.company-profile-page h4.comic-title {
+  font-size: 12pt !important;
+  line-height: 1.35 !important;
+  margin-top: 2rem;
+}
 
-  .pitch-deck-page .pitch-deck-tablet-figure {
-    margin-left: -1rem;
-    max-width: 13.35rem;
-    flex-basis: 13.35rem;
-  }
+.company-profile-page .comic-card {
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent;
+}
 
-  .pitch-deck-tablet {
-    overflow: visible;
-    width: 13.35rem;
-    max-width: 13.35rem;
-  }
+.company-profile-page .company-profile-toc.comic-card {
+  padding: 1.25rem !important;
+  border: 1px solid color-mix(in srgb, var(--brand-navy) 28%, #fff) !important;
+  background: color-mix(in srgb, var(--brand-navy) 4%, #fff);
+}
 
-  .pitch-deck-tablet-screen {
-    aspect-ratio: 1 / 1.6;
-  }
+.company-profile-page .company-profile-section.comic-card {
+  padding: 0 0 1.75rem !important;
+  border-top: none !important;
+}
 
-  .pitch-deck-page .pitch-deck-tech-flow-shell {
-    width: 100%;
-    margin: 0.7rem 0 0.9rem;
-  }
+.company-profile-page .company-profile-section.comic-card::before {
+  content: "";
+  display: block;
+  height: 0;
+  margin: 2.25rem 0 1.35rem;
+  border-top: 1px solid color-mix(in srgb, var(--brand-navy) 22%, #fff);
+}
 
-  .pitch-deck-page .pitch-deck-tech-flow {
-    display: flex;
+.company-profile-page .company-profile-letterhead.comic-card::before {
+  display: none;
+}
+
+.company-profile-page .company-profile-toolbar {
+  background: var(--brand-navy);
+}
+
+.company-profile-masthead {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin: 0.25rem 0 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--brand-navy);
+  box-shadow: 0 3px 0 0 var(--brand-red);
+}
+
+.company-profile-masthead-logo {
+  display: block;
+  height: 3.25rem;
+  width: auto;
+  object-fit: contain;
+}
+
+.company-profile-legal-name {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 16pt !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  color: var(--brand-navy);
+}
+
+.company-profile-doc-title {
+  margin: 0.15rem 0 0;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 13pt !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase;
+  color: var(--brand-red);
+}
+
+.company-profile-doc-meta {
+  margin: 0.35rem 0 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 10pt !important;
+  font-weight: 400 !important;
+  color: var(--brand-medium-gray);
+}
+
+.company-profile-meta-table {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: 1.25rem 0 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--brand-navy) 22%, #fff);
+}
+
+.company-profile-meta-table > div {
+  display: grid;
+  grid-template-columns: 11.5rem 1fr;
+  gap: 0.75rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--brand-navy) 14%, #fff);
+}
+
+.company-profile-meta-table dt {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 10pt !important;
+  font-weight: 600 !important;
+  color: var(--brand-navy);
+}
+
+.company-profile-meta-table dd {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 11pt !important;
+  font-weight: 400 !important;
+}
+
+.company-profile-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 13.5rem) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.company-profile-overview-photo {
+  margin: 0;
+}
+
+.company-profile-coaching::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.company-profile-coaching-photos {
+  float: right;
+  width: 18.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin: 0 0 0.65rem 1.15rem;
+}
+
+.company-profile-coaching-photos img {
+  aspect-ratio: 1000 / 752;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  object-position: center;
+}
+
+.company-profile-achievements::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.company-profile-achievements-photo {
+  float: right;
+  width: 13.5rem;
+  margin: 0 0 0.75rem 1.25rem;
+}
+
+.company-profile-overview-photo img,
+.company-profile-hero-figure img,
+.company-profile-catalogue img,
+.company-profile-founder-photos img:first-of-type,
+.company-profile-founder-teaching img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border: 1px solid color-mix(in srgb, var(--brand-navy) 28%, #fff);
+  background: #fff;
+}
+
+.company-profile-overview-photo figcaption,
+.company-profile-hero-figure figcaption,
+.company-profile-catalogue figcaption,
+.company-profile-founder-teaching figcaption {
+  margin: 0.4rem 0 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 9.5pt !important;
+  font-weight: 400 !important;
+  line-height: 1.35 !important;
+  color: var(--brand-medium-gray);
+}
+
+.company-profile-values {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.company-profile-values article {
+  margin: 0;
+  padding: 0.7rem 0.75rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--brand-navy) 20%, #fff);
+  border-top: 3px solid var(--brand-navy);
+  background: color-mix(in srgb, var(--brand-navy) 3%, #fff);
+}
+
+.company-profile-values h5 {
+  margin: 0 0 0.4rem;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 11pt !important;
+  font-weight: 700 !important;
+  color: var(--brand-navy);
+}
+
+.company-profile-values p {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 10pt !important;
+  line-height: 1.45 !important;
+}
+
+.company-profile-inline-logo {
+  display: inline-block;
+  height: 1.85rem;
+  width: auto;
+  margin: 0 0.15rem;
+  vertical-align: middle;
+  object-fit: contain;
+}
+
+.company-profile-inline-logo--homeroom {
+  height: 2.15rem;
+}
+
+.company-profile-tech-flow {
+  margin: 1.25rem 0 0.75rem;
+  overflow: visible;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+}
+
+.company-profile-hero-figure {
+  margin: 0.25rem 0 1.15rem;
+}
+
+.company-profile-table-wrap {
+  margin: 0.75rem 0 1.15rem;
+  overflow-x: auto;
+}
+
+.company-profile-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  color: var(--brand-navy);
+}
+
+.company-profile-table caption {
+  caption-side: top;
+  text-align: left;
+  margin-bottom: 0.4rem;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 11pt !important;
+  font-weight: 700 !important;
+  color: var(--brand-navy);
+}
+
+.company-profile-table th,
+.company-profile-table td {
+  border: 1px solid color-mix(in srgb, var(--brand-navy) 28%, #fff);
+  padding: 0.45rem 0.65rem;
+  vertical-align: top;
+  font-family: Georgia, "Times New Roman", Times, serif;
+}
+
+.company-profile-table thead th {
+  background: color-mix(in srgb, var(--brand-navy) 8%, #fff);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 10pt !important;
+  font-weight: 700 !important;
+}
+
+.company-profile-table td:first-child {
+  width: 32%;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.company-profile-catalogue {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem 1rem;
+  margin: 0.35rem 0 1.15rem;
+}
+
+.company-profile-catalogue figure {
+  margin: 0;
+}
+
+.company-profile-catalogue img {
+  object-fit: contain;
+  background: #fff;
+}
+
+.company-profile-list {
+  margin: 0.35rem 0 0.75rem;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+
+.company-profile-list li {
+  margin: 0 0 0.45rem;
+  font-family: Georgia, "Times New Roman", Times, serif;
+}
+
+.company-profile-founder {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.company-profile-founder-photos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.company-profile-founder-photos img:first-of-type {
+  width: 11rem;
+  height: 11rem;
+  object-fit: cover;
+  object-position: top;
+}
+
+.company-profile-founder-seal {
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: contain;
+}
+
+.company-profile-founder-teaching {
+  float: right;
+  width: 11rem;
+  margin: 0 0 0.65rem 1rem;
+}
+
+.company-profile-founder-teaching img {
+  object-fit: cover;
+}
+
+.company-profile-endorsement {
+  margin: 1.5rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--brand-navy) 22%, #fff);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 9.5pt !important;
+  color: var(--brand-medium-gray);
+  text-align: center;
+}
+
+@media screen and (max-width: 699px) {
+  .company-profile-masthead {
     flex-direction: column;
-    gap: 0.85rem;
+    align-items: flex-start;
   }
 
-  .pitch-deck-page .pitch-deck-tech-flow-row {
-    display: grid;
+  .company-profile-meta-table > div {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+  }
+
+  .company-profile-overview,
+  .company-profile-founder,
+  .company-profile-values,
+  .company-profile-catalogue {
+    grid-template-columns: 1fr;
+  }
+
+  .company-profile-achievements-photo,
+  .company-profile-founder-teaching,
+  .company-profile-coaching-photos {
+    float: none;
+    width: 100%;
+    margin: 0 0 0.85rem;
+  }
+
+  .company-profile-coaching-photos {
     grid-template-columns: 1fr 1fr;
-    gap: 0.7rem;
   }
 
-  .pitch-deck-page .pitch-deck-tech-flow-main {
-    display: grid;
-    grid-template-columns: 3fr 1fr;
-    grid-template-rows: auto auto;
-    column-gap: 0;
-    row-gap: 0.7rem;
+  .company-profile-table td:first-child {
+    white-space: normal;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
   }
 
-  .pitch-deck-page .pitch-deck-tech-flow-col--app {
-    grid-row: 1 / span 2;
+  .pitch-deck-site-header,
+  .pitch-deck-site-header *,
+  .pitch-deck-page,
+  .pitch-deck-page *,
+  .company-profile-page,
+  .company-profile-page * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
-  .pitch-deck-page .pitch-deck-tech-flow-app-stage .pitch-deck-tech-devices {
-    transform: scale(0.72);
-    transform-origin: top left;
-    margin-bottom: calc(-0.28 * 24rem);
-    zoom: 1;
+  .pitch-deck-page .print\:hidden,
+  .company-profile-page .print\:hidden,
+  .pitch-deck-site-header .print\:hidden {
+    display: none !important;
   }
 
-  .pitch-deck-page .pitch-deck-tech-flow-shot-image {
-    height: 7.5rem;
-  }
-
-  .pitch-deck-page .pitch-deck-tech-flow-closer-title,
-  .pitch-deck-page h3.pitch-deck-tech-flow-closer-title {
-    font-size: 13pt !important;
-  }
-
-  .pitch-deck-page .pitch-deck-tech-flow-closer-sub,
-  .pitch-deck-page p.pitch-deck-tech-flow-closer-sub {
-    font-size: 10pt !important;
-  }
-
-  .pitch-deck-page .pitch-deck-tech-flow-tube-fill,
-  .pitch-deck-page .pitch-deck-tech-flow-chart,
-  .pitch-deck-page .pitch-deck-tech-flow-shot-card,
-  .pitch-deck-page .pitch-deck-tech-stack-card {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  .pitch-deck-iphone,
-  .pitch-deck-iphone-bezel,
-  .pitch-deck-iphone-hero,
-  .pitch-deck-iphone-demo,
-  .pitch-deck-iphone-action,
-  .pitch-deck-iphone-burger,
-  .pitch-deck-tablet,
-  .pitch-deck-tablet-bezel,
-  .pitch-deck-tablet-body,
-  .pitch-deck-tablet-item,
-  .pitch-deck-tablet-item-icon {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  /* Site header: hide nav (was printing as a square); center logo */
   .pitch-deck-site-header {
     justify-content: center !important;
-    box-shadow: none !important;
-    padding-top: 0.75rem !important;
-    padding-bottom: 0.75rem !important;
   }
 
   .pitch-deck-site-header a {
@@ -2785,124 +3176,228 @@ body::before {
     margin-right: auto !important;
   }
 
-  .pitch-deck-site-header img {
-    max-width: 180px !important;
-    height: auto !important;
+  /* Keep footer logo; hide footer action cards */
+  .pitch-deck-page footer .grid,
+  .company-profile-page footer .grid {
+    display: none !important;
   }
 
-  .pitch-deck-page {
-    background: white !important;
+  .pitch-deck-page footer,
+  .company-profile-page footer {
+    display: block !important;
   }
 
-  /* Balanced print rhythm — denser than screen, not cramped */
-  .pitch-deck-page .pitch-deck-hero {
-    padding-top: 0.75rem !important;
-    padding-bottom: 0.75rem !important;
+  .pitch-deck-page footer .text-center,
+  .company-profile-page footer .text-center {
+    text-align: center !important;
   }
 
-  .pitch-deck-page .pitch-deck-hero .space-y-4 > * + * {
-    margin-top: 0.4rem !important;
+  .pitch-deck-page footer img,
+  .company-profile-page footer img {
+    display: block !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
 
-  .pitch-deck-page .pitch-deck-content {
-    padding-top: 0.75rem !important;
-    padding-bottom: 0.75rem !important;
-  }
-
-  .pitch-deck-page .pitch-deck-content.space-y-10 > * + * {
-    margin-top: 0.85rem !important;
-  }
-
-  .pitch-deck-page .comic-card {
-    border-color: transparent !important;
-    break-inside: avoid;
-    page-break-inside: avoid;
-    padding: 0.65rem 0 !important;
-  }
-
-  .pitch-deck-page .pitch-deck-section.comic-card {
-    border-bottom: 1px solid #d0d0d0 !important;
-    padding-top: 0.85rem !important;
-    padding-bottom: 0.85rem !important;
-    margin: 0 !important;
+  /* Allow long sections to split; keep small visual units together */
+  .pitch-deck-page .pitch-deck-section {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
   }
 
   .pitch-deck-page .pitch-deck-section .scroll-mt-28 {
     scroll-margin-top: 0 !important;
   }
 
-  .pitch-deck-page .pitch-deck-section h2.comic-title {
-    margin-bottom: 0.5rem !important;
+  .pitch-deck-page .pitch-deck-print-break,
+  .pitch-deck-page .pitch-deck-section--products,
+  .pitch-deck-page .pitch-deck-homeroom-intro {
+    break-before: page;
+    page-break-before: always;
   }
 
-  .pitch-deck-page .pitch-deck-section h4.comic-title {
-    margin-top: 0.7rem !important;
-    margin-bottom: 0.35rem !important;
+  .pitch-deck-page .pitch-deck-homeroom-intro .pitch-deck-feature-table-wrap--split {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    break-before: avoid;
+    page-break-before: avoid;
   }
 
-  .pitch-deck-page .pitch-deck-body {
-    margin-bottom: 0.5rem !important;
+  .pitch-deck-page .pitch-deck-print-flow,
+  .pitch-deck-page .pitch-deck-print-flow > .pitch-deck-section {
+    break-before: auto;
+    page-break-before: auto;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
   }
 
-  .pitch-deck-page .pitch-deck-section ul {
-    margin-bottom: 0.5rem !important;
+  .pitch-deck-page .pitch-deck-englishfeed-hero,
+  .pitch-deck-page .pitch-deck-englishfeed-hero img,
+  .pitch-deck-page .pitch-deck-case-card,
+  .pitch-deck-page .pitch-deck-case-metric,
+  .pitch-deck-page .pitch-deck-market-step,
+  .pitch-deck-page .pitch-deck-compete-card,
+  .pitch-deck-page .pitch-deck-tech-stack-card,
+  .pitch-deck-page .pitch-deck-feature-table-wrap:not(.pitch-deck-feature-table-wrap--split),
+  .pitch-deck-page .pitch-deck-logo-stamp,
+  .pitch-deck-page figure {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
-  .pitch-deck-page .pitch-deck-section li {
-    margin-top: 0.2rem !important;
-    margin-bottom: 0.2rem !important;
+  /* Keep desktop product / case / marketing layouts (print viewport can be narrow) */
+  .pitch-deck-page .pitch-deck-product-tools {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 
-  .pitch-deck-page .pitch-deck-toc.comic-card {
-    background: #e1e1e1 !important;
-    border-radius: 0.75rem !important;
-    border: 4px solid var(--brand-navy) !important;
-    padding: 0.75rem !important;
+  .pitch-deck-page .pitch-deck-homeroom-tools > :first-child {
+    grid-row: span 2;
   }
 
-  .pitch-deck-page .comic-text,
-  .pitch-deck-page .comic-text-bold,
-  .pitch-deck-page li,
-  .pitch-deck-page p {
-    font-size: 11pt !important;
+  .pitch-deck-page .pitch-deck-founder {
+    grid-template-columns: auto 1fr !important;
   }
 
-  .pitch-deck-page p.pitch-deck-callout-heading {
-    font-size: 11pt !important;
-    font-weight: 400 !important;
-    line-height: 1.1 !important;
-    padding: 0.3rem 0.65rem 0.25rem;
-    box-shadow: 3px 3px 0 var(--comic-black);
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+  .pitch-deck-page .pitch-deck-founder > div:first-child {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
   }
 
-  .pitch-deck-page .pitch-deck-body,
-  .pitch-deck-page .pitch-deck-section li {
-    font-weight: 400 !important;
+  .pitch-deck-page .pitch-deck-founder > div:first-child > img:first-of-type {
+    height: 12rem !important;
+    width: 12rem !important;
   }
 
-  .pitch-deck-page h1.comic-title {
-    font-size: 18pt !important;
-    margin-bottom: 0 !important;
-    font-family: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.01em !important;
+  .pitch-deck-page .pitch-deck-device-rollout {
+    flex-direction: row !important;
+    align-items: flex-end !important;
   }
 
-  .pitch-deck-page h2.comic-title {
-    font-size: 13pt !important;
-    font-family: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.01em !important;
+  .pitch-deck-page .pitch-deck-device-rollout > div:first-child {
+    width: 18rem !important;
   }
 
-  .pitch-deck-page h3.comic-title,
-  .pitch-deck-page h4.comic-title {
-    font-size: 12pt !important;
-    font-family: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.01em !important;
+  .pitch-deck-page .pitch-deck-thailand-points {
+    grid-template-columns: 1fr 1fr 1fr !important;
+  }
+
+  .pitch-deck-page .pitch-deck-compete {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .pitch-deck-page .pitch-deck-market-steps {
+    grid-template-columns: 1fr 1fr 1fr 1fr !important;
+  }
+
+  .pitch-deck-page .pitch-deck-case-setup {
+    grid-template-columns: 1.55fr 1fr !important;
+  }
+
+  .pitch-deck-page .pitch-deck-case-workflow {
+    grid-template-columns: 1fr 1.2fr 1fr !important;
+  }
+
+  .pitch-deck-page .pitch-deck-case-metrics {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-stack {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-stack--panel {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-flow-row {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .pitch-deck-page .pitch-deck-tech-devices,
+  .pitch-deck-page .pitch-deck-tech-flow-app-stage .pitch-deck-tech-devices {
+    flex-direction: row !important;
+    align-items: flex-end !important;
+  }
+
+  /* Company profile — page breaks and desktop layout in print */
+  .company-profile-page .company-profile-letterhead {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .company-profile-page .company-profile-section--products,
+  .company-profile-page .company-profile-print-break,
+  .company-profile-page .company-profile-section--achievements {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .company-profile-page .company-profile-section {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  .company-profile-page .company-profile-masthead,
+  .company-profile-page .company-profile-table-wrap,
+  .company-profile-page .company-profile-values,
+  .company-profile-page figure {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .company-profile-page .pitch-deck-page .pitch-deck-print-break {
+    break-before: auto !important;
+    page-break-before: auto !important;
+  }
+
+  .company-profile-page .company-profile-overview {
+    grid-template-columns: minmax(0, 13.5rem) minmax(0, 1fr) !important;
+  }
+
+  .company-profile-page .company-profile-values {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .company-profile-page .company-profile-catalogue {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .company-profile-page .company-profile-coaching-photos {
+    float: right !important;
+    width: 18.5rem !important;
+    margin: 0 0 0.65rem 1.15rem !important;
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .company-profile-page .company-profile-founder {
+    grid-template-columns: auto 1fr !important;
+  }
+
+  .company-profile-page .company-profile-founder-teaching {
+    float: right !important;
+    width: 11rem !important;
+    margin: 0 0 0.65rem 1rem !important;
+  }
+
+  .company-profile-page .company-profile-achievements-photo {
+    float: right !important;
+    width: 13.5rem !important;
+    margin: 0 0 0.75rem 1.25rem !important;
+  }
+
+  .company-profile-page .company-profile-meta-table > div {
+    grid-template-columns: 11.5rem 1fr !important;
+  }
+
+  .company-profile-page .company-profile-masthead {
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+
+  .company-profile-page .company-profile-table td:first-child {
+    white-space: nowrap !important;
   }
 }
 

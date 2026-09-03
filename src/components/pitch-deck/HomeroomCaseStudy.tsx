@@ -14,7 +14,6 @@ const AFTER_FLOW = [
 
 const PRACTICE_STAMPS = [
   'Presentation',
-  'QR Speaking',
   'Listening',
   'Gradebook',
 ] as const;
@@ -95,7 +94,7 @@ export default async function HomeroomCaseStudy() {
           </ul>
           <p className="pitch-deck-case-stamp pitch-deck-case-stamp--combo-follow">Solution</p>
           <p className="pitch-deck-case-copy">
-            Homeroom Tools — a unified workflow. Tool used in practice:
+            <strong>Homeroom Tools</strong> — a unified workflow:
           </p>
           <ul className="pitch-deck-case-practice">
             {PRACTICE_STAMPS.map((label) => (
@@ -104,6 +103,15 @@ export default async function HomeroomCaseStudy() {
               </li>
             ))}
           </ul>
+          <blockquote className="pitch-deck-case-quote">
+            <span className="pitch-deck-market-flow-stamp pitch-deck-case-quote-stamp">
+              QR Speaking
+            </span>
+            <span className="pitch-deck-case-quote-text">
+              With 40–45 students, giving everyone speaking time is hard. Speak
+              &amp; Submit lets every student speak for teacher review.
+            </span>
+          </blockquote>
         </article>
       </div>
 

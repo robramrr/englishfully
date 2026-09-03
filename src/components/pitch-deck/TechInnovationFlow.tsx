@@ -109,9 +109,13 @@ function RoleShot({
   );
 }
 
-export default function TechInnovationFlow() {
+export default function TechInnovationFlow({
+  showAiStack = true,
+}: {
+  showAiStack?: boolean;
+} = {}) {
   return (
-    <div className="pitch-deck-tech-flow-shell">
+    <div className="pitch-deck-tech-flow-shell pitch-deck-print-break">
       <div className="pitch-deck-tech-flow-closer">
         <h3 className="pitch-deck-tech-flow-closer-title">
           AI-Powered. Human-Centered. Real Impact.
@@ -122,18 +126,20 @@ export default function TechInnovationFlow() {
       </div>
 
       <div className="pitch-deck-tech-flow">
-        <section className="pitch-deck-tech-flow-col pitch-deck-tech-flow-col--ai">
-          <FlowHead title="Artificial Intelligence (AI)" />
-          <ul className="pitch-deck-tech-flow-ai">
-            {AI_STACK.map((item) => (
-              <li key={item.name}>
-                {item.mark === 'openai' ? <OpenAiMark /> : null}
-                {item.mark === 'google' ? <GoogleMark /> : null}
-                <span>{item.name}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
+        {showAiStack ? (
+          <section className="pitch-deck-tech-flow-col pitch-deck-tech-flow-col--ai">
+            <FlowHead title="Artificial Intelligence (AI)" />
+            <ul className="pitch-deck-tech-flow-ai">
+              {AI_STACK.map((item) => (
+                <li key={item.name}>
+                  {item.mark === 'openai' ? <OpenAiMark /> : null}
+                  {item.mark === 'google' ? <GoogleMark /> : null}
+                  <span>{item.name}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <div className="pitch-deck-tech-flow-main">
           <section className="pitch-deck-tech-flow-col pitch-deck-tech-flow-col--app">
