@@ -44,6 +44,7 @@ export default function HeaderWrapper() {
       className={[
         'w-full flex items-center justify-between py-6 px-8 comic-bg-header-stripes comic-border-b-4 border-b-6 border-[var(--comic-black)] comic-shadow-xl',
         isFormalDoc ? 'pitch-deck-site-header' : '',
+        pathname.startsWith('/about/company-profile') ? 'print:hidden' : '',
       ].join(' ')}
     >
       <Logo />

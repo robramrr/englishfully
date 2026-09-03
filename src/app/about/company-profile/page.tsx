@@ -9,7 +9,6 @@ import ComicTitle from '../../../components/ComicTitle';
 import Footer from '../../../components/Footer';
 import TechInnovationFlow from '../../../components/pitch-deck/TechInnovationFlow';
 import {
-  CONTACT_OFFICE_IMAGE_URL,
   COMPANY_PROFILE_ONLINE_COACHING_URL,
   LOGO_URL,
   ONSITE_ONE_ON_ONE_PRACTICE_URL,
@@ -23,7 +22,9 @@ const TOC = [
   { id: 'products', label: 'e. Products & Services' },
   { id: 'achievements', label: 'f. Key Achievements' },
   { id: 'leadership', label: 'g. Leadership' },
-  { id: 'thailand-contact', label: 'h. Thailand Presence & Contact' },
+  { id: 'thailand-contact', label: 'h. Contact' },
+  { id: 'brochure', label: 'i. Product Brochure' },
+  { id: 'website', label: 'j. Website' },
 ] as const;
 
 function SectionHeading({
@@ -218,8 +219,7 @@ export default function CompanyProfilePage() {
               </Body>
               <Body>
                 Products are designed for Thai-language learner backgrounds and for classroom
-                conditions typical of Thai secondary schools, including large class sizes in which
-                it is difficult to give every student speaking time.
+                conditions typical of Thai secondary schools.
               </Body>
             </div>
           </div>
@@ -343,10 +343,6 @@ export default function CompanyProfilePage() {
             practice to student phones or tablets via QR code; and track results in one Gradebook.
           </Body>
 
-          <div className="company-profile-tech-flow pitch-deck-page">
-            <TechInnovationFlow showAiStack={false} />
-          </div>
-
           <SubHeading>3. Coaching services</SubHeading>
           <div className="company-profile-coaching">
             <div className="company-profile-coaching-photos">
@@ -373,6 +369,12 @@ export default function CompanyProfilePage() {
               Thailand on Pro. Learners practice in the application and may add mentor-led
               speaking support through the same membership path.
             </Body>
+          </div>
+        </ComicCard>
+
+        <ComicCard className="company-profile-section company-profile-section--tech-flow">
+          <div className="company-profile-tech-flow pitch-deck-page">
+            <TechInnovationFlow showAiStack={false} />
           </div>
         </ComicCard>
 
@@ -437,20 +439,6 @@ export default function CompanyProfilePage() {
               </tbody>
             </table>
           </div>
-          <ul className="company-profile-list">
-            <li>
-              Company established in 2026 with live digital products: EnglishFeed (learner
-              application) and Homeroom Tools (teacher suite).
-            </li>
-            <li>
-              Products designed for Thai-language learner backgrounds and real classroom
-              constraints, including large class sizes.
-            </li>
-            <li>
-              Classroom validation as described above; figures are from the founder-led product
-              demonstration and are not presented as commercial customer counts.
-            </li>
-          </ul>
         </ComicCard>
 
         {/* g. Leadership */}
@@ -497,21 +485,19 @@ export default function CompanyProfilePage() {
           </div>
         </ComicCard>
 
-        {/* h. Thailand & contact */}
+        {/* h. Contact */}
         <ComicCard className="company-profile-section">
-          <SectionHeading id="thailand-contact">h. Thailand Presence &amp; Contact</SectionHeading>
+          <SectionHeading id="thailand-contact">h. Contact</SectionHeading>
           <div className="company-profile-overview">
             <figure className="company-profile-overview-photo">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={CONTACT_OFFICE_IMAGE_URL} alt="Englishfully office location in Bangkok" />
+              <img
+                src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1783520856/englishfully/company/englishfully-office.jpg"
+                alt="Englishfully office location in Bangkok"
+              />
               <figcaption>Registered office, Pathum Wan, Bangkok</figcaption>
             </figure>
             <div>
-              <Body>
-                Thailand is Englishfully’s home market. The founder is based in Thailand. Products
-                are built for Thai learner needs, classroom conditions, and digital infrastructure,
-                and the company operates in the Digital Industry.
-              </Body>
               <dl className="company-profile-meta-table company-profile-meta-table--contact">
                 <div>
                   <dt>Legal name</dt>
@@ -537,6 +523,217 @@ export default function CompanyProfilePage() {
           </p>
         </ComicCard>
 
+        {/* i. Product brochure */}
+        <ComicCard className="company-profile-section company-profile-section--brochure">
+          <SectionHeading id="brochure">i. Product Brochure</SectionHeading>
+          <div className="company-profile-brochure">
+            <article className="company-profile-brochure-sheet company-profile-brochure-sheet--englishfully">
+              <header className="company-profile-brochure-top">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={LOGO_URL} alt="Englishfully" className="company-profile-brochure-logo" />
+                <p className="company-profile-brochure-folio">01 / 03</p>
+              </header>
+              <div className="company-profile-brochure-body">
+                <p className="company-profile-brochure-kicker">Digital Industry · Bangkok</p>
+                <h3 className="company-profile-brochure-headline">
+                  Complete English learning.
+                  <span>One ecosystem.</span>
+                </h3>
+                <p className="company-profile-brochure-deck">
+                  Englishfully Co., Ltd. develops live digital products for Thai-language learners and
+                  for teachers who need classroom technology that fits real lessons—structured
+                  practice, assessment, and grade management in one system.
+                </p>
+                <figure className="company-profile-brochure-hero">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788104162/students-using-englishfully_atx3yu.jpg"
+                    alt="Students using Englishfully learning products"
+                  />
+                </figure>
+                <ul className="company-profile-brochure-lanes">
+                  <li>
+                    <span>Learner application</span>
+                    <strong>EnglishFeed</strong>
+                    <p>Swipe-based English practice with AI support and live coaching at higher tiers.</p>
+                  </li>
+                  <li>
+                    <span>Teacher suite</span>
+                    <strong>Homeroom Tools</strong>
+                    <p>Create, assign, assess, and manage English classes from one classroom system.</p>
+                  </li>
+                </ul>
+                <footer className="company-profile-brochure-foot">
+                  <span>Established 2026</span>
+                  <span>englishfully.com</span>
+                </footer>
+              </div>
+            </article>
+
+            <article className="company-profile-brochure-sheet company-profile-brochure-sheet--englishfeed">
+              <header className="company-profile-brochure-top">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://res.cloudinary.com/dkbf7tvcx/image/upload/v1783143201/englishfeed/logo/englishfeed-logo.png"
+                  alt="EnglishFeed"
+                  className="company-profile-brochure-logo"
+                />
+                <p className="company-profile-brochure-folio">02 / 03</p>
+              </header>
+              <div className="company-profile-brochure-body">
+                <p className="company-profile-brochure-kicker">Learner application</p>
+                <h3 className="company-profile-brochure-headline">
+                  English in a structured
+                  <span>swipe feed.</span>
+                </h3>
+                <div className="company-profile-brochure-lead">
+                  <figure className="company-profile-brochure-hero company-profile-brochure-hero--app">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://res.cloudinary.com/ktg8khoq/image/upload/v1787847387/prototype-englishfeed_o62i1e.jpg"
+                      alt="EnglishFeed application"
+                    />
+                  </figure>
+                  <p className="company-profile-brochure-deck">
+                    Learners move through video lessons at their level, then practice in context: tap
+                    vocabulary, speak target sentences, complete quizzes, and role-play with an AI
+                    tutor. Memberships: App, Lite, and Pro.
+                  </p>
+                </div>
+                <ul className="company-profile-brochure-features">
+                  <li>Six-skill immersion</li>
+                  <li>Interactive subtitles</li>
+                  <li>Pronunciation scoring</li>
+                  <li>AI tutor &amp; quizzes</li>
+                  <li>Thai-language support</li>
+                  <li>Online &amp; onsite coaching</li>
+                </ul>
+                <div className="company-profile-brochure-thumbs">
+                  <figure>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788002412/pronunciation-01_m9ctrx.png"
+                      alt="EnglishFeed pronunciation practice"
+                    />
+                    <figcaption>Pronunciation</figcaption>
+                  </figure>
+                  <figure>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788003630/vocab-02_jbppku.png"
+                      alt="EnglishFeed vocabulary practice"
+                    />
+                    <figcaption>Vocabulary</figcaption>
+                  </figure>
+                  <figure>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788002412/quiz-01_ehz92q.png"
+                      alt="EnglishFeed quiz"
+                    />
+                    <figcaption>AI Quiz</figcaption>
+                  </figure>
+                </div>
+                <footer className="company-profile-brochure-foot">
+                  <span>App · Lite · Pro</span>
+                  <span>englishfeed.com</span>
+                </footer>
+              </div>
+            </article>
+
+            <article className="company-profile-brochure-sheet company-profile-brochure-sheet--homeroom">
+              <header className="company-profile-brochure-top">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="https://res.cloudinary.com/ktg8khoq/image/upload/f_png/v1788022325/homeroomtools4_oacwhe.psd"
+                  alt="Homeroom Tools"
+                  className="company-profile-brochure-logo"
+                />
+                <p className="company-profile-brochure-folio">03 / 03</p>
+              </header>
+              <div className="company-profile-brochure-body">
+                <p className="company-profile-brochure-kicker">Teacher suite</p>
+                <h3 className="company-profile-brochure-headline">
+                  Teacher tools that
+                  <span>fit real classrooms.</span>
+                </h3>
+                <p className="company-profile-brochure-deck">
+                  Homeroom Tools is Englishfully’s classroom system for teachers and schools. Create
+                  listening, speaking, and slide activities with AI assistance; assign practice via QR
+                  code; and track results in one Gradebook.
+                </p>
+                <div className="company-profile-brochure-thumbs company-profile-brochure-thumbs--four">
+                  <figure>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://res.cloudinary.com/ktg8khoq/image/upload/v1787851330/grades-demo-1_kuddy9.png"
+                      alt="Homeroom Tools Gradebook"
+                    />
+                    <figcaption>Gradebook</figcaption>
+                  </figure>
+                  <figure>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788018163/speak-04_bfm2gd.png"
+                      alt="Homeroom Tools Speak and Submit"
+                    />
+                    <figcaption>Speak &amp; Submit</figcaption>
+                  </figure>
+                  <figure>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788092380/listen-answer-2_rphg4a.png"
+                      alt="Homeroom Tools Listen and Answer"
+                    />
+                    <figcaption>Listen &amp; Answer</figcaption>
+                  </figure>
+                  <figure>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://res.cloudinary.com/ktg8khoq/image/upload/v1787850604/presentation-demo_jcwzqr.png"
+                      alt="Homeroom Tools Presentation Generator"
+                    />
+                    <figcaption>Presentation</figcaption>
+                  </figure>
+                </div>
+                <ul className="company-profile-brochure-steps">
+                  <li>
+                    <strong>01</strong>
+                    <span>Create</span>
+                    <p>Build activities with AI assist, by topic and level.</p>
+                  </li>
+                  <li>
+                    <strong>02</strong>
+                    <span>Assign</span>
+                    <p>Share to student phones or tablets with a QR code.</p>
+                  </li>
+                  <li>
+                    <strong>03</strong>
+                    <span>Assess</span>
+                    <p>Review speaking, listening, and grades in one place.</p>
+                  </li>
+                </ul>
+                <footer className="company-profile-brochure-foot">
+                  <span>Membership for teachers &amp; schools</span>
+                  <span>englishfully.com</span>
+                </footer>
+              </div>
+            </article>
+          </div>
+        </ComicCard>
+
+        <ComicCard className="company-profile-section">
+          <SectionHeading id="website">j. Website</SectionHeading>
+          <figure className="company-profile-website-shot">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://res.cloudinary.com/ktg8khoq/image/upload/v1788441567/Website-1_nvugg9.png"
+              alt="englishfully.com/app EnglishFeed page"
+            />
+            <figcaption>englishfully.com/app</figcaption>
+          </figure>
+        </ComicCard>
+
         <div className="flex flex-wrap gap-3 print:hidden pb-8">
           <Link href="/about">
             <ComicButton variant="secondary" size="sm">
@@ -556,8 +753,10 @@ export default function CompanyProfilePage() {
         </div>
       </div>
 
-      <div className="flex-grow" />
-      <Footer />
+      <div className="flex-grow print:hidden" />
+      <div className="print:hidden">
+        <Footer />
+      </div>
     </div>
   );
 }

@@ -2786,6 +2786,10 @@ body::before {
   border-top: 1px solid color-mix(in srgb, var(--brand-navy) 22%, #fff);
 }
 
+.company-profile-page .company-profile-section--tech-flow.comic-card::before {
+  display: none;
+}
+
 .company-profile-page .company-profile-letterhead.comic-card::before {
   display: none;
 }
@@ -2989,6 +2993,28 @@ body::before {
   font-family: var(--font-fredoka), system-ui, sans-serif;
 }
 
+.company-profile-website-shot {
+  margin: 0.25rem 0 0;
+}
+
+.company-profile-website-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  border: 1px solid color-mix(in srgb, var(--brand-navy) 28%, #fff);
+  background: #fff;
+}
+
+.company-profile-website-shot figcaption {
+  margin: 0.4rem 0 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 9.5pt !important;
+  font-weight: 400 !important;
+  line-height: 1.35 !important;
+  color: var(--brand-medium-gray);
+}
+
 .company-profile-hero-figure {
   margin: 0.25rem 0 1.15rem;
 }
@@ -3070,6 +3096,10 @@ body::before {
   align-items: start;
 }
 
+.company-profile-page .company-profile-founder h4.comic-title {
+  margin-top: 0;
+}
+
 .company-profile-founder-photos {
   display: flex;
   flex-direction: column;
@@ -3079,7 +3109,7 @@ body::before {
 
 .company-profile-founder-photos img:first-of-type {
   width: 11rem;
-  height: 11rem;
+  height: 8.5rem;
   object-fit: cover;
   object-position: top;
 }
@@ -3110,7 +3140,422 @@ body::before {
   text-align: center;
 }
 
+.company-profile-page .company-profile-section--brochure.comic-card {
+  padding-bottom: 0 !important;
+}
+
+.company-profile-page .company-profile-section--brochure.comic-card::before {
+  margin-bottom: 1.5rem;
+}
+
+.company-profile-brochure {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.company-profile-brochure-sheet {
+  --brochure-accent: var(--brand-red);
+  --brochure-ink: var(--brand-navy);
+  --brochure-stripe: rgba(0, 26, 72, 0.045);
+  --brochure-wash: #f3f3f2;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 42rem;
+  overflow: hidden;
+  color: var(--brochure-ink);
+  background-color: var(--brochure-wash);
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      var(--brochure-stripe) 10px,
+      var(--brochure-stripe) 20px
+    ),
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      var(--brochure-wash) 58%,
+      color-mix(in srgb, var(--brand-navy) 8%, var(--brochure-wash)) 100%
+    );
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.company-profile-brochure-sheet--englishfully {
+  --brochure-accent: var(--brand-red);
+  --brochure-stripe: rgba(0, 26, 72, 0.05);
+  --brochure-wash: #f3f3f2;
+}
+
+.company-profile-brochure-sheet--englishfeed {
+  --brochure-accent: var(--brand-red);
+  --brochure-stripe: rgba(234, 18, 37, 0.07);
+  --brochure-wash: #fde8ea;
+}
+
+.company-profile-brochure-sheet--homeroom {
+  --brochure-accent: var(--brand-navy);
+  --brochure-stripe: rgba(0, 26, 72, 0.07);
+  --brochure-wash: #e8eef6;
+}
+
+.company-profile-brochure-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.95rem 1.7rem 0.85rem;
+  border-bottom: 3px solid var(--brochure-accent);
+  background-color: #fff;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(0, 26, 72, 0.08) 10px,
+    rgba(0, 26, 72, 0.08) 20px
+  );
+}
+
+.company-profile-brochure-logo {
+  display: block;
+  height: 2.35rem;
+  width: auto;
+  max-width: 13rem;
+  object-fit: contain;
+}
+
+.company-profile-brochure-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  flex: 1;
+  padding: 1.15rem 1.7rem 1.25rem;
+}
+
+.company-profile-page .company-profile-brochure-folio,
+.company-profile-brochure-folio {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 9pt !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.18em !important;
+  line-height: 1 !important;
+  text-transform: uppercase;
+  color: var(--brochure-accent);
+}
+
+.company-profile-page .company-profile-brochure-kicker,
+.company-profile-brochure-kicker {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 8.5pt !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.16em !important;
+  line-height: 1.3 !important;
+  text-transform: uppercase;
+  color: var(--brochure-accent);
+}
+
+.company-profile-page .company-profile-brochure-headline,
+.company-profile-brochure-headline {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 26pt !important;
+  font-weight: 700 !important;
+  line-height: 1.12 !important;
+  letter-spacing: -0.015em !important;
+  color: var(--brochure-ink);
+}
+
+.company-profile-brochure-headline span {
+  display: block;
+  font-weight: 400;
+  font-style: italic;
+  color: color-mix(in srgb, var(--brochure-ink) 78%, var(--brochure-accent));
+}
+
+.company-profile-page .company-profile-brochure-deck,
+.company-profile-brochure-deck {
+  margin: 0;
+  max-width: 38rem;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 11.5pt !important;
+  font-weight: 400 !important;
+  line-height: 1.45 !important;
+  color: var(--brochure-ink);
+}
+
+.company-profile-brochure-lead {
+  margin: 0.15rem 0 0;
+}
+
+.company-profile-brochure-lead::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.company-profile-brochure-lead .company-profile-brochure-hero {
+  float: right;
+  width: 15.5rem;
+  margin: 0 0 0.65rem 1.1rem;
+}
+
+.company-profile-brochure-lead .company-profile-brochure-deck {
+  max-width: none;
+}
+
+.company-profile-brochure-hero {
+  margin: 0.15rem 0 0;
+}
+
+.company-profile-brochure-hero img,
+.company-profile-brochure-thumbs img {
+  display: block;
+  width: 100%;
+  background: #fff;
+}
+
+.company-profile-brochure-hero img {
+  height: 14.5rem;
+  object-fit: cover;
+  object-position: center;
+  border: 1px solid color-mix(in srgb, var(--brand-navy) 16%, #fff);
+}
+
+.company-profile-brochure-hero--app img {
+  object-fit: contain;
+  background: #fff;
+}
+
+.company-profile-brochure-lead .company-profile-brochure-hero img {
+  height: auto;
+  max-height: 13.5rem;
+  border: 1px solid color-mix(in srgb, var(--brand-navy) 16%, #fff);
+}
+
+.company-profile-brochure-lanes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+  margin: 0.1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.company-profile-brochure-lanes li {
+  margin: 0;
+  padding: 0.85rem 0.95rem 0.95rem;
+  background: color-mix(in srgb, #fff 72%, transparent);
+  border-top: 3px solid var(--brochure-accent);
+}
+
+.company-profile-page .company-profile-brochure-lanes span,
+.company-profile-brochure-lanes span {
+  display: block;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 8pt !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase;
+  color: var(--brochure-accent);
+}
+
+.company-profile-page .company-profile-brochure-lanes strong,
+.company-profile-brochure-lanes strong {
+  display: block;
+  margin: 0.28rem 0 0.35rem;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 14pt !important;
+  font-weight: 700 !important;
+  color: var(--brochure-ink);
+}
+
+.company-profile-page .company-profile-brochure-lanes p,
+.company-profile-brochure-lanes p {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 10pt !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+  color: var(--brochure-ink);
+}
+
+.company-profile-brochure-features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.company-profile-page .company-profile-brochure-features li,
+.company-profile-brochure-features li {
+  margin: 0;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--brochure-ink) 22%, #fff);
+  background: color-mix(in srgb, #fff 70%, transparent);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 9pt !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  line-height: 1.3 !important;
+  text-align: center;
+  color: var(--brochure-ink);
+}
+
+.company-profile-brochure-thumbs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 0.1rem 0 0;
+}
+
+.company-profile-brochure-thumbs--four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.company-profile-brochure-thumbs figure {
+  margin: 0;
+  padding: 0.45rem 0.45rem 0.4rem;
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--brand-navy) 14%, #fff);
+}
+
+.company-profile-brochure-thumbs img {
+  height: 8.75rem;
+  object-fit: contain;
+  object-position: center;
+}
+
+.company-profile-page .company-profile-brochure-thumbs figcaption,
+.company-profile-brochure-thumbs figcaption {
+  margin: 0.4rem 0 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 8.5pt !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--brochure-accent);
+}
+
+.company-profile-brochure-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0.15rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.company-profile-brochure-steps li {
+  margin: 0;
+  padding: 0.75rem 0.8rem 0.85rem;
+  background: color-mix(in srgb, #fff 72%, transparent);
+  border-top: 3px solid var(--brochure-accent);
+}
+
+.company-profile-page .company-profile-brochure-steps strong,
+.company-profile-brochure-steps strong {
+  display: block;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 13pt !important;
+  font-weight: 700 !important;
+  color: var(--brochure-accent);
+}
+
+.company-profile-page .company-profile-brochure-steps span,
+.company-profile-brochure-steps span {
+  display: block;
+  margin: 0.15rem 0 0.3rem;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 13pt !important;
+  font-weight: 700 !important;
+  color: var(--brochure-ink);
+}
+
+.company-profile-page .company-profile-brochure-steps p,
+.company-profile-brochure-steps p {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 10pt !important;
+  font-weight: 400 !important;
+  line-height: 1.35 !important;
+  color: var(--brochure-ink);
+}
+
+.company-profile-brochure-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--brochure-ink) 18%, #fff);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 8.5pt !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase;
+  color: var(--brochure-accent);
+}
+
 @media screen and (max-width: 699px) {
+  .company-profile-brochure-sheet {
+    min-height: 0;
+    padding: 0;
+  }
+
+  .company-profile-brochure-top {
+    padding: 0.85rem 1.05rem 0.75rem;
+  }
+
+  .company-profile-brochure-body {
+    padding: 1rem 1.05rem 1rem;
+  }
+
+  .company-profile-brochure-logo {
+    height: 2rem;
+    max-width: 10.5rem;
+  }
+
+  .company-profile-page .company-profile-brochure-headline,
+  .company-profile-brochure-headline {
+    font-size: 20pt !important;
+  }
+
+  .company-profile-brochure-hero img {
+    height: 11rem;
+  }
+
+  .company-profile-brochure-lead .company-profile-brochure-hero {
+    float: none;
+    width: 100%;
+    margin: 0 0 0.75rem;
+  }
+
+  .company-profile-brochure-lead .company-profile-brochure-hero img {
+    height: 11rem;
+    max-height: none;
+  }
+
+  .company-profile-brochure-lanes,
+  .company-profile-brochure-features,
+  .company-profile-brochure-thumbs,
+  .company-profile-brochure-thumbs--four,
+  .company-profile-brochure-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .company-profile-brochure-thumbs img {
+    height: 11rem;
+  }
+
   .company-profile-masthead {
     flex-direction: column;
     align-items: flex-start;
@@ -3163,6 +3608,7 @@ body::before {
 
   .pitch-deck-page .print\:hidden,
   .company-profile-page .print\:hidden,
+  .pitch-deck-site-header.print\:hidden,
   .pitch-deck-site-header .print\:hidden {
     display: none !important;
   }
@@ -3177,26 +3623,27 @@ body::before {
   }
 
   /* Keep footer logo; hide footer action cards */
-  .pitch-deck-page footer .grid,
-  .company-profile-page footer .grid {
+  .pitch-deck-page footer .grid {
     display: none !important;
   }
 
-  .pitch-deck-page footer,
-  .company-profile-page footer {
+  .pitch-deck-page footer {
     display: block !important;
   }
 
-  .pitch-deck-page footer .text-center,
-  .company-profile-page footer .text-center {
+  .pitch-deck-page footer .text-center {
     text-align: center !important;
   }
 
-  .pitch-deck-page footer img,
-  .company-profile-page footer img {
+  .pitch-deck-page footer img {
     display: block !important;
     margin-left: auto !important;
     margin-right: auto !important;
+  }
+
+  .company-profile-page footer,
+  .company-profile-page .flex-grow {
+    display: none !important;
   }
 
   /* Allow long sections to split; keep small visual units together */
@@ -3320,36 +3767,173 @@ body::before {
   }
 
   /* Company profile — page breaks and desktop layout in print */
-  .company-profile-page .company-profile-letterhead {
-    break-inside: avoid;
-    page-break-inside: avoid;
-    break-after: page;
-    page-break-after: always;
+  .company-profile-page .company-profile-content {
+    max-width: none !important;
+    width: 100% !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
 
-  .company-profile-page .company-profile-section--products,
-  .company-profile-page .company-profile-print-break,
-  .company-profile-page .company-profile-section--achievements {
+  .company-profile-page .company-profile-content > * {
+    margin-top: 0 !important;
+  }
+
+  .company-profile-page .company-profile-section {
+    break-before: page;
+    page-break-before: always;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .company-profile-page .company-profile-letterhead {
+    break-before: auto;
+    page-break-before: auto;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .company-profile-page .scroll-mt-28 {
+    scroll-margin-top: 0 !important;
+  }
+
+  .company-profile-page .company-profile-section > .scroll-mt-28 {
+    break-after: avoid;
+    page-break-after: avoid;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .company-profile-page .company-profile-section--brochure {
+    margin-top: 0 !important;
+  }
+
+  .company-profile-page .company-profile-section--brochure.comic-card::before {
+    display: none !important;
+  }
+
+  .company-profile-page .company-profile-section--brochure > .scroll-mt-28 {
+    display: none !important;
+  }
+
+  .company-profile-page .company-profile-brochure {
+    gap: 0 !important;
+  }
+
+  .company-profile-page .company-profile-brochure-sheet {
+    min-height: 273mm !important;
+    padding: 0 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .company-profile-page .company-profile-brochure-top {
+    padding: 8mm 11mm 7mm !important;
+  }
+
+  .company-profile-page .company-profile-brochure-body {
+    padding: 8mm 11mm 10mm !important;
+  }
+
+  .company-profile-page .company-profile-brochure-sheet + .company-profile-brochure-sheet {
     break-before: page;
     page-break-before: always;
   }
 
-  .company-profile-page .company-profile-section {
-    break-inside: auto !important;
-    page-break-inside: auto !important;
+  .company-profile-page .company-profile-brochure-lanes,
+  .company-profile-page .company-profile-brochure-features,
+  .company-profile-page .company-profile-brochure-thumbs,
+  .company-profile-page .company-profile-brochure-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .company-profile-page .company-profile-brochure-lanes {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .company-profile-page .company-profile-brochure-thumbs--four {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .company-profile-page .company-profile-brochure-lead .company-profile-brochure-hero {
+    float: right !important;
+    width: 15.5rem !important;
+    margin: 0 0 0.65rem 1.1rem !important;
   }
 
   .company-profile-page .company-profile-masthead,
   .company-profile-page .company-profile-table-wrap,
   .company-profile-page .company-profile-values,
-  .company-profile-page figure {
+  .company-profile-page figure,
+  .company-profile-page .company-profile-website-shot {
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
-  .company-profile-page .pitch-deck-page .pitch-deck-print-break {
+  .company-profile-page .company-profile-website-shot img {
+    max-height: 220mm;
+    width: 100%;
+    object-fit: contain;
+  }
+
+  .company-profile-page .company-profile-section--tech-flow {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    padding: 0 !important;
+  }
+
+  .company-profile-page .company-profile-section--tech-flow.comic-card::before {
+    display: none !important;
+  }
+
+  .company-profile-page .company-profile-tech-flow {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden;
+    margin: 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .company-profile-page .company-profile-tech-flow .pitch-deck-tech-flow-closer {
+    margin: 0 0 0.55rem;
+  }
+
+  .company-profile-page .company-profile-tech-flow .pitch-deck-tech-flow-shell {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .company-profile-page .company-profile-tech-flow .pitch-deck-print-break {
     break-before: auto !important;
     page-break-before: auto !important;
+  }
+
+  .company-profile-page .company-profile-tech-flow .pitch-deck-tech-flow {
+    width: 100%;
+    max-width: 100%;
+    zoom: 0.68;
+  }
+
+  .company-profile-page .company-profile-tech-flow .pitch-deck-tech-flow-main {
+    width: 100% !important;
+    max-width: 100% !important;
+    justify-content: center !important;
+    grid-template-columns: max-content max-content !important;
+  }
+
+  .company-profile-page .company-profile-tech-flow .pitch-deck-tech-flow-app-stage {
+    width: auto !important;
+    max-width: 100% !important;
+  }
+
+  .company-profile-page .company-profile-tech-flow .pitch-deck-tech-devices,
+  .company-profile-page .company-profile-tech-flow .pitch-deck-tech-flow-app-stage .pitch-deck-tech-devices {
+    flex-direction: row !important;
+    align-items: flex-end !important;
+    max-width: 100%;
   }
 
   .company-profile-page .company-profile-overview {
