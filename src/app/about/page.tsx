@@ -48,23 +48,6 @@ function HeroSection() {
             </ComicButton>
           </Link>
         </div>
-        <div className="mt-10 flex flex-col items-center gap-3">
-          <ComicText size="sm" className="comic-text-white font-bold">
-            Formal documents
-          </ComicText>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Link href="/about/pitch-deck">
-              <ComicButton variant="accent" size="sm">
-                Pitch Deck
-              </ComicButton>
-            </Link>
-            <Link href="/about/company-profile">
-              <ComicButton variant="accent" size="sm">
-                Company Profile
-              </ComicButton>
-            </Link>
-          </div>
-        </div>
       </div>
     </section>
   );
