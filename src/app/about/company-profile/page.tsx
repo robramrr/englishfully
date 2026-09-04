@@ -102,9 +102,6 @@ export default function CompanyProfilePage() {
               Print / Save PDF
             </ComicButton>
           </div>
-          <p className="text-white/90 text-sm font-bold">
-            In the print dialog, turn on Background graphics and use A4 at 100% scale.
-          </p>
         </div>
       </section>
 
