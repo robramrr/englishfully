@@ -12,11 +12,10 @@ import TotalTimeDisplay, {
 } from './TotalTimeDisplay';
 import ScantronAnswerSheet from './ScantronAnswerSheet';
 import PartThumbnailBlock from './PartThumbnailBlock';
+import PrintQuestionBlock from './PrintQuestionBlock';
 import type { ListenAssignmentWithParts } from '@/lib/listen-and-answer/types';
 import {
-  QUESTION_TYPE_LABELS,
   formatAnswerKeyAnswer,
-  formatPrintChoiceLine,
   formatQuestionLabel,
   getPrintableQuestions,
   getQuestionSequenceStart,
@@ -94,6 +93,27 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
             font-size: 0.75rem !important;
             font-weight: 400 !important;
             line-height: 1.5 !important;
+          }
+          .listen-and-answer-page .print-question-write-in {
+            padding-top: 0.35rem;
+            padding-bottom: 0.4rem;
+          }
+          .listen-and-answer-page .listen-print-inline-blank {
+            display: inline-block;
+            border-bottom: 1.5px solid var(--comic-black);
+            min-height: 1.4em;
+            margin: 0 0.2em;
+            vertical-align: baseline;
+            box-sizing: border-box;
+          }
+          .listen-and-answer-page .listen-print-write-in-line {
+            border-bottom: 1.5px solid var(--comic-black);
+            min-height: 2.35rem;
+            max-width: 28rem;
+            margin-left: 0.15rem;
+          }
+          .listen-and-answer-page .listen-print-write-in-line-tall {
+            min-height: 2.85rem;
           }
           .listen-and-answer-page .listen-print-instructions {
             background: #e1e1e1;
@@ -213,43 +233,14 @@ export default function LivePrintPreview({ assignment }: LivePrintPreviewProps) 
                 variant="part"
               />
 
-              <ol className="space-y-2">
+              <ol className="space-y-4">
                 {printableQuestions.map((question, questionIndex) => (
-                  <li
+                  <PrintQuestionBlock
                     key={question.id}
-                    className="print-question-block space-y-1.5"
-                  >
-                    <p className="text-sm font-semibold leading-snug text-[var(--comic-dark)]">
-                      {formatQuestionLabel(questionIndex, sequenceStart)}. {question.question_text}
-                    </p>
-                    {question.show_question_type ? (
-                      <p className="listen-print-question-type text-xs text-[var(--comic-secondary)]">
-                        {QUESTION_TYPE_LABELS[question.question_type]}
-                      </p>
-                    ) : null}
-                    {question.choices.length > 0 ? (
-                      <div className="listen-print-choices space-y-0.5 text-sm font-normal leading-relaxed pl-1 text-[var(--comic-dark)]">
-                        {question.choices
-                          .map((choice, choiceIndex) =>
-                            formatPrintChoiceLine(
-                              question.question_type,
-                              choiceIndex,
-                              choice
-                            )
-                          )
-                          .filter((choice) => choice)
-                          .map((choice) => (
-                            <div key={choice}>{choice}</div>
-                          ))}
-                      </div>
-                    ) : (
-                      <div
-                        className="h-8"
-                        style={{ borderBottom: '1px solid #cccccc' }}
-                      />
-                    )}
-                    <ListenMetaDivider className="mt-3 mb-4" />
-                  </li>
+                    question={question}
+                    questionIndex={questionIndex}
+                    sequenceStart={sequenceStart}
+                  />
                 ))}
               </ol>
             </section>

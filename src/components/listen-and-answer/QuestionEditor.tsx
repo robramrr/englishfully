@@ -128,8 +128,17 @@ export default function QuestionEditor({
           onChange={(event) =>
             onChange(question.clientId, { question_text: event.target.value })
           }
-          placeholder="Enter the question students will answer after listening"
+          placeholder={
+            question.question_type === 'fill_in_blank'
+              ? 'Use _____ where students should write the missing word'
+              : 'Enter the question students will answer after listening'
+          }
         />
+        {question.question_type === 'fill_in_blank' ? (
+          <ComicText className="text-xs text-[var(--comic-secondary)] mt-1">
+            Underscores print as a writing line on the worksheet and answer sheet.
+          </ComicText>
+        ) : null}
       </div>
 
       {showChoices ? (

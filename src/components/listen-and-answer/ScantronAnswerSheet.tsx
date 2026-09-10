@@ -10,6 +10,7 @@ import type {
 } from '@/lib/listen-and-answer/types';
 import {
   formatQuestionLabel,
+  getScantronInstructions,
   getScantronPartSections,
   hasScantronQuestions,
 } from '@/lib/listen-and-answer/types';
@@ -48,52 +49,69 @@ function ScantronGrid({
   interactive,
   onSelectAnswer,
 }: ScantronGridProps) {
+  const hasBubbleRows = rows.some((row) => row.kind === 'bubbles');
+
   return (
     <div className="scantron-grid">
-      <div className="scantron-answer-row scantron-answer-header">
-        <div className="scantron-question-label" />
-        {columnLetters.map((letter) => (
-          <div key={`header-${gridKey}-${letter}`} className="scantron-grid-header">
-            {letter}
-          </div>
-        ))}
-      </div>
-
-      {rows.map((row) => (
-        <div key={row.question.id} className="scantron-answer-row">
-          <div className="scantron-question-label">
-            {formatQuestionLabel(row.questionIndex, 0)}
-          </div>
-          {columnLetters.map((letter, columnIndex) => {
-            const isActive = columnIndex < row.letters.length;
-            const isSelected = answers[row.question.id] === letter;
-
-            if (!isActive) {
-              return <div key={`${row.question.id}-${letter}`} className="scantron-bubble-spacer" />;
-            }
-
-            return (
-              <div key={`${row.question.id}-${letter}`} className="scantron-bubble-cell">
-                {interactive ? (
-                  <button
-                    type="button"
-                    className="scantron-bubble-button interactive"
-                    aria-label={`${formatQuestionLabel(row.questionIndex)} answer ${letter}`}
-                    aria-pressed={isSelected}
-                    onClick={() => onSelectAnswer(row.question.id, letter)}
-                  >
-                    <span className={`scantron-bubble${isSelected ? ' selected' : ''}`} />
-                  </button>
-                ) : (
-                  <span className="scantron-bubble-button" aria-hidden="true">
-                    <span className="scantron-bubble" />
-                  </span>
-                )}
-              </div>
-            );
-          })}
+      {hasBubbleRows ? (
+        <div className="scantron-answer-row scantron-answer-header">
+          <div className="scantron-question-label" />
+          {columnLetters.map((letter) => (
+            <div key={`header-${gridKey}-${letter}`} className="scantron-grid-header">
+              {letter}
+            </div>
+          ))}
         </div>
-      ))}
+      ) : null}
+
+      {rows.map((row) => {
+        if (row.kind === 'write_in') {
+          return (
+            <div key={row.question.id} className="scantron-answer-row scantron-write-in-row">
+              <div className="scantron-question-label">
+                {formatQuestionLabel(row.questionIndex, 0)}
+              </div>
+              <div className="scantron-write-in-blank" aria-hidden="true" />
+            </div>
+          );
+        }
+
+        return (
+          <div key={row.question.id} className="scantron-answer-row">
+            <div className="scantron-question-label">
+              {formatQuestionLabel(row.questionIndex, 0)}
+            </div>
+            {columnLetters.map((letter, columnIndex) => {
+              const isActive = columnIndex < row.letters.length;
+              const isSelected = answers[row.question.id] === letter;
+
+              if (!isActive) {
+                return <div key={`${row.question.id}-${letter}`} className="scantron-bubble-spacer" />;
+              }
+
+              return (
+                <div key={`${row.question.id}-${letter}`} className="scantron-bubble-cell">
+                  {interactive ? (
+                    <button
+                      type="button"
+                      className="scantron-bubble-button interactive"
+                      aria-label={`${formatQuestionLabel(row.questionIndex)} answer ${letter}`}
+                      aria-pressed={isSelected}
+                      onClick={() => onSelectAnswer(row.question.id, letter)}
+                    >
+                      <span className={`scantron-bubble${isSelected ? ' selected' : ''}`} />
+                    </button>
+                  ) : (
+                    <span className="scantron-bubble-button" aria-hidden="true">
+                      <span className="scantron-bubble" />
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -129,10 +147,10 @@ export default function ScantronAnswerSheet({
     return null;
   }
 
-  const maxBubbleCount = Math.max(
-    ...sections.flatMap((section) => section.rows.map((row) => row.letters.length)),
-    4
+  const bubbleCounts = sections.flatMap((section) =>
+    section.rows.filter((row) => row.kind === 'bubbles').map((row) => row.letters.length)
   );
+  const maxBubbleCount = Math.max(...bubbleCounts, 4);
   const columnLetters = Array.from({ length: maxBubbleCount }, (_, index) =>
     String.fromCharCode(65 + index)
   );
@@ -193,6 +211,18 @@ export default function ScantronAnswerSheet({
           grid-template-columns: 6.25rem repeat(var(--scantron-columns, 4), 1.25rem);
           column-gap: 0.125rem;
           align-items: center;
+        }
+        .scantron-answer-sheet .scantron-write-in-row {
+          grid-template-columns: 6.25rem minmax(14rem, 20rem);
+          column-gap: 0.5rem;
+          min-height: 2rem;
+          margin: 0.2rem 0;
+        }
+        .scantron-answer-sheet .scantron-write-in-blank {
+          border-bottom: 1.5px solid var(--comic-black);
+          height: 1.7rem;
+          width: 100%;
+          min-width: 14rem;
         }
         .scantron-answer-sheet .scantron-answer-header {
           margin-bottom: 0.1rem;
@@ -262,6 +292,12 @@ export default function ScantronAnswerSheet({
           .scantron-answer-sheet .scantron-bubble.selected {
             background: #fff !important;
           }
+          .scantron-answer-sheet .scantron-write-in-row {
+            min-height: 2.1rem;
+          }
+          .scantron-answer-sheet .scantron-write-in-blank {
+            height: 1.8rem;
+          }
         }
       `}</style>
 
@@ -309,7 +345,7 @@ export default function ScantronAnswerSheet({
           Answer Sheet
         </ComicTitle>
         <p className="text-sm text-[var(--comic-dark)] mb-4">
-          Fill in one bubble per question.
+          {getScantronInstructions(sections)}
         </p>
 
         {useTwoColumnLayout ? (

@@ -16,7 +16,7 @@ import type {
   SaveAssignmentPayload,
   TimeUnit,
 } from '@/lib/listen-and-answer/types';
-import { createEmptyPart } from '@/lib/listen-and-answer/types';
+import { createEmptyPart, normalizeQuestionChoices } from '@/lib/listen-and-answer/types';
 
 interface AssignmentEditorProps {
   assignmentId: string;
@@ -46,7 +46,7 @@ function toClientParts(assignment: ListenAssignmentWithParts): ClientListeningPa
       id: question.id,
       question_type: question.question_type,
       question_text: question.question_text,
-      choices: question.choices,
+      choices: normalizeQuestionChoices(question.question_type, question.choices),
       correct_answer: question.correct_answer,
       keep_question: question.keep_question,
       is_ai_generated: question.is_ai_generated,
@@ -106,7 +106,7 @@ function buildPayload(
         id: question.id,
         question_type: question.question_type,
         question_text: question.question_text,
-        choices: question.choices,
+        choices: normalizeQuestionChoices(question.question_type, question.choices),
         correct_answer: question.correct_answer,
         keep_question: question.keep_question,
         is_ai_generated: question.is_ai_generated,
@@ -381,7 +381,7 @@ export default function AssignmentEditor({
         sort_order: questionIndex,
         question_type: question.question_type,
         question_text: question.question_text,
-        choices: question.choices,
+        choices: normalizeQuestionChoices(question.question_type, question.choices),
         correct_answer: question.correct_answer,
         keep_question: question.keep_question,
         is_ai_generated: question.is_ai_generated,

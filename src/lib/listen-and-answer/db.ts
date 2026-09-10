@@ -1,17 +1,18 @@
 import { sql, type VercelPoolClient } from '@vercel/postgres';
 import { nanoid } from 'nanoid';
-import type {
-  AssignmentListItem,
-  ListenAssignment,
-  ListenAssignmentWithParts,
-  ListeningPart,
-  ListenQuestion,
-  SaveAssignmentPayload,
-  CefrLevel,
-  TranscriptSource,
-  QuestionType,
-  TimeUnit,
-  AiQuestionPart,
+import {
+  normalizeQuestionChoices,
+  type AssignmentListItem,
+  type ListenAssignment,
+  type ListenAssignmentWithParts,
+  type ListeningPart,
+  type ListenQuestion,
+  type SaveAssignmentPayload,
+  type CefrLevel,
+  type TranscriptSource,
+  type QuestionType,
+  type TimeUnit,
+  type AiQuestionPart,
 } from './types';
 
 const DEFAULT_TEACHER_ID = 'default';
@@ -187,7 +188,7 @@ function rowToQuestion(row: Record<string, unknown>): ListenQuestion {
     sort_order: row.sort_order as number,
     question_type: row.question_type as QuestionType,
     question_text: row.question_text as string,
-    choices: Array.isArray(choices) ? (choices as string[]) : [],
+    choices: normalizeQuestionChoices(row.question_type as QuestionType, Array.isArray(choices) ? (choices as string[]) : []),
     correct_answer: row.correct_answer as string,
     keep_question: Boolean(row.keep_question),
     is_ai_generated: Boolean(row.is_ai_generated),
@@ -347,7 +348,7 @@ async function replaceAssignmentParts(
           ${questionIndex},
           ${question.question_type},
           ${question.question_text ?? ''},
-          ${JSON.stringify(question.choices ?? [])},
+          ${JSON.stringify(normalizeQuestionChoices(question.question_type, question.choices))},
           ${question.correct_answer ?? ''},
           ${Boolean(question.keep_question)},
           ${Boolean(question.is_ai_generated)},

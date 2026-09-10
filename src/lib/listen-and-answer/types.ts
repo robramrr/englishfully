@@ -252,10 +252,13 @@ export function formatPrintChoiceLine(
 
 export type ScantronAnswers = Record<string, string>;
 
+export type ScantronRowKind = 'bubbles' | 'write_in';
+
 export interface ScantronQuestionRow {
   question: ListenQuestion;
   questionIndex: number;
   letters: string[];
+  kind: ScantronRowKind;
 }
 
 export interface ScantronPartSection {
@@ -268,6 +271,71 @@ const SCANTRON_QUESTION_TYPES: QuestionType[] = ['multiple_choice', 'true_false'
 
 export function isScantronQuestionType(questionType: QuestionType): boolean {
   return SCANTRON_QUESTION_TYPES.includes(questionType);
+}
+
+export function isWriteInQuestionType(questionType: QuestionType): boolean {
+  return questionType === 'fill_in_blank' || questionType === 'short_answer';
+}
+
+export function shouldPrintChoiceList(question: {
+  question_type: QuestionType;
+  choices: string[];
+}): boolean {
+  if (isWriteInQuestionType(question.question_type)) return false;
+  return question.choices.some((choice) => choice.trim().length > 0);
+}
+
+export function normalizeQuestionChoices(
+  questionType: QuestionType,
+  choices: string[] | undefined
+): string[] {
+  if (isWriteInQuestionType(questionType)) return [];
+  return Array.isArray(choices) ? choices : [];
+}
+
+export function questionTextHasBlankMarker(text: string): boolean {
+  return /_{2,}/.test(text);
+}
+
+export function getPrintBlankWidthCh(marker: string): number {
+  return Math.min(28, Math.max(18, marker.length * 3));
+}
+
+export function splitQuestionTextWithBlanks(
+  text: string
+): Array<{ type: 'text'; value: string } | { type: 'blank'; widthCh: number }> {
+  const parts: Array<{ type: 'text'; value: string } | { type: 'blank'; widthCh: number }> = [];
+  const regex = /_{2,}/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ type: 'text', value: text.slice(lastIndex, match.index) });
+    }
+    parts.push({ type: 'blank', widthCh: getPrintBlankWidthCh(match[0]) });
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push({ type: 'text', value: text.slice(lastIndex) });
+  }
+
+  return parts;
+}
+
+export function getScantronInstructions(sections: ScantronPartSection[]): string {
+  const kinds = new Set(sections.flatMap((section) => section.rows.map((row) => row.kind)));
+  const hasBubbles = kinds.has('bubbles');
+  const hasWriteIn = kinds.has('write_in');
+
+  if (hasBubbles && hasWriteIn) {
+    return 'Fill in one bubble for multiple-choice questions. Write your answer on the line for fill-in-the-blank questions.';
+  }
+  if (hasWriteIn) {
+    return 'Write your answer on the line.';
+  }
+  return 'Fill in one bubble per question.';
 }
 
 export function getScantronBubbleLetters(question: ListenQuestion): string[] {
@@ -287,21 +355,19 @@ export function getScantronPartSections(assignment: ListenAssignmentWithParts): 
     .map((part, partIndex) => {
       const printableQuestions = getPrintableQuestions(part);
       const sequenceStart = getQuestionSequenceStart(assignment.parts, partIndex);
-      const scantronQuestions = printableQuestions.filter((question) =>
-        isScantronQuestionType(question.question_type)
-      );
 
       return {
         part,
         partIndex,
-        rows: scantronQuestions.map((question) => {
-          const questionIndexInPart = printableQuestions.findIndex(
-            (item) => item.id === question.id
-          );
+        rows: printableQuestions.map((question, questionIndexInPart) => {
+          const kind: ScantronRowKind = isScantronQuestionType(question.question_type)
+            ? 'bubbles'
+            : 'write_in';
           return {
             question,
             questionIndex: sequenceStart + questionIndexInPart,
-            letters: getScantronBubbleLetters(question),
+            letters: kind === 'bubbles' ? getScantronBubbleLetters(question) : [],
+            kind,
           };
         }),
       };
