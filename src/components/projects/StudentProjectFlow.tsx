@@ -409,15 +409,17 @@ export default function StudentProjectFlow({
           </span>
         </ComicTitle>
         {worksheetSettings?.file?.url ? (
-          <a
-            href={worksheetSettings.file.url}
-            target="_blank"
-            rel="noreferrer"
-            className="comic-text comic-text-white font-bold underline max-w-3xl mx-auto inline-block"
-            onClick={() => void markWorksheetOpened()}
-          >
-            Open worksheet
-          </a>
+          <ComicText className="comic-text-white">
+            <a
+              href={worksheetSettings.file.url}
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-[0.2em] decoration-2"
+              onClick={() => void markWorksheetOpened()}
+            >
+              Open worksheet
+            </a>
+          </ComicText>
         ) : null}
         {project && formatProjectHeaderMeta(project) ? (
           <ComicText className="comic-text-white mt-2">{formatProjectHeaderMeta(project)}</ComicText>
@@ -519,11 +521,6 @@ export default function StudentProjectFlow({
                 <ComicTitle level={4} className="text-[var(--comic-primary)]">
                   Worksheet
                 </ComicTitle>
-                {statusFor(worksheet, submission) ? (
-                  <ComicText className="text-[var(--comic-success)] font-bold">
-                    ✓ Worksheet opened
-                  </ComicText>
-                ) : null}
                 {!locked ? (
                   <>
                     <ComicText className="text-[var(--comic-dark)]">
