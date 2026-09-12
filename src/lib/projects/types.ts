@@ -86,6 +86,7 @@ export interface Project {
   slug: string;
   description: string;
   class_name: string;
+  class_names: string[];
   due_date: string | null;
   status: ProjectStatus;
   allow_resubmission: boolean;
@@ -163,6 +164,7 @@ export interface PublicProject {
   slug: string;
   description: string;
   class_name: string;
+  class_names: string[];
   due_date: string | null;
   allow_resubmission: boolean;
   entry_config: SpeakEntryConfig;
@@ -172,7 +174,8 @@ export interface PublicProject {
 export interface CreateProjectPayload {
   title: string;
   description: string;
-  class_name: string;
+  class_name?: string;
+  class_names?: string[];
   due_date: string | null;
   worksheet_enabled: boolean;
   artwork_enabled: boolean;
@@ -182,7 +185,8 @@ export interface CreateProjectPayload {
 export interface SaveProjectPayload {
   title: string;
   description: string;
-  class_name: string;
+  class_name?: string;
+  class_names?: string[];
   due_date: string | null;
   allow_resubmission: boolean;
   components: Array<{
@@ -314,6 +318,41 @@ export function formatProjectDateTime(value: string | null): string {
     hour: 'numeric',
     minute: '2-digit',
   });
+}
+
+export function parseClassNames(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item ?? '').trim()).filter(Boolean);
+  }
+  const raw = String(value ?? '').trim();
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (Array.isArray(parsed)) {
+      return parsed.map((item) => String(item ?? '').trim()).filter(Boolean);
+    }
+  } catch {
+    // Treat as a single class or a joined list.
+  }
+  return raw.split(/\s*(?:·|,)\s*/).map((item) => item.trim()).filter(Boolean);
+}
+
+export function serializeClassNames(names: string[]): string {
+  return JSON.stringify(names.map((item) => item.trim()).filter(Boolean));
+}
+
+export function formatClassNames(names: string[]): string {
+  return names.map((item) => item.trim()).filter(Boolean).join(' · ');
+}
+
+export function normalizeProjectClassNames(payload: {
+  class_name?: string;
+  class_names?: string[];
+}): string[] {
+  if (Array.isArray(payload.class_names) && payload.class_names.length > 0) {
+    return parseClassNames(payload.class_names);
+  }
+  return parseClassNames(payload.class_name);
 }
 
 export function slugifyProjectTitle(title: string): string {

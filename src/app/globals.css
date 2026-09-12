@@ -4745,6 +4745,12 @@ html {
   box-shadow: var(--comic-shadow-lg);
 }
 
+.projects-page .projects-create-card.comic-card,
+.projects-page .projects-create-card.comic-card:hover {
+  box-shadow: none;
+  transform: none;
+}
+
 /* Animation for section reveals */
 @keyframes fadeInUp {
   from {

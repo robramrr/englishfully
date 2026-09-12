@@ -19,6 +19,7 @@ import {
 } from '@/lib/projects/types';
 import type { SpeakClassOption } from '@/lib/speak-and-submit/types';
 import { sortSpeakClassOptions } from '@/lib/speak-and-submit/types';
+import ClassCheckboxDropdown from './ClassCheckboxDropdown';
 
 interface ProjectEditorProps {
   project: ProjectWithComponents;
@@ -45,7 +46,12 @@ function toEditorComponents(components: ProjectComponent[]): EditorComponent[] {
 export default function ProjectEditor({ project, onProjectChange }: ProjectEditorProps) {
   const [title, setTitle] = useState(project.title);
   const [description, setDescription] = useState(project.description);
-  const [className, setClassName] = useState(project.class_name);
+  const [selectedClasses, setSelectedClasses] = useState<string[]>(
+    project.class_names?.length ? project.class_names : project.class_name ? [project.class_name] : []
+  );
+  const [manualClassName, setManualClassName] = useState(
+    project.class_names?.length ? '' : project.class_name
+  );
   const [dueDate, setDueDate] = useState(project.due_date || '');
   const [allowResubmission, setAllowResubmission] = useState(project.allow_resubmission);
   const [components, setComponents] = useState<EditorComponent[]>(() =>
@@ -119,7 +125,7 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
         body: JSON.stringify({
           title,
           description,
-          class_name: className,
+          class_names: classes.length > 0 ? selectedClasses : [manualClassName].filter(Boolean),
           due_date: dueDate || null,
           allow_resubmission: allowResubmission,
           components: components.map((item) => ({
@@ -249,23 +255,17 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
         />
         <div className="grid md:grid-cols-2 gap-4">
           {classes.length > 0 ? (
-            <select
-              className="w-full comic-input"
-              value={className}
-              onChange={(event) => setClassName(event.target.value)}
-            >
-              {classes.map((item) => (
-                <option key={item.id} value={item.label}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
+            <ClassCheckboxDropdown
+              classes={classes}
+              selected={selectedClasses}
+              onChange={setSelectedClasses}
+            />
           ) : (
             <input
               className="w-full comic-input"
               placeholder="Class"
-              value={className}
-              onChange={(event) => setClassName(event.target.value)}
+              value={manualClassName}
+              onChange={(event) => setManualClassName(event.target.value)}
             />
           )}
           <input

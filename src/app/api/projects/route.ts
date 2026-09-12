@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isTeacherAuthenticated } from '@/lib/speak-and-submit/auth';
 import { jsonError } from '@/lib/speak-and-submit/api';
 import { createProject, listProjects } from '@/lib/projects/db';
-import type { CreateProjectPayload } from '@/lib/projects/types';
+import { normalizeProjectClassNames, type CreateProjectPayload } from '@/lib/projects/types';
 
 export const dynamic = 'force-dynamic';
 
 function validateCreate(body: CreateProjectPayload): string | null {
   if (!body.title?.trim()) return 'Project title is required';
-  if (!body.class_name?.trim()) return 'Class is required';
+  if (normalizeProjectClassNames(body).length === 0) return 'Select at least one class';
   if (!body.worksheet_enabled && !body.artwork_enabled && !body.speaking_enabled) {
     return 'Enable at least one project component';
   }
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     const project = await createProject({
       title: body.title,
       description: body.description || '',
-      class_name: body.class_name,
+      class_names: normalizeProjectClassNames(body),
       due_date: body.due_date || null,
       worksheet_enabled: Boolean(body.worksheet_enabled),
       artwork_enabled: Boolean(body.artwork_enabled),

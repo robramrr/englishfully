@@ -1,14 +1,22 @@
 import { sql } from '@vercel/postgres';
 import { nanoid } from 'nanoid';
 import { getEntryConfig } from '@/lib/speak-and-submit/settings';
-import { getDefaultEntryConfig, normalizeStudentNumber } from '@/lib/speak-and-submit/types';
+import {
+  getDefaultEntryConfig,
+  normalizeStudentNumber,
+  type SpeakEntryConfig,
+} from '@/lib/speak-and-submit/types';
 import {
   asArtworkSettings,
   asSpeakingSettings,
   asWorksheetSettings,
   defaultSettingsForType,
+  formatClassNames,
   isProjectComponentType,
   isProjectStatus,
+  normalizeProjectClassNames,
+  parseClassNames,
+  serializeClassNames,
   slugifyProjectTitle,
   type ArtworkSettings,
   type ComponentSubmissionStatus,
@@ -93,13 +101,15 @@ function parseScore(value: unknown): number | null {
 }
 
 function rowToProject(row: Record<string, unknown>): Project {
+  const classNames = parseClassNames(row.class_name);
   return {
     id: String(row.id ?? ''),
     teacher_id: String(row.teacher_id ?? DEFAULT_TEACHER_ID),
     title: String(row.title ?? ''),
     slug: String(row.slug ?? ''),
     description: String(row.description ?? ''),
-    class_name: String(row.class_name ?? ''),
+    class_name: formatClassNames(classNames) || String(row.class_name ?? ''),
+    class_names: classNames,
     due_date: row.due_date ? String(row.due_date) : null,
     status: parseProjectStatus(row.status),
     allow_resubmission: parseBoolean(row.allow_resubmission),
@@ -336,12 +346,33 @@ async function ensureDefaultComponents(
   return getComponentsForProject(projectId);
 }
 
-async function studentCountForClass(className: string): Promise<number> {
+async function studentCountForClasses(classNames: string[]): Promise<number> {
   const config = await getEntryConfig();
-  const match = config.classes.find(
-    (item) => item.label.trim().toLowerCase() === className.trim().toLowerCase()
-  );
-  return match?.max_student_number ?? 0;
+  return classNames.reduce((total, className) => {
+    const match = config.classes.find(
+      (item) => item.label.trim().toLowerCase() === className.trim().toLowerCase()
+    );
+    return total + (match?.max_student_number ?? 0);
+  }, 0);
+}
+
+function scopedEntryConfig(entryConfig: SpeakEntryConfig, classNames: string[]): SpeakEntryConfig {
+  if (classNames.length === 0) return entryConfig;
+  const wanted = new Set(classNames.map((item) => item.toLowerCase()));
+  const matched = entryConfig.classes.filter((item) => wanted.has(item.label.trim().toLowerCase()));
+  const matchedLabels = new Set(matched.map((item) => item.label.trim().toLowerCase()));
+  const extras = classNames
+    .filter((name) => !matchedLabels.has(name.toLowerCase()))
+    .map((label, index) => ({
+      id: `project-class-${index}`,
+      label,
+      max_student_number: 35,
+      sort_order: 100 + index,
+    }));
+  return {
+    ...entryConfig,
+    classes: [...matched, ...extras],
+  };
 }
 
 export async function listProjects(
@@ -372,7 +403,7 @@ export async function listProjects(
       const components = await getComponentsForProject(project.id);
       return {
         ...project,
-        student_count: await studentCountForClass(project.class_name),
+        student_count: await studentCountForClasses(project.class_names),
         completed_count: Number(row.completed_count ?? 0) || 0,
         in_progress_count: Number(row.in_progress_count ?? 0) || 0,
         enabled_components: components.filter((item) => item.enabled).map((item) => item.type),
@@ -403,8 +434,9 @@ export async function createProject(
   await ensureProjectsSchema();
   const title = safeTrim(payload.title);
   if (!title) throw new Error('Project title is required');
-  const className = safeTrim(payload.class_name);
-  if (!className) throw new Error('Class is required');
+  const classNames = normalizeProjectClassNames(payload);
+  if (classNames.length === 0) throw new Error('Select at least one class');
+  const className = serializeClassNames(classNames);
 
   const id = nanoid(21);
   const slug = await uniqueSlug(title);
@@ -447,8 +479,9 @@ export async function updateProject(
 
   const title = safeTrim(payload.title);
   if (!title) throw new Error('Project title is required');
-  const className = safeTrim(payload.class_name);
-  if (!className) throw new Error('Class is required');
+  const classNames = normalizeProjectClassNames(payload);
+  if (classNames.length === 0) throw new Error('Select at least one class');
+  const className = serializeClassNames(classNames);
   if (!Array.isArray(payload.components) || payload.components.length === 0) {
     throw new Error('At least one project component is required');
   }
@@ -562,7 +595,9 @@ export async function publishProject(projectId: string, shareUrl: string): Promi
   const project = await getProjectByIdOrSlug(projectId);
   if (!project) throw new Error('Project not found');
   if (!project.title.trim()) throw new Error('Add a project title before publishing');
-  if (!project.class_name.trim()) throw new Error('Choose a class before publishing');
+  if (project.class_names.length === 0 && !project.class_name.trim()) {
+    throw new Error('Choose a class before publishing');
+  }
   const enabled = project.components.filter((item) => item.enabled);
   if (enabled.length === 0) throw new Error('Enable at least one component before publishing');
 
@@ -618,9 +653,10 @@ export async function getPublicProject(idOrSlug: string): Promise<PublicProject 
     slug: project.slug,
     description: project.description,
     class_name: project.class_name,
+    class_names: project.class_names,
     due_date: project.due_date,
     allow_resubmission: project.allow_resubmission,
-    entry_config: entryConfig,
+    entry_config: scopedEntryConfig(entryConfig, project.class_names),
     components: project.components
       .filter((item) => item.enabled)
       .map((item) => ({
@@ -644,9 +680,10 @@ export async function getTeacherPreviewProject(idOrSlug: string): Promise<Public
     slug: project.slug,
     description: project.description,
     class_name: project.class_name,
+    class_names: project.class_names,
     due_date: project.due_date,
     allow_resubmission: project.allow_resubmission,
-    entry_config: entryConfig,
+    entry_config: scopedEntryConfig(entryConfig, project.class_names),
     components: project.components
       .filter((item) => item.enabled)
       .map((item) => ({
@@ -726,6 +763,12 @@ export async function startOrResumeSubmission(
   const classNumber = safeTrim(payload.class_number);
   if (!studentName || !studentNumber || !classNumber) {
     throw new Error('Student name, number, and class are required');
+  }
+  if (
+    project.class_names.length > 0 &&
+    !project.class_names.some((item) => item.toLowerCase() === classNumber.toLowerCase())
+  ) {
+    throw new Error('This project is not assigned to that class');
   }
 
   const existing = await findStudentSubmission(project.id, studentNumber, classNumber);

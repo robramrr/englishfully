@@ -6,6 +6,7 @@ import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
+import ClassCheckboxDropdown from './ClassCheckboxDropdown';
 import type { SpeakClassOption } from '@/lib/speak-and-submit/types';
 import { sortSpeakClassOptions } from '@/lib/speak-and-submit/types';
 
@@ -13,7 +14,8 @@ export default function CreateProjectForm() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [className, setClassName] = useState('');
+  const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
+  const [manualClassName, setManualClassName] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [worksheetEnabled, setWorksheetEnabled] = useState(true);
   const [artworkEnabled, setArtworkEnabled] = useState(true);
@@ -26,9 +28,7 @@ export default function CreateProjectForm() {
     fetch('/api/speak-and-submit/settings', { cache: 'no-store' })
       .then((response) => response.json())
       .then((data) => {
-        const next = sortSpeakClassOptions((data.config?.classes || []) as SpeakClassOption[]);
-        setClasses(next);
-        if (next.length > 0) setClassName(next[0].label);
+        setClasses(sortSpeakClassOptions((data.config?.classes || []) as SpeakClassOption[]));
       })
       .catch(() => {
         // Class dropdown is optional if settings have not been configured yet.
@@ -39,13 +39,14 @@ export default function CreateProjectForm() {
     setError('');
     setSaving(true);
     try {
+      const classNames = classes.length > 0 ? selectedClasses : [manualClassName].filter(Boolean);
       const response = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
           description,
-          class_name: className,
+          class_names: classNames,
           due_date: dueDate || null,
           worksheet_enabled: worksheetEnabled,
           artwork_enabled: artworkEnabled,
@@ -66,7 +67,7 @@ export default function CreateProjectForm() {
   }
 
   return (
-    <ComicCard className="comic-shadow-xl">
+    <ComicCard className="projects-create-card">
       <ComicTitle level={3} className="mb-4 text-[var(--comic-secondary)]">
         + Create Project
       </ComicTitle>
@@ -89,23 +90,17 @@ export default function CreateProjectForm() {
         />
         <div className="grid md:grid-cols-2 gap-4">
           {classes.length > 0 ? (
-            <select
-              className="w-full comic-input"
-              value={className}
-              onChange={(event) => setClassName(event.target.value)}
-            >
-              {classes.map((item) => (
-                <option key={item.id} value={item.label}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
+            <ClassCheckboxDropdown
+              classes={classes}
+              selected={selectedClasses}
+              onChange={setSelectedClasses}
+            />
           ) : (
             <input
               className="w-full comic-input"
               placeholder="Class (e.g. M4/1)"
-              value={className}
-              onChange={(event) => setClassName(event.target.value)}
+              value={manualClassName}
+              onChange={(event) => setManualClassName(event.target.value)}
             />
           )}
           <input
