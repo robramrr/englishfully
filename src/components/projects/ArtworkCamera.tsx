@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
 import { compressArtworkImage } from '@/lib/projects/compressImage';
@@ -18,49 +18,60 @@ export default function ArtworkCamera({ disabled = false, onCapture }: ArtworkCa
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const stopCamera = useCallback(() => {
+  function stopCamera() {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
     setReady(false);
-  }, []);
-
-  const startCamera = useCallback(async () => {
-    if (disabled || !navigator.mediaDevices?.getUserMedia) {
-      setError('Camera is not available on this device. Use Take photo below.');
-      return;
-    }
-    setError('');
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } },
-        audio: false,
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      setReady(true);
-    } catch {
-      setError('Could not open the camera. Allow camera access, or use Take photo below.');
-    }
-  }, [disabled]);
+  }
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function startCamera() {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false,
+        });
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+        setReady(true);
+        setError('');
+      } catch {
+        if (!cancelled) {
+          setError('Could not open the live camera. Use Snap photo to open your phone camera.');
+        }
+      }
+    }
+
     void startCamera();
     return () => {
-      stopCamera();
+      cancelled = true;
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
     };
-  }, [startCamera, stopCamera]);
+  }, []);
 
   async function handleCapturedBlob(source: Blob) {
     setBusy(true);
     setError('');
     try {
       const compressed = await compressArtworkImage(source);
+      stopCamera();
       onCapture(compressed);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not compress this photo.');
+      setError(err instanceof Error ? err.message : 'Could not save this photo.');
     } finally {
       setBusy(false);
     }
@@ -68,26 +79,29 @@ export default function ArtworkCamera({ disabled = false, onCapture }: ArtworkCa
 
   async function handleSnap() {
     const video = videoRef.current;
-    if (!video || !ready || busy || disabled) return;
-    const width = video.videoWidth || 1280;
-    const height = video.videoHeight || 720;
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext('2d');
-    if (!context) {
-      setError('Could not take the photo.');
+    if (video && ready && !busy && !disabled) {
+      const width = video.videoWidth || 1280;
+      const height = video.videoHeight || 720;
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d');
+      if (!context) {
+        setError('Could not take the photo.');
+        return;
+      }
+      context.drawImage(video, 0, 0, width, height);
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob((result) => resolve(result), 'image/jpeg', 0.92)
+      );
+      if (!blob) {
+        setError('Could not take the photo.');
+        return;
+      }
+      await handleCapturedBlob(blob);
       return;
     }
-    context.drawImage(video, 0, 0, width, height);
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob((result) => resolve(result), 'image/jpeg', 0.92)
-    );
-    if (!blob) {
-      setError('Could not take the photo.');
-      return;
-    }
-    await handleCapturedBlob(blob);
+    fileInputRef.current?.click();
   }
 
   return (
@@ -100,25 +114,14 @@ export default function ArtworkCamera({ disabled = false, onCapture }: ArtworkCa
           ready ? '' : 'hidden'
         }`}
       />
-      {ready ? (
-        <ComicButton
-          variant="primary"
-          className="w-full"
-          disabled={disabled || busy}
-          onClick={() => void handleSnap()}
-        >
-          {busy ? 'Saving photo…' : 'Take a photo'}
-        </ComicButton>
-      ) : (
-        <ComicButton
-          variant="primary"
-          className="w-full"
-          disabled={disabled || busy}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          {busy ? 'Saving photo…' : 'Take a photo'}
-        </ComicButton>
-      )}
+      <ComicButton
+        variant="primary"
+        className="w-full"
+        disabled={disabled || busy}
+        onClick={() => void handleSnap()}
+      >
+        {busy ? 'Saving photo…' : 'Snap photo'}
+      </ComicButton>
       <input
         ref={fileInputRef}
         type="file"

@@ -318,6 +318,7 @@ export default function StudentProjectFlow({
     setError('');
     try {
       await uploadStudentFile('artwork', file);
+      setArtworkMethod('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload artwork');
     } finally {
@@ -331,6 +332,7 @@ export default function StudentProjectFlow({
     setError('');
     try {
       await uploadStudentFile('worksheet', file);
+      setWorksheetMethod('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload worksheet');
     } finally {
