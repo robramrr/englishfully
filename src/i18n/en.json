@@ -746,7 +746,14 @@
     "gamesPackItem2": "Vocabulary games",
     "gamesPackItem3": "Grammar challenges",
     "gamesPackItem4": "More games coming soon",
-    "openEscapeRoom": "Escape Room Generator"
+    "openEscapeRoom": "Escape Room Generator",
+    "projectsTitle": "Classroom Projects",
+    "projectsDesc": "Combine a worksheet, artwork, and speaking into one student project",
+    "projectsItem1": "Attach a worksheet students can open",
+    "projectsItem2": "Collect artwork photos",
+    "projectsItem3": "Record or present in person",
+    "projectsItem4": "Review the whole class in one place",
+    "openProjects": "Open Projects"
   },
   "aiVoiceCoach": {
     "heroTitle": "🎤 AI Language Tutor",

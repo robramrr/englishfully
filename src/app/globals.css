@@ -4095,7 +4095,8 @@ body::before {
 }
 
 .speak-page .speak-identity-title,
-.gradebook-page .speak-identity-title {
+.gradebook-page .speak-identity-title,
+.student-project-page .speak-identity-title {
   font-size: 1.1875rem;
   letter-spacing: 0.02em;
   line-height: 1.25;
@@ -4103,7 +4104,8 @@ body::before {
 
 @media (min-width: 380px) {
   .speak-page .speak-identity-title,
-  .gradebook-page .speak-identity-title {
+  .gradebook-page .speak-identity-title,
+  .student-project-page .speak-identity-title {
     font-size: 1.3125rem;
   }
 }

@@ -1,0 +1,780 @@
+'use client';
+
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFolderOpen, faHand } from '@fortawesome/free-solid-svg-icons';
+import ComicAudioPlayer from '../ComicAudioPlayer';
+import ComicButton from '../ComicButton';
+import ComicCard from '../ComicCard';
+import ComicText from '../ComicText';
+import ComicTitle from '../ComicTitle';
+import ProjectRecorder from './ProjectRecorder';
+import {
+  PROJECT_COMPONENT_LABELS,
+  asArtworkSettings,
+  asSpeakingSettings,
+  asWorksheetSettings,
+  formatProjectDateTime,
+  formatProjectDueDate,
+  type ProjectComponentSubmission,
+  type ProjectSubmissionWithComponents,
+  type PublicProject,
+  type PublicProjectComponent,
+  type SpeakingMethod,
+} from '@/lib/projects/types';
+import {
+  STUDENT_LETTER_OPTIONS,
+  getDefaultEntryConfig,
+  sortSpeakClassOptions,
+} from '@/lib/speak-and-submit/types';
+
+type Step = 'loading' | 'identity' | 'project' | 'error';
+
+interface StudentProjectFlowProps {
+  projectId: string;
+  preview?: boolean;
+}
+
+function statusFor(
+  component: PublicProjectComponent,
+  submission: ProjectSubmissionWithComponents | null
+): boolean {
+  return (
+    submission?.components.find((item) => item.component_id === component.id)?.status === 'complete'
+  );
+}
+
+function rowFor(
+  component: PublicProjectComponent | undefined,
+  submission: ProjectSubmissionWithComponents | null
+): ProjectComponentSubmission | null {
+  if (!component || !submission) return null;
+  return submission.components.find((item) => item.component_id === component.id) ?? null;
+}
+
+export default function StudentProjectFlow({ projectId, preview = false }: StudentProjectFlowProps) {
+  const [step, setStep] = useState<Step>('loading');
+  const [project, setProject] = useState<PublicProject | null>(null);
+  const [submission, setSubmission] = useState<ProjectSubmissionWithComponents | null>(null);
+  const [error, setError] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [studentName, setStudentName] = useState(preview ? 'Preview student' : '');
+  const [studentNumber, setStudentNumber] = useState(preview ? '1' : '');
+  const [studentLetter, setStudentLetter] = useState('');
+  const [classNumber, setClassNumber] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState('');
+  const [manualClassNumber, setManualClassNumber] = useState('');
+  const [checkingIdentity, setCheckingIdentity] = useState(false);
+  const [busy, setBusy] = useState('');
+  const [speakingMethod, setSpeakingMethod] = useState<SpeakingMethod | ''>('');
+  const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; duration: number } | null>(null);
+  const artworkInputRef = useRef<HTMLInputElement>(null);
+  const worksheetUploadRef = useRef<HTMLInputElement>(null);
+
+  const entryConfig = project?.entry_config ?? getDefaultEntryConfig();
+  const sortedClasses = useMemo(
+    () => sortSpeakClassOptions(entryConfig.classes),
+    [entryConfig.classes]
+  );
+  const usesClassDropdown = sortedClasses.length > 0;
+  const usesStudentLetter = entryConfig.student_letter_enabled;
+  const selectedClass = useMemo(
+    () => sortedClasses.find((item) => item.id === selectedClassId) ?? null,
+    [sortedClasses, selectedClassId]
+  );
+  const maxStudentNumber = selectedClass?.max_student_number ?? 35;
+  const studentNumberOptions = useMemo(
+    () => Array.from({ length: maxStudentNumber }, (_, index) => String(index + 1)),
+    [maxStudentNumber]
+  );
+
+  const worksheet = project?.components.find((item) => item.type === 'worksheet');
+  const artwork = project?.components.find((item) => item.type === 'artwork');
+  const speaking = project?.components.find((item) => item.type === 'speaking');
+  const worksheetSettings = worksheet ? asWorksheetSettings(worksheet.settings) : null;
+  const artworkSettings = artwork ? asArtworkSettings(artwork.settings) : null;
+  const speakingSettings = speaking ? asSpeakingSettings(speaking.settings) : null;
+  const worksheetRow = rowFor(worksheet, submission);
+  const artworkRow = rowFor(artwork, submission);
+  const speakingRow = rowFor(speaking, submission);
+  const locked =
+    !preview &&
+    Boolean(submission && submission.status !== 'in_progress' && !project?.allow_resubmission);
+  const requiredReady = Boolean(
+    project &&
+      submission &&
+      project.components
+        .filter((item) => item.required)
+        .every((item) => statusFor(item, submission))
+  );
+
+  useEffect(() => {
+    const url = preview
+      ? `/api/projects/${projectId}/preview`
+      : `/api/projects/public/${projectId}`;
+    fetch(url, { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((data) => {
+        if (!data.project) {
+          setError(data.error || 'This project could not be found.');
+          setStep('error');
+          return;
+        }
+        setProject(data.project);
+        if (data.project.entry_config?.classes?.length > 0) {
+          const classes = sortSpeakClassOptions(data.project.entry_config.classes);
+          setSelectedClassId(classes[0].id);
+          if (preview) setClassNumber(classes[0].label);
+        } else if (preview) {
+          setClassNumber(data.project.class_name || 'Preview');
+        }
+        setStep(preview ? 'project' : 'identity');
+      })
+      .catch(() => {
+        setError('Unable to load this project.');
+        setStep('error');
+      });
+  }, [preview, projectId]);
+
+  function formatStudentNumber(number: string, letter: string): string {
+    if (usesStudentLetter && letter) return `${number}${letter}`;
+    return number;
+  }
+
+  async function handleContinueIdentity() {
+    if (!project) return;
+    const resolvedName =
+      entryConfig.name_mode === 'first_last'
+        ? `${firstName.trim()} ${lastName.trim()}`.trim()
+        : nickname.trim();
+    const resolvedClass = usesClassDropdown ? selectedClass?.label ?? '' : manualClassNumber.trim();
+
+    if (entryConfig.name_mode === 'first_last') {
+      if (!firstName.trim() || !lastName.trim()) {
+        setError('Please enter your first and last name.');
+        return;
+      }
+    } else if (!nickname.trim()) {
+      setError('Please enter your nickname.');
+      return;
+    }
+    if (!studentNumber) {
+      setError('Please select your student number.');
+      return;
+    }
+    if (usesStudentLetter && !studentLetter) {
+      setError('Please select your student ID (A or B).');
+      return;
+    }
+    if (!resolvedClass) {
+      setError(usesClassDropdown ? 'Please select your class.' : 'Please enter your class.');
+      return;
+    }
+
+    const formattedNumber = formatStudentNumber(studentNumber, studentLetter);
+    setCheckingIdentity(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/projects/public/${projectId}/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_name: resolvedName,
+          student_number: formattedNumber,
+          class_number: resolvedClass,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || 'Unable to start this project.');
+        return;
+      }
+      setStudentName(resolvedName);
+      setStudentNumber(formattedNumber);
+      setClassNumber(resolvedClass);
+      setSubmission(data.submission);
+      const existingMethod = data.submission?.components?.find(
+        (item: ProjectComponentSubmission) => item.text_data === 'in_person' || item.audio_url
+      );
+      if (existingMethod?.text_data === 'in_person') setSpeakingMethod('in_person');
+      if (existingMethod?.audio_url) setSpeakingMethod('online');
+      setStep('project');
+    } catch {
+      setError('Unable to start this project. Please try again.');
+    } finally {
+      setCheckingIdentity(false);
+    }
+  }
+
+  async function saveComponent(payload: Record<string, unknown>) {
+    if (preview || !project) return;
+    const response = await fetch(`/api/projects/public/${projectId}/component`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        student_number: studentNumber,
+        class_number: classNumber,
+        ...payload,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to save progress');
+    setSubmission(data.submission);
+  }
+
+  async function uploadStudentFile(kind: 'worksheet' | 'artwork' | 'audio', file: Blob, extra?: FormData) {
+    if (preview) return;
+    const formData = extra ?? new FormData();
+    formData.append('file', file, kind === 'audio' ? 'recording.webm' : file instanceof File ? file.name : kind);
+    formData.append('kind', kind);
+    formData.append('student_name', studentName);
+    formData.append('student_number', studentNumber);
+    formData.append('class_number', classNumber);
+    const componentId =
+      kind === 'worksheet' ? worksheet?.id : kind === 'artwork' ? artwork?.id : speaking?.id;
+    if (!componentId) throw new Error('Component not found');
+    formData.append('component_id', componentId);
+    const response = await fetch(`/api/projects/public/${projectId}/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Upload failed');
+    setSubmission(data.submission);
+  }
+
+  async function handleOpenWorksheet() {
+    if (!worksheet) return;
+    if (worksheetSettings?.file?.url) {
+      window.open(worksheetSettings.file.url, '_blank', 'noopener,noreferrer');
+    }
+    if (preview || locked) return;
+    setBusy('worksheet');
+    setError('');
+    try {
+      await saveComponent({ component_id: worksheet.id, viewed: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save worksheet progress');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function handleArtworkUpload(file: File) {
+    if (locked || preview || !artwork) return;
+    setBusy('artwork');
+    setError('');
+    try {
+      await uploadStudentFile('artwork', file);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload artwork');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function handleWorksheetUpload(file: File) {
+    if (locked || preview || !worksheet) return;
+    setBusy('worksheet-upload');
+    setError('');
+    try {
+      await uploadStudentFile('worksheet', file);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload worksheet');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function handleChooseInPerson() {
+    if (locked || preview || !speaking) return;
+    setBusy('speaking');
+    setError('');
+    try {
+      await saveComponent({
+        component_id: speaking.id,
+        speaking_method: 'in_person',
+        clear_audio: true,
+      });
+      setSpeakingMethod('in_person');
+      setPendingAudio(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save speaking choice');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function handleSaveRecording() {
+    if (locked || preview || !speaking || !pendingAudio) return;
+    setBusy('speaking');
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('duration_seconds', String(pendingAudio.duration));
+      await uploadStudentFile('audio', pendingAudio.blob, formData);
+      setSpeakingMethod('online');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save recording');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function handleSubmitProject() {
+    if (locked || preview || !requiredReady) return;
+    setBusy('submit');
+    setError('');
+    try {
+      const response = await fetch(`/api/projects/public/${projectId}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_number: studentNumber,
+          class_number: classNumber,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to submit project');
+      setSubmission(data.submission);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to submit project');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  const progressItems = project?.components ?? [];
+  const submitted = submission?.status === 'submitted' || submission?.status === 'reviewed';
+
+  return (
+    <div className="student-project-page min-h-screen bg-[var(--comic-light)]">
+      <section className="comic-bg-secondary py-10 px-4 comic-pattern-dots text-center">
+        <ComicTitle level={2} className="comic-text-white mb-2">
+          <span className="inline-flex items-center justify-center gap-3">
+            <FontAwesomeIcon icon={faFolderOpen} aria-hidden className="h-[0.85em] w-[0.85em]" />
+            <span>{project?.title || 'Project'}</span>
+          </span>
+        </ComicTitle>
+        {project?.description ? (
+          <ComicText className="comic-text-white font-bold max-w-3xl mx-auto">
+            {project.description}
+          </ComicText>
+        ) : null}
+        {project?.due_date ? (
+          <ComicText className="comic-text-white mt-2">Due {formatProjectDueDate(project.due_date)}</ComicText>
+        ) : null}
+      </section>
+
+      <section className="max-w-3xl mx-auto py-8 px-4 space-y-6">
+        {preview ? (
+          <ComicCard className="comic-shadow-xl">
+            <ComicText className="text-[var(--comic-secondary)] font-bold">
+              Teacher preview — students see this after you publish. Uploads and submit stay off here.
+            </ComicText>
+          </ComicCard>
+        ) : null}
+
+        {step === 'loading' ? (
+          <ComicText className="text-[var(--comic-dark)] font-bold">Loading project…</ComicText>
+        ) : null}
+
+        {step === 'error' ? (
+          <ComicText className="text-[var(--comic-danger)] font-bold">{error}</ComicText>
+        ) : null}
+
+        {step === 'identity' && project ? (
+          <ComicCard className="comic-shadow-xl">
+            <ComicTitle level={6} className="speak-identity-title mb-4 text-[var(--comic-primary)] text-center">
+              <span className="inline-flex items-center justify-center gap-2">
+                <FontAwesomeIcon icon={faHand} aria-hidden className="h-[0.85em] w-[0.85em]" />
+                Who are you?
+              </span>
+            </ComicTitle>
+            <div className="space-y-4">
+              {entryConfig.name_mode === 'first_last' ? (
+                <>
+                  <input
+                    className="w-full comic-input text-lg py-4"
+                    placeholder="First name"
+                    value={firstName}
+                    onChange={(event) => setFirstName(event.target.value)}
+                  />
+                  <input
+                    className="w-full comic-input text-lg py-4"
+                    placeholder="Last name"
+                    value={lastName}
+                    onChange={(event) => setLastName(event.target.value)}
+                  />
+                </>
+              ) : (
+                <input
+                  className="w-full comic-input text-lg py-4"
+                  placeholder="Nickname"
+                  value={nickname}
+                  onChange={(event) => setNickname(event.target.value)}
+                />
+              )}
+              {usesClassDropdown ? (
+                <select
+                  className="w-full comic-input text-lg py-4"
+                  value={selectedClassId}
+                  onChange={(event) => setSelectedClassId(event.target.value)}
+                >
+                  <option value="">Select class</option>
+                  {sortedClasses.map((classOption) => (
+                    <option key={classOption.id} value={classOption.id}>
+                      {classOption.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  className="w-full comic-input text-lg py-4"
+                  placeholder="Class"
+                  value={manualClassNumber}
+                  onChange={(event) => setManualClassNumber(event.target.value)}
+                />
+              )}
+              <div className={`grid gap-3 ${usesStudentLetter ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                <select
+                  className="w-full comic-input text-lg py-4"
+                  value={studentNumber}
+                  onChange={(event) => setStudentNumber(event.target.value)}
+                >
+                  <option value="">#</option>
+                  {studentNumberOptions.map((number) => (
+                    <option key={number} value={number}>
+                      {number}
+                    </option>
+                  ))}
+                </select>
+                {usesStudentLetter ? (
+                  <select
+                    className="w-full comic-input text-lg py-4"
+                    value={studentLetter}
+                    onChange={(event) => setStudentLetter(event.target.value.toUpperCase())}
+                  >
+                    <option value="">ID</option>
+                    {STUDENT_LETTER_OPTIONS.map((letter) => (
+                      <option key={letter} value={letter}>
+                        {letter}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+              </div>
+              {error ? <ComicText className="text-[var(--comic-danger)] font-bold">{error}</ComicText> : null}
+              <ComicButton
+                variant="primary"
+                size="lg"
+                className="w-full"
+                disabled={checkingIdentity}
+                onClick={() => void handleContinueIdentity()}
+              >
+                {checkingIdentity ? 'Checking…' : 'Continue'}
+              </ComicButton>
+            </div>
+          </ComicCard>
+        ) : null}
+
+        {step === 'project' && project ? (
+          <>
+            {submitted ? (
+              <ComicCard className="comic-shadow-xl text-center">
+                <ComicTitle level={3} className="mb-2 text-[var(--comic-success)]">
+                  Project submitted
+                </ComicTitle>
+                <ComicText className="text-[var(--comic-dark)] font-bold">
+                  Submitted on {formatProjectDateTime(submission?.submitted_at ?? null)}
+                </ComicText>
+                {submission?.status === 'reviewed' && submission.teacher_feedback ? (
+                  <ComicText className="text-[var(--comic-dark)] mt-3">
+                    Teacher feedback: {submission.teacher_feedback}
+                  </ComicText>
+                ) : null}
+              </ComicCard>
+            ) : null}
+
+            <ComicCard className="comic-shadow-xl">
+              <ComicTitle level={4} className="mb-4 text-[var(--comic-secondary)]">
+                Project progress
+              </ComicTitle>
+              <ul className="space-y-2">
+                {progressItems.map((item) => (
+                  <li key={item.id} className="font-bold text-[var(--comic-dark)]">
+                    {statusFor(item, submission) ? '✓' : '○'} {PROJECT_COMPONENT_LABELS[item.type]}
+                    {item.required ? '' : ' (optional)'}
+                  </li>
+                ))}
+                <li className="font-bold text-[var(--comic-dark)]">
+                  {submitted ? '✓' : '○'} Submit
+                </li>
+              </ul>
+            </ComicCard>
+
+            {error ? <ComicText className="text-[var(--comic-danger)] font-bold">{error}</ComicText> : null}
+
+            {worksheet ? (
+              <ComicCard className="comic-shadow-xl space-y-4">
+                <ComicTitle level={4} className="text-[var(--comic-primary)]">
+                  Worksheet
+                </ComicTitle>
+                {worksheet.instructions ? (
+                  <ComicText className="text-[var(--comic-dark)]">{worksheet.instructions}</ComicText>
+                ) : (
+                  <ComicText className="text-[var(--comic-dark)]">
+                    Read or complete the worksheet.
+                  </ComicText>
+                )}
+                <ComicButton
+                  variant="secondary"
+                  className="w-full"
+                  disabled={busy === 'worksheet' || !worksheetSettings?.file}
+                  onClick={() => void handleOpenWorksheet()}
+                >
+                  {worksheetSettings?.file ? 'Open worksheet' : 'No worksheet attached yet'}
+                </ComicButton>
+                {statusFor(worksheet, submission) ? (
+                  <ComicText className="text-[var(--comic-success)] font-bold">
+                    ✓ Worksheet opened
+                  </ComicText>
+                ) : null}
+                {!locked ? (
+                  <>
+                    <input
+                      ref={worksheetUploadRef}
+                      type="file"
+                      accept=".pdf,.doc,.docx,image/*"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void handleWorksheetUpload(file);
+                        event.target.value = '';
+                      }}
+                    />
+                    <ComicButton
+                      variant="accent"
+                      size="sm"
+                      className="w-full"
+                      disabled={busy === 'worksheet-upload' || preview}
+                      onClick={() => worksheetUploadRef.current?.click()}
+                    >
+                      {busy === 'worksheet-upload' ? 'Uploading…' : 'Upload completed worksheet'}
+                    </ComicButton>
+                  </>
+                ) : null}
+                {worksheetRow?.file_url ? (
+                  <a
+                    href={worksheetRow.file_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block font-bold text-[var(--comic-secondary)] underline"
+                  >
+                    View your uploaded worksheet
+                  </a>
+                ) : null}
+              </ComicCard>
+            ) : null}
+
+            {artwork ? (
+              <ComicCard className="comic-shadow-xl space-y-4">
+                <ComicTitle level={4} className="text-[var(--comic-primary)]">
+                  Artwork
+                </ComicTitle>
+                <ComicText className="text-[var(--comic-dark)]">
+                  {artwork.instructions || 'Create your artwork and upload a photo.'}
+                </ComicText>
+                {artworkSettings?.example_image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={artworkSettings.example_image.url}
+                    alt="Artwork example"
+                    className="max-h-56 w-full object-contain rounded-lg comic-border"
+                  />
+                ) : null}
+                {artworkRow?.file_url ? (
+                  <>
+                    <ComicText className="text-[var(--comic-success)] font-bold">
+                      ✓ Artwork uploaded
+                    </ComicText>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={artworkRow.file_url}
+                      alt="Your artwork"
+                      className="max-h-72 w-full object-contain rounded-lg comic-border"
+                    />
+                  </>
+                ) : null}
+                {!locked ? (
+                  <>
+                    <input
+                      ref={artworkInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void handleArtworkUpload(file);
+                        event.target.value = '';
+                      }}
+                    />
+                    <ComicButton
+                      variant="primary"
+                      className="w-full"
+                      disabled={busy === 'artwork' || preview}
+                      onClick={() => artworkInputRef.current?.click()}
+                    >
+                      {busy === 'artwork'
+                        ? 'Uploading…'
+                        : artworkRow?.file_url
+                          ? 'Replace'
+                          : 'Upload artwork'}
+                    </ComicButton>
+                  </>
+                ) : null}
+              </ComicCard>
+            ) : null}
+
+            {speaking && speakingSettings ? (
+              <ComicCard className="comic-shadow-xl space-y-4">
+                <ComicTitle level={4} className="text-[var(--comic-primary)]">
+                  Speaking
+                </ComicTitle>
+                <ComicText className="text-[var(--comic-dark)]">
+                  {speaking.instructions || 'Practice your presentation.'}
+                </ComicText>
+                {speakingSettings.prompts.length > 0 ? (
+                  <ul className="list-disc pl-5 space-y-1 font-bold text-[var(--comic-dark)]">
+                    {speakingSettings.prompts.map((prompt, index) => (
+                      <li key={`${index}-${prompt}`}>{prompt}</li>
+                    ))}
+                  </ul>
+                ) : null}
+
+                {speakingSettings.online_recording_enabled && speakingSettings.in_person_enabled && !locked ? (
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <ComicButton
+                      variant={speakingMethod === 'online' ? 'primary' : 'secondary'}
+                      size="sm"
+                      className="w-full"
+                      disabled={preview}
+                      onClick={() => setSpeakingMethod('online')}
+                    >
+                      Online recording
+                    </ComicButton>
+                    <ComicButton
+                      variant={speakingMethod === 'in_person' ? 'primary' : 'secondary'}
+                      size="sm"
+                      className="w-full"
+                      disabled={preview || busy === 'speaking'}
+                      onClick={() => void handleChooseInPerson()}
+                    >
+                      In-person presentation
+                    </ComicButton>
+                  </div>
+                ) : null}
+
+                {(speakingMethod === 'in_person' ||
+                  (!speakingSettings.online_recording_enabled && speakingSettings.in_person_enabled) ||
+                  speakingRow?.text_data === 'in_person') && (
+                  <div className="space-y-3">
+                    <ComicText className="text-[var(--comic-dark)]">
+                      You will present this project in class.
+                    </ComicText>
+                    {speakingRow?.text_data === 'in_person' ? (
+                      <ComicText className="text-[var(--comic-success)] font-bold">
+                        ✓ In-person presentation selected
+                      </ComicText>
+                    ) : !locked && !speakingSettings.online_recording_enabled ? (
+                      <ComicButton
+                        variant="secondary"
+                        className="w-full"
+                        disabled={preview || busy === 'speaking'}
+                        onClick={() => void handleChooseInPerson()}
+                      >
+                        I will present in person
+                      </ComicButton>
+                    ) : null}
+                  </div>
+                )}
+
+                {(speakingSettings.online_recording_enabled &&
+                  (speakingMethod === 'online' ||
+                    !speakingSettings.in_person_enabled ||
+                    Boolean(speakingRow?.audio_url))) && (
+                  <div className="space-y-3">
+                    {speakingRow?.audio_url ? (
+                      <>
+                        <ComicText className="text-[var(--comic-success)] font-bold">
+                          ✓ Speaking submitted
+                        </ComicText>
+                        <ComicAudioPlayer src={speakingRow.audio_url} />
+                      </>
+                    ) : null}
+                    {!locked ? (
+                      <>
+                        <ProjectRecorder
+                          minSeconds={speakingSettings.min_seconds}
+                          maxSeconds={speakingSettings.max_seconds}
+                          disabled={preview || busy === 'speaking'}
+                          onReady={(blob, duration) => setPendingAudio({ blob, duration })}
+                          onClear={() => setPendingAudio(null)}
+                        />
+                        {pendingAudio ? (
+                          <ComicButton
+                            variant="success"
+                            className="w-full"
+                            disabled={preview || busy === 'speaking'}
+                            onClick={() => void handleSaveRecording()}
+                          >
+                            {busy === 'speaking' ? 'Saving…' : 'Save recording'}
+                          </ComicButton>
+                        ) : null}
+                      </>
+                    ) : null}
+                  </div>
+                )}
+              </ComicCard>
+            ) : null}
+
+            <ComicCard className="comic-shadow-xl space-y-4">
+              <ComicTitle level={4} className="text-[var(--comic-secondary)]">
+                Final submission
+              </ComicTitle>
+              <ul className="space-y-2">
+                {progressItems.map((item) => (
+                  <li key={`final-${item.id}`} className="font-bold text-[var(--comic-dark)]">
+                    {statusFor(item, submission) ? '✓' : '○'} {PROJECT_COMPONENT_LABELS[item.type]}
+                    {item.type === 'speaking' && speakingRow?.text_data === 'in_person'
+                      ? ' (in-person)'
+                      : item.type === 'speaking' && speakingRow?.audio_url
+                        ? ' (recording)'
+                        : ''}
+                  </li>
+                ))}
+              </ul>
+              {submitted ? (
+                <ComicText className="text-[var(--comic-success)] font-bold">
+                  This project is locked after submission.
+                </ComicText>
+              ) : (
+                <ComicButton
+                  variant="primary"
+                  size="lg"
+                  className="w-full"
+                  disabled={!requiredReady || preview || Boolean(busy)}
+                  onClick={() => void handleSubmitProject()}
+                >
+                  {busy === 'submit' ? 'Submitting…' : 'Submit project'}
+                </ComicButton>
+              )}
+            </ComicCard>
+          </>
+        ) : null}
+      </section>
+    </div>
+  );
+}

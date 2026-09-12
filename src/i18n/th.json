@@ -745,7 +745,14 @@
     "gamesPackItem2": "เกมคำศัพท์",
     "gamesPackItem3": "ความท้าทายไวยากรณ์",
     "gamesPackItem4": "เกมเพิ่มเติมเร็วๆ นี้",
-    "openEscapeRoom": "ตัวสร้าง Escape Room"
+    "openEscapeRoom": "ตัวสร้าง Escape Room",
+    "projectsTitle": "โปรเจกต์ในชั้นเรียน",
+    "projectsDesc": "รวมใบงาน งานศิลปะ และการพูดเป็นโปรเจกต์เดียว",
+    "projectsItem1": "แนบใบงานให้นักเรียนเปิดได้",
+    "projectsItem2": "เก็บรูปงานศิลปะ",
+    "projectsItem3": "อัดเสียงหรือนำเสนอในห้อง",
+    "projectsItem4": "ตรวจงานทั้งชั้นในที่เดียว",
+    "openProjects": "เปิดโปรเจกต์"
   },
   "aiVoiceCoach": {
     "heroTitle": "🎤 ครูสอนภาษา AI",

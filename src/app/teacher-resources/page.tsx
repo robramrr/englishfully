@@ -11,6 +11,7 @@ import {
   faChartColumn,
   faDoorOpen,
   faEarListen,
+  faFolderOpen,
   faGamepad,
   faHeadphones,
   faLock,
@@ -310,6 +311,33 @@ function FeaturedResourcesSection() {
             >
               <ButtonWithIcon icon={faDoorOpen}>
                 {t.teacherResources.openEscapeRoom}
+              </ButtonWithIcon>
+            </ComicButton>
+          </ComicCard>
+
+          <ComicCard className="flex flex-col">
+            <ComicTitle level={4} className="comic-title-no-shadow mb-4 text-[var(--comic-primary)]">
+              <TitleWithIcon icon={faFolderOpen}>
+                {t.teacherResources.projectsTitle}
+              </TitleWithIcon>
+            </ComicTitle>
+            <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
+              {t.teacherResources.projectsDesc}
+            </ComicText>
+            <ul className="text-[var(--comic-dark)] space-y-1 mb-6 text-sm flex-grow">
+              <li>• {t.teacherResources.projectsItem1}</li>
+              <li>• {t.teacherResources.projectsItem2}</li>
+              <li>• {t.teacherResources.projectsItem3}</li>
+              <li>• {t.teacherResources.projectsItem4}</li>
+            </ul>
+            <ComicButton
+              href="/teacher-resources/projects"
+              variant="primary"
+              size="sm"
+              className="w-full !inline-flex items-center justify-center"
+            >
+              <ButtonWithIcon icon={faFolderOpen}>
+                {t.teacherResources.openProjects}
               </ButtonWithIcon>
             </ComicButton>
           </ComicCard>
