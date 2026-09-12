@@ -2,20 +2,26 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFolderOpen, faHand } from '@fortawesome/free-solid-svg-icons';
+import { faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import ComicAudioPlayer from '../ComicAudioPlayer';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import ProjectRecorder from './ProjectRecorder';
+import StudentGroupIdentity, {
+  emptyIdentityDraft,
+  resolveIdentityMembers,
+  type IdentityDraft,
+} from './StudentGroupIdentity';
 import {
   PROJECT_COMPONENT_LABELS,
   asArtworkSettings,
   asSpeakingSettings,
   asWorksheetSettings,
   formatProjectDateTime,
-  formatProjectDueDate,
+  formatProjectHeaderMeta,
+  formatSubmissionGroupLabel,
   type ProjectComponentSubmission,
   type ProjectSubmissionWithComponents,
   type PublicProject,
@@ -23,7 +29,6 @@ import {
   type SpeakingMethod,
 } from '@/lib/projects/types';
 import {
-  STUDENT_LETTER_OPTIONS,
   getDefaultEntryConfig,
   sortSpeakClassOptions,
 } from '@/lib/speak-and-submit/types';
@@ -62,15 +67,10 @@ export default function StudentProjectFlow({
   const [project, setProject] = useState<PublicProject | null>(null);
   const [submission, setSubmission] = useState<ProjectSubmissionWithComponents | null>(null);
   const [error, setError] = useState('');
-  const [nickname, setNickname] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [studentName, setStudentName] = useState(preview ? 'Preview student' : '');
   const [studentNumber, setStudentNumber] = useState(preview ? '1' : '');
-  const [studentLetter, setStudentLetter] = useState('');
   const [classNumber, setClassNumber] = useState('');
-  const [selectedClassId, setSelectedClassId] = useState('');
-  const [manualClassNumber, setManualClassNumber] = useState('');
+  const [memberDrafts, setMemberDrafts] = useState<IdentityDraft[]>([emptyIdentityDraft()]);
   const [checkingIdentity, setCheckingIdentity] = useState(false);
   const [busy, setBusy] = useState('');
   const [speakingMethod, setSpeakingMethod] = useState<SpeakingMethod | ''>('');
@@ -85,15 +85,6 @@ export default function StudentProjectFlow({
   );
   const usesClassDropdown = sortedClasses.length > 0;
   const usesStudentLetter = entryConfig.student_letter_enabled;
-  const selectedClass = useMemo(
-    () => sortedClasses.find((item) => item.id === selectedClassId) ?? null,
-    [sortedClasses, selectedClassId]
-  );
-  const maxStudentNumber = selectedClass?.max_student_number ?? 35;
-  const studentNumberOptions = useMemo(
-    () => Array.from({ length: maxStudentNumber }, (_, index) => String(index + 1)),
-    [maxStudentNumber]
-  );
 
   const worksheet = project?.components.find((item) => item.type === 'worksheet');
   const artwork = project?.components.find((item) => item.type === 'artwork');
@@ -130,10 +121,15 @@ export default function StudentProjectFlow({
         setProject(data.project);
         if (data.project.entry_config?.classes?.length > 0) {
           const classes = sortSpeakClassOptions(data.project.entry_config.classes);
-          setSelectedClassId(classes[0].id);
+          setMemberDrafts((current) =>
+            current.map((draft) => ({
+              ...draft,
+              selectedClassId: draft.selectedClassId || classes[0].id,
+            }))
+          );
           if (preview) setClassNumber(classes[0].label);
         } else if (preview) {
-          setClassNumber(data.project.class_name || 'Preview');
+          setClassNumber(data.project.class_label || 'Preview');
         }
         setStep(preview ? 'project' : 'identity');
       })
@@ -143,42 +139,20 @@ export default function StudentProjectFlow({
       });
   }, [preview, projectId]);
 
-  function formatStudentNumber(number: string, letter: string): string {
-    if (usesStudentLetter && letter) return `${number}${letter}`;
-    return number;
-  }
-
   async function handleContinueIdentity() {
     if (!project) return;
-    const resolvedName =
-      entryConfig.name_mode === 'first_last'
-        ? `${firstName.trim()} ${lastName.trim()}`.trim()
-        : nickname.trim();
-    const resolvedClass = usesClassDropdown ? selectedClass?.label ?? '' : manualClassNumber.trim();
-
-    if (entryConfig.name_mode === 'first_last') {
-      if (!firstName.trim() || !lastName.trim()) {
-        setError('Please enter your first and last name.');
-        return;
-      }
-    } else if (!nickname.trim()) {
-      setError('Please enter your nickname.');
-      return;
-    }
-    if (!studentNumber) {
-      setError('Please select your student number.');
-      return;
-    }
-    if (usesStudentLetter && !studentLetter) {
-      setError('Please select your student ID (A or B).');
-      return;
-    }
-    if (!resolvedClass) {
-      setError(usesClassDropdown ? 'Please select your class.' : 'Please enter your class.');
+    const resolved = resolveIdentityMembers(memberDrafts, {
+      entryConfig,
+      sortedClasses,
+      usesClassDropdown,
+      usesStudentLetter,
+    });
+    if ('error' in resolved) {
+      setError(resolved.error);
       return;
     }
 
-    const formattedNumber = formatStudentNumber(studentNumber, studentLetter);
+    const primary = resolved.members[0];
     setCheckingIdentity(true);
     setError('');
     try {
@@ -186,9 +160,7 @@ export default function StudentProjectFlow({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          student_name: resolvedName,
-          student_number: formattedNumber,
-          class_number: resolvedClass,
+          members: resolved.members,
         }),
       });
       const data = await response.json();
@@ -196,9 +168,9 @@ export default function StudentProjectFlow({
         setError(data.error || 'Unable to start this project.');
         return;
       }
-      setStudentName(resolvedName);
-      setStudentNumber(formattedNumber);
-      setClassNumber(resolvedClass);
+      setStudentName(primary.student_name);
+      setStudentNumber(primary.student_number);
+      setClassNumber(primary.class_number);
       setSubmission(data.submission);
       const existingMethod = data.submission?.components?.find(
         (item: ProjectComponentSubmission) => item.text_data === 'in_person' || item.audio_url
@@ -368,8 +340,8 @@ export default function StudentProjectFlow({
             {project.description}
           </ComicText>
         ) : null}
-        {project?.due_date ? (
-          <ComicText className="comic-text-white mt-2">Due {formatProjectDueDate(project.due_date)}</ComicText>
+        {project && formatProjectHeaderMeta(project) ? (
+          <ComicText className="comic-text-white mt-2">{formatProjectHeaderMeta(project)}</ComicText>
         ) : null}
       </section>
 
@@ -395,98 +367,17 @@ export default function StudentProjectFlow({
         ) : null}
 
         {step === 'identity' && project ? (
-          <ComicCard className="comic-shadow-xl">
-            <ComicTitle level={6} className="speak-identity-title mb-4 text-[var(--comic-primary)] text-center">
-              <span className="inline-flex items-center justify-center gap-2">
-                <FontAwesomeIcon icon={faHand} aria-hidden className="h-[0.85em] w-[0.85em]" />
-                Who are you?
-              </span>
-            </ComicTitle>
-            <div className="space-y-4">
-              {entryConfig.name_mode === 'first_last' ? (
-                <>
-                  <input
-                    className="w-full comic-input text-lg py-4"
-                    placeholder="First name"
-                    value={firstName}
-                    onChange={(event) => setFirstName(event.target.value)}
-                  />
-                  <input
-                    className="w-full comic-input text-lg py-4"
-                    placeholder="Last name"
-                    value={lastName}
-                    onChange={(event) => setLastName(event.target.value)}
-                  />
-                </>
-              ) : (
-                <input
-                  className="w-full comic-input text-lg py-4"
-                  placeholder="Nickname"
-                  value={nickname}
-                  onChange={(event) => setNickname(event.target.value)}
-                />
-              )}
-              {usesClassDropdown ? (
-                <select
-                  className="w-full comic-input text-lg py-4"
-                  value={selectedClassId}
-                  onChange={(event) => setSelectedClassId(event.target.value)}
-                >
-                  <option value="">Select class</option>
-                  {sortedClasses.map((classOption) => (
-                    <option key={classOption.id} value={classOption.id}>
-                      {classOption.label}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  className="w-full comic-input text-lg py-4"
-                  placeholder="Class"
-                  value={manualClassNumber}
-                  onChange={(event) => setManualClassNumber(event.target.value)}
-                />
-              )}
-              <div className={`grid gap-3 ${usesStudentLetter ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                <select
-                  className="w-full comic-input text-lg py-4"
-                  value={studentNumber}
-                  onChange={(event) => setStudentNumber(event.target.value)}
-                >
-                  <option value="">#</option>
-                  {studentNumberOptions.map((number) => (
-                    <option key={number} value={number}>
-                      {number}
-                    </option>
-                  ))}
-                </select>
-                {usesStudentLetter ? (
-                  <select
-                    className="w-full comic-input text-lg py-4"
-                    value={studentLetter}
-                    onChange={(event) => setStudentLetter(event.target.value.toUpperCase())}
-                  >
-                    <option value="">ID</option>
-                    {STUDENT_LETTER_OPTIONS.map((letter) => (
-                      <option key={letter} value={letter}>
-                        {letter}
-                      </option>
-                    ))}
-                  </select>
-                ) : null}
-              </div>
-              {error ? <ComicText className="text-[var(--comic-danger)] font-bold">{error}</ComicText> : null}
-              <ComicButton
-                variant="primary"
-                size="lg"
-                className="w-full"
-                disabled={checkingIdentity}
-                onClick={() => void handleContinueIdentity()}
-              >
-                {checkingIdentity ? 'Checking…' : 'Continue'}
-              </ComicButton>
-            </div>
-          </ComicCard>
+          <StudentGroupIdentity
+            drafts={memberDrafts}
+            onChange={setMemberDrafts}
+            entryConfig={entryConfig}
+            sortedClasses={sortedClasses}
+            usesClassDropdown={usesClassDropdown}
+            usesStudentLetter={usesStudentLetter}
+            error={error}
+            checking={checkingIdentity}
+            onContinue={() => void handleContinueIdentity()}
+          />
         ) : null}
 
         {step === 'project' && project ? (
@@ -504,6 +395,15 @@ export default function StudentProjectFlow({
                     Teacher feedback: {submission.teacher_feedback}
                   </ComicText>
                 ) : null}
+              </ComicCard>
+            ) : null}
+
+            {submission ? (
+              <ComicCard className="comic-shadow-xl">
+                <ComicText className="text-[var(--comic-dark)] font-bold">
+                  {(submission.members?.length ?? 1) > 1 ? 'Group' : 'Student'}:{' '}
+                  {formatSubmissionGroupLabel(submission)}
+                </ComicText>
               </ComicCard>
             ) : null}
 

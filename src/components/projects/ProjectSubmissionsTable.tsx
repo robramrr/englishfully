@@ -7,6 +7,7 @@ import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import {
   PROJECT_SUBMISSION_STATUS_LABELS,
+  formatSubmissionGroupLabel,
   type ProjectSubmissionRow,
   type ProjectWithComponents,
 } from '@/lib/projects/types';
@@ -47,7 +48,7 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
         Student submissions
       </ComicTitle>
       <ComicText className="text-[var(--comic-dark)] font-bold mb-6">
-        {submissions.length} student{submissions.length === 1 ? '' : 's'} · {submittedCount} submitted
+        {submissions.length} submission{submissions.length === 1 ? '' : 's'} · {submittedCount} submitted
       </ComicText>
 
       {!loaded ? (
@@ -60,7 +61,7 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
         <table className="w-full min-w-[36rem] text-left border-collapse">
           <thead>
             <tr className="border-b-4 border-[var(--comic-black)]">
-              <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Student</th>
+              <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Students</th>
               {showWorksheet ? (
                 <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Worksheet</th>
               ) : null}
@@ -81,7 +82,7 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
                     href={`/teacher-resources/projects/${project.id}/students/${submission.id}`}
                     className="font-bold text-[var(--comic-secondary)] underline"
                   >
-                    {submission.student_number} {submission.student_name}
+                    {formatSubmissionGroupLabel(submission)}
                   </Link>
                 </td>
                 {showWorksheet ? <td className="py-3 pr-3 font-bold">{mark(submission.worksheet)}</td> : null}

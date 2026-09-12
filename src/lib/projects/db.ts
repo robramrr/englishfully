@@ -26,9 +26,11 @@ import {
   type ProjectComponentSettings,
   type ProjectComponentSubmission,
   type ProjectComponentType,
+  MAX_PROJECT_GROUP_SIZE,
   type ProjectListItem,
   type ProjectStatus,
   type ProjectSubmission,
+  type ProjectSubmissionMember,
   type ProjectSubmissionRow,
   type ProjectSubmissionStatus,
   type ProjectSubmissionWithComponents,
@@ -110,6 +112,7 @@ function rowToProject(row: Record<string, unknown>): Project {
     description: String(row.description ?? ''),
     class_name: formatClassNames(classNames) || String(row.class_name ?? ''),
     class_names: classNames,
+    class_label: String(row.class_label ?? '').trim(),
     due_date: row.due_date ? String(row.due_date) : null,
     status: parseProjectStatus(row.status),
     allow_resubmission: parseBoolean(row.allow_resubmission),
@@ -140,6 +143,7 @@ function rowToSubmission(row: Record<string, unknown>): ProjectSubmission {
     student_name: String(row.student_name ?? ''),
     student_number: String(row.student_number ?? ''),
     class_number: String(row.class_number ?? ''),
+    members: [],
     status: parseSubmissionStatus(row.status),
     submitted_at: row.submitted_at ? String(row.submitted_at) : null,
     reviewed_at: row.reviewed_at ? String(row.reviewed_at) : null,
@@ -259,6 +263,29 @@ export async function ensureProjectsSchema(): Promise<void> {
       await sql`
         CREATE UNIQUE INDEX IF NOT EXISTS idx_classroom_project_comp_sub_unique
         ON classroom_project_component_submissions(project_submission_id, component_id)
+      `;
+      await sql`
+        ALTER TABLE classroom_projects
+        ADD COLUMN IF NOT EXISTS class_label TEXT NOT NULL DEFAULT ''
+      `;
+      await sql`
+        CREATE TABLE IF NOT EXISTS classroom_project_submission_members (
+          id TEXT PRIMARY KEY,
+          submission_id TEXT NOT NULL REFERENCES classroom_project_submissions(id) ON DELETE CASCADE,
+          project_id TEXT NOT NULL,
+          student_name TEXT NOT NULL DEFAULT '',
+          student_number TEXT NOT NULL DEFAULT '',
+          class_number TEXT NOT NULL DEFAULT '',
+          sort_order INTEGER NOT NULL DEFAULT 0
+        )
+      `;
+      await sql`
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_classroom_project_members_student
+        ON classroom_project_submission_members(project_id, class_number, student_number)
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_classroom_project_members_submission
+        ON classroom_project_submission_members(submission_id, sort_order)
       `;
     })();
   }
@@ -442,10 +469,11 @@ export async function createProject(
   const slug = await uniqueSlug(title);
   const description = safeTrim(payload.description);
   const dueDate = safeTrim(payload.due_date) || null;
+  const classLabel = safeTrim(payload.class_label);
 
   await sql`
     INSERT INTO classroom_projects (
-      id, teacher_id, title, slug, description, class_name, due_date, status
+      id, teacher_id, title, slug, description, class_name, class_label, due_date, status
     ) VALUES (
       ${id},
       ${teacherId},
@@ -453,6 +481,7 @@ export async function createProject(
       ${slug},
       ${description},
       ${className},
+      ${classLabel},
       ${dueDate},
       'draft'
     )
@@ -503,6 +532,7 @@ export async function updateProject(
       slug = ${slug},
       description = ${safeTrim(payload.description)},
       class_name = ${className},
+      class_label = ${safeTrim(payload.class_label)},
       due_date = ${safeTrim(payload.due_date) || null},
       allow_resubmission = ${Boolean(payload.allow_resubmission)},
       updated_at = NOW()
@@ -654,6 +684,7 @@ export async function getPublicProject(idOrSlug: string): Promise<PublicProject 
     description: project.description,
     class_name: project.class_name,
     class_names: project.class_names,
+    class_label: project.class_label,
     due_date: project.due_date,
     allow_resubmission: project.allow_resubmission,
     entry_config: scopedEntryConfig(entryConfig, project.class_names),
@@ -681,6 +712,7 @@ export async function getTeacherPreviewProject(idOrSlug: string): Promise<Public
     description: project.description,
     class_name: project.class_name,
     class_names: project.class_names,
+    class_label: project.class_label,
     due_date: project.due_date,
     allow_resubmission: project.allow_resubmission,
     entry_config: scopedEntryConfig(entryConfig, project.class_names),
@@ -730,6 +762,107 @@ async function ensureComponentSubmissionRows(
   return getComponentSubmissions(submissionId);
 }
 
+function normalizeMembers(payload: StartProjectPayload): ProjectSubmissionMember[] {
+  const raw =
+    Array.isArray(payload.members) && payload.members.length > 0
+      ? payload.members
+      : [
+          {
+            student_name: payload.student_name ?? '',
+            student_number: payload.student_number ?? '',
+            class_number: payload.class_number ?? '',
+          },
+        ];
+
+  const members: ProjectSubmissionMember[] = [];
+  const seen = new Set<string>();
+  for (const item of raw) {
+    const member = {
+      student_name: safeTrim(item.student_name),
+      student_number: normalizeStudentNumber(item.student_number),
+      class_number: safeTrim(item.class_number),
+    };
+    if (!member.student_name || !member.student_number || !member.class_number) {
+      throw new Error('Each student needs a name, number, and class');
+    }
+    const key = `${member.class_number.toLowerCase()}::${member.student_number}`;
+    if (seen.has(key)) {
+      throw new Error('The same student was added twice');
+    }
+    seen.add(key);
+    members.push(member);
+  }
+
+  if (members.length === 0) {
+    throw new Error('Add at least one student');
+  }
+  if (members.length > MAX_PROJECT_GROUP_SIZE) {
+    throw new Error(`A group can have up to ${MAX_PROJECT_GROUP_SIZE} students`);
+  }
+  return members;
+}
+
+async function getSubmissionMembers(submissionId: string): Promise<ProjectSubmissionMember[]> {
+  const { rows } = await sql`
+    SELECT student_name, student_number, class_number
+    FROM classroom_project_submission_members
+    WHERE submission_id = ${submissionId}
+    ORDER BY sort_order ASC
+  `;
+  return rows.map((row) => ({
+    student_name: String(row.student_name ?? ''),
+    student_number: String(row.student_number ?? ''),
+    class_number: String(row.class_number ?? ''),
+  }));
+}
+
+async function replaceSubmissionMembers(
+  projectId: string,
+  submissionId: string,
+  members: ProjectSubmissionMember[]
+): Promise<void> {
+  await sql`DELETE FROM classroom_project_submission_members WHERE submission_id = ${submissionId}`;
+  for (const [index, member] of members.entries()) {
+    await sql`
+      INSERT INTO classroom_project_submission_members (
+        id, submission_id, project_id, student_name, student_number, class_number, sort_order
+      ) VALUES (
+        ${nanoid(21)},
+        ${submissionId},
+        ${projectId},
+        ${member.student_name},
+        ${member.student_number},
+        ${member.class_number},
+        ${index}
+      )
+    `;
+  }
+}
+
+async function hydrateSubmission(
+  row: Record<string, unknown>
+): Promise<ProjectSubmissionWithComponents> {
+  const submission = rowToSubmission(row);
+  let members = await getSubmissionMembers(submission.id);
+  if (members.length === 0) {
+    members = [
+      {
+        student_name: submission.student_name,
+        student_number: submission.student_number,
+        class_number: submission.class_number,
+      },
+    ];
+    if (submission.student_number && submission.class_number) {
+      await replaceSubmissionMembers(submission.project_id, submission.id, members);
+    }
+  }
+  return {
+    ...submission,
+    members,
+    components: await getComponentSubmissions(submission.id),
+  };
+}
+
 export async function findStudentSubmission(
   projectId: string,
   studentNumber: string,
@@ -737,20 +870,30 @@ export async function findStudentSubmission(
 ): Promise<ProjectSubmissionWithComponents | null> {
   await ensureProjectsSchema();
   const normalizedNumber = normalizeStudentNumber(studentNumber);
+  const classLabel = classNumber.trim();
+  const { rows: memberRows } = await sql`
+    SELECT s.*
+    FROM classroom_project_submission_members m
+    JOIN classroom_project_submissions s ON s.id = m.submission_id
+    WHERE m.project_id = ${projectId}
+      AND m.student_number = ${normalizedNumber}
+      AND m.class_number = ${classLabel}
+    LIMIT 1
+  `;
+  if (memberRows.length > 0) {
+    return hydrateSubmission(memberRows[0] as Record<string, unknown>);
+  }
+
   const { rows } = await sql`
     SELECT *
     FROM classroom_project_submissions
     WHERE project_id = ${projectId}
       AND student_number = ${normalizedNumber}
-      AND class_number = ${classNumber}
+      AND class_number = ${classLabel}
     LIMIT 1
   `;
   if (rows.length === 0) return null;
-  const submission = rowToSubmission(rows[0] as Record<string, unknown>);
-  return {
-    ...submission,
-    components: await getComponentSubmissions(submission.id),
-  };
+  return hydrateSubmission(rows[0] as Record<string, unknown>);
 }
 
 export async function startOrResumeSubmission(
@@ -758,34 +901,47 @@ export async function startOrResumeSubmission(
   payload: StartProjectPayload
 ): Promise<ProjectSubmissionWithComponents> {
   await ensureProjectsSchema();
-  const studentName = safeTrim(payload.student_name);
-  const studentNumber = normalizeStudentNumber(payload.student_number);
-  const classNumber = safeTrim(payload.class_number);
-  if (!studentName || !studentNumber || !classNumber) {
-    throw new Error('Student name, number, and class are required');
-  }
-  if (
-    project.class_names.length > 0 &&
-    !project.class_names.some((item) => item.toLowerCase() === classNumber.toLowerCase())
-  ) {
-    throw new Error('This project is not assigned to that class');
+  const members = normalizeMembers(payload);
+  for (const member of members) {
+    if (
+      project.class_names.length > 0 &&
+      !project.class_names.some((item) => item.toLowerCase() === member.class_number.toLowerCase())
+    ) {
+      throw new Error(`${member.student_name} is not in a class assigned to this project`);
+    }
   }
 
-  const existing = await findStudentSubmission(project.id, studentNumber, classNumber);
-  if (existing) {
-    const components = await ensureComponentSubmissionRows(existing.id, project.components);
-    if (existing.student_name !== studentName) {
+  const found: ProjectSubmissionWithComponents[] = [];
+  for (const member of members) {
+    const existing = await findStudentSubmission(project.id, member.student_number, member.class_number);
+    if (existing && !found.some((item) => item.id === existing.id)) {
+      found.push(existing);
+    }
+  }
+  if (found.length > 1) {
+    throw new Error('These students are already on different project submissions');
+  }
+
+  const primary = members[0];
+  if (found.length === 1) {
+    const existing = found[0];
+    const canEditMembers = existing.status === 'in_progress' || project.allow_resubmission;
+    if (canEditMembers) {
       await sql`
         UPDATE classroom_project_submissions
-        SET student_name = ${studentName}, updated_at = NOW()
+        SET
+          student_name = ${primary.student_name},
+          student_number = ${primary.student_number},
+          class_number = ${primary.class_number},
+          updated_at = NOW()
         WHERE id = ${existing.id}
       `;
+      await replaceSubmissionMembers(project.id, existing.id, members);
     }
-    return {
-      ...existing,
-      student_name: studentName,
-      components,
-    };
+    const components = await ensureComponentSubmissionRows(existing.id, project.components);
+    const updated = await findStudentSubmission(project.id, primary.student_number, primary.class_number);
+    if (!updated) throw new Error('Failed to resume project');
+    return { ...updated, components };
   }
 
   const id = nanoid(21);
@@ -795,14 +951,15 @@ export async function startOrResumeSubmission(
     ) VALUES (
       ${id},
       ${project.id},
-      ${studentName},
-      ${studentNumber},
-      ${classNumber},
+      ${primary.student_name},
+      ${primary.student_number},
+      ${primary.class_number},
       'in_progress'
     )
   `;
+  await replaceSubmissionMembers(project.id, id, members);
   const components = await ensureComponentSubmissionRows(id, project.components);
-  const created = await findStudentSubmission(project.id, studentNumber, classNumber);
+  const created = await findStudentSubmission(project.id, primary.student_number, primary.class_number);
   if (!created) throw new Error('Failed to start project');
   return { ...created, components };
 }
@@ -959,8 +1116,8 @@ export async function listProjectSubmissions(projectId: string): Promise<Project
 
   return Promise.all(
     rows.map(async (row) => {
-      const submission = rowToSubmission(row as Record<string, unknown>);
-      const components = await getComponentSubmissions(submission.id);
+      const submission = await hydrateSubmission(row as Record<string, unknown>);
+      const components = submission.components;
       const statusFor = (type: ProjectComponentType): ComponentSubmissionStatus | 'disabled' => {
         if (!enabledTypes.has(type)) return 'disabled';
         const component = project.components.find((item) => item.type === type);
@@ -990,11 +1147,7 @@ export async function getSubmissionForTeacher(
     LIMIT 1
   `;
   if (rows.length === 0) return null;
-  const submission = rowToSubmission(rows[0] as Record<string, unknown>);
-  return {
-    ...submission,
-    components: await getComponentSubmissions(submission.id),
-  };
+  return hydrateSubmission(rows[0] as Record<string, unknown>);
 }
 
 export async function reviewSubmission(

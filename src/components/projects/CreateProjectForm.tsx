@@ -16,6 +16,7 @@ export default function CreateProjectForm() {
   const [description, setDescription] = useState('');
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [manualClassName, setManualClassName] = useState('');
+  const [classLabel, setClassLabel] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [worksheetEnabled, setWorksheetEnabled] = useState(true);
   const [artworkEnabled, setArtworkEnabled] = useState(true);
@@ -47,6 +48,7 @@ export default function CreateProjectForm() {
           title,
           description,
           class_names: classNames,
+          class_label: classLabel,
           due_date: dueDate || null,
           worksheet_enabled: worksheetEnabled,
           artwork_enabled: artworkEnabled,
@@ -110,6 +112,18 @@ export default function CreateProjectForm() {
             onChange={(event) => setDueDate(event.target.value)}
           />
         </div>
+        <label className="block font-bold text-[var(--comic-dark)]">
+          Class label on the project header
+          <input
+            className="w-full comic-input mt-2"
+            placeholder="e.g. M4,M5,M6"
+            value={classLabel}
+            onChange={(event) => setClassLabel(event.target.value)}
+          />
+        </label>
+        <ComicText className="text-[var(--comic-dark)]">
+          This short label is what students and teachers see. The class list above only controls who can submit.
+        </ComicText>
 
         <div className="grid sm:grid-cols-3 gap-3">
           <label className="comic-border bg-white rounded-lg p-3 font-bold text-[var(--comic-dark)] flex items-center gap-2">

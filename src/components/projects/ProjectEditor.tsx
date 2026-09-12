@@ -52,6 +52,7 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
   const [manualClassName, setManualClassName] = useState(
     project.class_names?.length ? '' : project.class_name
   );
+  const [classLabel, setClassLabel] = useState(project.class_label || '');
   const [dueDate, setDueDate] = useState(project.due_date || '');
   const [allowResubmission, setAllowResubmission] = useState(project.allow_resubmission);
   const [components, setComponents] = useState<EditorComponent[]>(() =>
@@ -126,6 +127,7 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
           title,
           description,
           class_names: classes.length > 0 ? selectedClasses : [manualClassName].filter(Boolean),
+          class_label: classLabel,
           due_date: dueDate || null,
           allow_resubmission: allowResubmission,
           components: components.map((item) => ({
@@ -275,6 +277,18 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
             onChange={(event) => setDueDate(event.target.value)}
           />
         </div>
+        <label className="block font-bold text-[var(--comic-dark)]">
+          Class label on the project header
+          <input
+            className="w-full comic-input mt-2"
+            placeholder="e.g. M4,M5,M6"
+            value={classLabel}
+            onChange={(event) => setClassLabel(event.target.value)}
+          />
+        </label>
+        <ComicText className="text-[var(--comic-dark)]">
+          This short label is what students and teachers see. The class list above only controls who can submit.
+        </ComicText>
         <label className="flex items-center gap-2 font-bold text-[var(--comic-dark)]">
           <input
             type="checkbox"

@@ -10,6 +10,7 @@ import {
   PROJECT_COMPONENT_LABELS,
   PROJECT_SUBMISSION_STATUS_LABELS,
   formatProjectDateTime,
+  formatSubmissionGroupLabel,
   type ProjectComponentSubmission,
   type ProjectSubmissionWithComponents,
   type ProjectWithComponents,
@@ -85,11 +86,27 @@ export default function StudentSubmissionReview({
     <div className="space-y-8">
       <ComicCard className="comic-shadow-xl">
         <ComicTitle level={2} className="mb-2 text-[var(--comic-primary)]">
-          {submission.student_name}
+          {formatSubmissionGroupLabel(submission)}
         </ComicTitle>
-        <ComicText className="text-[var(--comic-dark)] font-bold">
-          #{submission.student_number} · {submission.class_number}
-        </ComicText>
+        <div className="space-y-1 mb-2">
+          {(submission.members?.length
+            ? submission.members
+            : [
+                {
+                  student_name: submission.student_name,
+                  student_number: submission.student_number,
+                  class_number: submission.class_number,
+                },
+              ]
+          ).map((member) => (
+            <ComicText
+              key={`${member.class_number}-${member.student_number}`}
+              className="text-[var(--comic-dark)] font-bold"
+            >
+              #{member.student_number} {member.student_name} · {member.class_number}
+            </ComicText>
+          ))}
+        </div>
         <ComicText className="text-[var(--comic-dark)]">
           {PROJECT_SUBMISSION_STATUS_LABELS[submission.status]}
           {submission.submitted_at ? ` · Submitted ${formatProjectDateTime(submission.submitted_at)}` : ''}

@@ -488,7 +488,9 @@ export async function listGradebookTasks(): Promise<GradebookTaskOption[]> {
         id: project.id,
         title: project.title,
         tool: 'projects',
-        class_name: project.class_names.length > 0 ? project.class_names.join(', ') : project.class_name,
+        class_name:
+          project.class_label.trim() ||
+          (project.class_names.length > 0 ? project.class_names.join(', ') : project.class_name),
         question_count: null,
       });
     }

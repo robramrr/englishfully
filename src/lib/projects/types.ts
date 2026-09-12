@@ -87,6 +87,7 @@ export interface Project {
   description: string;
   class_name: string;
   class_names: string[];
+  class_label: string;
   due_date: string | null;
   status: ProjectStatus;
   allow_resubmission: boolean;
@@ -124,12 +125,21 @@ export interface ProjectComponentSubmission {
   updated_at: string;
 }
 
+export interface ProjectSubmissionMember {
+  student_name: string;
+  student_number: string;
+  class_number: string;
+}
+
+export const MAX_PROJECT_GROUP_SIZE = 5;
+
 export interface ProjectSubmission {
   id: string;
   project_id: string;
   student_name: string;
   student_number: string;
   class_number: string;
+  members: ProjectSubmissionMember[];
   status: ProjectSubmissionStatus;
   submitted_at: string | null;
   reviewed_at: string | null;
@@ -165,6 +175,7 @@ export interface PublicProject {
   description: string;
   class_name: string;
   class_names: string[];
+  class_label: string;
   due_date: string | null;
   allow_resubmission: boolean;
   entry_config: SpeakEntryConfig;
@@ -176,6 +187,7 @@ export interface CreateProjectPayload {
   description: string;
   class_name?: string;
   class_names?: string[];
+  class_label?: string;
   due_date: string | null;
   worksheet_enabled: boolean;
   artwork_enabled: boolean;
@@ -187,6 +199,7 @@ export interface SaveProjectPayload {
   description: string;
   class_name?: string;
   class_names?: string[];
+  class_label?: string;
   due_date: string | null;
   allow_resubmission: boolean;
   components: Array<{
@@ -200,9 +213,10 @@ export interface SaveProjectPayload {
 }
 
 export interface StartProjectPayload {
-  student_name: string;
-  student_number: string;
-  class_number: string;
+  student_name?: string;
+  student_number?: string;
+  class_number?: string;
+  members?: ProjectSubmissionMember[];
 }
 
 export interface SaveComponentProgressPayload {
@@ -298,6 +312,44 @@ export function asSpeakingSettings(settings: ProjectComponentSettings): Speaking
 
 export function enabledRequiredComponents(components: Array<Pick<ProjectComponent, 'enabled' | 'required' | 'type'>>) {
   return components.filter((component) => component.enabled && component.required);
+}
+
+export function projectDisplayLabel(project: { class_label?: string; class_name?: string }): string {
+  return String(project.class_label ?? '').trim();
+}
+
+export function formatProjectHeaderMeta(project: {
+  class_label?: string;
+  due_date: string | null;
+}): string {
+  const label = projectDisplayLabel(project);
+  const due = formatProjectDueDate(project.due_date);
+  if (label && due) return `${label} · Due ${due}`;
+  if (label) return label;
+  if (due) return `Due ${due}`;
+  return '';
+}
+
+export function formatSubmissionGroupLabel(submission: {
+  student_name: string;
+  student_number: string;
+  class_number: string;
+  members?: ProjectSubmissionMember[];
+}): string {
+  const members =
+    submission.members && submission.members.length > 0
+      ? submission.members
+      : [
+          {
+            student_name: submission.student_name,
+            student_number: submission.student_number,
+            class_number: submission.class_number,
+          },
+        ];
+  return members
+    .map((member) => `${member.student_number} ${member.student_name}`.trim())
+    .filter(Boolean)
+    .join(', ');
 }
 
 export function formatProjectDueDate(value: string | null): string {

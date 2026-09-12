@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
       title: body.title,
       description: body.description || '',
       class_names: normalizeProjectClassNames(body),
+      class_label: body.class_label || '',
       due_date: body.due_date || null,
       worksheet_enabled: Boolean(body.worksheet_enabled),
       artwork_enabled: Boolean(body.artwork_enabled),

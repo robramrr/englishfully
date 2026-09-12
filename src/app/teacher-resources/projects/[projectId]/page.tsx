@@ -11,7 +11,7 @@ import Footer from '../../../../components/Footer';
 import TeacherAuthGate from '../../../../components/speak-and-submit/TeacherAuthGate';
 import ProjectEditor from '../../../../components/projects/ProjectEditor';
 import ProjectSubmissionsTable from '../../../../components/projects/ProjectSubmissionsTable';
-import { formatProjectDueDate, type ProjectWithComponents } from '@/lib/projects/types';
+import { formatProjectHeaderMeta, type ProjectWithComponents } from '@/lib/projects/types';
 
 interface ProjectDetailPageProps {
   params: { projectId: string };
@@ -75,8 +75,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                   {project.title}
                 </ComicTitle>
                 <ComicText className="text-[var(--comic-dark)] font-bold">
-                  {project.class_name}
-                  {project.due_date ? ` · Due ${formatProjectDueDate(project.due_date)}` : ''}
+                  {formatProjectHeaderMeta(project) || 'Add a short class label'}
                 </ComicText>
                 {project.description ? (
                   <ComicText className="text-[var(--comic-dark)] mt-3">{project.description}</ComicText>

@@ -9,7 +9,7 @@ import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import {
   PROJECT_STATUS_LABELS,
-  formatProjectDueDate,
+  formatProjectHeaderMeta,
   type ProjectListItem,
 } from '@/lib/projects/types';
 
@@ -42,7 +42,7 @@ export default function ProjectList({ projects, onRefresh }: ProjectListProps) {
       </ComicTitle>
       <div className="grid md:grid-cols-2 gap-6">
         {projects.map((project) => {
-          const due = formatProjectDueDate(project.due_date);
+          const headerMeta = formatProjectHeaderMeta(project);
           const total = project.student_count || project.completed_count + project.in_progress_count;
           return (
             <ComicCard key={project.id} className="comic-shadow-xl flex flex-col">
@@ -50,8 +50,7 @@ export default function ProjectList({ projects, onRefresh }: ProjectListProps) {
                 {project.title}
               </ComicTitle>
               <ComicText className="text-[var(--comic-dark)] font-bold mb-1">
-                {project.class_name || 'No class'}
-                {due ? ` · Due ${due}` : ''}
+                {headerMeta || 'No class label'}
               </ComicText>
               <ComicText className="text-[var(--comic-dark)] mb-2">
                 {project.completed_count}/{total || 0} submitted
