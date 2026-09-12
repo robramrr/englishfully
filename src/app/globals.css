@@ -4115,6 +4115,10 @@ body::before {
   line-height: 1.25;
 }
 
+.student-project-page .project-remove-button.comic-bg-danger {
+  background: linear-gradient(135deg, var(--brand-gray) 0%, var(--brand-navy) 100%);
+}
+
 @media (min-width: 380px) {
   .speak-page .speak-identity-title,
   .gradebook-page .speak-identity-title,

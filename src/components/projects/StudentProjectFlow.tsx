@@ -42,30 +42,6 @@ interface SavedProjectIdentity {
   class_number: string;
 }
 
-function identityStorageKey(projectId: string): string {
-  return `ef-project-identity:${projectId}`;
-}
-
-function readSavedIdentity(projectId: string): SavedProjectIdentity | null {
-  try {
-    const raw = window.localStorage.getItem(identityStorageKey(projectId));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as SavedProjectIdentity;
-    if (!parsed.student_number || !parsed.class_number) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function writeSavedIdentity(projectId: string, identity: SavedProjectIdentity): void {
-  window.localStorage.setItem(identityStorageKey(projectId), JSON.stringify(identity));
-}
-
-function clearSavedIdentity(projectId: string): void {
-  window.localStorage.removeItem(identityStorageKey(projectId));
-}
-
 interface StudentProjectFlowProps {
   projectId: string;
   preview?: boolean;
@@ -145,7 +121,7 @@ export default function StudentProjectFlow({
       : `/api/projects/public/${projectId}`;
     fetch(url, { cache: 'no-store' })
       .then((response) => response.json())
-      .then(async (data) => {
+      .then((data) => {
         if (!data.project) {
           setError(data.error || 'This project could not be found.');
           setStep('error');
@@ -164,25 +140,7 @@ export default function StudentProjectFlow({
         } else if (preview) {
           setClassNumber(data.project.class_label || 'Preview');
         }
-        if (preview) {
-          setStep('project');
-          return;
-        }
-
-        const saved = readSavedIdentity(data.project.id);
-        if (!saved) {
-          setStep('identity');
-          return;
-        }
-        const opened = await openSubmission(data.project.id, {
-          student_name: saved.student_name,
-          student_number: saved.student_number,
-          class_number: saved.class_number,
-        });
-        if (!opened) {
-          clearSavedIdentity(data.project.id);
-          setStep('identity');
-        }
+        setStep(preview ? 'project' : 'identity');
       })
       .catch(() => {
         setError('Unable to load this project.');
@@ -229,7 +187,6 @@ export default function StudentProjectFlow({
       setError(data.error || 'Unable to open this project.');
       return false;
     }
-    writeSavedIdentity(data.project?.id || idOrSlug, identity);
     applySubmission(data.submission, identity);
     return true;
   }
@@ -268,20 +225,6 @@ export default function StudentProjectFlow({
     }
   }
 
-  function handleSwitchStudent() {
-    if (project) clearSavedIdentity(project.id);
-    setSubmission(null);
-    setStudentName('');
-    setStudentNumber('');
-    setClassNumber('');
-    setArtworkMethod('');
-    setWorksheetMethod('');
-    setSpeakingMethod('');
-    setPendingAudio(null);
-    setError('');
-    setStep('identity');
-  }
-
   async function handleRemoveSubmission() {
     if (preview || !submission) return;
     const label = formatSubmissionGroupLabel(submission);
@@ -306,7 +249,6 @@ export default function StudentProjectFlow({
         setError(data.error || 'Failed to remove submission.');
         return;
       }
-      if (project) clearSavedIdentity(project.id);
       setSubmission(null);
       setArtworkMethod('');
       setWorksheetMethod('');
@@ -533,27 +475,21 @@ export default function StudentProjectFlow({
               </ComicCard>
             ) : null}
 
-            {submission ? (
-              <ComicCard className="comic-shadow-xl space-y-3">
-                <ComicText className="text-[var(--comic-dark)] font-bold">
-                  {(submission.members?.length ?? 1) > 1 ? 'Group' : 'Student'}:{' '}
-                  {formatSubmissionGroupLabel(submission)}
-                </ComicText>
-                {!preview ? (
-                  <div className="flex flex-wrap gap-3">
-                    <ComicButton variant="secondary" size="sm" onClick={handleSwitchStudent}>
-                      Use a different student
-                    </ComicButton>
-                    <ComicButton
-                      variant="danger"
-                      size="sm"
-                      disabled={busy === 'remove'}
-                      onClick={() => void handleRemoveSubmission()}
+            {submission && (submission.members?.length ?? 1) > 1 ? (
+              <ComicCard className="comic-shadow-xl">
+                <ComicTitle level={4} className="mb-4 text-[var(--comic-secondary)]">
+                  Group:
+                </ComicTitle>
+                <ul className="space-y-2">
+                  {(submission.members ?? []).map((member) => (
+                    <li
+                      key={`${member.class_number}-${member.student_number}`}
+                      className="font-bold text-[var(--comic-dark)]"
                     >
-                      {busy === 'remove' ? 'Removing…' : 'Remove submission'}
-                    </ComicButton>
-                  </div>
-                ) : null}
+                      {member.student_number} {member.student_name}
+                    </li>
+                  ))}
+                </ul>
               </ComicCard>
             ) : null}
 
@@ -581,13 +517,6 @@ export default function StudentProjectFlow({
                 <ComicTitle level={4} className="text-[var(--comic-primary)]">
                   Worksheet
                 </ComicTitle>
-                {worksheet.instructions ? (
-                  <ComicText className="text-[var(--comic-dark)]">{worksheet.instructions}</ComicText>
-                ) : (
-                  <ComicText className="text-[var(--comic-dark)]">
-                    Read or complete the worksheet.
-                  </ComicText>
-                )}
                 <ComicButton
                   variant="secondary"
                   className="w-full"
@@ -603,9 +532,9 @@ export default function StudentProjectFlow({
                 ) : null}
                 {!locked ? (
                   <>
-                    <ComicTitle level={5} className="text-[var(--comic-secondary)]">
+                    <ComicText className="text-[var(--comic-dark)]">
                       Upload completed worksheet
-                    </ComicTitle>
+                    </ComicText>
                     <input
                       ref={worksheetUploadRef}
                       type="file"
@@ -872,6 +801,17 @@ export default function StudentProjectFlow({
                   {busy === 'submit' ? 'Submitting…' : 'Submit project'}
                 </ComicButton>
               )}
+              {!preview ? (
+                <ComicButton
+                  variant="danger"
+                  size="lg"
+                  className="project-remove-button w-full"
+                  disabled={busy === 'remove'}
+                  onClick={() => void handleRemoveSubmission()}
+                >
+                  {busy === 'remove' ? 'Removing…' : 'Remove submission'}
+                </ComicButton>
+              ) : null}
             </ComicCard>
           </>
         ) : null}
