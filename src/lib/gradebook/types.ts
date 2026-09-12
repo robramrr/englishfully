@@ -1,16 +1,22 @@
-export type GradebookTool = 'speak_and_submit' | 'listen_and_answer' | 'listen_and_learn';
+export type GradebookTool =
+  | 'speak_and_submit'
+  | 'listen_and_answer'
+  | 'listen_and_learn'
+  | 'projects';
 export type GradebookSemester = 1 | 2;
 
 export const GRADEBOOK_TOOLS: GradebookTool[] = [
   'speak_and_submit',
   'listen_and_answer',
   'listen_and_learn',
+  'projects',
 ];
 
 export const GRADEBOOK_TOOL_LABELS: Record<GradebookTool, string> = {
   speak_and_submit: 'Speak & Submit',
   listen_and_answer: 'Listen & Answer',
   listen_and_learn: 'Listen & Learn',
+  projects: 'Projects',
 };
 
 export const DEFAULT_MAX_POINTS = 10;
@@ -201,7 +207,7 @@ function taskClassNameMentionsLevel(taskClassName: string, level: number): boole
   if (new RegExp(`(?:^|[^0-9])m${level}(?:[^0-9]|$)`).test(normalized)) return true;
   if (new RegExp(`(?:^|[^0-9])${level}(?:[\\/\\-_.]|$)`).test(normalized)) return true;
   return normalized
-    .split(/[,+;/|]+/)
+    .split(/[,+;/|·]+/)
     .map((part) => part.trim())
     .filter(Boolean)
     .some((part) => gradebookClassLevel(part) === level || classLabelsMatch(part, String(level)));
@@ -227,7 +233,7 @@ export function taskAppliesToGradebookClass(
   const level = gradebookClassLevel(gradeLabel);
   if (level == null) {
     return taskClass
-      .split(/[,+;/|]+/)
+      .split(/[,+;/|·]+/)
       .map((part) => part.trim())
       .filter(Boolean)
       .some((part) => classLabelsMatch(part, gradeLabel));
@@ -236,7 +242,7 @@ export function taskAppliesToGradebookClass(
   const mentionedLevels = [4, 5, 6].filter((n) => taskClassNameMentionsLevel(taskClass, n));
   if (mentionedLevels.length === 0) {
     return taskClass
-      .split(/[,+;/|]+/)
+      .split(/[,+;/|·]+/)
       .map((part) => part.trim())
       .filter(Boolean)
       .some((part) => classLabelsMatch(part, gradeLabel));

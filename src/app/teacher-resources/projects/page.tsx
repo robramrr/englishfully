@@ -33,7 +33,7 @@ export default function ProjectsPage() {
   return (
     <div className="projects-page flex flex-col min-h-screen bg-[var(--comic-light)]">
       <section className="comic-bg-secondary py-16 px-4 comic-pattern-dots text-center">
-        <ComicTitle level={1} className="comic-text-white mb-4">
+        <ComicTitle level={1} className="comic-title-no-shadow comic-text-white mb-4">
           <span className="inline-flex items-center justify-center gap-3">
             <FontAwesomeIcon icon={faFolderOpen} aria-hidden className="h-[0.85em] w-[0.85em]" />
             Projects

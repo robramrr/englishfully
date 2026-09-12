@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFolderOpen, faHand } from '@fortawesome/free-solid-svg-icons';
 import ComicAudioPlayer from '../ComicAudioPlayer';
@@ -33,6 +33,7 @@ type Step = 'loading' | 'identity' | 'project' | 'error';
 interface StudentProjectFlowProps {
   projectId: string;
   preview?: boolean;
+  headerAction?: ReactNode;
 }
 
 function statusFor(
@@ -52,7 +53,11 @@ function rowFor(
   return submission.components.find((item) => item.component_id === component.id) ?? null;
 }
 
-export default function StudentProjectFlow({ projectId, preview = false }: StudentProjectFlowProps) {
+export default function StudentProjectFlow({
+  projectId,
+  preview = false,
+  headerAction,
+}: StudentProjectFlowProps) {
   const [step, setStep] = useState<Step>('loading');
   const [project, setProject] = useState<PublicProject | null>(null);
   const [submission, setSubmission] = useState<ProjectSubmissionWithComponents | null>(null);
@@ -352,7 +357,7 @@ export default function StudentProjectFlow({ projectId, preview = false }: Stude
   return (
     <div className="student-project-page min-h-screen bg-[var(--comic-light)]">
       <section className="comic-bg-secondary py-10 px-4 comic-pattern-dots text-center">
-        <ComicTitle level={2} className="comic-text-white mb-2">
+        <ComicTitle level={2} className="comic-title-no-shadow comic-text-white mb-2">
           <span className="inline-flex items-center justify-center gap-3">
             <FontAwesomeIcon icon={faFolderOpen} aria-hidden className="h-[0.85em] w-[0.85em]" />
             <span>{project?.title || 'Project'}</span>
@@ -367,6 +372,10 @@ export default function StudentProjectFlow({ projectId, preview = false }: Stude
           <ComicText className="comic-text-white mt-2">Due {formatProjectDueDate(project.due_date)}</ComicText>
         ) : null}
       </section>
+
+      {headerAction ? (
+        <div className="max-w-3xl mx-auto px-4 pt-4">{headerAction}</div>
+      ) : null}
 
       <section className="max-w-3xl mx-auto py-8 px-4 space-y-6">
         {preview ? (

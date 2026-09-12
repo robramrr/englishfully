@@ -11,14 +11,17 @@ interface PreviewPageProps {
 export default function ProjectPreviewPage({ params }: PreviewPageProps) {
   return (
     <div className="projects-preview-page min-h-screen bg-[var(--comic-light)]">
-      <div className="max-w-3xl mx-auto px-4 pt-6">
-        <Link href={`/teacher-resources/projects/${params.projectId}`}>
-          <ComicButton variant="accent" size="sm">
-            ← Back to editor
-          </ComicButton>
-        </Link>
-      </div>
-      <StudentProjectFlow projectId={params.projectId} preview />
+      <StudentProjectFlow
+        projectId={params.projectId}
+        preview
+        headerAction={
+          <Link href={`/teacher-resources/projects/${params.projectId}`}>
+            <ComicButton variant="accent" size="sm">
+              ← Back to editor
+            </ComicButton>
+          </Link>
+        }
+      />
     </div>
   );
 }

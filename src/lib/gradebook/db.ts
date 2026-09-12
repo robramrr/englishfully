@@ -425,6 +425,7 @@ export async function listGradebookTasks(): Promise<GradebookTaskOption[]> {
   const speakOptions: GradebookTaskOption[] = [];
   const listenOptions: GradebookTaskOption[] = [];
   const learnOptions: GradebookTaskOption[] = [];
+  const projectOptions: GradebookTaskOption[] = [];
 
   try {
     const speakTasks = await listTasks();
@@ -479,7 +480,23 @@ export async function listGradebookTasks(): Promise<GradebookTaskOption[]> {
     console.error('listGradebookTasks learn failed:', error);
   }
 
-  return [...speakOptions, ...listenOptions, ...learnOptions];
+  try {
+    const { listProjects } = await import('@/lib/projects/db');
+    const projects = await listProjects();
+    for (const project of projects) {
+      projectOptions.push({
+        id: project.id,
+        title: project.title,
+        tool: 'projects',
+        class_name: project.class_names.length > 0 ? project.class_names.join(', ') : project.class_name,
+        question_count: null,
+      });
+    }
+  } catch (error) {
+    console.error('listGradebookTasks projects failed:', error);
+  }
+
+  return [...speakOptions, ...listenOptions, ...learnOptions, ...projectOptions];
 }
 
 /**
@@ -979,7 +996,8 @@ export async function upsertGradeEntry(
   if (
     payload.tool !== 'speak_and_submit' &&
     payload.tool !== 'listen_and_answer' &&
-    payload.tool !== 'listen_and_learn'
+    payload.tool !== 'listen_and_learn' &&
+    payload.tool !== 'projects'
   ) {
     throw new Error('Invalid tool');
   }
@@ -1959,6 +1977,9 @@ function studentUrlForTool(tool: GradebookTool, taskId: string): string | null {
   }
   if (tool === 'listen_and_learn') {
     return `/listen-learn/${taskId}`;
+  }
+  if (tool === 'projects') {
+    return `/projects/${taskId}`;
   }
   // Listen & Answer is print-based today — no student submit URL.
   return null;

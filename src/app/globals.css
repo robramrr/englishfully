@@ -4067,6 +4067,19 @@ body::before {
   text-shadow: none;
 }
 
+/* Projects — flat headings, no header drop shadows */
+.projects-page .comic-title,
+.projects-preview-page .comic-title,
+.student-project-page .comic-title {
+  text-shadow: none;
+}
+
+.projects-page .comic-bg-secondary,
+.projects-preview-page .comic-bg-secondary,
+.student-project-page .comic-bg-secondary {
+  box-shadow: none;
+}
+
 /* Running total highlighters */
 .gradebook-total-complete {
   display: inline-block;
