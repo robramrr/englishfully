@@ -299,12 +299,8 @@ export default function StudentProjectFlow({
     setSubmission(data.submission);
   }
 
-  async function handleOpenWorksheet() {
-    if (!worksheet) return;
-    if (worksheetSettings?.file?.url) {
-      window.open(worksheetSettings.file.url, '_blank', 'noopener,noreferrer');
-    }
-    if (preview || locked) return;
+  async function markWorksheetOpened() {
+    if (preview || locked || !submission || !worksheet) return;
     setBusy('worksheet');
     setError('');
     try {
@@ -412,10 +408,16 @@ export default function StudentProjectFlow({
             <span>{project?.title || 'Project'}</span>
           </span>
         </ComicTitle>
-        {project?.description ? (
-          <ComicText className="comic-text-white font-bold max-w-3xl mx-auto">
-            {project.description}
-          </ComicText>
+        {worksheetSettings?.file?.url ? (
+          <a
+            href={worksheetSettings.file.url}
+            target="_blank"
+            rel="noreferrer"
+            className="comic-text comic-text-white font-bold underline max-w-3xl mx-auto inline-block"
+            onClick={() => void markWorksheetOpened()}
+          >
+            Open worksheet
+          </a>
         ) : null}
         {project && formatProjectHeaderMeta(project) ? (
           <ComicText className="comic-text-white mt-2">{formatProjectHeaderMeta(project)}</ComicText>
@@ -517,14 +519,6 @@ export default function StudentProjectFlow({
                 <ComicTitle level={4} className="text-[var(--comic-primary)]">
                   Worksheet
                 </ComicTitle>
-                <ComicButton
-                  variant="secondary"
-                  className="w-full"
-                  disabled={busy === 'worksheet' || !worksheetSettings?.file}
-                  onClick={() => void handleOpenWorksheet()}
-                >
-                  {worksheetSettings?.file ? 'Open worksheet' : 'No worksheet attached yet'}
-                </ComicButton>
                 {statusFor(worksheet, submission) ? (
                   <ComicText className="text-[var(--comic-success)] font-bold">
                     ✓ Worksheet opened
