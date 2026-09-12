@@ -106,6 +106,7 @@ export default function StudentProjectFlow({
   const [busy, setBusy] = useState('');
   const [speakingMethod, setSpeakingMethod] = useState<SpeakingMethod | ''>('');
   const [artworkMethod, setArtworkMethod] = useState<'upload' | 'camera' | ''>('');
+  const [worksheetMethod, setWorksheetMethod] = useState<'upload' | 'camera' | ''>('');
   const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; duration: number } | null>(null);
   const artworkInputRef = useRef<HTMLInputElement>(null);
   const worksheetUploadRef = useRef<HTMLInputElement>(null);
@@ -274,6 +275,7 @@ export default function StudentProjectFlow({
     setStudentNumber('');
     setClassNumber('');
     setArtworkMethod('');
+    setWorksheetMethod('');
     setSpeakingMethod('');
     setPendingAudio(null);
     setError('');
@@ -307,6 +309,7 @@ export default function StudentProjectFlow({
       if (project) clearSavedIdentity(project.id);
       setSubmission(null);
       setArtworkMethod('');
+      setWorksheetMethod('');
       setSpeakingMethod('');
       setPendingAudio(null);
       setStep('identity');
@@ -600,6 +603,9 @@ export default function StudentProjectFlow({
                 ) : null}
                 {!locked ? (
                   <>
+                    <ComicTitle level={5} className="text-[var(--comic-secondary)]">
+                      Upload completed worksheet
+                    </ComicTitle>
                     <input
                       ref={worksheetUploadRef}
                       type="file"
@@ -611,15 +617,37 @@ export default function StudentProjectFlow({
                         event.target.value = '';
                       }}
                     />
-                    <ComicButton
-                      variant="accent"
-                      size="sm"
-                      className="w-full"
-                      disabled={busy === 'worksheet-upload' || preview}
-                      onClick={() => worksheetUploadRef.current?.click()}
-                    >
-                      {busy === 'worksheet-upload' ? 'Uploading…' : 'Upload completed worksheet'}
-                    </ComicButton>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <ComicButton
+                        variant={worksheetMethod === 'upload' ? 'primary' : 'secondary'}
+                        size="sm"
+                        className="w-full"
+                        disabled={preview || busy === 'worksheet-upload'}
+                        onClick={() => {
+                          setWorksheetMethod('upload');
+                          worksheetUploadRef.current?.click();
+                        }}
+                      >
+                        {busy === 'worksheet-upload' && worksheetMethod === 'upload'
+                          ? 'Uploading…'
+                          : 'Upload'}
+                      </ComicButton>
+                      <ComicButton
+                        variant={worksheetMethod === 'camera' ? 'primary' : 'secondary'}
+                        size="sm"
+                        className="w-full"
+                        disabled={preview || busy === 'worksheet-upload'}
+                        onClick={() => setWorksheetMethod('camera')}
+                      >
+                        Take a photo
+                      </ComicButton>
+                    </div>
+                    {worksheetMethod === 'camera' ? (
+                      <ArtworkCamera
+                        disabled={preview || busy === 'worksheet-upload'}
+                        onCapture={(file) => void handleWorksheetUpload(file)}
+                      />
+                    ) : null}
                   </>
                 ) : null}
                 {worksheetRow?.file_url ? (
