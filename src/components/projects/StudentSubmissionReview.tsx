@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import ComicAudioPlayer from '../ComicAudioPlayer';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
@@ -42,8 +43,10 @@ export default function StudentSubmissionReview({
   const [feedback, setFeedback] = useState(initialSubmission.teacher_feedback);
   const [score, setScore] = useState(initialSubmission.score?.toString() ?? '');
   const [saving, setSaving] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const router = useRouter();
 
   const worksheet = componentRow(project, submission, 'worksheet');
   const artwork = componentRow(project, submission, 'artwork');
@@ -82,6 +85,32 @@ export default function StudentSubmissionReview({
     }
   }
 
+  async function handleRemove() {
+    const label = formatSubmissionGroupLabel(submission);
+    const confirmed = window.confirm(
+      `Remove this submission for ${label}?\n\nThey will be able to start the project again.`
+    );
+    if (!confirmed) return;
+
+    setRemoving(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/projects/${project.id}/submissions/${submission.id}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(data.error || 'Failed to remove submission.');
+        return;
+      }
+      router.push(`/teacher-resources/projects/${project.id}`);
+    } catch {
+      setError('Failed to remove submission.');
+    } finally {
+      setRemoving(false);
+    }
+  }
+
   return (
     <div className="space-y-8">
       <ComicCard className="comic-shadow-xl">
@@ -107,10 +136,13 @@ export default function StudentSubmissionReview({
             </ComicText>
           ))}
         </div>
-        <ComicText className="text-[var(--comic-dark)]">
+        <ComicText className="text-[var(--comic-dark)] mb-4">
           {PROJECT_SUBMISSION_STATUS_LABELS[submission.status]}
           {submission.submitted_at ? ` · Submitted ${formatProjectDateTime(submission.submitted_at)}` : ''}
         </ComicText>
+        <ComicButton variant="danger" size="sm" disabled={removing} onClick={() => void handleRemove()}>
+          {removing ? 'Removing…' : 'Remove submission'}
+        </ComicButton>
       </ComicCard>
 
       {worksheet ? (

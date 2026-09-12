@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isTeacherAuthenticated } from '@/lib/speak-and-submit/auth';
 import { jsonError } from '@/lib/speak-and-submit/api';
-import { getProjectByIdOrSlug, getSubmissionForTeacher, reviewSubmission } from '@/lib/projects/db';
+import {
+  deleteProjectSubmission,
+  getProjectByIdOrSlug,
+  getSubmissionForTeacher,
+  reviewSubmission,
+} from '@/lib/projects/db';
 import type { ReviewSubmissionPayload } from '@/lib/projects/types';
 
 export const dynamic = 'force-dynamic';
@@ -55,5 +60,22 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error('Review project submission error:', error);
     return jsonError(error instanceof Error ? error.message : 'Failed to save review', 400);
+  }
+}
+
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+  if (!(await isTeacherAuthenticated())) {
+    return jsonError('Unauthorized', 401);
+  }
+
+  try {
+    const project = await getProjectByIdOrSlug(params.projectId);
+    if (!project) return jsonError('Project not found', 404);
+    const deleted = await deleteProjectSubmission(project.id, params.submissionId);
+    if (!deleted) return jsonError('Submission not found', 404);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('Delete project submission error:', error);
+    return jsonError('Failed to remove submission', 500);
   }
 }

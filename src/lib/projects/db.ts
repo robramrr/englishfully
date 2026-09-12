@@ -1150,6 +1150,20 @@ export async function getSubmissionForTeacher(
   return hydrateSubmission(rows[0] as Record<string, unknown>);
 }
 
+export async function deleteProjectSubmission(
+  projectId: string,
+  submissionId: string
+): Promise<boolean> {
+  await ensureProjectsSchema();
+  const existing = await getSubmissionForTeacher(projectId, submissionId);
+  if (!existing) return false;
+  await sql`
+    DELETE FROM classroom_project_submissions
+    WHERE id = ${existing.id} AND project_id = ${projectId}
+  `;
+  return true;
+}
+
 export async function reviewSubmission(
   projectId: string,
   submissionId: string,

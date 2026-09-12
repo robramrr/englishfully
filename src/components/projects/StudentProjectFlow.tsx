@@ -8,6 +8,7 @@ import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
+import ArtworkCamera from './ArtworkCamera';
 import ProjectRecorder from './ProjectRecorder';
 import StudentGroupIdentity, {
   emptyIdentityDraft,
@@ -74,6 +75,7 @@ export default function StudentProjectFlow({
   const [checkingIdentity, setCheckingIdentity] = useState(false);
   const [busy, setBusy] = useState('');
   const [speakingMethod, setSpeakingMethod] = useState<SpeakingMethod | ''>('');
+  const [artworkMethod, setArtworkMethod] = useState<'upload' | 'camera' | ''>('');
   const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; duration: number } | null>(null);
   const artworkInputRef = useRef<HTMLInputElement>(null);
   const worksheetUploadRef = useRef<HTMLInputElement>(null);
@@ -519,29 +521,59 @@ export default function StudentProjectFlow({
                 ) : null}
                 {!locked ? (
                   <>
-                    <input
-                      ref={artworkInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/gif"
-                      className="hidden"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) void handleArtworkUpload(file);
-                        event.target.value = '';
-                      }}
-                    />
-                    <ComicButton
-                      variant="primary"
-                      className="w-full"
-                      disabled={busy === 'artwork' || preview}
-                      onClick={() => artworkInputRef.current?.click()}
-                    >
-                      {busy === 'artwork'
-                        ? 'Uploading…'
-                        : artworkRow?.file_url
-                          ? 'Replace'
-                          : 'Upload artwork'}
-                    </ComicButton>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <ComicButton
+                        variant={artworkMethod === 'upload' ? 'primary' : 'secondary'}
+                        size="sm"
+                        className="w-full"
+                        disabled={preview || busy === 'artwork'}
+                        onClick={() => setArtworkMethod('upload')}
+                      >
+                        Upload photo
+                      </ComicButton>
+                      <ComicButton
+                        variant={artworkMethod === 'camera' ? 'primary' : 'secondary'}
+                        size="sm"
+                        className="w-full"
+                        disabled={preview || busy === 'artwork'}
+                        onClick={() => setArtworkMethod('camera')}
+                      >
+                        Take a picture
+                      </ComicButton>
+                    </div>
+                    {artworkMethod === 'upload' ? (
+                      <>
+                        <input
+                          ref={artworkInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          className="hidden"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) void handleArtworkUpload(file);
+                            event.target.value = '';
+                          }}
+                        />
+                        <ComicButton
+                          variant="primary"
+                          className="w-full"
+                          disabled={busy === 'artwork' || preview}
+                          onClick={() => artworkInputRef.current?.click()}
+                        >
+                          {busy === 'artwork'
+                            ? 'Uploading…'
+                            : artworkRow?.file_url
+                              ? 'Replace upload'
+                              : 'Choose photo'}
+                        </ComicButton>
+                      </>
+                    ) : null}
+                    {artworkMethod === 'camera' ? (
+                      <ArtworkCamera
+                        disabled={preview || busy === 'artwork'}
+                        onCapture={(file) => void handleArtworkUpload(file)}
+                      />
+                    ) : null}
                   </>
                 ) : null}
               </ComicCard>
