@@ -782,8 +782,8 @@ function normalizeMembers(payload: StartProjectPayload): ProjectSubmissionMember
       student_number: normalizeStudentNumber(item.student_number),
       class_number: safeTrim(item.class_number),
     };
-    if (!member.student_name || !member.student_number || !member.class_number) {
-      throw new Error('Each student needs a name, number, and class');
+    if (!member.student_number || !member.class_number) {
+      throw new Error('Each student needs a number and class');
     }
     const key = `${member.class_number.toLowerCase()}::${member.student_number}`;
     if (seen.has(key)) {
@@ -863,6 +863,21 @@ async function hydrateSubmission(
   };
 }
 
+function memberKey(member: Pick<ProjectSubmissionMember, 'student_number' | 'class_number'>): string {
+  return `${member.class_number.trim().toLowerCase()}::${normalizeStudentNumber(member.student_number)}`;
+}
+
+function memberLabel(member: ProjectSubmissionMember): string {
+  const name = member.student_name.trim();
+  return name ? `#${member.student_number} ${name}` : `#${member.student_number}`;
+}
+
+function canonicalClassName(project: ProjectWithComponents, classNumber: string): string {
+  const trimmed = classNumber.trim();
+  const match = project.class_names.find((item) => item.toLowerCase() === trimmed.toLowerCase());
+  return match || trimmed;
+}
+
 export async function findStudentSubmission(
   projectId: string,
   studentNumber: string,
@@ -870,14 +885,14 @@ export async function findStudentSubmission(
 ): Promise<ProjectSubmissionWithComponents | null> {
   await ensureProjectsSchema();
   const normalizedNumber = normalizeStudentNumber(studentNumber);
-  const classLabel = classNumber.trim();
+  const classLabel = classNumber.trim().toLowerCase();
   const { rows: memberRows } = await sql`
     SELECT s.*
     FROM classroom_project_submission_members m
     JOIN classroom_project_submissions s ON s.id = m.submission_id
     WHERE m.project_id = ${projectId}
       AND m.student_number = ${normalizedNumber}
-      AND m.class_number = ${classLabel}
+      AND lower(trim(m.class_number)) = ${classLabel}
     LIMIT 1
   `;
   if (memberRows.length > 0) {
@@ -889,7 +904,7 @@ export async function findStudentSubmission(
     FROM classroom_project_submissions
     WHERE project_id = ${projectId}
       AND student_number = ${normalizedNumber}
-      AND class_number = ${classLabel}
+      AND lower(trim(class_number)) = ${classLabel}
     LIMIT 1
   `;
   if (rows.length === 0) return null;
@@ -901,47 +916,59 @@ export async function startOrResumeSubmission(
   payload: StartProjectPayload
 ): Promise<ProjectSubmissionWithComponents> {
   await ensureProjectsSchema();
-  const members = normalizeMembers(payload);
+  const members = normalizeMembers(payload).map((member) => ({
+    ...member,
+    class_number: canonicalClassName(project, member.class_number),
+  }));
   for (const member of members) {
     if (
       project.class_names.length > 0 &&
       !project.class_names.some((item) => item.toLowerCase() === member.class_number.toLowerCase())
     ) {
-      throw new Error(`${member.student_name} is not in a class assigned to this project`);
+      throw new Error(`${memberLabel(member)} is not in a class assigned to this project`);
     }
-  }
-
-  const found: ProjectSubmissionWithComponents[] = [];
-  for (const member of members) {
-    const existing = await findStudentSubmission(project.id, member.student_number, member.class_number);
-    if (existing && !found.some((item) => item.id === existing.id)) {
-      found.push(existing);
-    }
-  }
-  if (found.length > 1) {
-    throw new Error('These students are already on different project submissions');
   }
 
   const primary = members[0];
-  if (found.length === 1) {
-    const existing = found[0];
-    const canEditMembers = existing.status === 'in_progress' || project.allow_resubmission;
-    if (canEditMembers) {
-      await sql`
-        UPDATE classroom_project_submissions
-        SET
-          student_name = ${primary.student_name},
-          student_number = ${primary.student_number},
-          class_number = ${primary.class_number},
-          updated_at = NOW()
-        WHERE id = ${existing.id}
-      `;
-      await replaceSubmissionMembers(project.id, existing.id, members);
+  const existingByMember = new Map<string, ProjectSubmissionWithComponents>();
+  for (const member of members) {
+    const existing = await findStudentSubmission(project.id, member.student_number, member.class_number);
+    if (existing) existingByMember.set(memberKey(member), existing);
+  }
+
+  const uniqueExisting = [...new Map([...existingByMember.values()].map((item) => [item.id, item])).values()];
+  if (uniqueExisting.length > 1) {
+    throw new Error('These students already belong to different submissions. Each student can only be on one.');
+  }
+
+  const primaryExisting = existingByMember.get(memberKey(primary)) ?? null;
+
+  if (primaryExisting) {
+    const extrasOnOtherSubmissions = members.filter((member) => {
+      const match = existingByMember.get(memberKey(member));
+      return Boolean(match && match.id !== primaryExisting.id);
+    });
+    if (extrasOnOtherSubmissions.length > 0) {
+      throw new Error(
+        `${extrasOnOtherSubmissions.map(memberLabel).join(', ')} already ${
+          extrasOnOtherSubmissions.length === 1 ? 'has' : 'have'
+        } a different submission for this project.`
+      );
     }
-    const components = await ensureComponentSubmissionRows(existing.id, project.components);
+
+    const components = await ensureComponentSubmissionRows(primaryExisting.id, project.components);
     const updated = await findStudentSubmission(project.id, primary.student_number, primary.class_number);
-    if (!updated) throw new Error('Failed to resume project');
+    if (!updated) throw new Error('Failed to open your project');
     return { ...updated, components };
+  }
+
+  const alreadySubmitted = members.filter((member) => existingByMember.has(memberKey(member)));
+  if (alreadySubmitted.length > 0) {
+    throw new Error(
+      `${alreadySubmitted.map(memberLabel).join(', ')} already ${
+        alreadySubmitted.length === 1 ? 'has' : 'have'
+      } a submission for this project and cannot join this group.`
+    );
   }
 
   const id = nanoid(21);
@@ -1156,6 +1183,20 @@ export async function deleteProjectSubmission(
 ): Promise<boolean> {
   await ensureProjectsSchema();
   const existing = await getSubmissionForTeacher(projectId, submissionId);
+  if (!existing) return false;
+  await sql`
+    DELETE FROM classroom_project_submissions
+    WHERE id = ${existing.id} AND project_id = ${projectId}
+  `;
+  return true;
+}
+
+export async function deleteStudentProjectSubmission(
+  projectId: string,
+  studentNumber: string,
+  classNumber: string
+): Promise<boolean> {
+  const existing = await findStudentSubmission(projectId, studentNumber, classNumber);
   if (!existing) return false;
   await sql`
     DELETE FROM classroom_project_submissions

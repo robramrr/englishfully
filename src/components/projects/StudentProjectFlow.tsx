@@ -36,6 +36,36 @@ import {
 
 type Step = 'loading' | 'identity' | 'project' | 'error';
 
+interface SavedProjectIdentity {
+  student_name: string;
+  student_number: string;
+  class_number: string;
+}
+
+function identityStorageKey(projectId: string): string {
+  return `ef-project-identity:${projectId}`;
+}
+
+function readSavedIdentity(projectId: string): SavedProjectIdentity | null {
+  try {
+    const raw = window.localStorage.getItem(identityStorageKey(projectId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as SavedProjectIdentity;
+    if (!parsed.student_number || !parsed.class_number) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeSavedIdentity(projectId: string, identity: SavedProjectIdentity): void {
+  window.localStorage.setItem(identityStorageKey(projectId), JSON.stringify(identity));
+}
+
+function clearSavedIdentity(projectId: string): void {
+  window.localStorage.removeItem(identityStorageKey(projectId));
+}
+
 interface StudentProjectFlowProps {
   projectId: string;
   preview?: boolean;
@@ -114,7 +144,7 @@ export default function StudentProjectFlow({
       : `/api/projects/public/${projectId}`;
     fetch(url, { cache: 'no-store' })
       .then((response) => response.json())
-      .then((data) => {
+      .then(async (data) => {
         if (!data.project) {
           setError(data.error || 'This project could not be found.');
           setStep('error');
@@ -133,13 +163,75 @@ export default function StudentProjectFlow({
         } else if (preview) {
           setClassNumber(data.project.class_label || 'Preview');
         }
-        setStep(preview ? 'project' : 'identity');
+        if (preview) {
+          setStep('project');
+          return;
+        }
+
+        const saved = readSavedIdentity(data.project.id);
+        if (!saved) {
+          setStep('identity');
+          return;
+        }
+        const opened = await openSubmission(data.project.id, {
+          student_name: saved.student_name,
+          student_number: saved.student_number,
+          class_number: saved.class_number,
+        });
+        if (!opened) {
+          clearSavedIdentity(data.project.id);
+          setStep('identity');
+        }
       })
       .catch(() => {
         setError('Unable to load this project.');
         setStep('error');
       });
   }, [preview, projectId]);
+
+  function applySubmission(
+    next: ProjectSubmissionWithComponents,
+    identity: SavedProjectIdentity
+  ) {
+    setStudentName(identity.student_name || next.student_name);
+    setStudentNumber(identity.student_number);
+    setClassNumber(identity.class_number);
+    setSubmission(next);
+    const existingMethod = next.components.find(
+      (item) => item.text_data === 'in_person' || item.audio_url
+    );
+    if (existingMethod?.text_data === 'in_person') setSpeakingMethod('in_person');
+    if (existingMethod?.audio_url) setSpeakingMethod('online');
+    setStep('project');
+  }
+
+  async function openSubmission(
+    idOrSlug: string,
+    identity: SavedProjectIdentity,
+    members?: Array<{ student_name: string; student_number: string; class_number: string }>
+  ): Promise<boolean> {
+    const response = await fetch(`/api/projects/public/${idOrSlug}/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(
+        members && members.length > 0
+          ? { members }
+          : {
+              student_name: identity.student_name,
+              student_number: identity.student_number,
+              class_number: identity.class_number,
+            }
+      ),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      setError(data.error || 'Unable to open this project.');
+      return false;
+    }
+    writeSavedIdentity(data.project?.id || idOrSlug, identity);
+    applySubmission(data.submission, identity);
+    return true;
+  }
 
   async function handleContinueIdentity() {
     if (!project) return;
@@ -158,32 +250,70 @@ export default function StudentProjectFlow({
     setCheckingIdentity(true);
     setError('');
     try {
-      const response = await fetch(`/api/projects/public/${projectId}/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          members: resolved.members,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error || 'Unable to start this project.');
-        return;
-      }
-      setStudentName(primary.student_name);
-      setStudentNumber(primary.student_number);
-      setClassNumber(primary.class_number);
-      setSubmission(data.submission);
-      const existingMethod = data.submission?.components?.find(
-        (item: ProjectComponentSubmission) => item.text_data === 'in_person' || item.audio_url
+      const opened = await openSubmission(
+        projectId,
+        {
+          student_name: primary.student_name,
+          student_number: primary.student_number,
+          class_number: primary.class_number,
+        },
+        resolved.members
       );
-      if (existingMethod?.text_data === 'in_person') setSpeakingMethod('in_person');
-      if (existingMethod?.audio_url) setSpeakingMethod('online');
-      setStep('project');
+      if (!opened) return;
     } catch {
       setError('Unable to start this project. Please try again.');
     } finally {
       setCheckingIdentity(false);
+    }
+  }
+
+  function handleSwitchStudent() {
+    if (project) clearSavedIdentity(project.id);
+    setSubmission(null);
+    setStudentName('');
+    setStudentNumber('');
+    setClassNumber('');
+    setArtworkMethod('');
+    setSpeakingMethod('');
+    setPendingAudio(null);
+    setError('');
+    setStep('identity');
+  }
+
+  async function handleRemoveSubmission() {
+    if (preview || !submission) return;
+    const label = formatSubmissionGroupLabel(submission);
+    const confirmed = window.confirm(
+      `Remove this submission${label ? ` for ${label}` : ''}?\n\nYou can start the project again.`
+    );
+    if (!confirmed) return;
+
+    setBusy('remove');
+    setError('');
+    try {
+      const response = await fetch(`/api/projects/public/${projectId}/submission`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_number: studentNumber,
+          class_number: classNumber,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(data.error || 'Failed to remove submission.');
+        return;
+      }
+      if (project) clearSavedIdentity(project.id);
+      setSubmission(null);
+      setArtworkMethod('');
+      setSpeakingMethod('');
+      setPendingAudio(null);
+      setStep('identity');
+    } catch {
+      setError('Failed to remove submission.');
+    } finally {
+      setBusy('');
     }
   }
 
@@ -401,11 +531,26 @@ export default function StudentProjectFlow({
             ) : null}
 
             {submission ? (
-              <ComicCard className="comic-shadow-xl">
+              <ComicCard className="comic-shadow-xl space-y-3">
                 <ComicText className="text-[var(--comic-dark)] font-bold">
                   {(submission.members?.length ?? 1) > 1 ? 'Group' : 'Student'}:{' '}
                   {formatSubmissionGroupLabel(submission)}
                 </ComicText>
+                {!preview ? (
+                  <div className="flex flex-wrap gap-3">
+                    <ComicButton variant="secondary" size="sm" onClick={handleSwitchStudent}>
+                      Use a different student
+                    </ComicButton>
+                    <ComicButton
+                      variant="danger"
+                      size="sm"
+                      disabled={busy === 'remove'}
+                      onClick={() => void handleRemoveSubmission()}
+                    >
+                      {busy === 'remove' ? 'Removing…' : 'Remove submission'}
+                    </ComicButton>
+                  </div>
+                ) : null}
               </ComicCard>
             ) : null}
 
@@ -521,15 +666,29 @@ export default function StudentProjectFlow({
                 ) : null}
                 {!locked ? (
                   <>
+                    <input
+                      ref={artworkInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void handleArtworkUpload(file);
+                        event.target.value = '';
+                      }}
+                    />
                     <div className="grid sm:grid-cols-2 gap-3">
                       <ComicButton
                         variant={artworkMethod === 'upload' ? 'primary' : 'secondary'}
                         size="sm"
                         className="w-full"
                         disabled={preview || busy === 'artwork'}
-                        onClick={() => setArtworkMethod('upload')}
+                        onClick={() => {
+                          setArtworkMethod('upload');
+                          artworkInputRef.current?.click();
+                        }}
                       >
-                        Upload photo
+                        {busy === 'artwork' && artworkMethod === 'upload' ? 'Uploading…' : 'Upload'}
                       </ComicButton>
                       <ComicButton
                         variant={artworkMethod === 'camera' ? 'primary' : 'secondary'}
@@ -538,36 +697,9 @@ export default function StudentProjectFlow({
                         disabled={preview || busy === 'artwork'}
                         onClick={() => setArtworkMethod('camera')}
                       >
-                        Take a picture
+                        Take a photo
                       </ComicButton>
                     </div>
-                    {artworkMethod === 'upload' ? (
-                      <>
-                        <input
-                          ref={artworkInputRef}
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp,image/gif"
-                          className="hidden"
-                          onChange={(event) => {
-                            const file = event.target.files?.[0];
-                            if (file) void handleArtworkUpload(file);
-                            event.target.value = '';
-                          }}
-                        />
-                        <ComicButton
-                          variant="primary"
-                          className="w-full"
-                          disabled={busy === 'artwork' || preview}
-                          onClick={() => artworkInputRef.current?.click()}
-                        >
-                          {busy === 'artwork'
-                            ? 'Uploading…'
-                            : artworkRow?.file_url
-                              ? 'Replace upload'
-                              : 'Choose photo'}
-                        </ComicButton>
-                      </>
-                    ) : null}
                     {artworkMethod === 'camera' ? (
                       <ArtworkCamera
                         disabled={preview || busy === 'artwork'}

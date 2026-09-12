@@ -107,7 +107,7 @@ export default function ArtworkCamera({ disabled = false, onCapture }: ArtworkCa
           disabled={disabled || busy}
           onClick={() => void handleSnap()}
         >
-          {busy ? 'Saving photo…' : 'Take picture'}
+          {busy ? 'Saving photo…' : 'Take a photo'}
         </ComicButton>
       ) : (
         <ComicButton
@@ -116,7 +116,7 @@ export default function ArtworkCamera({ disabled = false, onCapture }: ArtworkCa
           disabled={disabled || busy}
           onClick={() => fileInputRef.current?.click()}
         >
-          {busy ? 'Saving photo…' : 'Take picture'}
+          {busy ? 'Saving photo…' : 'Take a photo'}
         </ComicButton>
       )}
       <input

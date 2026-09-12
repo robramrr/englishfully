@@ -35,8 +35,8 @@ export async function POST(request: Request, { params }: RouteParams) {
     const durationRaw = formData.get('duration_seconds');
 
     if (!file || !(file instanceof Blob)) return jsonError('A file is required', 400);
-    if (!componentId || !studentName || !studentNumber || !classNumber) {
-      return jsonError('Student name, number, class, and component are required', 400);
+    if (!componentId || !studentNumber || !classNumber) {
+      return jsonError('Student number, class, and component are required', 400);
     }
     if (kind !== 'worksheet' && kind !== 'artwork' && kind !== 'audio') {
       return jsonError('Upload kind must be worksheet, artwork, or audio', 400);

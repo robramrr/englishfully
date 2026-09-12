@@ -80,8 +80,6 @@ export function resolveIdentityMembers(
       if (!draft.firstName.trim() || !draft.lastName.trim()) {
         return { error: `Please enter a first and last name for ${label}.` };
       }
-    } else if (!draft.nickname.trim()) {
-      return { error: `Please enter a nickname for ${label}.` };
     }
     if (!draft.studentNumber) {
       return { error: `Please select a student number for ${label}.` };
@@ -158,7 +156,8 @@ export default function StudentGroupIdentity({
         </span>
       </ComicTitle>
       <ComicText className="text-[var(--comic-dark)] font-bold text-center mb-6">
-        Work alone or add up to {MAX_PROJECT_GROUP_SIZE} students.
+        Work alone or add up to {MAX_PROJECT_GROUP_SIZE} students. Use the same class and number later
+        to open the same work.
       </ComicText>
       <div className="space-y-6">
         {drafts.map((draft, index) => {
@@ -202,7 +201,7 @@ export default function StudentGroupIdentity({
               ) : (
                 <input
                   className="w-full comic-input text-lg py-4"
-                  placeholder="Nickname"
+                  placeholder="Nickname (optional)"
                   value={draft.nickname}
                   onChange={(event) => updateDraft(index, { nickname: event.target.value })}
                 />
