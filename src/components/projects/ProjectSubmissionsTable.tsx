@@ -9,7 +9,9 @@ import ComicTitle from '../ComicTitle';
 import {
   PROJECT_SUBMISSION_STATUS_LABELS,
   componentDisplayTitle,
+  formatSubmissionClassColumn,
   formatSubmissionGroupLabel,
+  formatSubmissionStudentsColumn,
   isUploadTaskType,
   type ProjectSubmissionRow,
   type ProjectWithComponents,
@@ -95,6 +97,7 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
         <table className="w-full min-w-[36rem] text-left border-collapse">
           <thead>
             <tr className="border-b-4 border-[var(--comic-black)]">
+              <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Class</th>
               <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Students</th>
               {uploadTasks.map((task) => (
                 <th key={task.id} className="py-3 pr-3 font-bold text-[var(--comic-dark)]">
@@ -111,12 +114,15 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
           <tbody>
             {submissions.map((submission) => (
               <tr key={submission.id} className="border-b border-[var(--comic-black)]">
+                <td className="py-3 pr-3 font-bold text-[var(--comic-dark)]">
+                  {formatSubmissionClassColumn(submission) || '—'}
+                </td>
                 <td className="py-3 pr-3">
                   <Link
                     href={`/teacher-resources/projects/${project.id}/students/${submission.id}`}
                     className="font-bold text-[var(--comic-secondary)] underline"
                   >
-                    {formatSubmissionGroupLabel(submission)}
+                    {formatSubmissionStudentsColumn(submission) || 'View'}
                   </Link>
                 </td>
                 {uploadTasks.map((task) => {

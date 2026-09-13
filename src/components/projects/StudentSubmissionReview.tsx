@@ -13,9 +13,11 @@ import {
   asUploadTaskSettings,
   componentDisplayTitle,
   formatProjectDateTime,
+  formatSubmissionClassColumn,
   formatSubmissionGroupLabel,
   getComponentUploadFiles,
   isUploadTaskType,
+  submissionMembersList,
   type ProjectComponentSubmission,
   type ProjectSubmissionWithComponents,
   type ProjectWithComponents,
@@ -115,26 +117,20 @@ export default function StudentSubmissionReview({
     <div className="space-y-8">
       <ComicCard className="comic-shadow-xl">
         <ComicTitle level={2} className="mb-2 text-[var(--comic-primary)]">
-          {formatSubmissionGroupLabel(submission)}
+          {formatSubmissionClassColumn(submission) || 'Submission'}
         </ComicTitle>
         <div className="space-y-1 mb-2">
-          {(submission.members?.length
-            ? submission.members
-            : [
-                {
-                  student_name: submission.student_name,
-                  student_number: submission.student_number,
-                  class_number: submission.class_number,
-                },
-              ]
-          ).map((member) => (
-            <ComicText
-              key={`${member.class_number}-${member.student_number}`}
-              className="text-[var(--comic-dark)] font-bold"
-            >
-              #{member.student_number} {member.student_name} · {member.class_number}
-            </ComicText>
-          ))}
+          {submissionMembersList(submission).map((member) => {
+            const name = `${member.student_number} ${member.student_name}`.trim();
+            return (
+              <ComicText
+                key={`${member.class_number}-${member.student_number}`}
+                className="text-[var(--comic-dark)] font-bold"
+              >
+                #{name || member.student_number}
+              </ComicText>
+            );
+          })}
         </div>
         <ComicText className="text-[var(--comic-dark)] mb-4">
           {PROJECT_SUBMISSION_STATUS_LABELS[submission.status]}

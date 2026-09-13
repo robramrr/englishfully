@@ -485,16 +485,7 @@ export function formatSubmissionGroupLabel(submission: {
   class_number: string;
   members?: ProjectSubmissionMember[];
 }): string {
-  const members =
-    submission.members && submission.members.length > 0
-      ? submission.members
-      : [
-          {
-            student_name: submission.student_name,
-            student_number: submission.student_number,
-            class_number: submission.class_number,
-          },
-        ];
+  const members = submissionMembersList(submission);
   return members
     .map((member) => {
       const name = `${member.student_number} ${member.student_name}`.trim();
@@ -502,6 +493,52 @@ export function formatSubmissionGroupLabel(submission: {
       if (name && classLabel) return `${name} · ${classLabel}`;
       return name || classLabel;
     })
+    .filter(Boolean)
+    .join(', ');
+}
+
+export function submissionMembersList(submission: {
+  student_name: string;
+  student_number: string;
+  class_number: string;
+  members?: ProjectSubmissionMember[];
+}): ProjectSubmissionMember[] {
+  if (submission.members && submission.members.length > 0) return submission.members;
+  return [
+    {
+      student_name: submission.student_name,
+      student_number: submission.student_number,
+      class_number: submission.class_number,
+    },
+  ];
+}
+
+/** Unique class labels for a submission (e.g. "6/11" or "6/11, 6/12"). */
+export function formatSubmissionClassColumn(submission: {
+  student_name: string;
+  student_number: string;
+  class_number: string;
+  members?: ProjectSubmissionMember[];
+}): string {
+  const classes = [
+    ...new Set(
+      submissionMembersList(submission)
+        .map((member) => String(member.class_number ?? '').trim())
+        .filter(Boolean)
+    ),
+  ];
+  return classes.join(', ');
+}
+
+/** Student numbers/names without repeating class (e.g. "18A, 11B"). */
+export function formatSubmissionStudentsColumn(submission: {
+  student_name: string;
+  student_number: string;
+  class_number: string;
+  members?: ProjectSubmissionMember[];
+}): string {
+  return submissionMembersList(submission)
+    .map((member) => `${member.student_number} ${member.student_name}`.trim())
     .filter(Boolean)
     .join(', ');
 }
