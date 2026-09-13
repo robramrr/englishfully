@@ -23,6 +23,7 @@ import {
   formatProjectDateTime,
   formatProjectHeaderMeta,
   formatSubmissionGroupLabel,
+  getComponentUploadFiles,
   isUploadTaskType,
   type ProjectComponentSubmission,
   type ProjectSubmissionWithComponents,
@@ -376,6 +377,22 @@ export default function StudentProjectFlow({
     }
   }
 
+  async function handleRemoveUploadFile(componentId: string, fileKeyOrUrl: string) {
+    if (locked || preview || !submission) return;
+    setBusy(`remove-file-${componentId}`);
+    setError('');
+    try {
+      await saveComponent({
+        component_id: componentId,
+        remove_file_key: fileKeyOrUrl,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove file');
+    } finally {
+      setBusy('');
+    }
+  }
+
   async function handleChooseInPerson() {
     if (locked || preview || !speaking) return;
     setBusy('speaking');
@@ -569,10 +586,13 @@ export default function StudentProjectFlow({
             {uploadTasks.map((task) => {
               const settings = asUploadTaskSettings(task.settings, componentDisplayTitle(task));
               const row = rowFor(task, submission);
+              const uploadedFiles = getComponentUploadFiles(row);
               const method = uploadMethods[task.id] ?? '';
-              const taskBusy = busy === `upload-${task.id}`;
-              const showUpload = settings.upload_enabled;
-              const showCamera = settings.take_photo_enabled;
+              const taskBusy = busy === `upload-${task.id}` || busy === `remove-file-${task.id}`;
+              const atMax = uploadedFiles.length >= settings.max_uploads;
+              const canAddMore = !atMax;
+              const showUpload = settings.upload_enabled && canAddMore;
+              const showCamera = settings.take_photo_enabled && canAddMore;
               const showLine = settings.send_line_enabled && Boolean(classLineGroupUrl);
               const optionCount = [showUpload, showCamera, showLine].filter(Boolean).length;
               const gridClass =
@@ -581,9 +601,6 @@ export default function StudentProjectFlow({
                   : optionCount === 2
                     ? 'sm:grid-cols-2'
                     : 'sm:grid-cols-1';
-              const isImageUpload = Boolean(
-                row?.file_url && row.content_type?.startsWith('image/')
-              );
 
               return (
                 <ComicCard key={task.id} className="comic-shadow-xl space-y-4">
@@ -593,6 +610,9 @@ export default function StudentProjectFlow({
                   {task.instructions ? (
                     <ComicText className="text-[var(--comic-dark)]">{task.instructions}</ComicText>
                   ) : null}
+                  <ComicText className="text-[var(--comic-dark)] text-sm font-bold">
+                    Uploads: {uploadedFiles.length}/{settings.max_uploads}
+                  </ComicText>
                   {settings.example_image_enabled && settings.example_image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -601,25 +621,45 @@ export default function StudentProjectFlow({
                       className="max-h-56 w-full object-contain rounded-lg comic-border"
                     />
                   ) : null}
-                  {row?.file_url ? (
-                    <>
-                      <a
-                        href={row.file_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block font-bold text-[var(--comic-secondary)] underline"
-                      >
-                        View your uploaded file
-                      </a>
-                      {isImageUpload ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={row.file_url}
-                          alt={`Your ${componentDisplayTitle(task)}`}
-                          className="max-h-72 w-full object-contain rounded-lg comic-border"
-                        />
-                      ) : null}
-                    </>
+                  {uploadedFiles.length > 0 ? (
+                    <ul className="space-y-3">
+                      {uploadedFiles.map((file, index) => (
+                        <li
+                          key={`${file.key || file.url}-${index}`}
+                          className="space-y-2 rounded-lg comic-border bg-white p-3"
+                        >
+                          <a
+                            href={file.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block font-bold text-[var(--comic-secondary)] underline"
+                          >
+                            {file.file_name || `Upload ${index + 1}`}
+                          </a>
+                          {file.content_type?.startsWith('image/') ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={file.url}
+                              alt={file.file_name || `Upload ${index + 1}`}
+                              className="max-h-56 w-full object-contain rounded-lg"
+                            />
+                          ) : null}
+                          {!locked ? (
+                            <ComicButton
+                              type="button"
+                              variant="danger"
+                              size="sm"
+                              disabled={preview || taskBusy}
+                              onClick={() =>
+                                void handleRemoveUploadFile(task.id, file.key || file.url)
+                              }
+                            >
+                              {busy === `remove-file-${task.id}` ? 'Removing…' : 'Remove'}
+                            </ComicButton>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
                   ) : null}
                   {!locked ? (
                     <>
@@ -815,7 +855,9 @@ export default function StudentProjectFlow({
                           ? ' (in-person)'
                           : item.type === 'speaking' && speakingRow?.audio_url
                             ? ' (recording)'
-                            : isUploadTaskType(item.type) && sentViaLine(row) && !row?.file_url
+                            : isUploadTaskType(item.type) &&
+                                sentViaLine(row) &&
+                                getComponentUploadFiles(row).length === 0
                               ? ' (LINE)'
                               : ''}
                       </li>

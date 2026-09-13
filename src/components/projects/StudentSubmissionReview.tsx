@@ -14,6 +14,7 @@ import {
   componentDisplayTitle,
   formatProjectDateTime,
   formatSubmissionGroupLabel,
+  getComponentUploadFiles,
   isUploadTaskType,
   type ProjectComponentSubmission,
   type ProjectSubmissionWithComponents,
@@ -148,31 +149,36 @@ export default function StudentSubmissionReview({
         const row = rowForComponent(submission, task.id);
         const settings = asUploadTaskSettings(task.settings);
         const title = componentDisplayTitle(task);
+        const files = getComponentUploadFiles(row);
         return (
           <ComicCard key={task.id} className="comic-shadow-xl space-y-3">
             <ComicTitle level={4} className="text-[var(--comic-secondary)]">
               {title}
             </ComicTitle>
-            {row?.file_url ? (
-              <>
-                <a
-                  href={row.file_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-bold text-[var(--comic-secondary)] underline"
-                >
-                  View / download student file
-                  {row.file_name ? ` (${row.file_name})` : ''}
-                </a>
-                {row.content_type?.startsWith('image/') ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={row.file_url}
-                    alt={`${submission.student_name} ${title}`}
-                    className="max-h-[28rem] w-full object-contain rounded-lg comic-border"
-                  />
-                ) : null}
-              </>
+            {files.length > 0 ? (
+              <ul className="space-y-3">
+                {files.map((file, index) => (
+                  <li key={`${file.key || file.url}-${index}`} className="space-y-2">
+                    <a
+                      href={file.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-bold text-[var(--comic-secondary)] underline"
+                    >
+                      View / download
+                      {file.file_name ? ` (${file.file_name})` : ` file ${index + 1}`}
+                    </a>
+                    {file.content_type?.startsWith('image/') ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={file.url}
+                        alt={`${submission.student_name} ${title} ${index + 1}`}
+                        className="max-h-[28rem] w-full object-contain rounded-lg comic-border"
+                      />
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
             ) : (
               <ComicText className="text-[var(--comic-dark)]">
                 {row?.extra?.sent_via_line

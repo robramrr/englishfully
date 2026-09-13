@@ -14,6 +14,7 @@ import {
   componentDisplayTitle,
   DEFAULT_UPLOAD_TASK_SETTINGS,
   defaultSettingsForType,
+  getComponentUploadFiles,
   isUploadTaskType,
   parseStoredFileRef,
   formatClassNames,
@@ -47,8 +48,10 @@ import {
   type SpeakingSettings,
   type StartProjectPayload,
   type StoredFileRef,
+  type SubmissionUploadedFile,
   type WorksheetSettings,
 } from './types';
+import { deleteProjectFileFromR2 } from './storage';
 
 const DEFAULT_TEACHER_ID = 'default';
 
@@ -1076,12 +1079,49 @@ export async function startOrResumeSubmission(
   return { ...created, components };
 }
 
+function syncLegacyFileFields(files: SubmissionUploadedFile[]): {
+  file_url: string | null;
+  file_key: string | null;
+  file_name: string | null;
+  content_type: string | null;
+} {
+  const first = files[0];
+  if (!first) {
+    return {
+      file_url: null,
+      file_key: null,
+      file_name: null,
+      content_type: null,
+    };
+  }
+  return {
+    file_url: first.url,
+    file_key: first.key || null,
+    file_name: first.file_name || null,
+    content_type: first.content_type || null,
+  };
+}
+
+async function deleteUploadFilesFromR2(files: SubmissionUploadedFile[]): Promise<void> {
+  await Promise.all(
+    files.map(async (file) => {
+      if (!file.key) return;
+      try {
+        await deleteProjectFileFromR2(file.key);
+      } catch (error) {
+        console.error('Failed to delete project upload from R2:', file.key, error);
+      }
+    })
+  );
+}
+
 function isComponentComplete(
   component: ProjectComponent,
   row: ProjectComponentSubmission
 ): boolean {
   if (isUploadTaskType(component.type)) {
-    return Boolean(row.file_url) || Boolean(row.extra.sent_via_line);
+    const files = getComponentUploadFiles(row);
+    return files.length >= 1 || Boolean(row.extra.sent_via_line);
   }
   if (row.text_data === 'in_person') return true;
   return Boolean(row.audio_url);
@@ -1113,11 +1153,58 @@ export async function saveComponentProgress(
   if (payload.sent_via_line) extra.sent_via_line = true;
   if (payload.speaking_method) extra.speaking_method = payload.speaking_method;
 
+  let fileUrl = payload.clear_file ? null : payload.file_url ?? row.file_url;
+  let fileKey = payload.clear_file ? null : payload.file_key ?? row.file_key;
+  let fileName = payload.clear_file ? null : payload.file_name ?? row.file_name;
+  let contentType = payload.clear_file ? null : payload.content_type ?? row.content_type;
+
+  if (isUploadTaskType(component.type)) {
+    let files = getComponentUploadFiles(row);
+    const settings = asUploadTaskSettings(component.settings);
+
+    if (payload.clear_file) {
+      await deleteUploadFilesFromR2(files);
+      files = [];
+    }
+
+    if (payload.remove_file_key) {
+      const key = payload.remove_file_key.trim();
+      const removing = files.filter((file) => file.key === key || file.url === key);
+      const remaining = files.filter((file) => file.key !== key && file.url !== key);
+      await deleteUploadFilesFromR2(removing);
+      files = remaining;
+    }
+
+    if (payload.append_file) {
+      const url = String(payload.file_url ?? '').trim();
+      if (!url) throw new Error('Uploaded file is missing');
+      if (files.length >= settings.max_uploads) {
+        throw new Error(`This task allows up to ${settings.max_uploads} upload${settings.max_uploads === 1 ? '' : 's'}`);
+      }
+      files = [
+        ...files,
+        {
+          url,
+          key: String(payload.file_key ?? ''),
+          file_name: String(payload.file_name ?? ''),
+          content_type: String(payload.content_type ?? ''),
+        },
+      ];
+    }
+
+    extra.files = files;
+    const synced = syncLegacyFileFields(files);
+    fileUrl = synced.file_url;
+    fileKey = synced.file_key;
+    fileName = synced.file_name;
+    contentType = synced.content_type;
+  }
+
   const next = {
-    file_url: payload.clear_file ? null : payload.file_url ?? row.file_url,
-    file_key: payload.clear_file ? null : payload.file_key ?? row.file_key,
-    file_name: payload.clear_file ? null : payload.file_name ?? row.file_name,
-    content_type: payload.clear_file ? null : payload.content_type ?? row.content_type,
+    file_url: fileUrl,
+    file_key: fileKey,
+    file_name: fileName,
+    content_type: contentType,
     audio_url: payload.clear_audio ? null : payload.audio_url ?? row.audio_url,
     audio_key: payload.clear_audio ? null : payload.audio_key ?? row.audio_key,
     duration_seconds:

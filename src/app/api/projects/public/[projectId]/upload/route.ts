@@ -87,6 +87,7 @@ export async function POST(request: Request, { params }: RouteParams) {
             speaking_method: 'online' as const,
           }
         : {
+            append_file: true,
             file_url: uploaded.url,
             file_key: uploaded.key,
             file_name: uploaded.file_name,

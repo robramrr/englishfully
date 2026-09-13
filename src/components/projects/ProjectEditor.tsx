@@ -549,6 +549,24 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
                 Example image enabled
               </label>
             </div>
+            <label className="block font-bold text-[var(--comic-dark)]">
+              Max uploads
+              <select
+                className="w-full comic-input mt-2 max-w-[8rem]"
+                value={settings.max_uploads}
+                onChange={(event) =>
+                  updateUploadSettings(task.clientKey, {
+                    max_uploads: Number(event.target.value),
+                  })
+                }
+              >
+                {[1, 2, 3, 4, 5].map((count) => (
+                  <option key={count} value={count}>
+                    {count}
+                  </option>
+                ))}
+              </select>
+            </label>
             {settings.example_image_enabled ? (
               <div className="space-y-3">
                 <input

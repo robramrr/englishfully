@@ -65,6 +65,15 @@ export interface UploadTaskSettings {
   send_line_enabled: boolean;
   example_image_enabled: boolean;
   example_image: StoredFileRef | null;
+  /** Max student files for this task (1–5). */
+  max_uploads: number;
+}
+
+export interface SubmissionUploadedFile {
+  url: string;
+  key: string;
+  file_name: string;
+  content_type: string;
 }
 
 export interface SpeakingSettings {
@@ -258,6 +267,10 @@ export interface SaveComponentProgressPayload {
   audio_url?: string;
   audio_key?: string;
   duration_seconds?: number;
+  /** Append a file to an upload task (multi-file). */
+  append_file?: boolean;
+  /** Remove one uploaded file by R2 key (and delete from R2). */
+  remove_file_key?: string;
   clear_file?: boolean;
   clear_audio?: boolean;
 }
@@ -296,6 +309,7 @@ export const DEFAULT_UPLOAD_TASK_SETTINGS: UploadTaskSettings = {
   send_line_enabled: true,
   example_image_enabled: false,
   example_image: null,
+  max_uploads: 1,
 };
 
 export function isProjectComponentType(value: unknown): value is ProjectComponentType {
@@ -362,6 +376,10 @@ export function asUploadTaskSettings(
     Record<string, unknown>;
   const exampleImage = parseStoredFileRef(raw.example_image) ?? raw.example_image ?? null;
   const title = String(raw.title ?? fallbackTitle).trim() || fallbackTitle;
+  const maxRaw = Number(raw.max_uploads);
+  const maxUploads = Number.isFinite(maxRaw)
+    ? Math.min(5, Math.max(1, Math.floor(maxRaw)))
+    : 1;
   return {
     title,
     upload_enabled: raw.upload_enabled !== false,
@@ -369,7 +387,48 @@ export function asUploadTaskSettings(
     send_line_enabled: raw.send_line_enabled !== false,
     example_image_enabled: raw.example_image_enabled === true || Boolean(exampleImage),
     example_image: exampleImage,
+    max_uploads: maxUploads,
   };
+}
+
+export function parseSubmissionUploadedFile(value: unknown): SubmissionUploadedFile | null {
+  if (!value || typeof value !== 'object') return null;
+  const raw = value as Record<string, unknown>;
+  const url = String(raw.url ?? '').trim();
+  if (!url) return null;
+  return {
+    url,
+    key: String(raw.key ?? ''),
+    file_name: String(raw.file_name ?? ''),
+    content_type: String(raw.content_type ?? ''),
+  };
+}
+
+/** Files for an upload-task row, including legacy single file_url. */
+export function getComponentUploadFiles(
+  row: Pick<
+    ProjectComponentSubmission,
+    'file_url' | 'file_key' | 'file_name' | 'content_type' | 'extra'
+  > | null
+): SubmissionUploadedFile[] {
+  if (!row) return [];
+  const fromExtra = Array.isArray(row.extra?.files)
+    ? row.extra.files
+        .map((item) => parseSubmissionUploadedFile(item))
+        .filter((item): item is SubmissionUploadedFile => Boolean(item))
+    : [];
+  if (fromExtra.length > 0) return fromExtra;
+  if (row.file_url) {
+    return [
+      {
+        url: row.file_url,
+        key: row.file_key || '',
+        file_name: row.file_name || '',
+        content_type: row.content_type || '',
+      },
+    ];
+  }
+  return [];
 }
 
 export function componentDisplayTitle(

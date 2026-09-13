@@ -1,6 +1,7 @@
 import {
   sanitizePathSegment,
   uploadBinaryToR2,
+  deleteAudioFromR2,
 } from '@/lib/speak-and-submit/r2';
 
 const WORKSHEET_TYPES = new Set([
@@ -131,4 +132,10 @@ export async function uploadProjectStudentFile(params: {
     file_name: params.fileName || `${params.kind}.${extension}`,
     content_type: params.contentType,
   };
+}
+
+export async function deleteProjectFileFromR2(key: string): Promise<void> {
+  const trimmed = key.trim();
+  if (!trimmed) return;
+  await deleteAudioFromR2(trimmed);
 }
