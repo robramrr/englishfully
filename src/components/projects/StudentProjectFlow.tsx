@@ -609,7 +609,10 @@ export default function StudentProjectFlow({
               const allowMultiSelect = remainingSlots > 1;
               const showUpload = settings.upload_enabled && canAddMore;
               const showCamera = settings.take_photo_enabled && canAddMore;
-              const showLine = settings.send_line_enabled && Boolean(classLineGroupUrl);
+              const showLine =
+                settings.send_line_enabled &&
+                Boolean(classLineGroupUrl) &&
+                uploadedFiles.length === 0;
               const optionCount = [showUpload, showCamera, showLine].filter(Boolean).length;
               const gridClass =
                 optionCount >= 3
