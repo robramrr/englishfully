@@ -363,12 +363,20 @@ export default function StudentProjectFlow({
     setSubmission(data.submission);
   }
 
-  async function handleUploadTaskFile(componentId: string, file: File) {
-    if (locked || preview) return;
+  async function handleUploadTaskFiles(
+    componentId: string,
+    selected: FileList | File[],
+    remainingSlots: number
+  ) {
+    if (locked || preview || remainingSlots <= 0) return;
+    const files = Array.from(selected).slice(0, remainingSlots);
+    if (files.length === 0) return;
     setBusy(`upload-${componentId}`);
     setError('');
     try {
-      await uploadStudentFile('upload', file, componentId);
+      for (const file of files) {
+        await uploadStudentFile('upload', file, componentId);
+      }
       setUploadMethods((current) => ({ ...current, [componentId]: '' }));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload file');
@@ -590,7 +598,9 @@ export default function StudentProjectFlow({
               const method = uploadMethods[task.id] ?? '';
               const taskBusy = busy === `upload-${task.id}` || busy === `remove-file-${task.id}`;
               const atMax = uploadedFiles.length >= settings.max_uploads;
-              const canAddMore = !atMax;
+              const remainingSlots = Math.max(0, settings.max_uploads - uploadedFiles.length);
+              const canAddMore = remainingSlots > 0;
+              const allowMultiSelect = remainingSlots > 1;
               const showUpload = settings.upload_enabled && canAddMore;
               const showCamera = settings.take_photo_enabled && canAddMore;
               const showLine = settings.send_line_enabled && Boolean(classLineGroupUrl);
@@ -670,10 +680,13 @@ export default function StudentProjectFlow({
                           }}
                           type="file"
                           accept=".pdf,.doc,.docx,image/*"
+                          multiple={allowMultiSelect}
                           className="hidden"
                           onChange={(event) => {
-                            const file = event.target.files?.[0];
-                            if (file) void handleUploadTaskFile(task.id, file);
+                            const files = event.target.files;
+                            if (files?.length) {
+                              void handleUploadTaskFiles(task.id, files, remainingSlots);
+                            }
                             event.target.value = '';
                           }}
                         />
@@ -724,7 +737,9 @@ export default function StudentProjectFlow({
                       {showCamera && method === 'camera' ? (
                         <ArtworkCamera
                           disabled={preview || taskBusy}
-                          onCapture={(file) => void handleUploadTaskFile(task.id, file)}
+                          onCapture={(file) =>
+                            void handleUploadTaskFiles(task.id, [file], remainingSlots)
+                          }
                           onClose={() =>
                             setUploadMethods((current) => ({ ...current, [task.id]: '' }))
                           }
