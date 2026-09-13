@@ -53,7 +53,7 @@ function LineIconButton({
       aria-pressed={pressed}
       title={configured ? 'LINE group configured' : 'Add LINE group link'}
       onClick={onClick}
-      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full comic-border"
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border-0"
       style={{ backgroundColor: '#06C755' }}
     >
       <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
@@ -756,33 +756,30 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
           {schoolYear || settings?.school_year || '—'} · Semester {semester}
         </ComicText>
         {showLineGroupEditor ? (
-          <>
-            <label className="block font-bold text-[var(--comic-dark)] mb-4">
+          <div className="mb-4">
+            <label className="block font-bold text-[var(--comic-dark)] mb-2">
               LINE Group Link
+            </label>
+            <div className="flex flex-wrap items-center gap-3">
               <input
-                className="w-full comic-input mt-2"
+                className="min-w-0 flex-1 comic-input"
                 type="url"
                 placeholder="https://line.me/ti/g/…"
                 value={lineGroupUrl}
                 onChange={(event) => setLineGroupUrl(event.target.value)}
               />
-            </label>
-            <ComicText className="text-sm mb-3 text-[var(--comic-dark)]">
-              {lineGroupUrl.trim()
-                ? 'LINE group is configured for this class.'
-                : 'No LINE group configured yet. Leave empty if this class does not have one.'}
-            </ComicText>
-            <ComicButton
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="mb-4"
-              disabled={savingLineGroup}
-              onClick={() => void saveLineGroupUrl()}
-            >
-              {savingLineGroup ? 'Saving…' : 'Save LINE group'}
-            </ComicButton>
-          </>
+              <ComicButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={savingLineGroup}
+                onClick={() => void saveLineGroupUrl()}
+              >
+                {savingLineGroup ? 'Saving…' : 'Save LINE group'}
+              </ComicButton>
+            </div>
+            <hr className="mt-4 h-px w-full border-0" style={{ backgroundColor: '#e1e1e1' }} />
+          </div>
         ) : null}
         <div className="flex flex-wrap gap-2 mb-4">
           <ComicButton
