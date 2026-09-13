@@ -366,13 +366,19 @@ export default function StudentProjectFlow({
   async function handleUploadTaskFiles(
     componentId: string,
     selected: FileList | File[],
-    remainingSlots: number
+    remainingSlots: number,
+    maxUploads: number
   ) {
     if (locked || preview || remainingSlots <= 0) return;
-    const files = Array.from(selected).slice(0, remainingSlots);
-    if (files.length === 0) return;
+    const selectedFiles = Array.from(selected);
+    if (selectedFiles.length === 0) return;
+    const files = selectedFiles.slice(0, remainingSlots);
     setBusy(`upload-${componentId}`);
-    setError('');
+    setError(
+      selectedFiles.length > remainingSlots
+        ? `You can upload up to ${maxUploads} file${maxUploads === 1 ? '' : 's'}. Only the first ${remainingSlots} will be used.`
+        : ''
+    );
     try {
       for (const file of files) {
         await uploadStudentFile('upload', file, componentId);
@@ -597,7 +603,6 @@ export default function StudentProjectFlow({
               const uploadedFiles = getComponentUploadFiles(row);
               const method = uploadMethods[task.id] ?? '';
               const taskBusy = busy === `upload-${task.id}` || busy === `remove-file-${task.id}`;
-              const atMax = uploadedFiles.length >= settings.max_uploads;
               const remainingSlots = Math.max(0, settings.max_uploads - uploadedFiles.length);
               const canAddMore = remainingSlots > 0;
               const allowMultiSelect = remainingSlots > 1;
@@ -620,9 +625,6 @@ export default function StudentProjectFlow({
                   {task.instructions ? (
                     <ComicText className="text-[var(--comic-dark)]">{task.instructions}</ComicText>
                   ) : null}
-                  <ComicText className="text-[var(--comic-dark)] text-sm font-bold">
-                    Uploads: {uploadedFiles.length}/{settings.max_uploads}
-                  </ComicText>
                   {settings.example_image_enabled && settings.example_image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -685,7 +687,12 @@ export default function StudentProjectFlow({
                           onChange={(event) => {
                             const files = event.target.files;
                             if (files?.length) {
-                              void handleUploadTaskFiles(task.id, files, remainingSlots);
+                              void handleUploadTaskFiles(
+                                task.id,
+                                files,
+                                remainingSlots,
+                                settings.max_uploads
+                              );
                             }
                             event.target.value = '';
                           }}
@@ -738,7 +745,12 @@ export default function StudentProjectFlow({
                         <ArtworkCamera
                           disabled={preview || taskBusy}
                           onCapture={(file) =>
-                            void handleUploadTaskFiles(task.id, [file], remainingSlots)
+                            void handleUploadTaskFiles(
+                              task.id,
+                              [file],
+                              remainingSlots,
+                              settings.max_uploads
+                            )
                           }
                           onClose={() =>
                             setUploadMethods((current) => ({ ...current, [task.id]: '' }))
