@@ -37,6 +37,35 @@ interface ClassGradebookProps {
   classId: string;
 }
 
+function LineIconButton({
+  pressed,
+  configured,
+  onClick,
+}: {
+  pressed: boolean;
+  configured: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={pressed ? 'Hide LINE group link' : 'Show LINE group link'}
+      aria-pressed={pressed}
+      title={configured ? 'LINE group configured' : 'Add LINE group link'}
+      onClick={onClick}
+      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full comic-border"
+      style={{ backgroundColor: '#06C755' }}
+    >
+      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
+        <path
+          fill="#ffffff"
+          d="M12 3C6.9 3 2.8 6.7 2.8 11.2c0 4 3.3 7.4 7.7 8.1.3.1.7.2.8.5.1.2.1.6 0 .9l-.3 1.1c-.1.3.2.6.5.4 2.2-1.2 6.1-3.6 8.3-6.2 1.8-2 2.5-4.1 2.5-6.8C22.3 6.7 18.1 3 12 3zm-4.3 10.2H6.2c-.3 0-.5-.2-.5-.5V8.8c0-.3.2-.5.5-.5s.5.2.5.5v3.4h1.5c.3 0 .5.2.5.5s-.2.5-.5.5zm2.4.5c-.3 0-.5-.2-.5-.5V8.8c0-.3.2-.5.5-.5s.5.2.5.5v4.4c0 .3-.2.5-.5.5zm4.6 0c-.2 0-.4-.1-.5-.3l-1.5-2.1V13.2c0 .3-.2.5-.5.5s-.5-.2-.5-.5V8.8c0-.3.2-.5.5-.5.2 0 .4.1.5.3l1.5 2.1V8.8c0-.3.2-.5.5-.5s.5.2.5.5v4.4c0 .3-.2.5-.5.5zm3.8-.5h-1.5c-.3 0-.5-.2-.5-.5V8.8c0-.3.2-.5.5-.5s.5.2.5.5v3.4h1.5c.3 0 .5.2.5.5s-.2.5-.5.5z"
+        />
+      </svg>
+    </button>
+  );
+}
+
 export default function ClassGradebook({ classId }: ClassGradebookProps) {
   const searchParams = useSearchParams();
   const initialSemester = parseSemester(searchParams.get('semester'));
@@ -46,6 +75,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
   const [classLabel, setClassLabel] = useState('');
   const [lineGroupUrl, setLineGroupUrl] = useState('');
   const [savingLineGroup, setSavingLineGroup] = useState(false);
+  const [showLineGroupEditor, setShowLineGroupEditor] = useState(false);
   const [seats, setSeats] = useState<GradebookSeat[]>([]);
   const [taskColumns, setTaskColumns] = useState<GradebookTaskColumn[]>([]);
   const [availableTasks, setAvailableTasks] = useState<GradebookTaskOption[]>([]);
@@ -712,37 +742,48 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
       </div>
 
       <ComicCard className="comic-shadow-xl">
-        <ComicTitle level={3} className="mb-2 text-[var(--comic-primary)]">
-          Class {classLabel || '…'}
-        </ComicTitle>
+        <div className="mb-2 flex items-center gap-3">
+          <ComicTitle level={3} className="mb-0 text-[var(--comic-primary)]">
+            Class {classLabel || '…'}
+          </ComicTitle>
+          <LineIconButton
+            pressed={showLineGroupEditor}
+            configured={Boolean(lineGroupUrl.trim())}
+            onClick={() => setShowLineGroupEditor((current) => !current)}
+          />
+        </div>
         <ComicText className="mb-4">
           {schoolYear || settings?.school_year || '—'} · Semester {semester}
         </ComicText>
-        <label className="block font-bold text-[var(--comic-dark)] mb-4">
-          LINE Group Link
-          <input
-            className="w-full comic-input mt-2"
-            type="url"
-            placeholder="https://line.me/ti/g/…"
-            value={lineGroupUrl}
-            onChange={(event) => setLineGroupUrl(event.target.value)}
-          />
-        </label>
-        <ComicText className="text-sm mb-3 text-[var(--comic-dark)]">
-          {lineGroupUrl.trim()
-            ? 'LINE group is configured for this class.'
-            : 'No LINE group configured yet. Leave empty if this class does not have one.'}
-        </ComicText>
-        <ComicButton
-          type="button"
-          variant="secondary"
-          size="sm"
-          className="mb-4"
-          disabled={savingLineGroup}
-          onClick={() => void saveLineGroupUrl()}
-        >
-          {savingLineGroup ? 'Saving…' : 'Save LINE group'}
-        </ComicButton>
+        {showLineGroupEditor ? (
+          <>
+            <label className="block font-bold text-[var(--comic-dark)] mb-4">
+              LINE Group Link
+              <input
+                className="w-full comic-input mt-2"
+                type="url"
+                placeholder="https://line.me/ti/g/…"
+                value={lineGroupUrl}
+                onChange={(event) => setLineGroupUrl(event.target.value)}
+              />
+            </label>
+            <ComicText className="text-sm mb-3 text-[var(--comic-dark)]">
+              {lineGroupUrl.trim()
+                ? 'LINE group is configured for this class.'
+                : 'No LINE group configured yet. Leave empty if this class does not have one.'}
+            </ComicText>
+            <ComicButton
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="mb-4"
+              disabled={savingLineGroup}
+              onClick={() => void saveLineGroupUrl()}
+            >
+              {savingLineGroup ? 'Saving…' : 'Save LINE group'}
+            </ComicButton>
+          </>
+        ) : null}
         <div className="flex flex-wrap gap-2 mb-4">
           <ComicButton
             type="button"
