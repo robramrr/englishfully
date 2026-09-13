@@ -49,12 +49,6 @@ export default function ClassCheckboxDropdown({
     onChange([...selected, label]);
   }
 
-  const summary = allChecked
-    ? 'All classes'
-    : selected.length === 0
-      ? 'Select classes'
-      : selected.join(', ');
-
   return (
     <div ref={rootRef} className="relative">
       <button
@@ -64,7 +58,7 @@ export default function ClassCheckboxDropdown({
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
-        <span className={selected.length === 0 ? 'text-gray-500' : ''}>{summary}</span>
+        <span className="text-gray-500">Select class</span>
         <span aria-hidden className="text-[var(--comic-secondary)]">
           ▾
         </span>
