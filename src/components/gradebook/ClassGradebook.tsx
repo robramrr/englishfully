@@ -829,43 +829,6 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
             Semester 2
           </ComicButton>
         </div>
-        {taskColumns.length > 0 ? (
-          <div className="flex flex-wrap gap-3 pt-3 border-t-2 border-[var(--comic-black)]">
-            <ComicButton
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() =>
-                downloadAllGradedTasksExcel({
-                  classLabel,
-                  schoolYear: schoolYear || settings?.school_year || '',
-                  semester,
-                  taskColumns,
-                  seats,
-                })
-              }
-            >
-              <span className="inline-flex items-center gap-2">
-                <FontAwesomeIcon icon={faFileExcel} aria-hidden className="h-[1.1em] w-[1.1em]" />
-                Download Excel
-              </span>
-            </ComicButton>
-            <Link
-              href={`/teacher-resources/gradebook/${classId}/print?view=all_tasks&semester=${semester}${
-                schoolYear || settings?.school_year
-                  ? `&school_year=${encodeURIComponent(schoolYear || settings?.school_year || '')}`
-                  : ''
-              }`}
-            >
-              <ComicButton variant="warning" size="sm">
-                <span className="inline-flex items-center gap-2">
-                  <FontAwesomeIcon icon={faFilePdf} aria-hidden className="h-[1.1em] w-[1.1em]" />
-                  Download PDF
-                </span>
-              </ComicButton>
-            </Link>
-          </div>
-        ) : null}
       </ComicCard>
 
       <ComicCard className="comic-shadow-xl">
@@ -873,19 +836,58 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
           <ComicTitle level={3} className="comic-title-no-shadow text-[var(--comic-secondary)]">
             Enter Grades
           </ComicTitle>
-          {selectedTask ? (
-            <Link
-              href={`/teacher-resources/gradebook/${classId}/print?semester=${semester}&tool=${tool}&task_id=${encodeURIComponent(selectedTask.id)}&pass_percent=${encodeURIComponent(passPercent)}&max_points=${encodeURIComponent(maxPoints || String(DEFAULT_MAX_POINTS))}${
-                schoolYear || settings?.school_year
-                  ? `&school_year=${encodeURIComponent(schoolYear || settings?.school_year || '')}`
-                  : ''
-              }`}
-            >
-              <ComicButton variant="warning" size="sm">
-                Print grades
-              </ComicButton>
-            </Link>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-3">
+            {taskColumns.length > 0 ? (
+              <>
+                <ComicButton
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    downloadAllGradedTasksExcel({
+                      classLabel,
+                      schoolYear: schoolYear || settings?.school_year || '',
+                      semester,
+                      taskColumns,
+                      seats,
+                    })
+                  }
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <FontAwesomeIcon icon={faFileExcel} aria-hidden className="h-[1.1em] w-[1.1em]" />
+                    Download Excel
+                  </span>
+                </ComicButton>
+                <Link
+                  href={`/teacher-resources/gradebook/${classId}/print?view=all_tasks&semester=${semester}${
+                    schoolYear || settings?.school_year
+                      ? `&school_year=${encodeURIComponent(schoolYear || settings?.school_year || '')}`
+                      : ''
+                  }`}
+                >
+                  <ComicButton variant="warning" size="sm">
+                    <span className="inline-flex items-center gap-2">
+                      <FontAwesomeIcon icon={faFilePdf} aria-hidden className="h-[1.1em] w-[1.1em]" />
+                      Download PDF
+                    </span>
+                  </ComicButton>
+                </Link>
+              </>
+            ) : null}
+            {selectedTask ? (
+              <Link
+                href={`/teacher-resources/gradebook/${classId}/print?semester=${semester}&tool=${tool}&task_id=${encodeURIComponent(selectedTask.id)}&pass_percent=${encodeURIComponent(passPercent)}&max_points=${encodeURIComponent(maxPoints || String(DEFAULT_MAX_POINTS))}${
+                  schoolYear || settings?.school_year
+                    ? `&school_year=${encodeURIComponent(schoolYear || settings?.school_year || '')}`
+                    : ''
+                }`}
+              >
+                <ComicButton variant="warning" size="sm">
+                  Print grades
+                </ComicButton>
+              </Link>
+            ) : null}
+          </div>
         </div>
         <ComicText className="mb-4 text-[var(--comic-dark)] font-bold text-sm">
           Set each student’s 5-digit roll number in the Roll # column (used only for the student
