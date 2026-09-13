@@ -66,7 +66,7 @@ function LineIconButton({
       aria-pressed={pressed}
       title={configured ? 'LINE group configured' : 'Add LINE group link'}
       onClick={onClick}
-      className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-[var(--comic-black)] p-0"
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border-0 p-0"
       style={{ backgroundColor: '#06C755' }}
     >
       <FontAwesomeIcon
