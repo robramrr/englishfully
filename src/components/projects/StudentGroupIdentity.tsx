@@ -168,11 +168,8 @@ export default function StudentGroupIdentity({
               key={`member-${index}`}
               className="space-y-3"
             >
-              <div className="flex items-center justify-between gap-3">
-                <ComicText className="text-[var(--comic-secondary)] font-bold">
-                  {drafts.length === 1 ? 'Student' : `Student ${index + 1}`}
-                </ComicText>
-                {drafts.length > 1 ? (
+              {drafts.length > 1 ? (
+                <div className="flex justify-end">
                   <ComicButton
                     variant="danger"
                     size="sm"
@@ -180,8 +177,8 @@ export default function StudentGroupIdentity({
                   >
                     Remove
                   </ComicButton>
-                ) : null}
-              </div>
+                </div>
+              ) : null}
               {entryConfig.name_mode === 'first_last' ? (
                 <>
                   <input
