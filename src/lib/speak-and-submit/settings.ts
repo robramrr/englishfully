@@ -19,6 +19,24 @@ function parseSpeakBoolean(value: unknown): boolean {
   return normalized === 't' || normalized === 'true' || normalized === '1' || normalized === 'yes';
 }
 
+export function normalizeLineGroupUrl(value: unknown): string {
+  return String(value ?? '').trim();
+}
+
+export function validateLineGroupUrl(value: unknown): string | null {
+  const url = normalizeLineGroupUrl(value);
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      return 'LINE group link must start with https://';
+    }
+  } catch {
+    return 'Enter a valid LINE group URL, or leave the field empty.';
+  }
+  return null;
+}
+
 function rowToClassOption(row: Record<string, unknown>): SpeakClassOption {
   const maxRaw = Number(row.max_student_number);
   return {
@@ -28,6 +46,7 @@ function rowToClassOption(row: Record<string, unknown>): SpeakClassOption {
       ? Math.min(99, Math.max(1, Math.floor(maxRaw)))
       : DEFAULT_MAX_STUDENTS,
     sort_order: Number(row.sort_order ?? 0) || 0,
+    line_group_url: normalizeLineGroupUrl(row.line_group_url),
   };
 }
 
@@ -61,6 +80,10 @@ export async function ensureSettingsSchema(): Promise<void> {
   await sql`
     CREATE INDEX IF NOT EXISTS idx_speak_class_options_teacher
     ON speak_class_options(teacher_id, sort_order)
+  `;
+  await sql`
+    ALTER TABLE speak_class_options
+    ADD COLUMN IF NOT EXISTS line_group_url TEXT NOT NULL DEFAULT ''
   `;
 }
 
@@ -132,16 +155,19 @@ export async function saveEntryConfig(
 
   // Keep stable class IDs across saves. Recreating nanoids orphans gradebook rows keyed by class_id.
   const { rows: existingClasses } = await sql`
-    SELECT id, label FROM speak_class_options WHERE teacher_id = ${teacherId}
+    SELECT id, label, line_group_url FROM speak_class_options WHERE teacher_id = ${teacherId}
   `;
   const idByLabel = new Map<string, string>();
+  const lineUrlById = new Map<string, string>();
   for (const row of existingClasses) {
     const key = String(row.label ?? '')
       .trim()
       .toLowerCase();
+    const id = String(row.id);
     if (key && !idByLabel.has(key)) {
-      idByLabel.set(key, String(row.id));
+      idByLabel.set(key, id);
     }
+    lineUrlById.set(id, normalizeLineGroupUrl(row.line_group_url));
   }
 
   await sql`DELETE FROM speak_class_options WHERE teacher_id = ${teacherId}`;
@@ -149,13 +175,34 @@ export async function saveEntryConfig(
   for (let index = 0; index < classes.length; index += 1) {
     const item = classes[index];
     const id = idByLabel.get(item.label.toLowerCase()) || nanoid(21);
+    const lineGroupUrl = lineUrlById.get(id) || '';
     await sql`
-      INSERT INTO speak_class_options (id, teacher_id, label, max_student_number, sort_order)
-      VALUES (${id}, ${teacherId}, ${item.label}, ${item.max_student_number}, ${index})
+      INSERT INTO speak_class_options (id, teacher_id, label, max_student_number, sort_order, line_group_url)
+      VALUES (${id}, ${teacherId}, ${item.label}, ${item.max_student_number}, ${index}, ${lineGroupUrl})
     `;
   }
 
   return getEntryConfig(teacherId);
+}
+
+export async function saveClassLineGroupUrl(
+  classId: string,
+  lineGroupUrl: string,
+  teacherId: string = DEFAULT_TEACHER_ID
+): Promise<SpeakClassOption> {
+  await ensureSettingsSchema();
+  const url = normalizeLineGroupUrl(lineGroupUrl);
+  const validationError = validateLineGroupUrl(url);
+  if (validationError) throw new Error(validationError);
+
+  const { rows } = await sql`
+    UPDATE speak_class_options
+    SET line_group_url = ${url}
+    WHERE id = ${classId} AND teacher_id = ${teacherId}
+    RETURNING *
+  `;
+  if (rows.length === 0) throw new Error('Class not found');
+  return rowToClassOption(rows[0] as Record<string, unknown>);
 }
 
 export async function getTeacherName(teacherId: string = DEFAULT_TEACHER_ID): Promise<string> {

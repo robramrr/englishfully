@@ -395,6 +395,7 @@ function scopedEntryConfig(entryConfig: SpeakEntryConfig, classNames: string[]):
       label,
       max_student_number: 35,
       sort_order: 100 + index,
+      line_group_url: '',
     }));
   return {
     ...entryConfig,

@@ -44,6 +44,8 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
 
   const [settings, setSettings] = useState<GradebookSettings | null>(null);
   const [classLabel, setClassLabel] = useState('');
+  const [lineGroupUrl, setLineGroupUrl] = useState('');
+  const [savingLineGroup, setSavingLineGroup] = useState(false);
   const [seats, setSeats] = useState<GradebookSeat[]>([]);
   const [taskColumns, setTaskColumns] = useState<GradebookTaskColumn[]>([]);
   const [availableTasks, setAvailableTasks] = useState<GradebookTaskOption[]>([]);
@@ -118,6 +120,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
 
     setSettings(data.settings);
     setClassLabel(data.class_label);
+    setLineGroupUrl(String(data.line_group_url || ''));
     setSeats(data.seats || []);
     setTaskColumns(data.task_columns || []);
     setAvailableTasks(data.available_tasks || []);
@@ -215,6 +218,30 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
       setSubmittedNumbers(new Set());
     }
   }, [selectedTask, seats, taskColumns, tool, classLabel]);
+
+  async function saveLineGroupUrl() {
+    setSavingLineGroup(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/gradebook/class/${classId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ line_group_url: lineGroupUrl }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to save LINE group link');
+      setLineGroupUrl(String(data.line_group_url || ''));
+      setMessage(
+        data.line_group_url
+          ? `Saved LINE group link for ${classLabel || 'this class'}.`
+          : `Cleared LINE group link for ${classLabel || 'this class'}.`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save LINE group link');
+    } finally {
+      setSavingLineGroup(false);
+    }
+  }
 
   async function clearEntry(studentNumber: string) {
     if (!selectedTask) return;
@@ -691,6 +718,31 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
         <ComicText className="mb-4">
           {schoolYear || settings?.school_year || '—'} · Semester {semester}
         </ComicText>
+        <label className="block font-bold text-[var(--comic-dark)] mb-4">
+          LINE Group Link
+          <input
+            className="w-full comic-input mt-2"
+            type="url"
+            placeholder="https://line.me/ti/g/…"
+            value={lineGroupUrl}
+            onChange={(event) => setLineGroupUrl(event.target.value)}
+          />
+        </label>
+        <ComicText className="text-sm mb-3 text-[var(--comic-dark)]">
+          {lineGroupUrl.trim()
+            ? 'LINE group is configured for this class.'
+            : 'No LINE group configured yet. Leave empty if this class does not have one.'}
+        </ComicText>
+        <ComicButton
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="mb-4"
+          disabled={savingLineGroup}
+          onClick={() => void saveLineGroupUrl()}
+        >
+          {savingLineGroup ? 'Saving…' : 'Save LINE group'}
+        </ComicButton>
         <div className="flex flex-wrap gap-2 mb-4">
           <ComicButton
             type="button"

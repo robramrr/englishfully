@@ -74,6 +74,7 @@ export interface GradebookClassSummary {
   entry_count: number;
   total_points_earned: number;
   total_points_possible: number;
+  line_group_url: string;
 }
 
 export interface GradebookSeat {

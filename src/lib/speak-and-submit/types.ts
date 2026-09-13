@@ -154,6 +154,8 @@ export interface SpeakClassOption {
   label: string;
   max_student_number: number;
   sort_order: number;
+  /** Optional LINE group invite URL for this class. Empty when not configured. */
+  line_group_url: string;
 }
 
 export function sortSpeakClassOptions<T extends SpeakClassOption>(classes: T[]): T[] {

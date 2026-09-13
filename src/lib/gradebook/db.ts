@@ -765,6 +765,7 @@ export async function getClassOverview(
       entry_count: stats.entry_count,
       total_points_earned: stats.total_points_earned,
       total_points_possible: stats.total_points_possible,
+      line_group_url: classOption.line_group_url,
     };
   });
 
@@ -787,6 +788,7 @@ export async function getClassGradebook(
   class_id: string;
   class_label: string;
   max_student_number: number;
+  line_group_url: string;
   seats: GradebookSeat[];
   task_columns: GradebookTaskColumn[];
   available_tasks: GradebookTaskOption[];
@@ -983,6 +985,7 @@ export async function getClassGradebook(
     class_id: classOption.id,
     class_label: classOption.label,
     max_student_number: classOption.max_student_number,
+    line_group_url: classOption.line_group_url,
     seats,
     task_columns: taskColumns,
     available_tasks: availableTasks,
@@ -1321,6 +1324,7 @@ export async function lookupStudentGrades(params: {
             label: fromSpeak,
             max_student_number: 35,
             sort_order: 0,
+            line_group_url: '',
           };
         }
       }
