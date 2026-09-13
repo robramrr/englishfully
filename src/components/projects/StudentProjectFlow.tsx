@@ -546,7 +546,7 @@ export default function StudentProjectFlow({
           <>
             {submitted ? (
               <ComicCard className="comic-shadow-xl text-center">
-                <ComicTitle level={3} className="mb-2 text-[var(--comic-success)]">
+                <ComicTitle level={3} className="mb-2 text-[#15803d]">
                   Project submitted
                 </ComicTitle>
                 {submission?.status === 'reviewed' && submission.teacher_feedback ? (
@@ -893,7 +893,7 @@ export default function StudentProjectFlow({
                   })}
                 </ul>
                 {submitted ? (
-                  <ComicText className="text-[var(--comic-success)] font-bold">
+                  <ComicText className="text-[#15803d] font-bold">
                     Thank you for your submission!
                   </ComicText>
                 ) : (
