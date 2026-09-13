@@ -424,10 +424,27 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
                       task.status === 'graded' &&
                       task.points != null &&
                       task.points >= (task.max_points || 0);
+                    const replacedByMakeup =
+                      isAssessment &&
+                      task.status === 'graded' &&
+                      !earnedFull &&
+                      grade.tasks.some(
+                        (other) =>
+                          (other.tool === 'listen_and_learn' || Boolean(other.makeup_for_task_id)) &&
+                          other.makeup_for_task_id === task.task_id &&
+                          other.status === 'graded'
+                      );
                     let statusNode: ReactNode;
                     if (task.status === 'graded') {
                       if (isAssessment && testLabel !== '—') {
-                        statusNode = (
+                        statusNode = replacedByMakeup ? (
+                          <span className="text-[var(--brand-soft-gray)]">
+                            Failed - {testLabel}
+                            <span className="block text-xs font-medium normal-case tracking-normal">
+                              Replaced by makeup
+                            </span>
+                          </span>
+                        ) : (
                           <span
                             className={
                               earnedFull
@@ -471,10 +488,18 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
                     return (
                       <tr
                         key={`${task.tool}-${task.task_id}`}
-                        className="border-b border-[var(--comic-black)]/20"
+                        className={
+                          replacedByMakeup
+                            ? 'border-b border-[var(--comic-black)]/10 opacity-45 text-[var(--brand-soft-gray)]'
+                            : 'border-b border-[var(--comic-black)]/20'
+                        }
                       >
-                        <td className="py-2 pr-3 font-bold">
-                          {task.student_url ? (
+                        <td
+                          className={`py-2 pr-3 font-bold ${
+                            replacedByMakeup ? 'line-through decoration-[var(--brand-soft-gray)]' : ''
+                          }`}
+                        >
+                          {task.student_url && !replacedByMakeup ? (
                             <a
                               href={task.student_url}
                               target="_blank"
