@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faLine } from '@fortawesome/free-brands-svg-icons';
 import { faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import ComicAudioPlayer from '../ComicAudioPlayer';
 import ComicButton from '../ComicButton';
@@ -91,16 +92,16 @@ function classLineGroupUrlForStudent(
 function OpenClassLineButton({ url }: { url: string }) {
   if (!url) return null;
   return (
-    <ComicButton
+    <a
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      variant="success"
-      size="sm"
-      className="w-full"
+      className="comic-button inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-base text-white no-underline"
+      style={{ backgroundColor: '#06C755' }}
     >
-      Open Class LINE
-    </ComicButton>
+      <FontAwesomeIcon icon={faLine} aria-hidden className="h-[1.1em] w-[1.1em]" />
+      Send in LINE
+    </a>
   );
 }
 
@@ -613,6 +614,7 @@ export default function StudentProjectFlow({
                       <ArtworkCamera
                         disabled={preview || busy === 'worksheet-upload'}
                         onCapture={(file) => void handleWorksheetUpload(file)}
+                        onClose={() => setWorksheetMethod('')}
                       />
                     ) : null}
                   </>
@@ -706,6 +708,7 @@ export default function StudentProjectFlow({
                       <ArtworkCamera
                         disabled={preview || busy === 'artwork'}
                         onCapture={(file) => void handleArtworkUpload(file)}
+                        onClose={() => setArtworkMethod('')}
                       />
                     ) : null}
                   </>
