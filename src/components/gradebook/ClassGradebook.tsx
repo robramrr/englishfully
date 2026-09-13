@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faLine } from '@fortawesome/free-brands-svg-icons';
 import { faFileExcel, faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
@@ -37,6 +38,18 @@ interface ClassGradebookProps {
   classId: string;
 }
 
+function getOpenableLineGroupUrl(value: string): string {
+  const url = value.trim();
+  if (!url) return '';
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return '';
+    return parsed.toString();
+  } catch {
+    return '';
+  }
+}
+
 function LineIconButton({
   pressed,
   configured,
@@ -53,15 +66,10 @@ function LineIconButton({
       aria-pressed={pressed}
       title={configured ? 'LINE group configured' : 'Add LINE group link'}
       onClick={onClick}
-      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border-0"
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--comic-black)]"
       style={{ backgroundColor: '#06C755' }}
     >
-      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
-        <path
-          fill="#ffffff"
-          d="M12 3C6.9 3 2.8 6.7 2.8 11.2c0 4 3.3 7.4 7.7 8.1.3.1.7.2.8.5.1.2.1.6 0 .9l-.3 1.1c-.1.3.2.6.5.4 2.2-1.2 6.1-3.6 8.3-6.2 1.8-2 2.5-4.1 2.5-6.8C22.3 6.7 18.1 3 12 3zm-4.3 10.2H6.2c-.3 0-.5-.2-.5-.5V8.8c0-.3.2-.5.5-.5s.5.2.5.5v3.4h1.5c.3 0 .5.2.5.5s-.2.5-.5.5zm2.4.5c-.3 0-.5-.2-.5-.5V8.8c0-.3.2-.5.5-.5s.5.2.5.5v4.4c0 .3-.2.5-.5.5zm4.6 0c-.2 0-.4-.1-.5-.3l-1.5-2.1V13.2c0 .3-.2.5-.5.5s-.5-.2-.5-.5V8.8c0-.3.2-.5.5-.5.2 0 .4.1.5.3l1.5 2.1V8.8c0-.3.2-.5.5-.5s.5.2.5.5v4.4c0 .3-.2.5-.5.5zm3.8-.5h-1.5c-.3 0-.5-.2-.5-.5V8.8c0-.3.2-.5.5-.5s.5.2.5.5v3.4h1.5c.3 0 .5.2.5.5s-.2.5-.5.5z"
-        />
-      </svg>
+      <FontAwesomeIcon icon={faLine} aria-hidden className="h-8 w-8 text-white" />
     </button>
   );
 }
@@ -719,6 +727,8 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
     }
   }
 
+  const openableLineGroupUrl = getOpenableLineGroupUrl(lineGroupUrl);
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap gap-3">
@@ -776,6 +786,16 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                 onClick={() => void saveLineGroupUrl()}
               >
                 {savingLineGroup ? 'Saving…' : 'Save LINE group'}
+              </ComicButton>
+              <ComicButton
+                href={openableLineGroupUrl || undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="success"
+                size="sm"
+                disabled={!openableLineGroupUrl}
+              >
+                Open LINE group
               </ComicButton>
             </div>
             <hr className="mt-4 h-px w-full border-0" style={{ backgroundColor: '#e1e1e1' }} />
