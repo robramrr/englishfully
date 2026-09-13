@@ -89,7 +89,17 @@ function classLineGroupUrlForStudent(
   return getOpenableLineGroupUrl(match?.line_group_url ?? '');
 }
 
-function OpenClassLineButton({ url }: { url: string }) {
+function sentViaLine(row: ProjectComponentSubmission | null): boolean {
+  return Boolean(row?.extra?.sent_via_line);
+}
+
+function OpenClassLineButton({
+  url,
+  onSent,
+}: {
+  url: string;
+  onSent?: () => void;
+}) {
   if (!url) return null;
   return (
     <a
@@ -98,6 +108,7 @@ function OpenClassLineButton({ url }: { url: string }) {
       rel="noopener noreferrer"
       className="comic-button inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-base text-white no-underline"
       style={{ backgroundColor: '#06C755' }}
+      onClick={() => onSent?.()}
     >
       <FontAwesomeIcon icon={faLine} aria-hidden className="h-[1.1em] w-[1.1em]" />
       Send in LINE
@@ -416,6 +427,15 @@ export default function StudentProjectFlow({
     }
   }
 
+  async function handleSendInLine(componentId: string) {
+    if (preview || locked || !submission) return;
+    try {
+      await saveComponent({ component_id: componentId, sent_via_line: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save LINE progress');
+    }
+  }
+
   async function handleSubmitProject() {
     if (locked || preview || !requiredReady) return;
     setBusy('submit');
@@ -608,7 +628,10 @@ export default function StudentProjectFlow({
                       >
                         Take a photo
                       </ComicButton>
-                      <OpenClassLineButton url={classLineGroupUrl} />
+                      <OpenClassLineButton
+                        url={classLineGroupUrl}
+                        onSent={() => void handleSendInLine(worksheet.id)}
+                      />
                     </div>
                     {worksheetMethod === 'camera' ? (
                       <ArtworkCamera
@@ -702,7 +725,10 @@ export default function StudentProjectFlow({
                       >
                         Take a photo
                       </ComicButton>
-                      <OpenClassLineButton url={classLineGroupUrl} />
+                      <OpenClassLineButton
+                        url={classLineGroupUrl}
+                        onSent={() => void handleSendInLine(artwork.id)}
+                      />
                     </div>
                     {artworkMethod === 'camera' ? (
                       <ArtworkCamera
@@ -832,7 +858,11 @@ export default function StudentProjectFlow({
                       ? ' (in-person)'
                       : item.type === 'speaking' && speakingRow?.audio_url
                         ? ' (recording)'
-                        : ''}
+                        : item.type === 'worksheet' && sentViaLine(worksheetRow) && !worksheetRow?.file_url
+                          ? ' (LINE)'
+                          : item.type === 'artwork' && sentViaLine(artworkRow) && !artworkRow?.file_url
+                            ? ' (LINE)'
+                            : ''}
                   </li>
                 ))}
               </ul>

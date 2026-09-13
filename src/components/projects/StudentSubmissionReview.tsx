@@ -162,9 +162,11 @@ export default function StudentSubmissionReview({
             </a>
           ) : (
             <ComicText className="text-[var(--comic-dark)]">
-              {worksheet.row?.status === 'complete'
-                ? 'Student opened the worksheet. No file uploaded.'
-                : 'No worksheet work yet.'}
+              {worksheet.row?.extra?.sent_via_line
+                ? 'Student sent this in LINE. No file uploaded here.'
+                : worksheet.row?.status === 'complete'
+                  ? 'Student opened the worksheet. No file uploaded.'
+                  : 'No worksheet work yet.'}
             </ComicText>
           )}
         </ComicCard>
@@ -183,7 +185,11 @@ export default function StudentSubmissionReview({
               className="max-h-[28rem] w-full object-contain rounded-lg comic-border"
             />
           ) : (
-            <ComicText className="text-[var(--comic-dark)]">No artwork uploaded.</ComicText>
+            <ComicText className="text-[var(--comic-dark)]">
+              {artwork.row?.extra?.sent_via_line
+                ? 'Student sent this in LINE. No file uploaded here.'
+                : 'No artwork uploaded.'}
+            </ComicText>
           )}
         </ComicCard>
       ) : null}

@@ -997,10 +997,10 @@ function isComponentComplete(
   row: ProjectComponentSubmission
 ): boolean {
   if (component.type === 'worksheet') {
-    return Boolean(row.extra.viewed) || Boolean(row.file_url);
+    return Boolean(row.extra.viewed) || Boolean(row.extra.sent_via_line) || Boolean(row.file_url);
   }
   if (component.type === 'artwork') {
-    return Boolean(row.file_url);
+    return Boolean(row.file_url) || Boolean(row.extra.sent_via_line);
   }
   if (row.text_data === 'in_person') return true;
   return Boolean(row.audio_url);
@@ -1029,6 +1029,7 @@ export async function saveComponentProgress(
 
   const extra = { ...row.extra };
   if (payload.viewed) extra.viewed = true;
+  if (payload.sent_via_line) extra.sent_via_line = true;
   if (payload.speaking_method) extra.speaking_method = payload.speaking_method;
 
   const next = {

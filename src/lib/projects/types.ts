@@ -224,6 +224,7 @@ export interface SaveComponentProgressPayload {
   class_number: string;
   component_id: string;
   viewed?: boolean;
+  sent_via_line?: boolean;
   speaking_method?: SpeakingMethod;
   file_url?: string;
   file_key?: string;
