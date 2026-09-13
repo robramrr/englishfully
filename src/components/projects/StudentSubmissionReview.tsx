@@ -177,9 +177,11 @@ export default function StudentSubmissionReview({
               </ul>
             ) : (
               <ComicText className="text-[var(--comic-dark)]">
-                {row?.extra?.sent_via_line
+                {row?.extra?.sent_via_line || row?.extra?.manual_delivery === 'line'
                   ? 'Student sent this in LINE. No file uploaded here.'
-                  : `No ${title.toLowerCase()} work yet.`}
+                  : row?.extra?.manual_delivery === 'file_upload'
+                    ? 'Teacher marked file upload complete (no file stored here).'
+                    : `No ${title.toLowerCase()} work yet.`}
               </ComicText>
             )}
             {settings.example_image_enabled && settings.example_image ? (

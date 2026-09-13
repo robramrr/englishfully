@@ -22,11 +22,13 @@ import {
   isProjectStatus,
   normalizeProjectClassNames,
   parseClassNames,
+  resolveUploadDelivery,
   serializeClassNames,
   slugifyProjectTitle,
   type ArtworkSettings,
   type ComponentSubmissionStatus,
   type CreateProjectPayload,
+  type ManualTeacherSubmissionPayload,
   type Project,
   type ProjectComponent,
   type ProjectComponentSettings,
@@ -1121,7 +1123,12 @@ function isComponentComplete(
 ): boolean {
   if (isUploadTaskType(component.type)) {
     const files = getComponentUploadFiles(row);
-    return files.length >= 1 || Boolean(row.extra.sent_via_line);
+    return (
+      files.length >= 1 ||
+      Boolean(row.extra.sent_via_line) ||
+      row.extra.manual_delivery === 'file_upload' ||
+      row.extra.manual_delivery === 'line'
+    );
   }
   if (row.text_data === 'in_person') return true;
   return Boolean(row.audio_url);
@@ -1317,6 +1324,99 @@ export async function submitProject(
   return updated;
 }
 
+export async function createManualTeacherSubmission(
+  project: ProjectWithComponents,
+  payload: ManualTeacherSubmissionPayload
+): Promise<ProjectSubmissionRow> {
+  const classNumber = String(payload.class_number ?? '').trim();
+  if (!classNumber) throw new Error('Select a class');
+
+  const delivery = payload.delivery === 'file_upload' ? 'file_upload' : 'line';
+  const rawNumbers = String(payload.student_numbers ?? '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  if (rawNumbers.length === 0) throw new Error('Enter at least one student number');
+  if (rawNumbers.length > MAX_PROJECT_GROUP_SIZE) {
+    throw new Error(`A group can have up to ${MAX_PROJECT_GROUP_SIZE} students`);
+  }
+
+  const uploadTasks = project.components.filter((item) => isUploadTaskType(item.type) && item.enabled);
+  const selectedIds = Array.isArray(payload.component_ids)
+    ? payload.component_ids.map((id) => String(id).trim()).filter(Boolean)
+    : [];
+  const selectedComponents = uploadTasks.filter((item) => selectedIds.includes(item.id));
+  if (selectedComponents.length === 0) {
+    throw new Error('Select at least one upload task');
+  }
+
+  const members = rawNumbers.map((studentNumber) => ({
+    student_name: '',
+    student_number: studentNumber,
+    class_number: classNumber,
+  }));
+
+  const started = await startOrResumeSubmission(project, { members });
+  if (started.status !== 'in_progress' && !project.allow_resubmission) {
+    throw new Error('These students already have a submitted project');
+  }
+
+  const rows = await ensureComponentSubmissionRows(started.id, project.components);
+  for (const component of selectedComponents) {
+    const row = rows.find((item) => item.component_id === component.id);
+    if (!row) continue;
+    const extra = {
+      ...row.extra,
+      manual_delivery: delivery,
+      ...(delivery === 'line' ? { sent_via_line: true } : {}),
+    };
+    await sql`
+      UPDATE classroom_project_component_submissions
+      SET
+        status = 'complete',
+        extra = ${JSON.stringify(extra)}::jsonb,
+        updated_at = NOW()
+      WHERE id = ${row.id}
+    `;
+  }
+
+  const { DEFAULT_MAX_POINTS } = await import('@/lib/gradebook/types');
+  const credit =
+    started.score != null && Number.isFinite(started.score) ? started.score : DEFAULT_MAX_POINTS;
+
+  await sql`
+    UPDATE classroom_project_submissions
+    SET
+      status = 'submitted',
+      submitted_at = COALESCE(submitted_at, NOW()),
+      reviewed_at = NULL,
+      score = ${credit},
+      updated_at = NOW()
+    WHERE id = ${started.id}
+  `;
+
+  const updated = await findStudentSubmission(project.id, members[0].student_number, classNumber);
+  if (!updated) throw new Error('Failed to create submission');
+
+  try {
+    const { syncProjectScoreToGradebook } = await import('@/lib/gradebook/db');
+    await syncProjectScoreToGradebook({
+      projectId: project.id,
+      projectTitle: project.title,
+      members: updated.members,
+      score: credit,
+      teacherId: project.teacher_id,
+    });
+  } catch (error) {
+    console.error('Manual project gradebook sync failed:', error);
+  }
+
+  const listed = await listProjectSubmissions(project.id);
+  const row = listed.find((item) => item.id === updated.id);
+  if (!row) throw new Error('Failed to load created submission');
+  return row;
+}
+
 export async function listProjectSubmissions(projectId: string): Promise<ProjectSubmissionRow[]> {
   await ensureProjectsSchema();
   const project = await getProjectByIdOrSlug(projectId);
@@ -1354,6 +1454,12 @@ export async function listProjectSubmissions(projectId: string): Promise<Project
           title: componentDisplayTitle(component),
           status: statusFor(component.id, component.enabled),
         })),
+        upload_delivery: resolveUploadDelivery(
+          uploadTasks.map((component) => {
+            const match = components.find((item) => item.component_id === component.id);
+            return match ?? null;
+          })
+        ),
         speaking: speaking ? statusFor(speaking.id, speaking.enabled) : 'disabled',
       };
     })

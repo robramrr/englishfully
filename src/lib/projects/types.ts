@@ -184,6 +184,8 @@ export interface ProjectSubmissionRow extends ProjectSubmission {
     title: string;
     status: ComponentSubmissionStatus | 'disabled';
   }>;
+  /** How upload-task work was delivered for display in the submissions table. */
+  upload_delivery: 'file_upload' | 'line' | 'none';
   speaking: ComponentSubmissionStatus | 'disabled';
 }
 
@@ -251,6 +253,16 @@ export interface StartProjectPayload {
   student_number?: string;
   class_number?: string;
   members?: ProjectSubmissionMember[];
+}
+
+export interface ManualTeacherSubmissionPayload {
+  class_number: string;
+  /** Comma-separated student numbers, e.g. "18A, 11B". */
+  student_numbers: string;
+  /** Upload-task component ids to mark complete. */
+  component_ids: string[];
+  delivery: 'file_upload' | 'line';
+  status?: 'submitted';
 }
 
 export interface SaveComponentProgressPayload {
@@ -429,6 +441,31 @@ export function getComponentUploadFiles(
     ];
   }
   return [];
+}
+
+export function resolveUploadDelivery(
+  rows: Array<Pick<
+    ProjectComponentSubmission,
+    'file_url' | 'file_key' | 'file_name' | 'content_type' | 'extra'
+  > | null>
+): 'file_upload' | 'line' | 'none' {
+  let hasFile = false;
+  let hasLine = false;
+  for (const row of rows) {
+    if (!row) continue;
+    if (getComponentUploadFiles(row).length > 0) hasFile = true;
+    if (row.extra?.manual_delivery === 'file_upload') hasFile = true;
+    if (row.extra?.sent_via_line || row.extra?.manual_delivery === 'line') hasLine = true;
+  }
+  if (hasFile) return 'file_upload';
+  if (hasLine) return 'line';
+  return 'none';
+}
+
+export function formatUploadDeliveryLabel(delivery: 'file_upload' | 'line' | 'none'): string {
+  if (delivery === 'file_upload') return 'File upload';
+  if (delivery === 'line') return 'LINE';
+  return '—';
 }
 
 export function componentDisplayTitle(
