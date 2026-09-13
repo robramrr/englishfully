@@ -156,8 +156,7 @@ export default function StudentGroupIdentity({
         </span>
       </ComicTitle>
       <ComicText className="text-[var(--comic-dark)] font-bold text-center mb-6">
-        Work alone or add up to {MAX_PROJECT_GROUP_SIZE} students. Use the same class and number later
-        to open the same work.
+        Work alone or add up to {MAX_PROJECT_GROUP_SIZE} students.
       </ComicText>
       <div className="space-y-6">
         {drafts.map((draft, index) => {
@@ -167,7 +166,7 @@ export default function StudentGroupIdentity({
           return (
             <div
               key={`member-${index}`}
-              className="space-y-3 rounded-lg comic-border bg-white p-4"
+              className="space-y-3"
             >
               <div className="flex items-center justify-between gap-3">
                 <ComicText className="text-[var(--comic-secondary)] font-bold">
