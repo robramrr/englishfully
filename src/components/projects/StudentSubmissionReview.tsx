@@ -224,11 +224,11 @@ export default function StudentSubmissionReview({
           disabled={submission.status === 'in_progress'}
         />
         <label className="block font-bold text-[var(--comic-dark)]">
-          Score (optional)
+          Score (out of 10, also saved to the gradebook)
           <input
             className="w-full comic-input mt-2"
             inputMode="decimal"
-            placeholder="e.g. 18"
+            placeholder="e.g. 8"
             value={score}
             onChange={(event) => setScore(event.target.value)}
             disabled={submission.status === 'in_progress'}

@@ -1188,6 +1188,21 @@ export async function deleteProjectSubmission(
     DELETE FROM classroom_project_submissions
     WHERE id = ${existing.id} AND project_id = ${projectId}
   `;
+  try {
+    const project = await getProjectByIdOrSlug(projectId);
+    if (project) {
+      const { syncProjectScoreToGradebook } = await import('@/lib/gradebook/db');
+      await syncProjectScoreToGradebook({
+        projectId: project.id,
+        projectTitle: project.title,
+        members: existing.members,
+        score: null,
+        teacherId: project.teacher_id,
+      });
+    }
+  } catch (error) {
+    console.error('Project gradebook cleanup failed:', error);
+  }
   return true;
 }
 
@@ -1202,6 +1217,21 @@ export async function deleteStudentProjectSubmission(
     DELETE FROM classroom_project_submissions
     WHERE id = ${existing.id} AND project_id = ${projectId}
   `;
+  try {
+    const project = await getProjectByIdOrSlug(projectId);
+    if (project) {
+      const { syncProjectScoreToGradebook } = await import('@/lib/gradebook/db');
+      await syncProjectScoreToGradebook({
+        projectId: project.id,
+        projectTitle: project.title,
+        members: existing.members,
+        score: null,
+        teacherId: project.teacher_id,
+      });
+    }
+  } catch (error) {
+    console.error('Project gradebook cleanup failed:', error);
+  }
   return true;
 }
 
@@ -1246,6 +1276,24 @@ export async function reviewSubmission(
 
   const updated = await getSubmissionForTeacher(projectId, submissionId);
   if (!updated) throw new Error('Failed to save review');
+
+  try {
+    const project = await getProjectByIdOrSlug(projectId);
+    if (project) {
+      const { syncProjectScoreToGradebook } = await import('@/lib/gradebook/db');
+      await syncProjectScoreToGradebook({
+        projectId: project.id,
+        projectTitle: project.title,
+        members: updated.members,
+        score,
+        notes: feedback,
+        teacherId: project.teacher_id,
+      });
+    }
+  } catch (error) {
+    console.error('Project gradebook sync failed:', error);
+  }
+
   return updated;
 }
 

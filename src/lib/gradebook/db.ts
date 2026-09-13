@@ -1609,7 +1609,7 @@ export async function lookupStudentGrades(params: {
   // Listen & Learn makeups are added separately for students who failed the tied assessment.
   for (const task of availableTasks) {
     if (task.tool === 'listen_and_learn') continue;
-    if (task.tool === 'listen_and_answer') {
+    if (task.tool === 'listen_and_answer' || task.tool === 'projects') {
       if (!taskAppliesToGradebookClass(task.class_name, classLabel)) continue;
     } else if (classLabel && !classLabelsMatch(task.class_name, classLabel)) {
       continue;
@@ -2344,4 +2344,66 @@ export async function removeListenLearnMakeupCredit(params: {
       AND lower(trim(class_label)) = ${classLabel.toLowerCase()}
   `;
   return rowCount ?? 0;
+}
+
+export async function syncProjectScoreToGradebook(params: {
+  projectId: string;
+  projectTitle: string;
+  members: Array<{ student_number: string; class_number: string }>;
+  score: number | null;
+  notes?: string;
+  teacherId?: string;
+}): Promise<void> {
+  const teacherId = params.teacherId || DEFAULT_TEACHER_ID;
+  const members = params.members.filter(
+    (member) => member.student_number.trim() && member.class_number.trim()
+  );
+  if (members.length === 0) return;
+
+  const settings = await getGradebookSettings(teacherId);
+  const entryConfig = await getEntryConfig(teacherId);
+  const notes = (params.notes ?? '').trim();
+
+  for (const member of members) {
+    const classOption =
+      entryConfig.classes.find((item) => classLabelsMatch(item.label, member.class_number)) ?? null;
+    if (!classOption) {
+      console.warn(
+        `Project gradebook sync skipped ${member.student_number} — no class matches "${member.class_number}"`
+      );
+      continue;
+    }
+
+    const studentNumber = normalizeStudentNumber(member.student_number);
+    if (params.score == null || !Number.isFinite(params.score)) {
+      await sql`
+        DELETE FROM gradebook_entries
+        WHERE teacher_id = ${teacherId}
+          AND school_year = ${settings.school_year}
+          AND semester = ${settings.active_semester}
+          AND class_id = ${classOption.id}
+          AND student_number = ${studentNumber}
+          AND tool = 'projects'
+          AND task_id = ${params.projectId}
+      `;
+      continue;
+    }
+
+    await upsertGradeEntry(
+      {
+        school_year: settings.school_year,
+        semester: settings.active_semester,
+        class_id: classOption.id,
+        class_label: classOption.label,
+        student_number: studentNumber,
+        tool: 'projects',
+        task_id: params.projectId,
+        task_title: params.projectTitle.trim() || 'Project',
+        points: params.score,
+        max_points: DEFAULT_MAX_POINTS,
+        notes,
+      },
+      teacherId
+    );
+  }
 }
