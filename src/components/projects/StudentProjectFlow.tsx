@@ -32,6 +32,7 @@ import {
 import {
   getDefaultEntryConfig,
   sortSpeakClassOptions,
+  type SpeakClassOption,
 } from '@/lib/speak-and-submit/types';
 
 type Step = 'loading' | 'identity' | 'project' | 'error';
@@ -65,6 +66,44 @@ function rowFor(
   return submission.components.find((item) => item.component_id === component.id) ?? null;
 }
 
+function getOpenableLineGroupUrl(value: string): string {
+  const url = value.trim();
+  if (!url) return '';
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return '';
+    return parsed.toString();
+  } catch {
+    return '';
+  }
+}
+
+function classLineGroupUrlForStudent(
+  classes: SpeakClassOption[],
+  classNumber: string
+): string {
+  const wanted = classNumber.trim().toLowerCase();
+  if (!wanted) return '';
+  const match = classes.find((item) => item.label.trim().toLowerCase() === wanted);
+  return getOpenableLineGroupUrl(match?.line_group_url ?? '');
+}
+
+function OpenClassLineButton({ url }: { url: string }) {
+  if (!url) return null;
+  return (
+    <ComicButton
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      variant="success"
+      size="sm"
+      className="w-full"
+    >
+      Open Class LINE
+    </ComicButton>
+  );
+}
+
 export default function StudentProjectFlow({
   projectId,
   preview = false,
@@ -94,6 +133,7 @@ export default function StudentProjectFlow({
   );
   const usesClassDropdown = sortedClasses.length > 0;
   const usesStudentLetter = entryConfig.student_letter_enabled;
+  const classLineGroupUrl = classLineGroupUrlForStudent(sortedClasses, classNumber);
 
   const worksheet = project?.components.find((item) => item.type === 'worksheet');
   const artwork = project?.components.find((item) => item.type === 'artwork');
@@ -539,7 +579,11 @@ export default function StudentProjectFlow({
                         event.target.value = '';
                       }}
                     />
-                    <div className="grid sm:grid-cols-2 gap-3">
+                    <div
+                      className={`grid gap-3 ${
+                        classLineGroupUrl ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
+                      }`}
+                    >
                       <ComicButton
                         variant={worksheetMethod === 'upload' ? 'primary' : 'secondary'}
                         size="sm"
@@ -563,6 +607,7 @@ export default function StudentProjectFlow({
                       >
                         Take a photo
                       </ComicButton>
+                      <OpenClassLineButton url={classLineGroupUrl} />
                     </div>
                     {worksheetMethod === 'camera' ? (
                       <ArtworkCamera
@@ -571,7 +616,9 @@ export default function StudentProjectFlow({
                       />
                     ) : null}
                   </>
-                ) : null}
+                ) : (
+                  <OpenClassLineButton url={classLineGroupUrl} />
+                )}
                 {worksheetRow?.file_url ? (
                   <a
                     href={worksheetRow.file_url}
@@ -627,7 +674,11 @@ export default function StudentProjectFlow({
                         event.target.value = '';
                       }}
                     />
-                    <div className="grid sm:grid-cols-2 gap-3">
+                    <div
+                      className={`grid gap-3 ${
+                        classLineGroupUrl ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
+                      }`}
+                    >
                       <ComicButton
                         variant={artworkMethod === 'upload' ? 'primary' : 'secondary'}
                         size="sm"
@@ -649,6 +700,7 @@ export default function StudentProjectFlow({
                       >
                         Take a photo
                       </ComicButton>
+                      <OpenClassLineButton url={classLineGroupUrl} />
                     </div>
                     {artworkMethod === 'camera' ? (
                       <ArtworkCamera
@@ -657,7 +709,9 @@ export default function StudentProjectFlow({
                       />
                     ) : null}
                   </>
-                ) : null}
+                ) : (
+                  <OpenClassLineButton url={classLineGroupUrl} />
+                )}
               </ComicCard>
             ) : null}
 
