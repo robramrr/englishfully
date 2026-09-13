@@ -9,8 +9,13 @@ import {
 import {
   asArtworkSettings,
   asSpeakingSettings,
+  asUploadTaskSettings,
   asWorksheetSettings,
+  componentDisplayTitle,
+  DEFAULT_UPLOAD_TASK_SETTINGS,
   defaultSettingsForType,
+  isUploadTaskType,
+  parseStoredFileRef,
   formatClassNames,
   isProjectComponentType,
   isProjectStatus,
@@ -41,6 +46,7 @@ import {
   type SaveProjectPayload,
   type SpeakingSettings,
   type StartProjectPayload,
+  type StoredFileRef,
   type WorksheetSettings,
 } from './types';
 
@@ -78,6 +84,12 @@ function parseJson<T>(value: unknown, fallback: T): T {
 
 function parseSettings(type: ProjectComponentType, value: unknown): ProjectComponentSettings {
   const parsed = parseJson<ProjectComponentSettings>(value, defaultSettingsForType(type));
+  if (type === 'upload') {
+    return asUploadTaskSettings(
+      parsed,
+      'Upload'
+    );
+  }
   if (type === 'worksheet') return asWorksheetSettings(parsed);
   if (type === 'artwork') return asArtworkSettings(parsed);
   return asSpeakingSettings(parsed);
@@ -118,6 +130,7 @@ function rowToProject(row: Record<string, unknown>): Project {
     allow_resubmission: parseBoolean(row.allow_resubmission),
     final_submission_enabled:
       row.final_submission_enabled == null ? true : parseBoolean(row.final_submission_enabled),
+    worksheet_file: parseStoredFileRef(row.worksheet_file),
     share_url: row.share_url ? String(row.share_url) : null,
     created_at: String(row.created_at ?? ''),
     updated_at: String(row.updated_at ?? ''),
@@ -275,6 +288,10 @@ export async function ensureProjectsSchema(): Promise<void> {
         ADD COLUMN IF NOT EXISTS final_submission_enabled BOOLEAN NOT NULL DEFAULT TRUE
       `;
       await sql`
+        ALTER TABLE classroom_projects
+        ADD COLUMN IF NOT EXISTS worksheet_file JSONB
+      `;
+      await sql`
         CREATE TABLE IF NOT EXISTS classroom_project_submission_members (
           id TEXT PRIMARY KEY,
           submission_id TEXT NOT NULL REFERENCES classroom_project_submissions(id) ON DELETE CASCADE,
@@ -335,29 +352,33 @@ async function ensureDefaultComponents(
     sort_order: number;
     instructions: string;
     settings: ProjectComponentSettings;
-  }> = [
-    {
-      type: 'worksheet',
-      enabled: enabled.worksheet,
-      sort_order: 0,
+  }> = [];
+
+  if (enabled.worksheet) {
+    defaults.push({
+      type: 'upload',
+      enabled: true,
+      sort_order: defaults.length,
       instructions: '',
-      settings: defaultSettingsForType('worksheet'),
-    },
-    {
-      type: 'artwork',
-      enabled: enabled.artwork,
-      sort_order: 1,
+      settings: asUploadTaskSettings({ ...DEFAULT_UPLOAD_TASK_SETTINGS, title: 'Worksheet' }, 'Worksheet'),
+    });
+  }
+  if (enabled.artwork) {
+    defaults.push({
+      type: 'upload',
+      enabled: true,
+      sort_order: defaults.length,
       instructions: 'Create a drawing and upload a photo of your artwork.',
-      settings: defaultSettingsForType('artwork'),
-    },
-    {
-      type: 'speaking',
-      enabled: enabled.speaking,
-      sort_order: 2,
-      instructions: 'Talk about your project. Include the most important details.',
-      settings: defaultSettingsForType('speaking'),
-    },
-  ];
+      settings: asUploadTaskSettings({ ...DEFAULT_UPLOAD_TASK_SETTINGS, title: 'Artwork' }, 'Artwork'),
+    });
+  }
+  defaults.push({
+    type: 'speaking',
+    enabled: enabled.speaking,
+    sort_order: defaults.length,
+    instructions: 'Talk about your project. Include the most important details.',
+    settings: defaultSettingsForType('speaking'),
+  });
 
   for (const component of defaults) {
     await sql`
@@ -448,6 +469,12 @@ export async function listProjects(
   return projects;
 }
 
+function worksheetFileFromComponents(components: ProjectComponent[]) {
+  const worksheet = components.find((item) => item.type === 'worksheet');
+  if (!worksheet) return null;
+  return asWorksheetSettings(worksheet.settings).file;
+}
+
 export async function getProjectByIdOrSlug(idOrSlug: string): Promise<ProjectWithComponents | null> {
   await ensureProjectsSchema();
   const { rows } = await sql`
@@ -458,7 +485,11 @@ export async function getProjectByIdOrSlug(idOrSlug: string): Promise<ProjectWit
   if (rows.length === 0) return null;
   const project = rowToProject(rows[0] as Record<string, unknown>);
   const components = await getComponentsForProject(project.id);
-  return { ...project, components };
+  return {
+    ...project,
+    worksheet_file: project.worksheet_file ?? worksheetFileFromComponents(components),
+    components,
+  };
 }
 
 export async function createProject(
@@ -543,22 +574,29 @@ export async function updateProject(
       due_date = ${safeTrim(payload.due_date) || null},
       allow_resubmission = ${Boolean(payload.allow_resubmission)},
       final_submission_enabled = ${payload.final_submission_enabled !== false},
+      worksheet_file = ${JSON.stringify(payload.worksheet_file ?? existing.worksheet_file)},
       updated_at = NOW()
     WHERE id = ${existing.id}
   `;
 
-  const existingByType = new Map(existing.components.map((item) => [item.type, item]));
+  const existingById = new Map(existing.components.map((item) => [item.id, item]));
+  const keptIds = new Set<string>();
+  let speakingSeen = false;
 
   for (const [index, incoming] of payload.components.entries()) {
     if (!isProjectComponentType(incoming.type)) {
       throw new Error('Invalid project component');
     }
-    const current = existingByType.get(incoming.type);
+
+    const current = incoming.id ? existingById.get(incoming.id) : undefined;
     let settings: ProjectComponentSettings = defaultSettingsForType(incoming.type);
-    if (incoming.type === 'worksheet') {
-      settings = asWorksheetSettings(incoming.settings ?? current?.settings ?? settings);
-    } else if (incoming.type === 'artwork') {
-      settings = asArtworkSettings(incoming.settings ?? current?.settings ?? settings);
+    let nextType = incoming.type;
+
+    if (isUploadTaskType(incoming.type) || (current && isUploadTaskType(current.type))) {
+      nextType = 'upload';
+      const fallbackTitle =
+        current?.type === 'artwork' ? 'Artwork' : current?.type === 'worksheet' ? 'Worksheet' : 'Upload';
+      settings = asUploadTaskSettings(incoming.settings ?? current?.settings ?? settings, fallbackTitle);
     } else {
       const speaking = asSpeakingSettings(incoming.settings ?? current?.settings ?? settings);
       if (incoming.enabled && !speaking.online_recording_enabled && !speaking.in_person_enabled) {
@@ -568,12 +606,17 @@ export async function updateProject(
         throw new Error('Minimum speaking time cannot be longer than the maximum.');
       }
       settings = speaking;
+      nextType = 'speaking';
+      if (speakingSeen) throw new Error('Only one speaking section is allowed');
+      speakingSeen = true;
     }
 
     if (current) {
+      keptIds.add(current.id);
       await sql`
         UPDATE classroom_project_components
         SET
+          type = ${nextType},
           instructions = ${safeTrim(incoming.instructions)},
           required = ${Boolean(incoming.required)},
           enabled = ${Boolean(incoming.enabled)},
@@ -582,13 +625,15 @@ export async function updateProject(
         WHERE id = ${current.id}
       `;
     } else {
+      const id = nanoid(21);
+      keptIds.add(id);
       await sql`
         INSERT INTO classroom_project_components (
           id, project_id, type, instructions, required, enabled, sort_order, settings
         ) VALUES (
-          ${nanoid(21)},
+          ${id},
           ${existing.id},
-          ${incoming.type},
+          ${nextType},
           ${safeTrim(incoming.instructions)},
           ${Boolean(incoming.required)},
           ${Boolean(incoming.enabled)},
@@ -596,6 +641,12 @@ export async function updateProject(
           ${JSON.stringify(settings)}
         )
       `;
+    }
+  }
+
+  for (const component of existing.components) {
+    if (!keptIds.has(component.id)) {
+      await sql`DELETE FROM classroom_project_components WHERE id = ${component.id}`;
     }
   }
 
@@ -611,6 +662,19 @@ export async function updateProjectShareUrl(projectId: string, shareUrl: string)
     SET share_url = ${shareUrl}, updated_at = NOW()
     WHERE id = ${projectId}
   `;
+}
+
+export async function updateProjectWorksheetFile(
+  projectId: string,
+  file: StoredFileRef | null
+): Promise<ProjectWithComponents | null> {
+  await ensureProjectsSchema();
+  await sql`
+    UPDATE classroom_projects
+    SET worksheet_file = ${JSON.stringify(file)}, updated_at = NOW()
+    WHERE id = ${projectId}
+  `;
+  return getProjectByIdOrSlug(projectId);
 }
 
 export async function updateComponentSettings(
@@ -696,6 +760,7 @@ export async function getPublicProject(idOrSlug: string): Promise<PublicProject 
     due_date: project.due_date,
     allow_resubmission: project.allow_resubmission,
     final_submission_enabled: project.final_submission_enabled,
+    worksheet_file: project.worksheet_file,
     entry_config: scopedEntryConfig(entryConfig, project.class_names),
     components: project.components
       .filter((item) => item.enabled)
@@ -725,6 +790,7 @@ export async function getTeacherPreviewProject(idOrSlug: string): Promise<Public
     due_date: project.due_date,
     allow_resubmission: project.allow_resubmission,
     final_submission_enabled: project.final_submission_enabled,
+    worksheet_file: project.worksheet_file,
     entry_config: scopedEntryConfig(entryConfig, project.class_names),
     components: project.components
       .filter((item) => item.enabled)
@@ -1005,10 +1071,7 @@ function isComponentComplete(
   component: ProjectComponent,
   row: ProjectComponentSubmission
 ): boolean {
-  if (component.type === 'worksheet') {
-    return Boolean(row.extra.viewed) || Boolean(row.extra.sent_via_line) || Boolean(row.file_url);
-  }
-  if (component.type === 'artwork') {
+  if (isUploadTaskType(component.type)) {
     return Boolean(row.file_url) || Boolean(row.extra.sent_via_line);
   }
   if (row.text_data === 'in_person') return true;
@@ -1150,24 +1213,26 @@ export async function listProjectSubmissions(projectId: string): Promise<Project
       student_number ASC
   `;
 
-  const enabledTypes = new Set(project.components.filter((item) => item.enabled).map((item) => item.type));
+  const speaking = project.components.find((item) => item.type === 'speaking');
+  const uploadTasks = project.components.filter((item) => isUploadTaskType(item.type) && item.enabled);
 
   return Promise.all(
     rows.map(async (row) => {
       const submission = await hydrateSubmission(row as Record<string, unknown>);
       const components = submission.components;
-      const statusFor = (type: ProjectComponentType): ComponentSubmissionStatus | 'disabled' => {
-        if (!enabledTypes.has(type)) return 'disabled';
-        const component = project.components.find((item) => item.type === type);
-        if (!component) return 'disabled';
-        const match = components.find((item) => item.component_id === component.id);
+      const statusFor = (componentId: string, enabled: boolean): ComponentSubmissionStatus | 'disabled' => {
+        if (!enabled) return 'disabled';
+        const match = components.find((item) => item.component_id === componentId);
         return match?.status === 'complete' ? 'complete' : 'incomplete';
       };
       return {
         ...submission,
-        worksheet: statusFor('worksheet'),
-        artwork: statusFor('artwork'),
-        speaking: statusFor('speaking'),
+        upload_statuses: uploadTasks.map((component) => ({
+          component_id: component.id,
+          title: componentDisplayTitle(component),
+          status: statusFor(component.id, component.enabled),
+        })),
+        speaking: speaking ? statusFor(speaking.id, speaking.enabled) : 'disabled',
       };
     })
   );

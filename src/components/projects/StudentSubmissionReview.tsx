@@ -10,8 +10,11 @@ import ComicTitle from '../ComicTitle';
 import {
   PROJECT_COMPONENT_LABELS,
   PROJECT_SUBMISSION_STATUS_LABELS,
+  asUploadTaskSettings,
+  componentDisplayTitle,
   formatProjectDateTime,
   formatSubmissionGroupLabel,
+  isUploadTaskType,
   type ProjectComponentSubmission,
   type ProjectSubmissionWithComponents,
   type ProjectWithComponents,
@@ -22,17 +25,11 @@ interface StudentSubmissionReviewProps {
   initialSubmission: ProjectSubmissionWithComponents;
 }
 
-function componentRow(
-  project: ProjectWithComponents,
+function rowForComponent(
   submission: ProjectSubmissionWithComponents,
-  type: 'worksheet' | 'artwork' | 'speaking'
-): { component: ProjectWithComponents['components'][number]; row: ProjectComponentSubmission | null } | null {
-  const component = project.components.find((item) => item.type === type && item.enabled);
-  if (!component) return null;
-  return {
-    component,
-    row: submission.components.find((item) => item.component_id === component.id) ?? null,
-  };
+  componentId: string
+): ProjectComponentSubmission | null {
+  return submission.components.find((item) => item.component_id === componentId) ?? null;
 }
 
 export default function StudentSubmissionReview({
@@ -48,9 +45,11 @@ export default function StudentSubmissionReview({
   const [message, setMessage] = useState('');
   const router = useRouter();
 
-  const worksheet = componentRow(project, submission, 'worksheet');
-  const artwork = componentRow(project, submission, 'artwork');
-  const speaking = componentRow(project, submission, 'speaking');
+  const uploadTasks = project.components.filter(
+    (item) => isUploadTaskType(item.type) && item.enabled
+  );
+  const speaking = project.components.find((item) => item.type === 'speaking' && item.enabled);
+  const speakingRow = speaking ? rowForComponent(submission, speaking.id) : null;
 
   async function saveReview(markReviewed: boolean) {
     setSaving(true);
@@ -145,70 +144,66 @@ export default function StudentSubmissionReview({
         </ComicButton>
       </ComicCard>
 
-      {worksheet ? (
-        <ComicCard className="comic-shadow-xl space-y-3">
-          <ComicTitle level={4} className="text-[var(--comic-secondary)]">
-            {PROJECT_COMPONENT_LABELS.worksheet}
-          </ComicTitle>
-          {worksheet.row?.file_url ? (
-            <a
-              href={worksheet.row.file_url}
-              target="_blank"
-              rel="noreferrer"
-              className="font-bold text-[var(--comic-secondary)] underline"
-            >
-              View / download student worksheet
-              {worksheet.row.file_name ? ` (${worksheet.row.file_name})` : ''}
-            </a>
-          ) : (
-            <ComicText className="text-[var(--comic-dark)]">
-              {worksheet.row?.extra?.sent_via_line
-                ? 'Student sent this in LINE. No file uploaded here.'
-                : worksheet.row?.status === 'complete'
-                  ? 'Student opened the worksheet. No file uploaded.'
-                  : 'No worksheet work yet.'}
-            </ComicText>
-          )}
-        </ComicCard>
-      ) : null}
-
-      {artwork ? (
-        <ComicCard className="comic-shadow-xl space-y-3">
-          <ComicTitle level={4} className="text-[var(--comic-secondary)]">
-            {PROJECT_COMPONENT_LABELS.artwork}
-          </ComicTitle>
-          {artwork.row?.file_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={artwork.row.file_url}
-              alt={`${submission.student_name} artwork`}
-              className="max-h-[28rem] w-full object-contain rounded-lg comic-border"
-            />
-          ) : (
-            <ComicText className="text-[var(--comic-dark)]">
-              {artwork.row?.extra?.sent_via_line
-                ? 'Student sent this in LINE. No file uploaded here.'
-                : 'No artwork uploaded.'}
-            </ComicText>
-          )}
-        </ComicCard>
-      ) : null}
+      {uploadTasks.map((task) => {
+        const row = rowForComponent(submission, task.id);
+        const settings = asUploadTaskSettings(task.settings);
+        const title = componentDisplayTitle(task);
+        return (
+          <ComicCard key={task.id} className="comic-shadow-xl space-y-3">
+            <ComicTitle level={4} className="text-[var(--comic-secondary)]">
+              {title}
+            </ComicTitle>
+            {row?.file_url ? (
+              <>
+                <a
+                  href={row.file_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-bold text-[var(--comic-secondary)] underline"
+                >
+                  View / download student file
+                  {row.file_name ? ` (${row.file_name})` : ''}
+                </a>
+                {row.content_type?.startsWith('image/') ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={row.file_url}
+                    alt={`${submission.student_name} ${title}`}
+                    className="max-h-[28rem] w-full object-contain rounded-lg comic-border"
+                  />
+                ) : null}
+              </>
+            ) : (
+              <ComicText className="text-[var(--comic-dark)]">
+                {row?.extra?.sent_via_line
+                  ? 'Student sent this in LINE. No file uploaded here.'
+                  : `No ${title.toLowerCase()} work yet.`}
+              </ComicText>
+            )}
+            {settings.example_image_enabled && settings.example_image ? (
+              <ComicText className="text-[var(--comic-dark)]">
+                Teacher example was shown for this task.
+              </ComicText>
+            ) : null}
+          </ComicCard>
+        );
+      })}
 
       {speaking ? (
         <ComicCard className="comic-shadow-xl space-y-3">
           <ComicTitle level={4} className="text-[var(--comic-secondary)]">
             {PROJECT_COMPONENT_LABELS.speaking}
           </ComicTitle>
-          {speaking.row?.text_data === 'in_person' ? (
+          {speakingRow?.text_data === 'in_person' ? (
             <ComicText className="text-[var(--comic-dark)] font-bold">
               In-person presentation
             </ComicText>
-          ) : speaking.row?.audio_url ? (
+          ) : speakingRow?.audio_url ? (
             <div className="space-y-2">
-              <ComicAudioPlayer src={speaking.row.audio_url} />
-              {speaking.row.duration_seconds ? (
+              <ComicAudioPlayer src={speakingRow.audio_url} />
+              {speakingRow.duration_seconds ? (
                 <ComicText className="text-[var(--comic-dark)]">
-                  Duration: {Math.round(speaking.row.duration_seconds)}s
+                  Duration: {Math.round(speakingRow.duration_seconds)}s
                 </ComicText>
               ) : null}
             </div>

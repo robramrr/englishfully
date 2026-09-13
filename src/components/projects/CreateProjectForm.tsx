@@ -74,7 +74,7 @@ export default function CreateProjectForm() {
         + Create Project
       </ComicTitle>
       <ComicText className="text-[var(--comic-dark)] mb-6">
-        Combine a worksheet, artwork, and speaking into one classroom project.
+        Create a draft, then add upload tasks (worksheet, artwork, and more) and speaking in the project editor.
       </ComicText>
 
       <div className="space-y-4">
@@ -132,7 +132,7 @@ export default function CreateProjectForm() {
               checked={worksheetEnabled}
               onChange={(event) => setWorksheetEnabled(event.target.checked)}
             />
-            Worksheet
+            Start with Worksheet task
           </label>
           <label className="comic-border bg-white rounded-lg p-3 font-bold text-[var(--comic-dark)] flex items-center gap-2">
             <input
@@ -140,7 +140,7 @@ export default function CreateProjectForm() {
               checked={artworkEnabled}
               onChange={(event) => setArtworkEnabled(event.target.checked)}
             />
-            Artwork
+            Start with Artwork task
           </label>
           <label className="comic-border bg-white rounded-lg p-3 font-bold text-[var(--comic-dark)] flex items-center gap-2">
             <input

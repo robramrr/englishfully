@@ -8,7 +8,9 @@ import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import {
   PROJECT_SUBMISSION_STATUS_LABELS,
+  componentDisplayTitle,
   formatSubmissionGroupLabel,
+  isUploadTaskType,
   type ProjectSubmissionRow,
   type ProjectWithComponents,
 } from '@/lib/projects/types';
@@ -17,7 +19,7 @@ interface ProjectSubmissionsTableProps {
   project: ProjectWithComponents;
 }
 
-function mark(value: ProjectSubmissionRow['worksheet']) {
+function mark(value: ProjectSubmissionRow['speaking']) {
   if (value === 'disabled') return '—';
   return value === 'complete' ? '✓' : '—';
 }
@@ -41,8 +43,9 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
   const submittedCount = submissions.filter(
     (item) => item.status === 'submitted' || item.status === 'reviewed'
   ).length;
-  const showWorksheet = project.components.some((item) => item.type === 'worksheet' && item.enabled);
-  const showArtwork = project.components.some((item) => item.type === 'artwork' && item.enabled);
+  const uploadTasks = project.components.filter(
+    (item) => isUploadTaskType(item.type) && item.enabled
+  );
   const showSpeaking = project.components.some((item) => item.type === 'speaking' && item.enabled);
 
   async function handleRemove(submission: ProjectSubmissionRow) {
@@ -93,12 +96,11 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
           <thead>
             <tr className="border-b-4 border-[var(--comic-black)]">
               <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Students</th>
-              {showWorksheet ? (
-                <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Worksheet</th>
-              ) : null}
-              {showArtwork ? (
-                <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Artwork</th>
-              ) : null}
+              {uploadTasks.map((task) => (
+                <th key={task.id} className="py-3 pr-3 font-bold text-[var(--comic-dark)]">
+                  {componentDisplayTitle(task)}
+                </th>
+              ))}
               {showSpeaking ? (
                 <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Speaking</th>
               ) : null}
@@ -117,8 +119,16 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
                     {formatSubmissionGroupLabel(submission)}
                   </Link>
                 </td>
-                {showWorksheet ? <td className="py-3 pr-3 font-bold">{mark(submission.worksheet)}</td> : null}
-                {showArtwork ? <td className="py-3 pr-3 font-bold">{mark(submission.artwork)}</td> : null}
+                {uploadTasks.map((task) => {
+                  const status =
+                    submission.upload_statuses?.find((item) => item.component_id === task.id)
+                      ?.status ?? 'incomplete';
+                  return (
+                    <td key={task.id} className="py-3 pr-3 font-bold">
+                      {mark(status)}
+                    </td>
+                  );
+                })}
                 {showSpeaking ? <td className="py-3 pr-3 font-bold">{mark(submission.speaking)}</td> : null}
                 <td className="py-3 pr-3 font-bold text-[var(--comic-dark)]">
                   {PROJECT_SUBMISSION_STATUS_LABELS[submission.status]}

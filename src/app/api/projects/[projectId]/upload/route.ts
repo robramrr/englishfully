@@ -1,9 +1,20 @@
 import { NextResponse } from 'next/server';
 import { isTeacherAuthenticated } from '@/lib/speak-and-submit/auth';
 import { jsonError } from '@/lib/speak-and-submit/api';
-import { getProjectByIdOrSlug, updateComponentSettings } from '@/lib/projects/db';
-import { uploadProjectTeacherFile, validateImageFile, validateWorksheetFile } from '@/lib/projects/storage';
-import { asArtworkSettings, asWorksheetSettings } from '@/lib/projects/types';
+import {
+  getProjectByIdOrSlug,
+  updateComponentSettings,
+  updateProjectWorksheetFile,
+} from '@/lib/projects/db';
+import {
+  uploadProjectTeacherFile,
+  validateImageFile,
+  validateWorksheetFile,
+} from '@/lib/projects/storage';
+import {
+  asUploadTaskSettings,
+  isUploadTaskType,
+} from '@/lib/projects/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,13 +34,14 @@ export async function POST(request: Request, { params }: RouteParams) {
     const formData = await request.formData();
     const file = formData.get('file');
     const kind = String(formData.get('kind') ?? '').trim();
+    const componentId = String(formData.get('component_id') ?? '').trim();
 
     if (!file || !(file instanceof Blob)) {
       return jsonError('A file is required', 400);
     }
 
-    if (kind !== 'worksheet' && kind !== 'artwork-example') {
-      return jsonError('Upload kind must be worksheet or artwork-example', 400);
+    if (kind !== 'worksheet' && kind !== 'upload-example') {
+      return jsonError('Upload kind must be worksheet or upload-example', 400);
     }
 
     const validationError =
@@ -57,16 +69,20 @@ export async function POST(request: Request, { params }: RouteParams) {
     };
 
     if (kind === 'worksheet') {
-      const component = project.components.find((item) => item.type === 'worksheet');
-      if (!component) return jsonError('Worksheet component not found', 404);
-      const settings = asWorksheetSettings(component.settings);
-      await updateComponentSettings(component.id, { ...settings, file: stored });
-    } else {
-      const component = project.components.find((item) => item.type === 'artwork');
-      if (!component) return jsonError('Artwork component not found', 404);
-      const settings = asArtworkSettings(component.settings);
-      await updateComponentSettings(component.id, { ...settings, example_image: stored });
+      const updated = await updateProjectWorksheetFile(project.id, stored);
+      return NextResponse.json({ file: stored, project: updated });
     }
+
+    const component = project.components.find(
+      (item) => item.id === componentId && isUploadTaskType(item.type)
+    );
+    if (!component) return jsonError('Upload task not found', 404);
+    const settings = asUploadTaskSettings(component.settings, 'Upload');
+    await updateComponentSettings(component.id, {
+      ...settings,
+      example_image_enabled: true,
+      example_image: stored,
+    });
 
     const updated = await getProjectByIdOrSlug(project.id);
     return NextResponse.json({ file: stored, project: updated });

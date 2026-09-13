@@ -8,9 +8,9 @@ import {
 import {
   uploadProjectStudentFile,
   validateAudioFile,
-  validateImageFile,
   validateWorksheetFile,
 } from '@/lib/projects/storage';
+import { isUploadTaskType } from '@/lib/projects/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,21 +38,26 @@ export async function POST(request: Request, { params }: RouteParams) {
     if (!componentId || !studentNumber || !classNumber) {
       return jsonError('Student number, class, and component are required', 400);
     }
-    if (kind !== 'worksheet' && kind !== 'artwork' && kind !== 'audio') {
-      return jsonError('Upload kind must be worksheet, artwork, or audio', 400);
+    if (kind !== 'upload' && kind !== 'worksheet' && kind !== 'artwork' && kind !== 'audio') {
+      return jsonError('Upload kind must be upload, worksheet, artwork, or audio', 400);
     }
 
     const component = project.components.find((item) => item.id === componentId && item.enabled);
     if (!component) return jsonError('Component not found', 404);
 
+    if (kind === 'audio' && component.type !== 'speaking') {
+      return jsonError('Audio uploads are only for speaking', 400);
+    }
+    if (kind !== 'audio' && !isUploadTaskType(component.type)) {
+      return jsonError('File uploads are only for upload tasks', 400);
+    }
+
     const validationError =
-      kind === 'audio'
-        ? validateAudioFile(file)
-        : kind === 'artwork'
-          ? validateImageFile(file)
-          : validateWorksheetFile(file);
+      kind === 'audio' ? validateAudioFile(file) : validateWorksheetFile(file);
     if (validationError) return jsonError(validationError, 400);
 
+    const storageKind =
+      kind === 'audio' ? 'audio' : kind === 'artwork' ? 'artwork' : kind === 'worksheet' ? 'worksheet' : 'upload';
     const buffer = Buffer.from(await file.arrayBuffer());
     const contentType =
       file.type ||
@@ -63,7 +68,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       classNumber,
       studentNumber,
       studentName,
-      kind,
+      kind: storageKind,
       fileName,
       buffer,
       contentType,

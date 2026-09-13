@@ -84,7 +84,7 @@ export function validateAudioFile(file: Blob): string | null {
 
 export async function uploadProjectTeacherFile(params: {
   projectId: string;
-  kind: 'worksheet' | 'artwork-example';
+  kind: 'worksheet' | 'artwork-example' | 'upload-example';
   fileName: string;
   buffer: Buffer;
   contentType: string;
@@ -110,12 +110,13 @@ export async function uploadProjectStudentFile(params: {
   classNumber: string;
   studentNumber: string;
   studentName: string;
-  kind: 'worksheet' | 'artwork' | 'audio';
+  kind: 'worksheet' | 'artwork' | 'upload' | 'audio';
   fileName: string;
   buffer: Buffer;
   contentType: string;
 }): Promise<{ key: string; url: string; file_name: string; content_type: string }> {
-  const fallback = params.kind === 'audio' ? 'webm' : params.kind === 'worksheet' ? 'pdf' : 'jpg';
+  const fallback =
+    params.kind === 'audio' ? 'webm' : params.kind === 'artwork' ? 'jpg' : 'pdf';
   const extension = extensionForContentType(params.contentType, fallback);
   const classFolder = sanitizePathSegment(params.classNumber);
   const studentFolder = `${sanitizePathSegment(params.studentNumber)}_${sanitizePathSegment(params.studentName)}`;

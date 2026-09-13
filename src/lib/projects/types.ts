@@ -2,8 +2,10 @@ import type { SpeakEntryConfig } from '@/lib/speak-and-submit/types';
 
 export type { SpeakEntryConfig };
 
-export const PROJECT_COMPONENT_TYPES = ['worksheet', 'artwork', 'speaking'] as const;
+export const PROJECT_COMPONENT_TYPES = ['upload', 'worksheet', 'artwork', 'speaking'] as const;
 export type ProjectComponentType = (typeof PROJECT_COMPONENT_TYPES)[number];
+export const UPLOAD_TASK_TYPES = ['upload', 'worksheet', 'artwork'] as const;
+export type UploadTaskType = (typeof UPLOAD_TASK_TYPES)[number];
 
 export const PROJECT_STATUSES = ['draft', 'published'] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
@@ -21,6 +23,7 @@ export const SPEAKING_METHODS = ['online', 'in_person'] as const;
 export type SpeakingMethod = (typeof SPEAKING_METHODS)[number];
 
 export const PROJECT_COMPONENT_LABELS: Record<ProjectComponentType, string> = {
+  upload: 'Upload',
   worksheet: 'Worksheet',
   artwork: 'Artwork',
   speaking: 'Speaking',
@@ -55,6 +58,15 @@ export interface ArtworkSettings {
   example_image: StoredFileRef | null;
 }
 
+export interface UploadTaskSettings {
+  title: string;
+  upload_enabled: boolean;
+  take_photo_enabled: boolean;
+  send_line_enabled: boolean;
+  example_image_enabled: boolean;
+  example_image: StoredFileRef | null;
+}
+
 export interface SpeakingSettings {
   min_seconds: number;
   max_seconds: number;
@@ -64,6 +76,7 @@ export interface SpeakingSettings {
 }
 
 export type ProjectComponentSettings =
+  | UploadTaskSettings
   | WorksheetSettings
   | ArtworkSettings
   | SpeakingSettings;
@@ -92,6 +105,7 @@ export interface Project {
   status: ProjectStatus;
   allow_resubmission: boolean;
   final_submission_enabled: boolean;
+  worksheet_file: StoredFileRef | null;
   share_url: string | null;
   created_at: string;
   updated_at: string;
@@ -155,8 +169,11 @@ export interface ProjectSubmissionWithComponents extends ProjectSubmission {
 }
 
 export interface ProjectSubmissionRow extends ProjectSubmission {
-  worksheet: ComponentSubmissionStatus | 'disabled';
-  artwork: ComponentSubmissionStatus | 'disabled';
+  upload_statuses: Array<{
+    component_id: string;
+    title: string;
+    status: ComponentSubmissionStatus | 'disabled';
+  }>;
   speaking: ComponentSubmissionStatus | 'disabled';
 }
 
@@ -180,6 +197,7 @@ export interface PublicProject {
   due_date: string | null;
   allow_resubmission: boolean;
   final_submission_enabled: boolean;
+  worksheet_file: StoredFileRef | null;
   entry_config: SpeakEntryConfig;
   components: PublicProjectComponent[];
 }
@@ -205,6 +223,7 @@ export interface SaveProjectPayload {
   due_date: string | null;
   allow_resubmission: boolean;
   final_submission_enabled: boolean;
+  worksheet_file?: StoredFileRef | null;
   components: Array<{
     id?: string;
     type: ProjectComponentType;
@@ -267,6 +286,15 @@ export const DEFAULT_ARTWORK_SETTINGS: ArtworkSettings = {
   example_image: null,
 };
 
+export const DEFAULT_UPLOAD_TASK_SETTINGS: UploadTaskSettings = {
+  title: 'Upload',
+  upload_enabled: true,
+  take_photo_enabled: true,
+  send_line_enabled: true,
+  example_image_enabled: false,
+  example_image: null,
+};
+
 export function isProjectComponentType(value: unknown): value is ProjectComponentType {
   return PROJECT_COMPONENT_TYPES.includes(value as ProjectComponentType);
 }
@@ -279,24 +307,79 @@ export function isSpeakingMethod(value: unknown): value is SpeakingMethod {
   return SPEAKING_METHODS.includes(value as SpeakingMethod);
 }
 
+export function isUploadTaskType(type: unknown): type is UploadTaskType {
+  return UPLOAD_TASK_TYPES.includes(type as UploadTaskType);
+}
+
 export function defaultSettingsForType(type: ProjectComponentType): ProjectComponentSettings {
+  if (type === 'upload') return { ...DEFAULT_UPLOAD_TASK_SETTINGS };
   if (type === 'worksheet') return { ...DEFAULT_WORKSHEET_SETTINGS };
   if (type === 'artwork') return { ...DEFAULT_ARTWORK_SETTINGS };
   return { ...DEFAULT_SPEAKING_SETTINGS, prompts: [] };
 }
 
+export function parseStoredFileRef(value: unknown): StoredFileRef | null {
+  if (!value || typeof value !== 'object') return null;
+  const raw = value as Record<string, unknown>;
+  const url = String(raw.url ?? '').trim();
+  if (!url) return null;
+  return {
+    url,
+    key: String(raw.key ?? ''),
+    file_name: String(raw.file_name ?? ''),
+    content_type: String(raw.content_type ?? ''),
+    source: raw.source === 'google_drive' ? 'google_drive' : 'upload',
+    ...(raw.google_drive_file_id
+      ? { google_drive_file_id: String(raw.google_drive_file_id) }
+      : {}),
+  };
+}
+
 export function asWorksheetSettings(settings: ProjectComponentSettings): WorksheetSettings {
   const raw = settings as Partial<WorksheetSettings>;
   return {
-    file: raw.file ?? null,
+    file: parseStoredFileRef(raw.file) ?? raw.file ?? null,
   };
 }
 
 export function asArtworkSettings(settings: ProjectComponentSettings): ArtworkSettings {
   const raw = settings as Partial<ArtworkSettings>;
   return {
-    example_image: raw.example_image ?? null,
+    example_image: parseStoredFileRef(raw.example_image) ?? raw.example_image ?? null,
   };
+}
+
+export function asUploadTaskSettings(
+  settings: ProjectComponentSettings | Record<string, unknown> | null | undefined,
+  fallbackTitle = 'Upload'
+): UploadTaskSettings {
+  const raw = (settings ?? {}) as Partial<UploadTaskSettings> &
+    Partial<WorksheetSettings> &
+    Partial<ArtworkSettings> &
+    Record<string, unknown>;
+  const exampleImage = parseStoredFileRef(raw.example_image) ?? raw.example_image ?? null;
+  const title = String(raw.title ?? fallbackTitle).trim() || fallbackTitle;
+  return {
+    title,
+    upload_enabled: raw.upload_enabled !== false,
+    take_photo_enabled: raw.take_photo_enabled !== false,
+    send_line_enabled: raw.send_line_enabled !== false,
+    example_image_enabled: raw.example_image_enabled === true || Boolean(exampleImage),
+    example_image: exampleImage,
+  };
+}
+
+export function componentDisplayTitle(
+  component: Pick<ProjectComponent, 'type' | 'settings'> | Pick<PublicProjectComponent, 'type' | 'settings'>
+): string {
+  if (component.type === 'speaking') return PROJECT_COMPONENT_LABELS.speaking;
+  const fallback =
+    component.type === 'artwork'
+      ? 'Artwork'
+      : component.type === 'worksheet'
+        ? 'Worksheet'
+        : 'Upload';
+  return asUploadTaskSettings(component.settings, fallback).title;
 }
 
 export function asSpeakingSettings(settings: ProjectComponentSettings): SpeakingSettings {

@@ -17,13 +17,13 @@ import StudentGroupIdentity, {
   type IdentityDraft,
 } from './StudentGroupIdentity';
 import {
-  PROJECT_COMPONENT_LABELS,
-  asArtworkSettings,
   asSpeakingSettings,
-  asWorksheetSettings,
+  asUploadTaskSettings,
+  componentDisplayTitle,
   formatProjectDateTime,
   formatProjectHeaderMeta,
   formatSubmissionGroupLabel,
+  isUploadTaskType,
   type ProjectComponentSubmission,
   type ProjectSubmissionWithComponents,
   type PublicProject,
@@ -133,11 +133,9 @@ export default function StudentProjectFlow({
   const [checkingIdentity, setCheckingIdentity] = useState(false);
   const [busy, setBusy] = useState('');
   const [speakingMethod, setSpeakingMethod] = useState<SpeakingMethod | ''>('');
-  const [artworkMethod, setArtworkMethod] = useState<'upload' | 'camera' | ''>('');
-  const [worksheetMethod, setWorksheetMethod] = useState<'upload' | 'camera' | ''>('');
+  const [uploadMethods, setUploadMethods] = useState<Record<string, 'upload' | 'camera' | ''>>({});
   const [pendingAudio, setPendingAudio] = useState<{ blob: Blob; duration: number } | null>(null);
-  const artworkInputRef = useRef<HTMLInputElement>(null);
-  const worksheetUploadRef = useRef<HTMLInputElement>(null);
+  const uploadInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const entryConfig = project?.entry_config ?? getDefaultEntryConfig();
   const sortedClasses = useMemo(
@@ -148,14 +146,9 @@ export default function StudentProjectFlow({
   const usesStudentLetter = entryConfig.student_letter_enabled;
   const classLineGroupUrl = classLineGroupUrlForStudent(sortedClasses, classNumber);
 
-  const worksheet = project?.components.find((item) => item.type === 'worksheet');
-  const artwork = project?.components.find((item) => item.type === 'artwork');
+  const uploadTasks = (project?.components ?? []).filter((item) => isUploadTaskType(item.type));
   const speaking = project?.components.find((item) => item.type === 'speaking');
-  const worksheetSettings = worksheet ? asWorksheetSettings(worksheet.settings) : null;
-  const artworkSettings = artwork ? asArtworkSettings(artwork.settings) : null;
   const speakingSettings = speaking ? asSpeakingSettings(speaking.settings) : null;
-  const worksheetRow = rowFor(worksheet, submission);
-  const artworkRow = rowFor(artwork, submission);
   const speakingRow = rowFor(speaking, submission);
   const locked =
     !preview &&
@@ -304,8 +297,7 @@ export default function StudentProjectFlow({
         return;
       }
       setSubmission(null);
-      setArtworkMethod('');
-      setWorksheetMethod('');
+      setUploadMethods({});
       setSpeakingMethod('');
       setPendingAudio(null);
       setStep('identity');
@@ -332,7 +324,12 @@ export default function StudentProjectFlow({
     setSubmission(data.submission);
   }
 
-  async function uploadStudentFile(kind: 'worksheet' | 'artwork' | 'audio', file: Blob, extra?: FormData) {
+  async function uploadStudentFile(
+    kind: 'upload' | 'audio',
+    file: Blob,
+    componentId: string,
+    extra?: FormData
+  ) {
     if (preview) return;
     const formData = extra ?? new FormData();
     formData.append('file', file, kind === 'audio' ? 'recording.webm' : file instanceof File ? file.name : kind);
@@ -340,9 +337,6 @@ export default function StudentProjectFlow({
     formData.append('student_name', studentName);
     formData.append('student_number', studentNumber);
     formData.append('class_number', classNumber);
-    const componentId =
-      kind === 'worksheet' ? worksheet?.id : kind === 'artwork' ? artwork?.id : speaking?.id;
-    if (!componentId) throw new Error('Component not found');
     formData.append('component_id', componentId);
     const response = await fetch(`/api/projects/public/${projectId}/upload`, {
       method: 'POST',
@@ -353,42 +347,15 @@ export default function StudentProjectFlow({
     setSubmission(data.submission);
   }
 
-  async function markWorksheetOpened() {
-    if (preview || locked || !submission || !worksheet) return;
-    setBusy('worksheet');
+  async function handleUploadTaskFile(componentId: string, file: File) {
+    if (locked || preview) return;
+    setBusy(`upload-${componentId}`);
     setError('');
     try {
-      await saveComponent({ component_id: worksheet.id, viewed: true });
+      await uploadStudentFile('upload', file, componentId);
+      setUploadMethods((current) => ({ ...current, [componentId]: '' }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save worksheet progress');
-    } finally {
-      setBusy('');
-    }
-  }
-
-  async function handleArtworkUpload(file: File) {
-    if (locked || preview || !artwork) return;
-    setBusy('artwork');
-    setError('');
-    try {
-      await uploadStudentFile('artwork', file);
-      setArtworkMethod('');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload artwork');
-    } finally {
-      setBusy('');
-    }
-  }
-
-  async function handleWorksheetUpload(file: File) {
-    if (locked || preview || !worksheet) return;
-    setBusy('worksheet-upload');
-    setError('');
-    try {
-      await uploadStudentFile('worksheet', file);
-      setWorksheetMethod('');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload worksheet');
+      setError(err instanceof Error ? err.message : 'Failed to upload file');
     } finally {
       setBusy('');
     }
@@ -420,7 +387,7 @@ export default function StudentProjectFlow({
     try {
       const formData = new FormData();
       formData.append('duration_seconds', String(pendingAudio.duration));
-      await uploadStudentFile('audio', pendingAudio.blob, formData);
+      await uploadStudentFile('audio', pendingAudio.blob, speaking.id, formData);
       setSpeakingMethod('online');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save recording');
@@ -473,14 +440,13 @@ export default function StudentProjectFlow({
             <span>{project?.title || 'Project'}</span>
           </span>
         </ComicTitle>
-        {worksheetSettings?.file?.url ? (
+        {project?.worksheet_file?.url ? (
           <ComicText className="comic-text-white">
             <a
-              href={worksheetSettings.file.url}
+              href={project.worksheet_file.url}
               target="_blank"
               rel="noreferrer"
               className="underline underline-offset-[0.2em] decoration-2"
-              onClick={() => void markWorksheetOpened()}
             >
               Open worksheet
             </a>
@@ -569,7 +535,7 @@ export default function StudentProjectFlow({
               <ul className="space-y-2">
                 {progressItems.map((item) => (
                   <li key={item.id} className="font-bold text-[var(--comic-dark)]">
-                    {statusFor(item, submission) ? '✓' : '○'} {PROJECT_COMPONENT_LABELS[item.type]}
+                    {statusFor(item, submission) ? '✓' : '○'} {componentDisplayTitle(item)}
                     {item.required ? '' : ' (optional)'}
                   </li>
                 ))}
@@ -583,170 +549,137 @@ export default function StudentProjectFlow({
 
             {error ? <ComicText className="text-[var(--comic-danger)] font-bold">{error}</ComicText> : null}
 
-            {worksheet ? (
-              <ComicCard className="comic-shadow-xl space-y-4">
-                <ComicTitle level={4} className="text-[var(--comic-primary)]">
-                  Worksheet
-                </ComicTitle>
-                {!locked ? (
-                  <>
-                    <ComicText className="text-[var(--comic-dark)]">
-                      Upload completed worksheet
-                    </ComicText>
-                    <input
-                      ref={worksheetUploadRef}
-                      type="file"
-                      accept=".pdf,.doc,.docx,image/*"
-                      className="hidden"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) void handleWorksheetUpload(file);
-                        event.target.value = '';
-                      }}
-                    />
-                    <div
-                      className={`grid gap-3 ${
-                        classLineGroupUrl ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
-                      }`}
-                    >
-                      <ComicButton
-                        variant={worksheetMethod === 'upload' ? 'primary' : 'secondary'}
-                        size="sm"
-                        className="w-full"
-                        disabled={preview || busy === 'worksheet-upload'}
-                        onClick={() => {
-                          setWorksheetMethod('upload');
-                          worksheetUploadRef.current?.click();
-                        }}
-                      >
-                        {busy === 'worksheet-upload' && worksheetMethod === 'upload'
-                          ? 'Uploading…'
-                          : 'Upload'}
-                      </ComicButton>
-                      <ComicButton
-                        variant={worksheetMethod === 'camera' ? 'primary' : 'secondary'}
-                        size="sm"
-                        className="w-full"
-                        disabled={preview || busy === 'worksheet-upload'}
-                        onClick={() => setWorksheetMethod('camera')}
-                      >
-                        Take a photo
-                      </ComicButton>
-                      <OpenClassLineButton
-                        url={classLineGroupUrl}
-                        onSent={() => void handleSendInLine(worksheet.id)}
-                      />
-                    </div>
-                    {worksheetMethod === 'camera' ? (
-                      <ArtworkCamera
-                        disabled={preview || busy === 'worksheet-upload'}
-                        onCapture={(file) => void handleWorksheetUpload(file)}
-                        onClose={() => setWorksheetMethod('')}
-                      />
-                    ) : null}
-                  </>
-                ) : (
-                  <OpenClassLineButton url={classLineGroupUrl} />
-                )}
-                {worksheetRow?.file_url ? (
-                  <a
-                    href={worksheetRow.file_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block font-bold text-[var(--comic-secondary)] underline"
-                  >
-                    View your uploaded worksheet
-                  </a>
-                ) : null}
-              </ComicCard>
-            ) : null}
+            {uploadTasks.map((task) => {
+              const settings = asUploadTaskSettings(task.settings, componentDisplayTitle(task));
+              const row = rowFor(task, submission);
+              const method = uploadMethods[task.id] ?? '';
+              const taskBusy = busy === `upload-${task.id}`;
+              const showUpload = settings.upload_enabled;
+              const showCamera = settings.take_photo_enabled;
+              const showLine = settings.send_line_enabled && Boolean(classLineGroupUrl);
+              const optionCount = [showUpload, showCamera, showLine].filter(Boolean).length;
+              const gridClass =
+                optionCount >= 3
+                  ? 'sm:grid-cols-3'
+                  : optionCount === 2
+                    ? 'sm:grid-cols-2'
+                    : 'sm:grid-cols-1';
+              const isImageUpload = Boolean(
+                row?.file_url && row.content_type?.startsWith('image/')
+              );
 
-            {artwork ? (
-              <ComicCard className="comic-shadow-xl space-y-4">
-                <ComicTitle level={4} className="text-[var(--comic-primary)]">
-                  Artwork
-                </ComicTitle>
-                <ComicText className="text-[var(--comic-dark)]">
-                  {artwork.instructions || 'Create your artwork and upload a photo.'}
-                </ComicText>
-                {artworkSettings?.example_image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={artworkSettings.example_image.url}
-                    alt="Artwork example"
-                    className="max-h-56 w-full object-contain rounded-lg comic-border"
-                  />
-                ) : null}
-                {artworkRow?.file_url ? (
-                  <>
-                    <ComicText className="text-[var(--comic-success)] font-bold">
-                      ✓ Artwork uploaded
-                    </ComicText>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
+              return (
+                <ComicCard key={task.id} className="comic-shadow-xl space-y-4">
+                  <ComicTitle level={4} className="text-[var(--comic-primary)]">
+                    {componentDisplayTitle(task)}
+                  </ComicTitle>
+                  {task.instructions ? (
+                    <ComicText className="text-[var(--comic-dark)]">{task.instructions}</ComicText>
+                  ) : null}
+                  {settings.example_image_enabled && settings.example_image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={artworkRow.file_url}
-                      alt="Your artwork"
-                      className="max-h-72 w-full object-contain rounded-lg comic-border"
+                      src={settings.example_image.url}
+                      alt={`${componentDisplayTitle(task)} example`}
+                      className="max-h-56 w-full object-contain rounded-lg comic-border"
                     />
-                  </>
-                ) : null}
-                {!locked ? (
-                  <>
-                    <input
-                      ref={artworkInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/gif"
-                      className="hidden"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) void handleArtworkUpload(file);
-                        event.target.value = '';
-                      }}
-                    />
-                    <div
-                      className={`grid gap-3 ${
-                        classLineGroupUrl ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
-                      }`}
-                    >
-                      <ComicButton
-                        variant={artworkMethod === 'upload' ? 'primary' : 'secondary'}
-                        size="sm"
-                        className="w-full"
-                        disabled={preview || busy === 'artwork'}
-                        onClick={() => {
-                          setArtworkMethod('upload');
-                          artworkInputRef.current?.click();
-                        }}
+                  ) : null}
+                  {row?.file_url ? (
+                    <>
+                      <a
+                        href={row.file_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block font-bold text-[var(--comic-secondary)] underline"
                       >
-                        {busy === 'artwork' && artworkMethod === 'upload' ? 'Uploading…' : 'Upload'}
-                      </ComicButton>
-                      <ComicButton
-                        variant={artworkMethod === 'camera' ? 'primary' : 'secondary'}
-                        size="sm"
-                        className="w-full"
-                        disabled={preview || busy === 'artwork'}
-                        onClick={() => setArtworkMethod('camera')}
-                      >
-                        Take a photo
-                      </ComicButton>
-                      <OpenClassLineButton
-                        url={classLineGroupUrl}
-                        onSent={() => void handleSendInLine(artwork.id)}
-                      />
-                    </div>
-                    {artworkMethod === 'camera' ? (
-                      <ArtworkCamera
-                        disabled={preview || busy === 'artwork'}
-                        onCapture={(file) => void handleArtworkUpload(file)}
-                        onClose={() => setArtworkMethod('')}
-                      />
-                    ) : null}
-                  </>
-                ) : (
-                  <OpenClassLineButton url={classLineGroupUrl} />
-                )}
-              </ComicCard>
-            ) : null}
+                        View your uploaded file
+                      </a>
+                      {isImageUpload ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={row.file_url}
+                          alt={`Your ${componentDisplayTitle(task)}`}
+                          className="max-h-72 w-full object-contain rounded-lg comic-border"
+                        />
+                      ) : null}
+                    </>
+                  ) : null}
+                  {!locked ? (
+                    <>
+                      {showUpload ? (
+                        <input
+                          ref={(element) => {
+                            uploadInputRefs.current[task.id] = element;
+                          }}
+                          type="file"
+                          accept=".pdf,.doc,.docx,image/*"
+                          className="hidden"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) void handleUploadTaskFile(task.id, file);
+                            event.target.value = '';
+                          }}
+                        />
+                      ) : null}
+                      {optionCount > 0 ? (
+                        <div className={`grid gap-3 ${gridClass}`}>
+                          {showUpload ? (
+                            <ComicButton
+                              variant={method === 'upload' ? 'primary' : 'secondary'}
+                              size="sm"
+                              className="w-full"
+                              disabled={preview || taskBusy}
+                              onClick={() => {
+                                setUploadMethods((current) => ({
+                                  ...current,
+                                  [task.id]: 'upload',
+                                }));
+                                uploadInputRefs.current[task.id]?.click();
+                              }}
+                            >
+                              {taskBusy && method === 'upload' ? 'Uploading…' : 'Upload'}
+                            </ComicButton>
+                          ) : null}
+                          {showCamera ? (
+                            <ComicButton
+                              variant={method === 'camera' ? 'primary' : 'secondary'}
+                              size="sm"
+                              className="w-full"
+                              disabled={preview || taskBusy}
+                              onClick={() =>
+                                setUploadMethods((current) => ({
+                                  ...current,
+                                  [task.id]: 'camera',
+                                }))
+                              }
+                            >
+                              Take a photo
+                            </ComicButton>
+                          ) : null}
+                          {showLine ? (
+                            <OpenClassLineButton
+                              url={classLineGroupUrl}
+                              onSent={() => void handleSendInLine(task.id)}
+                            />
+                          ) : null}
+                        </div>
+                      ) : null}
+                      {showCamera && method === 'camera' ? (
+                        <ArtworkCamera
+                          disabled={preview || taskBusy}
+                          onCapture={(file) => void handleUploadTaskFile(task.id, file)}
+                          onClose={() =>
+                            setUploadMethods((current) => ({ ...current, [task.id]: '' }))
+                          }
+                        />
+                      ) : null}
+                    </>
+                  ) : showLine ? (
+                    <OpenClassLineButton url={classLineGroupUrl} />
+                  ) : null}
+                </ComicCard>
+              );
+            })}
 
             {speaking && speakingSettings ? (
               <ComicCard className="comic-shadow-xl space-y-4">
@@ -856,20 +789,21 @@ export default function StudentProjectFlow({
                   Final submission
                 </ComicTitle>
                 <ul className="space-y-2">
-                  {progressItems.map((item) => (
-                    <li key={`final-${item.id}`} className="font-bold text-[var(--comic-dark)]">
-                      {statusFor(item, submission) ? '✓' : '○'} {PROJECT_COMPONENT_LABELS[item.type]}
-                      {item.type === 'speaking' && speakingRow?.text_data === 'in_person'
-                        ? ' (in-person)'
-                        : item.type === 'speaking' && speakingRow?.audio_url
-                          ? ' (recording)'
-                          : item.type === 'worksheet' && sentViaLine(worksheetRow) && !worksheetRow?.file_url
-                            ? ' (LINE)'
-                            : item.type === 'artwork' && sentViaLine(artworkRow) && !artworkRow?.file_url
+                  {progressItems.map((item) => {
+                    const row = rowFor(item, submission);
+                    return (
+                      <li key={`final-${item.id}`} className="font-bold text-[var(--comic-dark)]">
+                        {statusFor(item, submission) ? '✓' : '○'} {componentDisplayTitle(item)}
+                        {item.type === 'speaking' && speakingRow?.text_data === 'in_person'
+                          ? ' (in-person)'
+                          : item.type === 'speaking' && speakingRow?.audio_url
+                            ? ' (recording)'
+                            : isUploadTaskType(item.type) && sentViaLine(row) && !row?.file_url
                               ? ' (LINE)'
                               : ''}
-                    </li>
-                  ))}
+                      </li>
+                    );
+                  })}
                 </ul>
                 {submitted ? (
                   <ComicText className="text-[var(--comic-success)] font-bold">
