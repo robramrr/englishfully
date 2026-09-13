@@ -91,6 +91,7 @@ export interface Project {
   due_date: string | null;
   status: ProjectStatus;
   allow_resubmission: boolean;
+  final_submission_enabled: boolean;
   share_url: string | null;
   created_at: string;
   updated_at: string;
@@ -178,6 +179,7 @@ export interface PublicProject {
   class_label: string;
   due_date: string | null;
   allow_resubmission: boolean;
+  final_submission_enabled: boolean;
   entry_config: SpeakEntryConfig;
   components: PublicProjectComponent[];
 }
@@ -202,6 +204,7 @@ export interface SaveProjectPayload {
   class_label?: string;
   due_date: string | null;
   allow_resubmission: boolean;
+  final_submission_enabled: boolean;
   components: Array<{
     id?: string;
     type: ProjectComponentType;

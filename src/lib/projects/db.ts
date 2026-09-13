@@ -116,6 +116,8 @@ function rowToProject(row: Record<string, unknown>): Project {
     due_date: row.due_date ? String(row.due_date) : null,
     status: parseProjectStatus(row.status),
     allow_resubmission: parseBoolean(row.allow_resubmission),
+    final_submission_enabled:
+      row.final_submission_enabled == null ? true : parseBoolean(row.final_submission_enabled),
     share_url: row.share_url ? String(row.share_url) : null,
     created_at: String(row.created_at ?? ''),
     updated_at: String(row.updated_at ?? ''),
@@ -267,6 +269,10 @@ export async function ensureProjectsSchema(): Promise<void> {
       await sql`
         ALTER TABLE classroom_projects
         ADD COLUMN IF NOT EXISTS class_label TEXT NOT NULL DEFAULT ''
+      `;
+      await sql`
+        ALTER TABLE classroom_projects
+        ADD COLUMN IF NOT EXISTS final_submission_enabled BOOLEAN NOT NULL DEFAULT TRUE
       `;
       await sql`
         CREATE TABLE IF NOT EXISTS classroom_project_submission_members (
@@ -536,6 +542,7 @@ export async function updateProject(
       class_label = ${safeTrim(payload.class_label)},
       due_date = ${safeTrim(payload.due_date) || null},
       allow_resubmission = ${Boolean(payload.allow_resubmission)},
+      final_submission_enabled = ${payload.final_submission_enabled !== false},
       updated_at = NOW()
     WHERE id = ${existing.id}
   `;
@@ -688,6 +695,7 @@ export async function getPublicProject(idOrSlug: string): Promise<PublicProject 
     class_label: project.class_label,
     due_date: project.due_date,
     allow_resubmission: project.allow_resubmission,
+    final_submission_enabled: project.final_submission_enabled,
     entry_config: scopedEntryConfig(entryConfig, project.class_names),
     components: project.components
       .filter((item) => item.enabled)
@@ -716,6 +724,7 @@ export async function getTeacherPreviewProject(idOrSlug: string): Promise<Public
     class_label: project.class_label,
     due_date: project.due_date,
     allow_resubmission: project.allow_resubmission,
+    final_submission_enabled: project.final_submission_enabled,
     entry_config: scopedEntryConfig(entryConfig, project.class_names),
     components: project.components
       .filter((item) => item.enabled)

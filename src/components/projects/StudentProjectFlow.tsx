@@ -160,6 +160,7 @@ export default function StudentProjectFlow({
   const locked =
     !preview &&
     Boolean(submission && submission.status !== 'in_progress' && !project?.allow_resubmission);
+  const finalSubmissionEnabled = project?.final_submission_enabled !== false;
   const requiredReady = Boolean(
     project &&
       submission &&
@@ -572,9 +573,11 @@ export default function StudentProjectFlow({
                     {item.required ? '' : ' (optional)'}
                   </li>
                 ))}
-                <li className="font-bold text-[var(--comic-dark)]">
-                  {submitted ? '✓' : '○'} Submit
-                </li>
+                {finalSubmissionEnabled ? (
+                  <li className="font-bold text-[var(--comic-dark)]">
+                    {submitted ? '✓' : '○'} Submit
+                  </li>
+                ) : null}
               </ul>
             </ComicCard>
 
@@ -847,42 +850,56 @@ export default function StudentProjectFlow({
               </ComicCard>
             ) : null}
 
-            <ComicCard className="comic-shadow-xl space-y-4">
-              <ComicTitle level={4} className="text-[var(--comic-secondary)]">
-                Final submission
-              </ComicTitle>
-              <ul className="space-y-2">
-                {progressItems.map((item) => (
-                  <li key={`final-${item.id}`} className="font-bold text-[var(--comic-dark)]">
-                    {statusFor(item, submission) ? '✓' : '○'} {PROJECT_COMPONENT_LABELS[item.type]}
-                    {item.type === 'speaking' && speakingRow?.text_data === 'in_person'
-                      ? ' (in-person)'
-                      : item.type === 'speaking' && speakingRow?.audio_url
-                        ? ' (recording)'
-                        : item.type === 'worksheet' && sentViaLine(worksheetRow) && !worksheetRow?.file_url
-                          ? ' (LINE)'
-                          : item.type === 'artwork' && sentViaLine(artworkRow) && !artworkRow?.file_url
+            {finalSubmissionEnabled ? (
+              <ComicCard className="comic-shadow-xl space-y-4">
+                <ComicTitle level={4} className="text-[var(--comic-secondary)]">
+                  Final submission
+                </ComicTitle>
+                <ul className="space-y-2">
+                  {progressItems.map((item) => (
+                    <li key={`final-${item.id}`} className="font-bold text-[var(--comic-dark)]">
+                      {statusFor(item, submission) ? '✓' : '○'} {PROJECT_COMPONENT_LABELS[item.type]}
+                      {item.type === 'speaking' && speakingRow?.text_data === 'in_person'
+                        ? ' (in-person)'
+                        : item.type === 'speaking' && speakingRow?.audio_url
+                          ? ' (recording)'
+                          : item.type === 'worksheet' && sentViaLine(worksheetRow) && !worksheetRow?.file_url
                             ? ' (LINE)'
-                            : ''}
-                  </li>
-                ))}
-              </ul>
-              {submitted ? (
-                <ComicText className="text-[var(--comic-success)] font-bold">
-                  This project is locked after submission.
-                </ComicText>
-              ) : (
-                <ComicButton
-                  variant="primary"
-                  size="lg"
-                  className="w-full"
-                  disabled={!requiredReady || preview || Boolean(busy)}
-                  onClick={() => void handleSubmitProject()}
-                >
-                  {busy === 'submit' ? 'Submitting…' : 'Submit project'}
-                </ComicButton>
-              )}
-              {!preview ? (
+                            : item.type === 'artwork' && sentViaLine(artworkRow) && !artworkRow?.file_url
+                              ? ' (LINE)'
+                              : ''}
+                    </li>
+                  ))}
+                </ul>
+                {submitted ? (
+                  <ComicText className="text-[var(--comic-success)] font-bold">
+                    This project is locked after submission.
+                  </ComicText>
+                ) : (
+                  <ComicButton
+                    variant="primary"
+                    size="lg"
+                    className="w-full"
+                    disabled={!requiredReady || preview || Boolean(busy)}
+                    onClick={() => void handleSubmitProject()}
+                  >
+                    {busy === 'submit' ? 'Submitting…' : 'Submit project'}
+                  </ComicButton>
+                )}
+                {!preview ? (
+                  <ComicButton
+                    variant="danger"
+                    size="lg"
+                    className="project-remove-button w-full"
+                    disabled={busy === 'remove'}
+                    onClick={() => void handleRemoveSubmission()}
+                  >
+                    {busy === 'remove' ? 'Removing…' : 'Remove submission'}
+                  </ComicButton>
+                ) : null}
+              </ComicCard>
+            ) : !preview ? (
+              <ComicCard className="comic-shadow-xl space-y-4">
                 <ComicButton
                   variant="danger"
                   size="lg"
@@ -892,8 +909,8 @@ export default function StudentProjectFlow({
                 >
                   {busy === 'remove' ? 'Removing…' : 'Remove submission'}
                 </ComicButton>
-              ) : null}
-            </ComicCard>
+              </ComicCard>
+            ) : null}
           </>
         ) : null}
       </section>

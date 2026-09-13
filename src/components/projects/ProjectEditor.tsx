@@ -55,6 +55,9 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
   const [classLabel, setClassLabel] = useState(project.class_label || '');
   const [dueDate, setDueDate] = useState(project.due_date || '');
   const [allowResubmission, setAllowResubmission] = useState(project.allow_resubmission);
+  const [finalSubmissionEnabled, setFinalSubmissionEnabled] = useState(
+    project.final_submission_enabled !== false
+  );
   const [components, setComponents] = useState<EditorComponent[]>(() =>
     toEditorComponents(project.components)
   );
@@ -130,6 +133,7 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
           class_label: classLabel,
           due_date: dueDate || null,
           allow_resubmission: allowResubmission,
+          final_submission_enabled: finalSubmissionEnabled,
           components: components.map((item) => ({
             id: item.id,
             type: item.type,
@@ -288,6 +292,17 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
         </label>
         <ComicText className="text-[var(--comic-dark)]">
           This short label is what students and teachers see. The class list above only controls who can submit.
+        </ComicText>
+        <label className="flex items-center gap-2 font-bold text-[var(--comic-dark)]">
+          <input
+            type="checkbox"
+            checked={finalSubmissionEnabled}
+            onChange={(event) => setFinalSubmissionEnabled(event.target.checked)}
+          />
+          Enable final submission
+        </label>
+        <ComicText className="text-[var(--comic-dark)]">
+          When this is off, students only upload or send in LINE. You review the project manually.
         </ComicText>
         <label className="flex items-center gap-2 font-bold text-[var(--comic-dark)]">
           <input
