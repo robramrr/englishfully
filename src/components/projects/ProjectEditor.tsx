@@ -460,8 +460,8 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
           Enable final submission
         </label>
         <ComicText className="text-[var(--comic-dark)]">
-          When this is off, students cannot submit or remove a submission. They only upload or send
-          in LINE, and you review the project manually.
+          When this is off, Final submission stays hidden until a student successfully uploads a
+          file. LINE-only work still does not show Submit unless this is on.
         </ComicText>
         <label className="flex items-center gap-2 font-bold text-[var(--comic-dark)]">
           <input

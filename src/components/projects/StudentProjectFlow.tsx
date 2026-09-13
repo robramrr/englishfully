@@ -170,6 +170,11 @@ export default function StudentProjectFlow({
     Boolean(submission && submission.status !== 'in_progress' && !project?.allow_resubmission);
   const finalSubmissionEnabled = project?.final_submission_enabled !== false;
   const projectProgressEnabled = project?.project_progress_enabled !== false;
+  const hasSuccessfulUpload = uploadTasks.some(
+    (task) => getComponentUploadFiles(rowFor(task, submission)).length > 0
+  );
+  const showFinalSubmission =
+    finalSubmissionEnabled || hasSuccessfulUpload || Boolean(submission && submission.status !== 'in_progress');
   const requiredReady = Boolean(
     project &&
       submission &&
@@ -586,7 +591,7 @@ export default function StudentProjectFlow({
                       {statusFor(item, submission) ? '✓' : '○'} {componentDisplayTitle(item)}
                     </li>
                   ))}
-                  {finalSubmissionEnabled ? (
+                  {showFinalSubmission ? (
                     <li className="font-bold text-[var(--comic-dark)]">
                       {submitted ? '✓' : '○'} Submit
                     </li>
@@ -867,7 +872,7 @@ export default function StudentProjectFlow({
               </ComicCard>
             ) : null}
 
-            {finalSubmissionEnabled ? (
+            {showFinalSubmission ? (
               <ComicCard className="comic-shadow-xl space-y-4">
                 <ComicTitle level={4} className="text-[var(--comic-secondary)]">
                   Final submission
