@@ -105,6 +105,7 @@ export interface Project {
   status: ProjectStatus;
   allow_resubmission: boolean;
   final_submission_enabled: boolean;
+  project_progress_enabled: boolean;
   worksheet_file: StoredFileRef | null;
   share_url: string | null;
   created_at: string;
@@ -197,6 +198,7 @@ export interface PublicProject {
   due_date: string | null;
   allow_resubmission: boolean;
   final_submission_enabled: boolean;
+  project_progress_enabled: boolean;
   worksheet_file: StoredFileRef | null;
   entry_config: SpeakEntryConfig;
   components: PublicProjectComponent[];
@@ -223,6 +225,7 @@ export interface SaveProjectPayload {
   due_date: string | null;
   allow_resubmission: boolean;
   final_submission_enabled: boolean;
+  project_progress_enabled: boolean;
   worksheet_file?: StoredFileRef | null;
   components: Array<{
     id?: string;

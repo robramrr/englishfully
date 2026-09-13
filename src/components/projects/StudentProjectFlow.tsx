@@ -154,6 +154,7 @@ export default function StudentProjectFlow({
     !preview &&
     Boolean(submission && submission.status !== 'in_progress' && !project?.allow_resubmission);
   const finalSubmissionEnabled = project?.final_submission_enabled !== false;
+  const projectProgressEnabled = project?.project_progress_enabled !== false;
   const requiredReady = Boolean(
     project &&
       submission &&
@@ -528,24 +529,25 @@ export default function StudentProjectFlow({
               </ComicCard>
             ) : null}
 
-            <ComicCard className="comic-shadow-xl">
-              <ComicTitle level={4} className="mb-4 text-[var(--comic-secondary)]">
-                Project progress
-              </ComicTitle>
-              <ul className="space-y-2">
-                {progressItems.map((item) => (
-                  <li key={item.id} className="font-bold text-[var(--comic-dark)]">
-                    {statusFor(item, submission) ? '✓' : '○'} {componentDisplayTitle(item)}
-                    {item.required ? '' : ' (optional)'}
-                  </li>
-                ))}
-                {finalSubmissionEnabled ? (
-                  <li className="font-bold text-[var(--comic-dark)]">
-                    {submitted ? '✓' : '○'} Submit
-                  </li>
-                ) : null}
-              </ul>
-            </ComicCard>
+            {projectProgressEnabled ? (
+              <ComicCard className="comic-shadow-xl">
+                <ComicTitle level={4} className="mb-4 text-[var(--comic-secondary)]">
+                  Project progress
+                </ComicTitle>
+                <ul className="space-y-2">
+                  {progressItems.map((item) => (
+                    <li key={item.id} className="font-bold text-[var(--comic-dark)]">
+                      {statusFor(item, submission) ? '✓' : '○'} {componentDisplayTitle(item)}
+                    </li>
+                  ))}
+                  {finalSubmissionEnabled ? (
+                    <li className="font-bold text-[var(--comic-dark)]">
+                      {submitted ? '✓' : '○'} Submit
+                    </li>
+                  ) : null}
+                </ul>
+              </ComicCard>
+            ) : null}
 
             {error ? <ComicText className="text-[var(--comic-danger)] font-bold">{error}</ComicText> : null}
 
@@ -831,18 +833,6 @@ export default function StudentProjectFlow({
                     {busy === 'remove' ? 'Removing…' : 'Remove submission'}
                   </ComicButton>
                 ) : null}
-              </ComicCard>
-            ) : !preview ? (
-              <ComicCard className="comic-shadow-xl space-y-4">
-                <ComicButton
-                  variant="danger"
-                  size="lg"
-                  className="project-remove-button w-full"
-                  disabled={busy === 'remove'}
-                  onClick={() => void handleRemoveSubmission()}
-                >
-                  {busy === 'remove' ? 'Removing…' : 'Remove submission'}
-                </ComicButton>
               </ComicCard>
             ) : null}
           </>

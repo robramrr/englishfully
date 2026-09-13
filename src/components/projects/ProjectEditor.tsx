@@ -93,6 +93,9 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
   const [finalSubmissionEnabled, setFinalSubmissionEnabled] = useState(
     project.final_submission_enabled !== false
   );
+  const [projectProgressEnabled, setProjectProgressEnabled] = useState(
+    project.project_progress_enabled !== false
+  );
   const [worksheetFile, setWorksheetFile] = useState<StoredFileRef | null>(
     project.worksheet_file ?? null
   );
@@ -195,6 +198,7 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
           due_date: dueDate || null,
           allow_resubmission: allowResubmission,
           final_submission_enabled: finalSubmissionEnabled,
+          project_progress_enabled: projectProgressEnabled,
           worksheet_file: worksheetFile,
           components: components.map((item) => ({
             id: item.id,
@@ -439,13 +443,25 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
         <label className="flex items-center gap-2 font-bold text-[var(--comic-dark)]">
           <input
             type="checkbox"
+            checked={projectProgressEnabled}
+            onChange={(event) => setProjectProgressEnabled(event.target.checked)}
+          />
+          Enable project progress
+        </label>
+        <ComicText className="text-[var(--comic-dark)]">
+          When this is off, students do not see the Project progress checklist.
+        </ComicText>
+        <label className="flex items-center gap-2 font-bold text-[var(--comic-dark)]">
+          <input
+            type="checkbox"
             checked={finalSubmissionEnabled}
             onChange={(event) => setFinalSubmissionEnabled(event.target.checked)}
           />
           Enable final submission
         </label>
         <ComicText className="text-[var(--comic-dark)]">
-          When this is off, students only upload or send in LINE. You review the project manually.
+          When this is off, students cannot submit or remove a submission. They only upload or send
+          in LINE, and you review the project manually.
         </ComicText>
         <label className="flex items-center gap-2 font-bold text-[var(--comic-dark)]">
           <input

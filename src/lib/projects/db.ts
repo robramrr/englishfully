@@ -130,6 +130,8 @@ function rowToProject(row: Record<string, unknown>): Project {
     allow_resubmission: parseBoolean(row.allow_resubmission),
     final_submission_enabled:
       row.final_submission_enabled == null ? true : parseBoolean(row.final_submission_enabled),
+    project_progress_enabled:
+      row.project_progress_enabled == null ? true : parseBoolean(row.project_progress_enabled),
     worksheet_file: parseStoredFileRef(row.worksheet_file),
     share_url: row.share_url ? String(row.share_url) : null,
     created_at: String(row.created_at ?? ''),
@@ -286,6 +288,10 @@ export async function ensureProjectsSchema(): Promise<void> {
       await sql`
         ALTER TABLE classroom_projects
         ADD COLUMN IF NOT EXISTS final_submission_enabled BOOLEAN NOT NULL DEFAULT TRUE
+      `;
+      await sql`
+        ALTER TABLE classroom_projects
+        ADD COLUMN IF NOT EXISTS project_progress_enabled BOOLEAN NOT NULL DEFAULT TRUE
       `;
       await sql`
         ALTER TABLE classroom_projects
@@ -574,6 +580,7 @@ export async function updateProject(
       due_date = ${safeTrim(payload.due_date) || null},
       allow_resubmission = ${Boolean(payload.allow_resubmission)},
       final_submission_enabled = ${payload.final_submission_enabled !== false},
+      project_progress_enabled = ${payload.project_progress_enabled !== false},
       worksheet_file = ${JSON.stringify(payload.worksheet_file ?? existing.worksheet_file)},
       updated_at = NOW()
     WHERE id = ${existing.id}
@@ -760,6 +767,7 @@ export async function getPublicProject(idOrSlug: string): Promise<PublicProject 
     due_date: project.due_date,
     allow_resubmission: project.allow_resubmission,
     final_submission_enabled: project.final_submission_enabled,
+    project_progress_enabled: project.project_progress_enabled,
     worksheet_file: project.worksheet_file,
     entry_config: scopedEntryConfig(entryConfig, project.class_names),
     components: project.components
@@ -790,6 +798,7 @@ export async function getTeacherPreviewProject(idOrSlug: string): Promise<Public
     due_date: project.due_date,
     allow_resubmission: project.allow_resubmission,
     final_submission_enabled: project.final_submission_enabled,
+    project_progress_enabled: project.project_progress_enabled,
     worksheet_file: project.worksheet_file,
     entry_config: scopedEntryConfig(entryConfig, project.class_names),
     components: project.components
