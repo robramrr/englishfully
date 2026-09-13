@@ -16,8 +16,8 @@ import {
   isUploadTaskType,
   type ProjectComponent,
   type ProjectWithComponents,
+  type ProjectWorksheetHandout,
   type SaveProjectPayload,
-  type StoredFileRef,
   type UploadTaskSettings,
 } from '@/lib/projects/types';
 import type { SpeakClassOption } from '@/lib/speak-and-submit/types';
@@ -96,8 +96,8 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
   const [projectProgressEnabled, setProjectProgressEnabled] = useState(
     project.project_progress_enabled !== false
   );
-  const [worksheetFile, setWorksheetFile] = useState<StoredFileRef | null>(
-    project.worksheet_file ?? null
+  const [worksheetFiles, setWorksheetFiles] = useState<ProjectWorksheetHandout[]>(
+    () => project.worksheet_files ?? (project.worksheet_file ? [{ ...project.worksheet_file, title: 'Worksheet' }] : [])
   );
   const [components, setComponents] = useState<EditorComponent[]>(() =>
     toEditorComponents(project.components)
@@ -110,6 +110,7 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
   const [message, setMessage] = useState('');
   const [qrCode, setQrCode] = useState('');
   const worksheetInputRef = useRef<HTMLInputElement>(null);
+  const worksheetUploadIndexRef = useRef<number | null>(null);
   const exampleInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const studentUrl = project.share_url || getStudentProjectUrl(project.slug);
@@ -145,7 +146,13 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
 
   function syncFromProject(next: ProjectWithComponents) {
     onProjectChange(next);
-    setWorksheetFile(next.worksheet_file ?? null);
+    setWorksheetFiles(
+      next.worksheet_files?.length
+        ? next.worksheet_files
+        : next.worksheet_file
+          ? [{ ...next.worksheet_file, title: 'Worksheet' }]
+          : []
+    );
     setComponents(toEditorComponents(next.components));
   }
 
@@ -172,7 +179,8 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
     setComponents((current) => {
       const speakingItem = current.find((item) => item.type === 'speaking');
       const uploads = current.filter((item) => item.type === 'upload');
-      const nextTitle = uploads.length === 0 ? 'Worksheet' : uploads.length === 1 ? 'Artwork' : `Upload ${uploads.length + 1}`;
+      const nextTitle =
+        uploads.length === 0 ? 'Worksheet' : `Worksheet ${uploads.length + 1}`;
       const nextUploads = [...uploads, emptyUploadTask(nextTitle)];
       return speakingItem ? [...nextUploads, speakingItem] : nextUploads;
     });
@@ -199,7 +207,7 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
           allow_resubmission: allowResubmission,
           final_submission_enabled: finalSubmissionEnabled,
           project_progress_enabled: projectProgressEnabled,
-          worksheet_file: worksheetFile,
+          worksheet_files: worksheetFiles.filter((item) => Boolean(item.url)),
           components: components.map((item) => ({
             id: item.id,
             type: item.type === 'speaking' ? 'speaking' : 'upload',
@@ -273,15 +281,28 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
     }
   }
 
-  async function handleWorksheetUpload(file: File) {
-    setUploading('worksheet');
+  async function handleWorksheetUpload(file: File, handoutIndex: number | null) {
+    setUploading(handoutIndex == null ? 'worksheet-new' : `worksheet-${handoutIndex}`);
     setError('');
     try {
+      const target = handoutIndex != null ? worksheetFiles[handoutIndex] : null;
+      const draftTitle =
+        target?.title?.trim() ||
+        `Worksheet ${worksheetFiles.filter((item) => item.url).length + 1}`;
+      const replacing = Boolean(target?.url);
+      const savedIndex = replacing
+        ? worksheetFiles.slice(0, handoutIndex!).filter((item) => item.url).length
+        : -1;
+
       const saved = await saveDraft();
       if (!saved) return;
       const formData = new FormData();
       formData.append('file', file);
       formData.append('kind', 'worksheet');
+      formData.append('title', draftTitle || 'Worksheet');
+      if (savedIndex >= 0) {
+        formData.append('handout_index', String(savedIndex));
+      }
       const response = await fetch(`/api/projects/${saved.id}/upload`, {
         method: 'POST',
         body: formData,
@@ -297,7 +318,32 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
       setError('Failed to upload worksheet');
     } finally {
       setUploading('');
+      worksheetUploadIndexRef.current = null;
     }
+  }
+
+  function addWorksheetHandout() {
+    setWorksheetFiles((current) => [
+      ...current,
+      {
+        title: `Worksheet ${current.length + 1}`,
+        url: '',
+        key: '',
+        file_name: '',
+        content_type: '',
+        source: 'upload',
+      },
+    ]);
+  }
+
+  function updateWorksheetTitle(index: number, title: string) {
+    setWorksheetFiles((current) =>
+      current.map((item, itemIndex) => (itemIndex === index ? { ...item, title } : item))
+    );
+  }
+
+  function removeWorksheetHandout(index: number) {
+    setWorksheetFiles((current) => current.filter((_, itemIndex) => itemIndex !== index));
   }
 
   async function handleExampleUpload(clientKey: string, componentId: string | undefined, file: File) {
@@ -401,7 +447,11 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
         </ComicText>
 
         <div className="space-y-3">
-          <ComicText className="font-bold text-[var(--comic-dark)]">Upload a worksheet</ComicText>
+          <ComicText className="font-bold text-[var(--comic-dark)]">Handouts under project title</ComicText>
+          <ComicText className="text-[var(--comic-dark)]">
+            Optional download links under the project heading (separate from student upload
+            worksheets below). Give each handout a title.
+          </ComicText>
           <input
             ref={worksheetInputRef}
             type="file"
@@ -409,35 +459,68 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
             className="hidden"
             onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) void handleWorksheetUpload(file);
+              const index = worksheetUploadIndexRef.current;
+              if (file) void handleWorksheetUpload(file, index);
               event.target.value = '';
             }}
           />
-          <ComicButton
-            variant="secondary"
-            size="sm"
-            disabled={uploading === 'worksheet'}
-            onClick={() => worksheetInputRef.current?.click()}
-          >
-            {uploading === 'worksheet' ? 'Uploading…' : 'Upload worksheet'}
+          {worksheetFiles.map((handout, index) => (
+            <div key={`handout-${index}`} className="space-y-2 rounded-lg comic-border bg-white p-3">
+              <label className="block font-bold text-[var(--comic-dark)]">
+                Worksheet title
+                <input
+                  className="mt-1 w-full comic-input"
+                  placeholder={`Worksheet ${index + 1}`}
+                  value={handout.title}
+                  onChange={(event) => updateWorksheetTitle(index, event.target.value)}
+                />
+              </label>
+              {handout.url ? (
+                <ComicText className="text-[var(--comic-dark)]">
+                  File:{' '}
+                  <a
+                    href={handout.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-bold text-[var(--comic-secondary)] underline"
+                  >
+                    {handout.file_name || handout.title || 'Open'}
+                  </a>
+                </ComicText>
+              ) : (
+                <ComicText className="text-[var(--comic-dark)]">No file uploaded yet.</ComicText>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <ComicButton
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={Boolean(uploading)}
+                  onClick={() => {
+                    worksheetUploadIndexRef.current = index;
+                    worksheetInputRef.current?.click();
+                  }}
+                >
+                  {uploading === `worksheet-${index}`
+                    ? 'Uploading…'
+                    : handout.url
+                      ? 'Replace file'
+                      : 'Upload file'}
+                </ComicButton>
+                <ComicButton
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  onClick={() => removeWorksheetHandout(index)}
+                >
+                  Remove
+                </ComicButton>
+              </div>
+            </div>
+          ))}
+          <ComicButton type="button" variant="accent" size="sm" onClick={addWorksheetHandout}>
+            + Add handout
           </ComicButton>
-          {worksheetFile ? (
-            <ComicText className="text-[var(--comic-dark)]">
-              Attached:{' '}
-              <a
-                href={worksheetFile.url}
-                target="_blank"
-                rel="noreferrer"
-                className="font-bold text-[var(--comic-secondary)] underline"
-              >
-                {worksheetFile.file_name}
-              </a>
-            </ComicText>
-          ) : (
-            <ComicText className="text-[var(--comic-dark)]">
-              Optional handout students can open from the project page.
-            </ComicText>
-          )}
         </div>
 
         <label className="flex items-center gap-2 font-bold text-[var(--comic-dark)]">
@@ -473,17 +556,38 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
         </label>
       </ComicCard>
 
-      {uploadTasks.map((task) => {
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <ComicTitle level={4} className="text-[var(--comic-secondary)]">
+            Student upload worksheets
+          </ComicTitle>
+          <ComicText className="text-[var(--comic-dark)]">
+            Each worksheet title becomes a subheading on the student page. Use + Add worksheet for
+            another one.
+          </ComicText>
+        </div>
+        <ComicButton type="button" variant="accent" size="sm" onClick={addUploadTask}>
+          + Add worksheet
+        </ComicButton>
+      </div>
+
+      {uploadTasks.map((task, taskIndex) => {
         const settings = asUploadTaskSettings(task.settings);
         return (
           <ComicCard key={task.clientKey} className="comic-shadow-xl space-y-4">
+            <ComicText className="font-bold text-[var(--comic-dark)]">
+              Worksheet {taskIndex + 1}
+            </ComicText>
             <div className="flex flex-wrap items-center gap-3">
-              <input
-                className="min-w-0 flex-1 comic-input"
-                placeholder="Task title (e.g. Worksheet or Artwork)"
-                value={settings.title}
-                onChange={(event) => updateUploadSettings(task.clientKey, { title: event.target.value })}
-              />
+              <label className="min-w-0 flex-1 block font-bold text-[var(--comic-dark)]">
+                Worksheet title
+                <input
+                  className="mt-1 w-full comic-input"
+                  placeholder={`Worksheet ${taskIndex + 1}`}
+                  value={settings.title}
+                  onChange={(event) => updateUploadSettings(task.clientKey, { title: event.target.value })}
+                />
+              </label>
               <label className="font-bold text-[var(--comic-dark)] flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -503,7 +607,7 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
             </div>
             <textarea
               className="w-full comic-textarea min-h-24"
-              placeholder="Instructions for this upload task"
+              placeholder="Instructions for this worksheet"
               value={task.instructions}
               onChange={(event) => updateByKey(task.clientKey, { instructions: event.target.value })}
             />
@@ -606,15 +710,17 @@ export default function ProjectEditor({ project, onProjectChange }: ProjectEdito
               size="sm"
               onClick={() => removeUploadTask(task.clientKey)}
             >
-              Remove upload task
+              Remove worksheet
             </ComicButton>
           </ComicCard>
         );
       })}
 
-      <ComicButton type="button" variant="accent" onClick={addUploadTask}>
-        + Add upload task
-      </ComicButton>
+      {uploadTasks.length > 0 ? (
+        <ComicButton type="button" variant="accent" onClick={addUploadTask}>
+          + Add worksheet
+        </ComicButton>
+      ) : null}
 
       {speaking ? (
         <ComicCard className="comic-shadow-xl space-y-4">

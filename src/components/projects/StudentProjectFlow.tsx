@@ -490,18 +490,31 @@ export default function StudentProjectFlow({
             <span>{project?.title || 'Project'}</span>
           </span>
         </ComicTitle>
-        {project?.worksheet_file?.url ? (
-          <ComicText className="comic-text-white">
-            <a
-              href={project.worksheet_file.url}
-              target="_blank"
-              rel="noreferrer"
-              className="underline underline-offset-[0.2em] decoration-2"
-            >
-              Open worksheet
-            </a>
-          </ComicText>
-        ) : null}
+        {(() => {
+          const handouts =
+            project?.worksheet_files?.length
+              ? project.worksheet_files
+              : project?.worksheet_file?.url
+                ? [{ ...project.worksheet_file, title: 'Worksheet' }]
+                : [];
+          if (handouts.length === 0) return null;
+          return (
+            <div className="mt-3 space-y-2">
+              {handouts.map((handout, index) => (
+                <ComicText key={`${handout.key || handout.url}-${index}`} className="comic-text-white">
+                  <a
+                    href={handout.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline underline-offset-[0.2em] decoration-2"
+                  >
+                    {handout.title?.trim() || `Worksheet ${index + 1}`}
+                  </a>
+                </ComicText>
+              ))}
+            </div>
+          );
+        })()}
         {project && formatProjectHeaderMeta(project) ? (
           <ComicText className="comic-text-white mt-2">{formatProjectHeaderMeta(project)}</ComicText>
         ) : null}

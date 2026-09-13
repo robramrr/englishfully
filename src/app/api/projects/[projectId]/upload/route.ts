@@ -4,7 +4,7 @@ import { jsonError } from '@/lib/speak-and-submit/api';
 import {
   getProjectByIdOrSlug,
   updateComponentSettings,
-  updateProjectWorksheetFile,
+  updateProjectWorksheetFiles,
 } from '@/lib/projects/db';
 import {
   uploadProjectTeacherFile,
@@ -69,8 +69,19 @@ export async function POST(request: Request, { params }: RouteParams) {
     };
 
     if (kind === 'worksheet') {
-      const updated = await updateProjectWorksheetFile(project.id, stored);
-      return NextResponse.json({ file: stored, project: updated });
+      const title = String(formData.get('title') ?? '').trim() || 'Worksheet';
+      const indexRaw = String(formData.get('handout_index') ?? '').trim();
+      const index = indexRaw === '' ? -1 : Number(indexRaw);
+      const current = [...(project.worksheet_files || [])];
+      const handout = { ...stored, title };
+      if (Number.isInteger(index) && index >= 0 && index < current.length) {
+        handout.title = String(current[index]?.title || title).trim() || title;
+        current[index] = handout;
+      } else {
+        current.push(handout);
+      }
+      const updated = await updateProjectWorksheetFiles(project.id, current);
+      return NextResponse.json({ file: handout, project: updated });
     }
 
     const component = project.components.find(

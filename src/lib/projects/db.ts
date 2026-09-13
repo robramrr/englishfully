@@ -17,6 +17,7 @@ import {
   getComponentUploadFiles,
   isUploadTaskType,
   parseStoredFileRef,
+  parseWorksheetHandouts,
   formatClassNames,
   isProjectComponentType,
   isProjectStatus,
@@ -51,6 +52,7 @@ import {
   type StartProjectPayload,
   type StoredFileRef,
   type SubmissionUploadedFile,
+  type ProjectWorksheetHandout,
   type WorksheetSettings,
 } from './types';
 import { deleteProjectFileFromR2 } from './storage';
@@ -137,7 +139,8 @@ function rowToProject(row: Record<string, unknown>): Project {
       row.final_submission_enabled == null ? true : parseBoolean(row.final_submission_enabled),
     project_progress_enabled:
       row.project_progress_enabled == null ? true : parseBoolean(row.project_progress_enabled),
-    worksheet_file: parseStoredFileRef(row.worksheet_file),
+    worksheet_files: parseWorksheetHandouts(row.worksheet_file),
+    worksheet_file: parseWorksheetHandouts(row.worksheet_file)[0] ?? null,
     share_url: row.share_url ? String(row.share_url) : null,
     created_at: String(row.created_at ?? ''),
     updated_at: String(row.updated_at ?? ''),
@@ -480,10 +483,12 @@ export async function listProjects(
   return projects;
 }
 
-function worksheetFileFromComponents(components: ProjectComponent[]) {
+function worksheetFilesFromComponents(components: ProjectComponent[]): ProjectWorksheetHandout[] {
   const worksheet = components.find((item) => item.type === 'worksheet');
-  if (!worksheet) return null;
-  return asWorksheetSettings(worksheet.settings).file;
+  if (!worksheet) return [];
+  const file = asWorksheetSettings(worksheet.settings).file;
+  if (!file) return [];
+  return [{ ...file, title: 'Worksheet' }];
 }
 
 export async function getProjectByIdOrSlug(idOrSlug: string): Promise<ProjectWithComponents | null> {
@@ -496,9 +501,14 @@ export async function getProjectByIdOrSlug(idOrSlug: string): Promise<ProjectWit
   if (rows.length === 0) return null;
   const project = rowToProject(rows[0] as Record<string, unknown>);
   const components = await getComponentsForProject(project.id);
+  const worksheet_files =
+    project.worksheet_files.length > 0
+      ? project.worksheet_files
+      : worksheetFilesFromComponents(components);
   return {
     ...project,
-    worksheet_file: project.worksheet_file ?? worksheetFileFromComponents(components),
+    worksheet_files,
+    worksheet_file: worksheet_files[0] ?? null,
     components,
   };
 }
@@ -586,7 +596,13 @@ export async function updateProject(
       allow_resubmission = ${Boolean(payload.allow_resubmission)},
       final_submission_enabled = ${payload.final_submission_enabled !== false},
       project_progress_enabled = ${payload.project_progress_enabled !== false},
-      worksheet_file = ${JSON.stringify(payload.worksheet_file ?? existing.worksheet_file)},
+      worksheet_file = ${JSON.stringify(
+        Array.isArray(payload.worksheet_files)
+          ? payload.worksheet_files
+          : payload.worksheet_file
+            ? parseWorksheetHandouts(payload.worksheet_file)
+            : existing.worksheet_files
+      )},
       updated_at = NOW()
     WHERE id = ${existing.id}
   `;
@@ -676,17 +692,26 @@ export async function updateProjectShareUrl(projectId: string, shareUrl: string)
   `;
 }
 
-export async function updateProjectWorksheetFile(
+export async function updateProjectWorksheetFiles(
   projectId: string,
-  file: StoredFileRef | null
+  files: ProjectWorksheetHandout[]
 ): Promise<ProjectWithComponents | null> {
   await ensureProjectsSchema();
   await sql`
     UPDATE classroom_projects
-    SET worksheet_file = ${JSON.stringify(file)}, updated_at = NOW()
+    SET worksheet_file = ${JSON.stringify(files)}, updated_at = NOW()
     WHERE id = ${projectId}
   `;
   return getProjectByIdOrSlug(projectId);
+}
+
+/** @deprecated Prefer updateProjectWorksheetFiles */
+export async function updateProjectWorksheetFile(
+  projectId: string,
+  file: StoredFileRef | null
+): Promise<ProjectWithComponents | null> {
+  const handouts = file ? parseWorksheetHandouts({ ...file, title: 'Worksheet' }) : [];
+  return updateProjectWorksheetFiles(projectId, handouts);
 }
 
 export async function updateComponentSettings(
@@ -774,6 +799,7 @@ export async function getPublicProject(idOrSlug: string): Promise<PublicProject 
     final_submission_enabled: project.final_submission_enabled,
     project_progress_enabled: project.project_progress_enabled,
     worksheet_file: project.worksheet_file,
+    worksheet_files: project.worksheet_files,
     entry_config: scopedEntryConfig(entryConfig, project.class_names),
     components: project.components
       .filter((item) => item.enabled)
@@ -805,6 +831,7 @@ export async function getTeacherPreviewProject(idOrSlug: string): Promise<Public
     final_submission_enabled: project.final_submission_enabled,
     project_progress_enabled: project.project_progress_enabled,
     worksheet_file: project.worksheet_file,
+    worksheet_files: project.worksheet_files,
     entry_config: scopedEntryConfig(entryConfig, project.class_names),
     components: project.components
       .filter((item) => item.enabled)

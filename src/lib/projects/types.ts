@@ -50,6 +50,11 @@ export interface StoredFileRef {
   google_drive_file_id?: string;
 }
 
+/** Optional handout students open under the project title. */
+export interface ProjectWorksheetHandout extends StoredFileRef {
+  title: string;
+}
+
 export interface WorksheetSettings {
   file: StoredFileRef | null;
 }
@@ -115,7 +120,9 @@ export interface Project {
   allow_resubmission: boolean;
   final_submission_enabled: boolean;
   project_progress_enabled: boolean;
+  /** @deprecated Prefer worksheet_files; kept as the first handout for older callers. */
   worksheet_file: StoredFileRef | null;
+  worksheet_files: ProjectWorksheetHandout[];
   share_url: string | null;
   created_at: string;
   updated_at: string;
@@ -210,7 +217,9 @@ export interface PublicProject {
   allow_resubmission: boolean;
   final_submission_enabled: boolean;
   project_progress_enabled: boolean;
+  /** @deprecated Prefer worksheet_files; kept as the first handout for older callers. */
   worksheet_file: StoredFileRef | null;
+  worksheet_files: ProjectWorksheetHandout[];
   entry_config: SpeakEntryConfig;
   components: PublicProjectComponent[];
 }
@@ -238,6 +247,7 @@ export interface SaveProjectPayload {
   final_submission_enabled: boolean;
   project_progress_enabled: boolean;
   worksheet_file?: StoredFileRef | null;
+  worksheet_files?: ProjectWorksheetHandout[];
   components: Array<{
     id?: string;
     type: ProjectComponentType;
@@ -362,6 +372,25 @@ export function parseStoredFileRef(value: unknown): StoredFileRef | null {
       ? { google_drive_file_id: String(raw.google_drive_file_id) }
       : {}),
   };
+}
+
+export function parseWorksheetHandout(value: unknown, fallbackTitle = 'Worksheet'): ProjectWorksheetHandout | null {
+  const file = parseStoredFileRef(value);
+  if (!file) return null;
+  const raw = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+  const title = String(raw.title ?? '').trim() || fallbackTitle;
+  return { ...file, title };
+}
+
+/** Accepts legacy single file object or an array of titled handouts. */
+export function parseWorksheetHandouts(value: unknown): ProjectWorksheetHandout[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((item, index) => parseWorksheetHandout(item, `Worksheet ${index + 1}`))
+      .filter((item): item is ProjectWorksheetHandout => Boolean(item));
+  }
+  const single = parseWorksheetHandout(value, 'Worksheet');
+  return single ? [single] : [];
 }
 
 export function asWorksheetSettings(settings: ProjectComponentSettings): WorksheetSettings {
