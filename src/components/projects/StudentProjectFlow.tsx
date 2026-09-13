@@ -898,7 +898,7 @@ export default function StudentProjectFlow({
                 </ul>
                 {submitted ? (
                   <ComicText className="text-[var(--comic-success)] font-bold">
-                    This project is locked after submission.
+                    Thank you for your submission!
                   </ComicText>
                 ) : (
                   <ComicButton
@@ -912,15 +912,14 @@ export default function StudentProjectFlow({
                   </ComicButton>
                 )}
                 {!preview ? (
-                  <ComicButton
-                    variant="danger"
-                    size="lg"
-                    className="project-remove-button w-full"
+                  <button
+                    type="button"
+                    className="project-remove-button mt-1 text-sm font-bold text-[var(--comic-dark)]/60 underline underline-offset-2 hover:text-[var(--comic-danger)] disabled:opacity-50"
                     disabled={busy === 'remove'}
                     onClick={() => void handleRemoveSubmission()}
                   >
                     {busy === 'remove' ? 'Removing…' : 'Remove submission'}
-                  </ComicButton>
+                  </button>
                 ) : null}
               </ComicCard>
             ) : null}
