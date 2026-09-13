@@ -20,7 +20,6 @@ import {
   asSpeakingSettings,
   asUploadTaskSettings,
   componentDisplayTitle,
-  formatProjectDateTime,
   formatProjectHeaderMeta,
   formatSubmissionGroupLabel,
   getComponentUploadFiles,
@@ -550,9 +549,6 @@ export default function StudentProjectFlow({
                 <ComicTitle level={3} className="mb-2 text-[var(--comic-success)]">
                   Project submitted
                 </ComicTitle>
-                <ComicText className="text-[var(--comic-dark)] font-bold">
-                  Submitted on {formatProjectDateTime(submission?.submitted_at ?? null)}
-                </ComicText>
                 {submission?.status === 'reviewed' && submission.teacher_feedback ? (
                   <ComicText className="text-[var(--comic-dark)] mt-3">
                     Teacher feedback: {submission.teacher_feedback}
