@@ -437,7 +437,12 @@ export function formatSubmissionGroupLabel(submission: {
           },
         ];
   return members
-    .map((member) => `${member.student_number} ${member.student_name}`.trim())
+    .map((member) => {
+      const name = `${member.student_number} ${member.student_name}`.trim();
+      const classLabel = String(member.class_number ?? '').trim();
+      if (name && classLabel) return `${name} · ${classLabel}`;
+      return name || classLabel;
+    })
     .filter(Boolean)
     .join(', ');
 }

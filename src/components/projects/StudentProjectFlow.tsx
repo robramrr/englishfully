@@ -126,7 +126,7 @@ function OpenClassLineButton({
           }}
         />
       </span>
-      <span className="flex flex-1 items-center justify-center px-3 py-2">Send in LINE</span>
+      <span className="flex flex-1 items-center justify-center px-3 py-2">Send</span>
     </button>
   );
 }
@@ -537,6 +537,7 @@ export default function StudentProjectFlow({
                       className="font-bold text-[var(--comic-dark)]"
                     >
                       {member.student_number} {member.student_name}
+                      {member.class_number ? ` · ${member.class_number}` : ''}
                     </li>
                   ))}
                 </ul>
