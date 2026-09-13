@@ -104,15 +104,29 @@ function OpenClassLineButton({
   return (
     <button
       type="button"
-      className="comic-button inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-base text-white"
+      className="comic-button flex w-full items-stretch overflow-hidden p-0 text-base text-white"
       style={{ backgroundColor: '#06C755' }}
       onClick={() => {
         window.open(url, '_blank', 'noopener,noreferrer');
         onSent?.();
       }}
     >
-      <FontAwesomeIcon icon={faLine} aria-hidden className="h-[1.1em] w-[1.1em]" />
-      Send in LINE
+      <span
+        className="flex w-14 shrink-0 items-center justify-center self-stretch"
+        aria-hidden
+      >
+        <FontAwesomeIcon
+          icon={faLine}
+          className="block text-white"
+          style={{
+            width: '2.75rem',
+            height: '2.75rem',
+            fontSize: '2.75rem',
+            color: '#ffffff',
+          }}
+        />
+      </span>
+      <span className="flex flex-1 items-center justify-center px-3 py-2">Send in LINE</span>
     </button>
   );
 }
