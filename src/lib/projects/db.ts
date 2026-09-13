@@ -1280,14 +1280,40 @@ export async function submitProject(
     throw new Error('Complete every required part before submitting');
   }
 
+  // Completion credit on submit (teacher can still change the score later in review).
+  const { DEFAULT_MAX_POINTS } = await import('@/lib/gradebook/types');
+  const credit =
+    submission.score != null && Number.isFinite(submission.score)
+      ? submission.score
+      : DEFAULT_MAX_POINTS;
+
   await sql`
     UPDATE classroom_project_submissions
-    SET status = 'submitted', submitted_at = NOW(), reviewed_at = NULL, updated_at = NOW()
+    SET
+      status = 'submitted',
+      submitted_at = NOW(),
+      reviewed_at = NULL,
+      score = ${credit},
+      updated_at = NOW()
     WHERE id = ${submission.id}
   `;
 
   const updated = await findStudentSubmission(project.id, studentNumber, classNumber);
   if (!updated) throw new Error('Failed to submit project');
+
+  try {
+    const { syncProjectScoreToGradebook } = await import('@/lib/gradebook/db');
+    await syncProjectScoreToGradebook({
+      projectId: project.id,
+      projectTitle: project.title,
+      members: updated.members,
+      score: credit,
+      teacherId: project.teacher_id,
+    });
+  } catch (error) {
+    console.error('Project gradebook sync on submit failed:', error);
+  }
+
   return updated;
 }
 
