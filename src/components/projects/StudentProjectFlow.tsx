@@ -126,7 +126,7 @@ function OpenClassLineButton({
           }}
         />
       </span>
-      <span className="flex flex-1 items-center justify-center px-3 py-2">Send</span>
+      <span className="flex flex-1 items-center justify-center px-3 py-2">Send it!</span>
     </button>
   );
 }

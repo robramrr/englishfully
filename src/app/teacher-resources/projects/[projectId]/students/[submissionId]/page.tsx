@@ -39,12 +39,14 @@ export default function StudentReviewPage({ params }: ReviewPageProps) {
   return (
     <div className="projects-page flex flex-col min-h-screen bg-[var(--comic-light)]">
       <TeacherAuthGate>
-        <section className="max-w-4xl mx-auto py-16 px-4 space-y-8">
-          <Link href={`/teacher-resources/projects/${params.projectId}`}>
-            <ComicButton variant="accent" size="sm">
-              ← Back to project
-            </ComicButton>
-          </Link>
+        <section className="max-w-4xl mx-auto py-16 px-4">
+          <div className="mb-8">
+            <Link href={`/teacher-resources/projects/${params.projectId}`}>
+              <ComicButton variant="accent" size="sm">
+                ← Back to project
+              </ComicButton>
+            </Link>
+          </div>
           {loading ? (
             <ComicText className="text-[var(--comic-dark)] font-bold">Loading submission…</ComicText>
           ) : error ? (
