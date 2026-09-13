@@ -102,17 +102,18 @@ function OpenClassLineButton({
 }) {
   if (!url) return null;
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="comic-button inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-base text-white no-underline"
+    <button
+      type="button"
+      className="comic-button inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-base text-white"
       style={{ backgroundColor: '#06C755' }}
-      onClick={() => onSent?.()}
+      onClick={() => {
+        window.open(url, '_blank', 'noopener,noreferrer');
+        onSent?.();
+      }}
     >
       <FontAwesomeIcon icon={faLine} aria-hidden className="h-[1.1em] w-[1.1em]" />
       Send in LINE
-    </a>
+    </button>
   );
 }
 
