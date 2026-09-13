@@ -66,10 +66,15 @@ function LineIconButton({
       aria-pressed={pressed}
       title={configured ? 'LINE group configured' : 'Add LINE group link'}
       onClick={onClick}
-      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--comic-black)]"
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-[var(--comic-black)] p-0"
       style={{ backgroundColor: '#06C755' }}
     >
-      <FontAwesomeIcon icon={faLine} aria-hidden className="h-8 w-8 text-white" />
+      <FontAwesomeIcon
+        icon={faLine}
+        aria-hidden
+        className="block text-white"
+        style={{ width: '100%', height: '100%', fontSize: '2.75rem' }}
+      />
     </button>
   );
 }
@@ -767,14 +772,13 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
         </ComicText>
         {showLineGroupEditor ? (
           <div className="mb-4">
-            <label className="block font-bold text-[var(--comic-dark)] mb-2">
-              LINE Group Link
-            </label>
+            <hr className="mb-4 h-px w-full border-0" style={{ backgroundColor: '#e1e1e1' }} />
             <div className="flex flex-wrap items-center gap-3">
               <input
                 className="min-w-0 flex-1 comic-input"
                 type="url"
-                placeholder="https://line.me/ti/g/…"
+                aria-label="LINE Group Link"
+                placeholder="LINE Group Link"
                 value={lineGroupUrl}
                 onChange={(event) => setLineGroupUrl(event.target.value)}
               />
