@@ -181,7 +181,9 @@ export default function StudentSubmissionReview({
                   ? 'Student sent this in LINE. No file uploaded here.'
                   : row?.extra?.manual_delivery === 'file_upload'
                     ? 'Teacher marked file upload complete (no file stored here).'
-                    : `No ${title.toLowerCase()} work yet.`}
+                    : row?.extra?.manual_delivery === 'in_person'
+                      ? 'Teacher marked this as turned in in person.'
+                      : `No ${title.toLowerCase()} work yet.`}
               </ComicText>
             )}
             {settings.example_image_enabled && settings.example_image ? (

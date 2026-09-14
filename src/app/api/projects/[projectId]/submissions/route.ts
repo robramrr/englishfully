@@ -42,7 +42,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       class_number: String(body.class_number ?? ''),
       student_numbers: String(body.student_numbers ?? ''),
       component_ids: Array.isArray(body.component_ids) ? body.component_ids.map(String) : [],
-      delivery: body.delivery === 'file_upload' ? 'file_upload' : 'line',
+      delivery:
+        body.delivery === 'file_upload'
+          ? 'file_upload'
+          : body.delivery === 'in_person'
+            ? 'in_person'
+            : 'line',
       status: 'submitted',
     });
     return NextResponse.json({ submission });

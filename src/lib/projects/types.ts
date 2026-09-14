@@ -192,7 +192,7 @@ export interface ProjectSubmissionRow extends ProjectSubmission {
     status: ComponentSubmissionStatus | 'disabled';
   }>;
   /** How upload-task work was delivered for display in the submissions table. */
-  upload_delivery: 'file_upload' | 'line' | 'none';
+  upload_delivery: ProjectSubmissionDelivery;
   speaking: ComponentSubmissionStatus | 'disabled';
 }
 
@@ -265,13 +265,21 @@ export interface StartProjectPayload {
   members?: ProjectSubmissionMember[];
 }
 
+export const PROJECT_SUBMISSION_DELIVERIES = ['file_upload', 'line', 'in_person', 'none'] as const;
+export type ProjectSubmissionDelivery = (typeof PROJECT_SUBMISSION_DELIVERIES)[number];
+export type ProjectManualDelivery = Exclude<ProjectSubmissionDelivery, 'none'>;
+
+export function isProjectManualDelivery(value: unknown): value is ProjectManualDelivery {
+  return value === 'file_upload' || value === 'line' || value === 'in_person';
+}
+
 export interface ManualTeacherSubmissionPayload {
   class_number: string;
   /** Comma-separated student numbers, e.g. "18A, 11B". */
   student_numbers: string;
   /** Upload-task component ids to mark complete. */
   component_ids: string[];
-  delivery: 'file_upload' | 'line';
+  delivery: ProjectManualDelivery;
   status?: 'submitted';
 }
 
@@ -477,23 +485,27 @@ export function resolveUploadDelivery(
     ProjectComponentSubmission,
     'file_url' | 'file_key' | 'file_name' | 'content_type' | 'extra'
   > | null>
-): 'file_upload' | 'line' | 'none' {
+): ProjectSubmissionDelivery {
   let hasFile = false;
   let hasLine = false;
+  let hasInPerson = false;
   for (const row of rows) {
     if (!row) continue;
     if (getComponentUploadFiles(row).length > 0) hasFile = true;
     if (row.extra?.manual_delivery === 'file_upload') hasFile = true;
     if (row.extra?.sent_via_line || row.extra?.manual_delivery === 'line') hasLine = true;
+    if (row.extra?.manual_delivery === 'in_person') hasInPerson = true;
   }
   if (hasFile) return 'file_upload';
   if (hasLine) return 'line';
+  if (hasInPerson) return 'in_person';
   return 'none';
 }
 
-export function formatUploadDeliveryLabel(delivery: 'file_upload' | 'line' | 'none'): string {
+export function formatUploadDeliveryLabel(delivery: ProjectSubmissionDelivery): string {
   if (delivery === 'file_upload') return 'File upload';
   if (delivery === 'line') return 'LINE';
+  if (delivery === 'in_person') return 'In person';
   return '—';
 }
 

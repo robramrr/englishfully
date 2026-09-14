@@ -1154,7 +1154,8 @@ function isComponentComplete(
       files.length >= 1 ||
       Boolean(row.extra.sent_via_line) ||
       row.extra.manual_delivery === 'file_upload' ||
-      row.extra.manual_delivery === 'line'
+      row.extra.manual_delivery === 'line' ||
+      row.extra.manual_delivery === 'in_person'
     );
   }
   if (row.text_data === 'in_person') return true;
@@ -1358,7 +1359,12 @@ export async function createManualTeacherSubmission(
   const classNumber = String(payload.class_number ?? '').trim();
   if (!classNumber) throw new Error('Select a class');
 
-  const delivery = payload.delivery === 'file_upload' ? 'file_upload' : 'line';
+  const delivery =
+    payload.delivery === 'file_upload'
+      ? 'file_upload'
+      : payload.delivery === 'in_person'
+        ? 'in_person'
+        : 'line';
   const rawNumbers = String(payload.student_numbers ?? '')
     .split(',')
     .map((item) => item.trim())

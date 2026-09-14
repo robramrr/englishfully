@@ -54,7 +54,7 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
   const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>(() =>
     uploadTasks.map((task) => task.id)
   );
-  const [delivery, setDelivery] = useState<'file_upload' | 'line'>('line');
+  const [delivery, setDelivery] = useState<'file_upload' | 'line' | 'in_person'>('line');
 
   useEffect(() => {
     fetch(`/api/projects/${project.id}/submissions`, { cache: 'no-store' })
@@ -213,16 +213,24 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
               />
             </label>
             <label className="block font-bold text-[var(--comic-dark)]">
-              Upload
+              Submitted by
               <select
                 className="mt-1 w-full comic-input"
                 value={delivery}
-                onChange={(event) =>
-                  setDelivery(event.target.value === 'file_upload' ? 'file_upload' : 'line')
-                }
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setDelivery(
+                    value === 'file_upload'
+                      ? 'file_upload'
+                      : value === 'in_person'
+                        ? 'in_person'
+                        : 'line'
+                  );
+                }}
               >
                 <option value="line">LINE</option>
                 <option value="file_upload">File upload</option>
+                <option value="in_person">In person</option>
               </select>
             </label>
             <label className="block font-bold text-[var(--comic-dark)]">
@@ -274,7 +282,7 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
             <tr className="border-b-4 border-[var(--comic-black)]">
               <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Class</th>
               <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Students</th>
-              <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Upload</th>
+              <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Submitted by</th>
               {uploadTasks.map((task) => (
                 <th key={task.id} className="py-3 pr-3 font-bold text-[var(--comic-dark)]">
                   {componentDisplayTitle(task)}
