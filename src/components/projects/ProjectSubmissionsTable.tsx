@@ -12,6 +12,7 @@ import {
   formatSubmissionClassColumn,
   formatSubmissionGroupLabel,
   formatSubmissionStudentsColumn,
+  formatProjectDateTime,
   formatUploadDeliveryLabel,
   isUploadTaskType,
   type ProjectSubmissionRow,
@@ -54,7 +55,7 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
   const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>(() =>
     uploadTasks.map((task) => task.id)
   );
-  const [delivery, setDelivery] = useState<'file_upload' | 'line' | 'in_person'>('line');
+  const [delivery, setDelivery] = useState<'file_upload' | 'line' | 'in_person'>('in_person');
 
   useEffect(() => {
     fetch(`/api/projects/${project.id}/submissions`, { cache: 'no-store' })
@@ -137,7 +138,7 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
         });
       }
       setStudentNumbers('');
-      setDelivery('line');
+      setDelivery('in_person');
       setSelectedComponentIds(uploadTasks.map((task) => task.id));
       setShowAddRow(false);
       setMessage('Submission added and scored in the gradebook.');
@@ -181,9 +182,6 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
 
       {showAddRow ? (
         <div className="mb-6 space-y-3 rounded-lg comic-border bg-white p-4">
-          <ComicText className="text-[var(--comic-dark)] font-bold">
-            Quick add for LINE (or file) turn-ins
-          </ComicText>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <label className="block font-bold text-[var(--comic-dark)]">
               Class
@@ -222,15 +220,15 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
                   setDelivery(
                     value === 'file_upload'
                       ? 'file_upload'
-                      : value === 'in_person'
-                        ? 'in_person'
-                        : 'line'
+                      : value === 'line'
+                        ? 'line'
+                        : 'in_person'
                   );
                 }}
               >
+                <option value="in_person">In person</option>
                 <option value="line">LINE</option>
                 <option value="file_upload">File upload</option>
-                <option value="in_person">In person</option>
               </select>
             </label>
             <label className="block font-bold text-[var(--comic-dark)]">
@@ -283,6 +281,7 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
               <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Class</th>
               <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Students</th>
               <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Submitted by</th>
+              <th className="py-3 pr-3 font-bold text-[var(--comic-dark)]">Date</th>
               {uploadTasks.map((task) => (
                 <th key={task.id} className="py-3 pr-3 font-bold text-[var(--comic-dark)]">
                   {componentDisplayTitle(task)}
@@ -311,6 +310,9 @@ export default function ProjectSubmissionsTable({ project }: ProjectSubmissionsT
                 </td>
                 <td className="py-3 pr-3 font-bold text-[var(--comic-dark)]">
                   {formatUploadDeliveryLabel(submission.upload_delivery || 'none')}
+                </td>
+                <td className="py-3 pr-3 font-bold text-[var(--comic-dark)] whitespace-nowrap">
+                  {formatProjectDateTime(submission.submitted_at || submission.created_at) || '—'}
                 </td>
                 {uploadTasks.map((task) => {
                   const status =
