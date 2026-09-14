@@ -631,10 +631,6 @@ export default function GradebookHome() {
                         classItem.total_points_possible
                       )}
                     </ComicText>
-                    <ComicText className="text-sm mt-1">
-                      LINE group:{' '}
-                      {classItem.line_group_url.trim() ? 'Configured' : 'Not set'}
-                    </ComicText>
                   </div>
                   <Link
                     href={`/teacher-resources/gradebook/${classItem.id}?semester=${semester}&school_year=${encodeURIComponent(schoolYear)}`}
