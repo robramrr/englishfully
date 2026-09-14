@@ -66,8 +66,8 @@ function LineIconButton({
       aria-pressed={pressed}
       title={configured ? 'LINE group configured' : 'Add LINE group link'}
       onClick={onClick}
-      className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border-0 p-0 outline-none shadow-none ring-0 focus:outline-none focus:ring-0"
-      style={{ backgroundColor: '#06C755', border: 'none', boxShadow: 'none' }}
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-white p-0 outline-none shadow-none ring-0 focus:outline-none focus:ring-0"
+      style={{ backgroundColor: '#06C755', boxShadow: 'none' }}
     >
       <FontAwesomeIcon
         icon={faLine}
@@ -76,8 +76,8 @@ function LineIconButton({
         style={{
           width: '100%',
           height: '100%',
-          fontSize: '2.9rem',
-          transform: 'scale(1.2)',
+          fontSize: '2.75rem',
+          transform: 'scale(1.15)',
           lineHeight: 1,
         }}
       />
