@@ -71,28 +71,30 @@ function toClientVocabulary(assignment: LearnAssignmentWithDetails): ClientLearn
 }
 
 function toClientQuestions(assignment: LearnAssignmentWithDetails): ClientLearnQuestion[] {
-  return assignment.questions.map((question) => {
-    const choices = (
-      question.choices.length >= 4
-        ? question.choices.slice(0, 4)
-        : [...question.choices, '', '', '', ''].slice(0, 4)
-    ).map((choice) => stripChoiceLetterPrefix(choice));
-    const correctAnswer = stripChoiceLetterPrefix(question.correct_answer);
-    const matched =
-      choices.find((choice) => choice.toLowerCase() === correctAnswer.toLowerCase()) ||
-      correctAnswer;
-    return {
-      clientId: question.id,
-      id: question.id,
-      segment_id: question.segment_id,
-      segmentClientId: question.segment_id,
-      question_text: question.question_text,
-      choices,
-      correct_answer: matched,
-      explanation: question.explanation,
-      keep_question: question.keep_question,
-    };
-  });
+  return assignment.questions
+    .filter((question) => question.keep_question !== false)
+    .map((question) => {
+      const choices = (
+        question.choices.length >= 4
+          ? question.choices.slice(0, 4)
+          : [...question.choices, '', '', '', ''].slice(0, 4)
+      ).map((choice) => stripChoiceLetterPrefix(choice));
+      const correctAnswer = stripChoiceLetterPrefix(question.correct_answer);
+      const matched =
+        choices.find((choice) => choice.toLowerCase() === correctAnswer.toLowerCase()) ||
+        correctAnswer;
+      return {
+        clientId: question.id,
+        id: question.id,
+        segment_id: question.segment_id,
+        segmentClientId: question.segment_id,
+        question_text: question.question_text,
+        choices,
+        correct_answer: matched,
+        explanation: question.explanation,
+        keep_question: true,
+      };
+    });
 }
 
 function buildPayload(
@@ -114,6 +116,7 @@ function buildPayload(
     maxReplays: number;
     randomizeQuestions: boolean;
     randomizeAnswers: boolean;
+    vocabularyAudioEnabled: boolean;
     status: 'draft' | 'published';
     makeupEnabled: boolean;
     makeupListenAssignmentIds: string[];
@@ -142,6 +145,7 @@ function buildPayload(
     max_replays: values.maxReplays,
     randomize_questions: values.randomizeQuestions,
     randomize_answers: values.randomizeAnswers,
+    vocabulary_audio_enabled: values.vocabularyAudioEnabled,
     status: values.status,
     makeup_enabled: values.makeupEnabled,
     makeup_listen_assignment_ids: values.makeupListenAssignmentIds,
@@ -165,7 +169,9 @@ function buildPayload(
       end_seconds: segment.end_seconds,
       selected: segment.selected,
     })),
-    questions: questions.map((question) => {
+    questions: questions
+      .filter((question) => question.keep_question !== false)
+      .map((question) => {
       const linkedSegment = segments.find(
         (segment) =>
           segment.clientId === question.segmentClientId ||
@@ -181,7 +187,7 @@ function buildPayload(
         choices: question.choices,
         correct_answer: question.correct_answer,
         explanation: question.explanation,
-        keep_question: question.keep_question,
+        keep_question: true,
       };
     }),
   };
@@ -217,6 +223,9 @@ export default function AssignmentEditor({
     initialAssignment.randomize_questions
   );
   const [randomizeAnswers, setRandomizeAnswers] = useState(initialAssignment.randomize_answers);
+  const [vocabularyAudioEnabled, setVocabularyAudioEnabled] = useState(
+    initialAssignment.vocabulary_audio_enabled !== false
+  );
   const [status, setStatus] = useState<'draft' | 'published'>(initialAssignment.status);
   const [makeupEnabled, setMakeupEnabled] = useState(
     Boolean(initialAssignment.makeup_enabled)
@@ -285,6 +294,7 @@ export default function AssignmentEditor({
     maxReplays,
     randomizeQuestions,
     randomizeAnswers,
+    vocabularyAudioEnabled,
     status,
     makeupEnabled,
     makeupListenAssignmentIds,
@@ -311,6 +321,7 @@ export default function AssignmentEditor({
       maxReplays,
       randomizeQuestions,
       randomizeAnswers,
+      vocabularyAudioEnabled,
       status,
       makeupEnabled,
       makeupListenAssignmentIds,
@@ -335,6 +346,7 @@ export default function AssignmentEditor({
       maxReplays,
       randomizeQuestions,
       randomizeAnswers,
+      vocabularyAudioEnabled,
       status,
       makeupEnabled,
       makeupListenAssignmentIds,
@@ -953,6 +965,14 @@ export default function AssignmentEditor({
             <label className="flex items-center gap-2 font-bold text-[var(--comic-dark)]">
               <input
                 type="checkbox"
+                checked={vocabularyAudioEnabled}
+                onChange={(event) => setVocabularyAudioEnabled(event.target.checked)}
+              />
+              Vocabulary play audio
+            </label>
+            <label className="flex items-center gap-2 font-bold text-[var(--comic-dark)]">
+              <input
+                type="checkbox"
                 checked={autoSaveEnabled}
                 onChange={(event) => setAutoSaveEnabled(event.target.checked)}
               />
@@ -1293,6 +1313,7 @@ export default function AssignmentEditor({
           assignmentId={assignmentId}
           audioUrl={audioUrl}
           vocabulary={vocabulary}
+          vocabularyAudioEnabled={vocabularyAudioEnabled}
           onChange={setVocabulary}
           onPersistVocabulary={(next) => void handlePersistVocabulary(next)}
           onGenerate={() => void handleGenerateVocabulary()}
@@ -1322,7 +1343,7 @@ export default function AssignmentEditor({
 
       <ComicCard className="comic-shadow-xl space-y-4">
         <ComicTitle level={3} className="text-[var(--comic-warning)]">
-          Questions ({questions.filter((q) => q.keep_question).length} kept)
+          Questions ({questions.length})
         </ComicTitle>
         {questions.length === 0 ? (
           <ComicText className="text-[var(--comic-dark)] font-bold">
@@ -1344,18 +1365,17 @@ export default function AssignmentEditor({
                     <ComicTitle level={4} className="text-[var(--comic-primary)]">
                       Question {index + 1}
                     </ComicTitle>
-                    <label className="flex items-center gap-2 font-bold">
-                      <input
-                        type="checkbox"
-                        checked={question.keep_question}
-                        onChange={(event) =>
-                          updateQuestion(question.clientId, {
-                            keep_question: event.target.checked,
-                          })
-                        }
-                      />
-                      Keep question
-                    </label>
+                    <ComicButton
+                      variant="danger"
+                      size="sm"
+                      onClick={() =>
+                        setQuestions((current) =>
+                          current.filter((item) => item.clientId !== question.clientId)
+                        )
+                      }
+                    >
+                      Remove
+                    </ComicButton>
                   </div>
 
                   {segment ? (

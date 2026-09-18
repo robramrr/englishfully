@@ -168,6 +168,10 @@ export async function ensureLearnSchema(): Promise<void> {
         ALTER TABLE learn_assignments
         ADD COLUMN IF NOT EXISTS makeup_class_names TEXT NOT NULL DEFAULT '[]'
       `;
+      await sql`
+        ALTER TABLE learn_assignments
+        ADD COLUMN IF NOT EXISTS vocabulary_audio_enabled BOOLEAN NOT NULL DEFAULT TRUE
+      `;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_segments_assignment ON learn_segments(assignment_id, sort_order)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_questions_assignment ON learn_questions(assignment_id, sort_order)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_vocabulary_assignment ON learn_vocabulary(assignment_id, sort_order)`;
@@ -265,6 +269,8 @@ function rowToAssignment(row: Record<string, unknown>): LearnAssignment {
     max_replays: Math.max(0, Number(row.max_replays ?? 3)),
     randomize_questions: parseDbBoolean(row.randomize_questions),
     randomize_answers: parseDbBoolean(row.randomize_answers),
+    vocabulary_audio_enabled:
+      row.vocabulary_audio_enabled == null ? true : parseDbBoolean(row.vocabulary_audio_enabled),
     status: row.status === 'published' ? 'published' : 'draft',
     makeup_enabled: parseDbBoolean(row.makeup_enabled),
     makeup_listen_assignment_ids: parseMakeupListenAssignmentIds(row.makeup_listen_assignment_id),
@@ -766,6 +772,7 @@ export async function saveLearnAssignment(
       max_replays = ${Math.max(0, Number(payload.max_replays) || 0)},
       randomize_questions = ${Boolean(payload.randomize_questions)},
       randomize_answers = ${Boolean(payload.randomize_answers)},
+      vocabulary_audio_enabled = ${payload.vocabulary_audio_enabled !== false},
       status = ${payload.status === 'published' ? 'published' : 'draft'},
       makeup_enabled = ${Boolean(payload.makeup_enabled)},
       makeup_listen_assignment_id = ${
@@ -868,6 +875,7 @@ export async function getPublicLearnAssignment(
     max_replays: assignment.max_replays,
     randomize_questions: assignment.randomize_questions,
     randomize_answers: assignment.randomize_answers,
+    vocabulary_audio_enabled: assignment.vocabulary_audio_enabled !== false,
     entry_config: entryConfig,
     vocabulary: assignment.vocabulary
       .filter((item) => item.keep_word !== false && item.word.trim())

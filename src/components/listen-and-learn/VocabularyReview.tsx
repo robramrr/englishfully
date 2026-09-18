@@ -23,6 +23,7 @@ interface VocabularyReviewProps {
   assignmentId: string;
   audioUrl: string;
   vocabulary: ClientLearnVocabulary[];
+  vocabularyAudioEnabled?: boolean;
   onChange: (vocabulary: ClientLearnVocabulary[]) => void;
   onPersistVocabulary?: (vocabulary: ClientLearnVocabulary[]) => void | Promise<void>;
   onGenerate: () => void;
@@ -34,6 +35,7 @@ export default function VocabularyReview({
   assignmentId,
   audioUrl,
   vocabulary,
+  vocabularyAudioEnabled = true,
   onChange,
   onPersistVocabulary,
   onGenerate,
@@ -137,9 +139,9 @@ export default function VocabularyReview({
   return (
     <div className="space-y-4">
       <ComicText className="text-[var(--comic-dark)] font-bold">
-        Generate about 5 key vocabulary words from the transcript. Each word gets an audio clip from
-        the recording plus a clear definition. Optionally add an AI image, upload a file, or paste an
-        image URL. Keep, edit, remove, or add your own words.
+        Generate about 5 key vocabulary words from the transcript. Each word gets a definition
+        {vocabularyAudioEnabled ? ' and an audio clip from the recording' : ''}. Optionally add an AI
+        image, upload a file, or paste an image URL. Keep, edit, remove, or add your own words.
       </ComicText>
 
       <div className="flex flex-wrap gap-2">
@@ -211,7 +213,11 @@ export default function VocabularyReview({
                 </label>
                 <div className="space-y-1">
                   <ComicText className="font-black">Audio clip</ComicText>
-                  {audioUrl.trim() && item.end_seconds > item.start_seconds ? (
+                  {!vocabularyAudioEnabled ? (
+                    <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+                      Student play audio is off for this assessment.
+                    </ComicText>
+                  ) : audioUrl.trim() && item.end_seconds > item.start_seconds ? (
                     <SegmentAudioPlayer
                       audioUrl={audioUrl}
                       startSeconds={item.start_seconds}
@@ -330,46 +336,48 @@ export default function VocabularyReview({
                 ) : null}
               </div>
 
-              <div className="grid grid-cols-2 gap-3 max-w-md">
-                <label className="space-y-1">
-                  <ComicText className="font-black text-sm">Start</ComicText>
-                  <input
-                    type="text"
-                    value={formatTimestamp(item.start_seconds)}
-                    onChange={(event) =>
-                      updateItem(item.clientId, {
-                        start_seconds: parseTimestamp(event.target.value),
-                      })
-                    }
-                    onBlur={(event) => {
-                      const next = updateItem(item.clientId, {
-                        start_seconds: parseTimestamp(event.target.value),
-                      });
-                      if (onPersistVocabulary) void onPersistVocabulary(next);
-                    }}
-                    className="w-full comic-border-thick rounded-md p-2 font-bold"
-                  />
-                </label>
-                <label className="space-y-1">
-                  <ComicText className="font-black text-sm">End</ComicText>
-                  <input
-                    type="text"
-                    value={formatTimestamp(item.end_seconds)}
-                    onChange={(event) =>
-                      updateItem(item.clientId, {
-                        end_seconds: parseTimestamp(event.target.value),
-                      })
-                    }
-                    onBlur={(event) => {
-                      const next = updateItem(item.clientId, {
-                        end_seconds: parseTimestamp(event.target.value),
-                      });
-                      if (onPersistVocabulary) void onPersistVocabulary(next);
-                    }}
-                    className="w-full comic-border-thick rounded-md p-2 font-bold"
-                  />
-                </label>
-              </div>
+              {vocabularyAudioEnabled ? (
+                <div className="grid grid-cols-2 gap-3 max-w-md">
+                  <label className="space-y-1">
+                    <ComicText className="font-black text-sm">Start</ComicText>
+                    <input
+                      type="text"
+                      value={formatTimestamp(item.start_seconds)}
+                      onChange={(event) =>
+                        updateItem(item.clientId, {
+                          start_seconds: parseTimestamp(event.target.value),
+                        })
+                      }
+                      onBlur={(event) => {
+                        const next = updateItem(item.clientId, {
+                          start_seconds: parseTimestamp(event.target.value),
+                        });
+                        if (onPersistVocabulary) void onPersistVocabulary(next);
+                      }}
+                      className="w-full comic-border-thick rounded-md p-2 font-bold"
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <ComicText className="font-black text-sm">End</ComicText>
+                    <input
+                      type="text"
+                      value={formatTimestamp(item.end_seconds)}
+                      onChange={(event) =>
+                        updateItem(item.clientId, {
+                          end_seconds: parseTimestamp(event.target.value),
+                        })
+                      }
+                      onBlur={(event) => {
+                        const next = updateItem(item.clientId, {
+                          end_seconds: parseTimestamp(event.target.value),
+                        });
+                        if (onPersistVocabulary) void onPersistVocabulary(next);
+                      }}
+                      className="w-full comic-border-thick rounded-md p-2 font-bold"
+                    />
+                  </label>
+                </div>
+              ) : null}
             </div>
           ))}
         </div>

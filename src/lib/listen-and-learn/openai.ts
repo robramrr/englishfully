@@ -6,7 +6,12 @@ import type {
   LearnDifficulty,
   TranscriptSegmentDraft,
 } from './types';
-import { mergeShortSegments, splitIntoSentences, stripChoiceLetterPrefix } from './types';
+import {
+  alignSentencesToWordTimestamps,
+  mergeShortSegments,
+  splitIntoSentences,
+  stripChoiceLetterPrefix,
+} from './types';
 import { buildSegmentQuestionPrompt, buildVocabularyPrompt } from './prompts';
 import { uploadVocabularyImageToR2 } from '@/lib/speak-and-submit/r2';
 
@@ -56,22 +61,7 @@ function distributeSentenceTimestamps(
   start: number,
   end: number
 ): TranscriptSegmentDraft[] {
-  if (sentences.length === 0) return [];
-  const span = Math.max(0.4, end - start);
-  const weights = sentences.map((sentence) => Math.max(1, sentence.split(/\s+/).length));
-  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-  let cursor = start;
-  return sentences.map((sentence, index) => {
-    const portion = span * (weights[index] / totalWeight);
-    const segmentEnd = index === sentences.length - 1 ? end : cursor + portion;
-    const draft: TranscriptSegmentDraft = {
-      sentence_text: sentence,
-      start_seconds: Number(cursor.toFixed(2)),
-      end_seconds: Number(Math.max(cursor + 0.3, segmentEnd).toFixed(2)),
-    };
-    cursor = draft.end_seconds;
-    return draft;
-  });
+  return alignSentencesToWordTimestamps(sentences, [], start, end);
 }
 
 export async function transcribeAudioWithSegments(
@@ -80,23 +70,54 @@ export async function transcribeAudioWithSegments(
   const file = await downloadAudioFile(audioUrl);
   const openai = getOpenAIClient();
 
-  const result = await openai.audio.transcriptions.create({
-    file,
-    model: 'whisper-1',
-    language: 'en',
-    response_format: 'verbose_json',
-    timestamp_granularities: ['segment'],
-  });
+  // Prefer word-level timestamps so sentence clips match spoken audio.
+  let result: Awaited<ReturnType<typeof openai.audio.transcriptions.create>>;
+  let words: WhisperWordStamp[] = [];
+  try {
+    result = await openai.audio.transcriptions.create({
+      file,
+      model: 'whisper-1',
+      language: 'en',
+      response_format: 'verbose_json',
+      timestamp_granularities: ['word', 'segment'],
+    });
+    words = Array.isArray((result as { words?: unknown[] }).words)
+      ? ((result as { words: Array<{ word?: string; start?: number; end?: number }> }).words)
+          .map((item) => ({
+            word: String(item.word ?? '').trim(),
+            start: Number(item.start ?? 0),
+            end: Number(item.end ?? item.start ?? 0),
+          }))
+          .filter((item) => item.word && Number.isFinite(item.start) && Number.isFinite(item.end))
+      : [];
+  } catch {
+    // Some accounts reject combined granularities — fall back to segment-only.
+    result = await openai.audio.transcriptions.create({
+      file,
+      model: 'whisper-1',
+      language: 'en',
+      response_format: 'verbose_json',
+      timestamp_granularities: ['segment'],
+    });
+  }
 
   const transcript = String(result.text ?? '').trim();
   if (!transcript) {
     throw new Error('Transcription returned empty text');
   }
 
-  const whisperSegments = Array.isArray(result.segments) ? result.segments : [];
-  const segments: TranscriptSegmentDraft[] = [];
+  const verbose = result as {
+    segments?: Array<{ text?: string; start?: number; end?: number }>;
+  };
+  const whisperSegments = Array.isArray(verbose.segments) ? verbose.segments : [];
+  let segments: TranscriptSegmentDraft[] = [];
 
-  if (whisperSegments.length > 0) {
+  if (words.length > 0) {
+    // Build sentence clips from the full transcript using word timestamps.
+    const sentences = splitIntoSentences(transcript);
+    const lastWordEnd = words[words.length - 1]?.end ?? Math.max(8, sentences.length * 3);
+    segments = alignSentencesToWordTimestamps(sentences, words, 0, lastWordEnd);
+  } else if (whisperSegments.length > 0) {
     for (const segment of whisperSegments) {
       const text = String(segment.text ?? '').trim();
       if (!text) continue;
@@ -282,9 +303,21 @@ function locateWordClip(
         }
       }
       if (!matches) continue;
-      const start = Math.max(0, normalizedStamps[index].start - 0.12);
+      const start = Math.max(0, normalizedStamps[index].start - 0.05);
       const endStamp = normalizedStamps[index + tokens.length - 1];
-      const end = Math.max(start + 0.45, endStamp.end + 0.18);
+      const end = Math.max(start + 0.35, endStamp.end + 0.12);
+      return {
+        start_seconds: Number(start.toFixed(2)),
+        end_seconds: Number(end.toFixed(2)),
+      };
+    }
+
+    // Fuzzy: first token match, then take the following tokens.length stamps.
+    for (let index = 0; index < normalizedStamps.length; index += 1) {
+      if (normalizedStamps[index].normalized !== tokens[0]) continue;
+      const endIndex = Math.min(normalizedStamps.length - 1, index + tokens.length - 1);
+      const start = Math.max(0, normalizedStamps[index].start - 0.05);
+      const end = Math.max(start + 0.35, normalizedStamps[endIndex].end + 0.12);
       return {
         start_seconds: Number(start.toFixed(2)),
         end_seconds: Number(end.toFixed(2)),
@@ -292,18 +325,17 @@ function locateWordClip(
     }
   }
 
-  const needle = tokens.join(' ');
+  const needle = tokens.join('');
   for (const segment of segments) {
     const haystack = normalizeVocabToken(segment.sentence_text);
-    if (haystack.includes(needle.replace(/\s+/g, ''))) {
-      const duration = Math.max(0.6, segment.end_seconds - segment.start_seconds);
-      const clip = Math.min(1.4, duration);
-      const mid = (segment.start_seconds + segment.end_seconds) / 2;
-      return {
-        start_seconds: Number(Math.max(0, mid - clip / 2).toFixed(2)),
-        end_seconds: Number((mid + clip / 2).toFixed(2)),
-      };
-    }
+    if (!haystack.includes(needle)) continue;
+    // Prefer a short clip near the start of the matching sentence, not the midpoint.
+    const duration = Math.max(0.5, segment.end_seconds - segment.start_seconds);
+    const clip = Math.min(1.2, Math.max(0.5, duration * 0.25));
+    return {
+      start_seconds: Number(segment.start_seconds.toFixed(2)),
+      end_seconds: Number(Math.min(segment.end_seconds, segment.start_seconds + clip).toFixed(2)),
+    };
   }
 
   return { start_seconds: 0, end_seconds: 0.8 };

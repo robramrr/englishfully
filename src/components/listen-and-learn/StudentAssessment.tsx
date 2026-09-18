@@ -445,7 +445,9 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
             Vocabulary
           </ComicTitle>
           <ComicText className="text-[var(--comic-dark)] font-bold">
-            Play each word, then read the definition.
+            {assignment.vocabulary_audio_enabled !== false
+              ? 'Play each word, then read the definition.'
+              : 'Read each word and definition.'}
           </ComicText>
           <div className="space-y-4">
             {assignment.vocabulary.map((item) => (
@@ -458,7 +460,8 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
                     <ComicText className="font-black text-lg text-[var(--comic-secondary)]">
                       {item.word}
                     </ComicText>
-                    {item.end_seconds > item.start_seconds ? (
+                    {assignment.vocabulary_audio_enabled !== false &&
+                    item.end_seconds > item.start_seconds ? (
                       <SegmentAudioPlayer
                         audioUrl={assignment.audio_url}
                         startSeconds={item.start_seconds}

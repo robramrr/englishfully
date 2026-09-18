@@ -77,6 +77,8 @@ export interface LearnAssignment {
   max_replays: number;
   randomize_questions: boolean;
   randomize_answers: boolean;
+  /** When false, vocabulary cards hide play-audio clips. */
+  vocabulary_audio_enabled: boolean;
   status: 'draft' | 'published';
   /** When true, passing this Learn credits a separate makeup gradebook row. */
   makeup_enabled: boolean;
@@ -155,6 +157,7 @@ export interface SaveLearnAssignmentPayload {
   max_replays: number;
   randomize_questions: boolean;
   randomize_answers: boolean;
+  vocabulary_audio_enabled?: boolean;
   status: 'draft' | 'published';
   makeup_enabled?: boolean;
   /** Prefer this when tying to one or more Listen & Answer assessments. */
@@ -220,6 +223,7 @@ export interface PublicLearnAssignment {
   max_replays: number;
   randomize_questions: boolean;
   randomize_answers: boolean;
+  vocabulary_audio_enabled: boolean;
   /** Same student entry settings as Speak & Submit (nickname/class/ID). */
   entry_config: SpeakEntryConfig;
   vocabulary: Array<{
@@ -299,6 +303,7 @@ export function splitIntoSentences(text: string): string[] {
 /**
  * Merge adjacent segments until each is at least `minSeconds` long,
  * so clips are long enough for a complete thought / workable question.
+ * Never invents end times that spill into the next sentence's audio.
  */
 export function mergeShortSegments(
   segments: TranscriptSegmentDraft[],
@@ -313,7 +318,9 @@ export function mergeShortSegments(
     const duration = segmentDuration(current.start_seconds, current.end_seconds);
     if (duration < minSeconds) {
       current = {
-        sentence_text: `${current.sentence_text} ${segments[index].sentence_text}`.replace(/\s+/g, ' ').trim(),
+        sentence_text: `${current.sentence_text} ${segments[index].sentence_text}`
+          .replace(/\s+/g, ' ')
+          .trim(),
         start_seconds: current.start_seconds,
         end_seconds: segments[index].end_seconds,
       };
@@ -327,28 +334,138 @@ export function mergeShortSegments(
   if (merged.length > 0 && lastDuration < minSeconds) {
     const previous = merged[merged.length - 1];
     merged[merged.length - 1] = {
-      sentence_text: `${previous.sentence_text} ${current.sentence_text}`.replace(/\s+/g, ' ').trim(),
+      sentence_text: `${previous.sentence_text} ${current.sentence_text}`
+        .replace(/\s+/g, ' ')
+        .trim(),
       start_seconds: previous.start_seconds,
       end_seconds: current.end_seconds,
     };
   } else {
-    // Pad a lone short clip so playback lasts at least minSeconds.
-    if (lastDuration < minSeconds) {
-      current = {
-        ...current,
-        end_seconds: Number((current.start_seconds + minSeconds).toFixed(2)),
-      };
-    }
     merged.push(current);
   }
 
-  return merged.map((segment) => {
-    const duration = segmentDuration(segment.start_seconds, segment.end_seconds);
-    if (duration >= minSeconds) return segment;
-    return {
-      ...segment,
-      end_seconds: Number((segment.start_seconds + minSeconds).toFixed(2)),
+  return merged;
+}
+
+/**
+ * Align sentence texts to word-level Whisper timestamps.
+ * Falls back to proportional split within [rangeStart, rangeEnd] when words are missing.
+ */
+export function alignSentencesToWordTimestamps(
+  sentences: string[],
+  words: Array<{ word: string; start: number; end: number }>,
+  rangeStart = 0,
+  rangeEnd?: number
+): TranscriptSegmentDraft[] {
+  if (sentences.length === 0) return [];
+
+  const normalize = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9'\-]/g, '')
+      .trim();
+
+  const stamps = words
+    .map((item) => ({
+      token: normalize(item.word),
+      start: item.start,
+      end: item.end,
+    }))
+    .filter((item) => item.token && Number.isFinite(item.start) && Number.isFinite(item.end));
+
+  if (stamps.length === 0) {
+    const end = rangeEnd ?? Math.max(rangeStart + sentences.length * 3, rangeStart + 8);
+    return distributeSentenceTimestampsFallback(sentences, rangeStart, end);
+  }
+
+  let cursor = 0;
+  const drafts: TranscriptSegmentDraft[] = [];
+
+  for (let sentenceIndex = 0; sentenceIndex < sentences.length; sentenceIndex += 1) {
+    const sentence = sentences[sentenceIndex];
+    const tokens = sentence
+      .split(/\s+/)
+      .map(normalize)
+      .filter(Boolean);
+
+    if (tokens.length === 0) continue;
+
+    let matchStart = -1;
+    for (let index = cursor; index < stamps.length; index += 1) {
+      let matches = true;
+      for (let offset = 0; offset < tokens.length; offset += 1) {
+        if (stamps[index + offset]?.token !== tokens[offset]) {
+          matches = false;
+          break;
+        }
+      }
+      if (matches) {
+        matchStart = index;
+        break;
+      }
+    }
+
+    // Fuzzy: find first token, then take the next tokens.length stamps.
+    if (matchStart < 0) {
+      for (let index = cursor; index < stamps.length; index += 1) {
+        if (stamps[index].token === tokens[0]) {
+          matchStart = index;
+          break;
+        }
+      }
+    }
+
+    if (matchStart >= 0) {
+      const matchEnd = Math.min(stamps.length - 1, matchStart + tokens.length - 1);
+      drafts.push({
+        sentence_text: sentence,
+        start_seconds: Number(Math.max(0, stamps[matchStart].start).toFixed(2)),
+        end_seconds: Number(
+          Math.max(stamps[matchStart].start + 0.3, stamps[matchEnd].end).toFixed(2)
+        ),
+      });
+      cursor = matchEnd + 1;
+      continue;
+    }
+
+    // No word match — estimate from neighbors / remaining range.
+    const prevEnd = drafts.length > 0 ? drafts[drafts.length - 1].end_seconds : rangeStart;
+    const remainingSentences = sentences.length - sentenceIndex;
+    const remainingWords = Math.max(1, stamps.length - cursor);
+    const approxSpan = Math.max(0.8, (remainingWords / Math.max(1, tokens.length)) * 0.35);
+    const start = prevEnd;
+    const end = Number((start + Math.max(0.8, tokens.length * 0.35, approxSpan)).toFixed(2));
+    drafts.push({
+      sentence_text: sentence,
+      start_seconds: Number(start.toFixed(2)),
+      end_seconds: end,
+    });
+  }
+
+  return drafts;
+}
+
+/** @deprecated internal name kept for openai import compatibility via re-export below */
+function distributeSentenceTimestampsFallback(
+  sentences: string[],
+  start: number,
+  end: number
+): TranscriptSegmentDraft[] {
+  if (sentences.length === 0) return [];
+  const span = Math.max(0.4, end - start);
+  const weights = sentences.map((sentence) => Math.max(1, sentence.split(/\s+/).length));
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+  let cursor = start;
+  return sentences.map((sentence, index) => {
+    const portion = span * (weights[index] / totalWeight);
+    const segmentEnd = index === sentences.length - 1 ? end : cursor + portion;
+    const draft: TranscriptSegmentDraft = {
+      sentence_text: sentence,
+      start_seconds: Number(cursor.toFixed(2)),
+      end_seconds: Number(Math.max(cursor + 0.3, segmentEnd).toFixed(2)),
     };
+    cursor = draft.end_seconds;
+    return draft;
   });
 }
 
