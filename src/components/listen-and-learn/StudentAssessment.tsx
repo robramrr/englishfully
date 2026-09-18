@@ -537,6 +537,7 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
                 {question.choices.map((choice, choiceIndex) => {
                   if (!choice.trim()) return null;
                   const letter = String.fromCharCode(65 + choiceIndex);
+                  const caption = String(question.choice_captions?.[choiceIndex] ?? '').trim();
                   const selected = answers[question.id] === choice;
                   return (
                     <button
@@ -555,10 +556,13 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={choice.trim()}
-                        alt={`Choice ${letter}`}
+                        alt={caption || `Choice ${letter}`}
                         referrerPolicy="no-referrer"
                         className="max-h-40 w-full object-contain rounded-md bg-white"
                       />
+                      {caption ? (
+                        <ComicText className="font-bold text-sm text-center">{caption}</ComicText>
+                      ) : null}
                     </button>
                   );
                 })}

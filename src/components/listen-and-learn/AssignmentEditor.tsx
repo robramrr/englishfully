@@ -32,6 +32,7 @@ import {
   formatTimestamp,
   isLearnChoiceQuestion,
   isLearnWriteInQuestion,
+  normalizeChoiceCaptions,
   parseTimestamp,
   stripChoiceLetterPrefix,
 } from '@/lib/listen-and-learn/types';
@@ -45,6 +46,7 @@ interface ClientLearnQuestion {
   question_type: LearnQuestionType;
   question_text: string;
   choices: string[];
+  choice_captions: string[];
   correct_answer: string;
   explanation: string;
   keep_question: boolean;
@@ -113,6 +115,10 @@ function toClientQuestions(assignment: LearnAssignmentWithDetails): ClientLearnQ
         question_type: questionType,
         question_text: question.question_text,
         choices,
+        choice_captions: normalizeChoiceCaptions(
+          question.choice_captions,
+          choices.length
+        ),
         correct_answer: matched,
         explanation: question.explanation,
         keep_question: true,
@@ -209,6 +215,10 @@ function buildPayload(
         question_type: question.question_type || 'multiple_choice',
         question_text: question.question_text,
         choices: question.choices,
+        choice_captions: normalizeChoiceCaptions(
+          question.choice_captions,
+          question.choices.length
+        ),
         correct_answer: question.correct_answer,
         explanation: question.explanation,
         keep_question: true,
@@ -831,6 +841,7 @@ export default function AssignmentEditor({
           question_type: 'multiple_choice',
           question_text: question.question_text,
           choices,
+          choice_captions: normalizeChoiceCaptions([], choices.length),
           correct_answer: matched,
           explanation: question.explanation,
           keep_question: true,
@@ -883,6 +894,7 @@ export default function AssignmentEditor({
         question_type: 'multiple_choice',
         question_text: '',
         choices: defaultLearnChoicesForType('multiple_choice'),
+        choice_captions: ['', '', '', ''],
         correct_answer: '',
         explanation: '',
         keep_question: true,
@@ -1465,9 +1477,11 @@ export default function AssignmentEditor({
                         value={questionType}
                         onChange={(event) => {
                           const nextType = event.target.value as LearnQuestionType;
+                          const nextChoices = defaultLearnChoicesForType(nextType);
                           updateQuestion(question.clientId, {
                             question_type: nextType,
-                            choices: defaultLearnChoicesForType(nextType),
+                            choices: nextChoices,
+                            choice_captions: normalizeChoiceCaptions([], nextChoices.length),
                             correct_answer:
                               nextType === 'true_false' ? 'True' : '',
                           });
@@ -1607,7 +1621,14 @@ export default function AssignmentEditor({
                               onChange={(event) => {
                                 const next = [...question.choices];
                                 next[choiceIndex] = event.target.value;
-                                updateQuestion(question.clientId, { choices: next });
+                                const captions = normalizeChoiceCaptions(
+                                  question.choice_captions,
+                                  next.length
+                                );
+                                updateQuestion(question.clientId, {
+                                  choices: next,
+                                  choice_captions: captions,
+                                });
                               }}
                               className="w-full comic-border-thick rounded-md p-2 font-bold"
                               placeholder={
@@ -1617,11 +1638,31 @@ export default function AssignmentEditor({
                               }
                               disabled={questionType === 'true_false'}
                             />
+                            {questionType === 'multiple_choice_images' ? (
+                              <input
+                                value={question.choice_captions[choiceIndex] ?? ''}
+                                onChange={(event) => {
+                                  const captions = normalizeChoiceCaptions(
+                                    question.choice_captions,
+                                    question.choices.length
+                                  );
+                                  captions[choiceIndex] = event.target.value;
+                                  updateQuestion(question.clientId, {
+                                    choice_captions: captions,
+                                  });
+                                }}
+                                className="w-full comic-border-thick rounded-md p-2 font-bold"
+                                placeholder="Title / caption (optional)"
+                              />
+                            ) : null}
                             {questionType === 'multiple_choice_images' && choice.trim() ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={choice.trim()}
-                                alt={`Choice ${String.fromCharCode(65 + choiceIndex)} preview`}
+                                alt={
+                                  (question.choice_captions[choiceIndex] || '').trim() ||
+                                  `Choice ${String.fromCharCode(65 + choiceIndex)} preview`
+                                }
                                 referrerPolicy="no-referrer"
                                 className="max-h-32 w-auto comic-border rounded-md object-contain bg-white"
                               />
@@ -1634,11 +1675,19 @@ export default function AssignmentEditor({
                         <ComicButton
                           variant="accent"
                           size="sm"
-                          onClick={() =>
+                          onClick={() => {
+                            const nextChoices = [...question.choices, ''];
                             updateQuestion(question.clientId, {
-                              choices: [...question.choices, ''],
-                            })
-                          }
+                              choices: nextChoices,
+                              choice_captions: [
+                                ...normalizeChoiceCaptions(
+                                  question.choice_captions,
+                                  question.choices.length
+                                ),
+                                '',
+                              ],
+                            });
+                          }}
                         >
                           + Add choice
                         </ComicButton>
@@ -1670,17 +1719,21 @@ export default function AssignmentEditor({
                         className="w-full comic-border-thick rounded-md p-3 font-bold"
                       >
                         <option value="">Select correct choice</option>
-                        {question.choices
-                          .filter((choice) => choice.trim())
-                          .map((choice, choiceIndex) => (
+                        {question.choices.map((choice, choiceIndex) => {
+                          if (!choice.trim()) return null;
+                          const caption = String(
+                            question.choice_captions[choiceIndex] ?? ''
+                          ).trim();
+                          return (
                             <option key={`${choice}-${choiceIndex}`} value={choice}>
                               {questionType === 'multiple_choice_images'
-                                ? `${String.fromCharCode(65 + choiceIndex)}. ${choice.slice(0, 60)}${
-                                    choice.length > 60 ? '…' : ''
+                                ? `${String.fromCharCode(65 + choiceIndex)}${
+                                    caption ? ` — ${caption}` : ''
                                   }`
                                 : choice}
                             </option>
-                          ))}
+                          );
+                        })}
                       </select>
                     )}
                   </label>

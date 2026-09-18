@@ -66,6 +66,19 @@ export function normalizeLearnQuestionType(value: unknown): LearnQuestionType {
   return 'multiple_choice';
 }
 
+/** Pad/trim captions to match choice count. */
+export function normalizeChoiceCaptions(
+  captions: unknown,
+  choiceCount: number
+): string[] {
+  const raw = Array.isArray(captions)
+    ? captions.map((item) => String(item ?? ''))
+    : [];
+  const next = raw.slice(0, Math.max(0, choiceCount));
+  while (next.length < choiceCount) next.push('');
+  return next;
+}
+
 export interface LearnSegment {
   id: string;
   assignment_id: string;
@@ -84,6 +97,8 @@ export interface LearnQuestion {
   question_type: LearnQuestionType;
   question_text: string;
   choices: string[];
+  /** Optional captions for picture choices (same index as choices). */
+  choice_captions: string[];
   correct_answer: string;
   explanation: string;
   keep_question: boolean;
@@ -242,6 +257,7 @@ export interface SaveLearnAssignmentPayload {
     question_type?: LearnQuestionType;
     question_text: string;
     choices: string[];
+    choice_captions?: string[];
     correct_answer: string;
     explanation: string;
     keep_question: boolean;
@@ -291,6 +307,7 @@ export interface PublicLearnAssignment {
     question_type: LearnQuestionType;
     question_text: string;
     choices: string[];
+    choice_captions: string[];
     start_seconds: number;
     end_seconds: number;
   }>;

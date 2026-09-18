@@ -17,7 +17,7 @@ import type {
   SaveLearnAssignmentPayload,
   SubmitLearnPayload,
 } from './types';
-import { shuffleArray, stripChoiceLetterPrefix, parseMakeupListenAssignmentIds, serializeMakeupListenAssignmentIds, normalizeLearnQuestionType } from './types';
+import { shuffleArray, stripChoiceLetterPrefix, parseMakeupListenAssignmentIds, serializeMakeupListenAssignmentIds, normalizeLearnQuestionType, normalizeChoiceCaptions } from './types';
 
 const DEFAULT_TEACHER_ID = 'default';
 
@@ -111,6 +111,10 @@ export async function ensureLearnSchema(): Promise<void> {
       await sql`
         ALTER TABLE learn_questions
         ADD COLUMN IF NOT EXISTS question_type TEXT NOT NULL DEFAULT 'multiple_choice'
+      `;
+      await sql`
+        ALTER TABLE learn_questions
+        ADD COLUMN IF NOT EXISTS choice_captions JSONB NOT NULL DEFAULT '[]'::jsonb
       `;
       await sql`
         CREATE TABLE IF NOT EXISTS learn_submissions (
@@ -323,7 +327,7 @@ function rowToVocabulary(row: Record<string, unknown>): LearnVocabularyItem {
 }
 
 function rowToQuestion(row: Record<string, unknown>): LearnQuestion {
-  const choices = row.choices;
+  const choices = Array.isArray(row.choices) ? (row.choices as string[]) : [];
   return {
     id: row.id as string,
     assignment_id: row.assignment_id as string,
@@ -331,7 +335,8 @@ function rowToQuestion(row: Record<string, unknown>): LearnQuestion {
     sort_order: Number(row.sort_order ?? 0),
     question_type: normalizeLearnQuestionType(row.question_type),
     question_text: (row.question_text as string) ?? '',
-    choices: Array.isArray(choices) ? (choices as string[]) : [],
+    choices,
+    choice_captions: normalizeChoiceCaptions(row.choice_captions, choices.length),
     correct_answer: (row.correct_answer as string) ?? '',
     explanation: (row.explanation as string) ?? '',
     keep_question: Boolean(row.keep_question),
@@ -675,7 +680,7 @@ async function replaceLearnChildren(
     await sql`
       INSERT INTO learn_questions (
         id, assignment_id, segment_id, sort_order, question_type, question_text, choices,
-        correct_answer, explanation, keep_question
+        choice_captions, correct_answer, explanation, keep_question
       )
       VALUES (
         ${questionId},
@@ -685,6 +690,9 @@ async function replaceLearnChildren(
         ${normalizeLearnQuestionType(question.question_type)},
         ${question.question_text},
         ${JSON.stringify(question.choices ?? [])},
+        ${JSON.stringify(
+          normalizeChoiceCaptions(question.choice_captions, (question.choices ?? []).length)
+        )},
         ${question.correct_answer},
         ${question.explanation ?? ''},
         ${Boolean(question.keep_question)}
@@ -902,24 +910,41 @@ export async function getPublicLearnAssignment(
     questions: questions.map((question) => {
       const segment = question.segment_id ? segmentById.get(question.segment_id) : null;
       const questionType = normalizeLearnQuestionType(question.question_type);
-      let choices = question.choices
+      const cleanedChoices = question.choices
         .map((choice) =>
           questionType === 'multiple_choice_images'
             ? String(choice ?? '').trim()
             : stripChoiceLetterPrefix(choice)
         )
         .filter((choice) => choice.trim());
+      let captions = normalizeChoiceCaptions(
+        question.choice_captions,
+        question.choices.length
+      ).filter((_, index) => String(question.choices[index] ?? '').trim());
+
+      let choices = cleanedChoices;
       if (
         assignment.randomize_answers &&
         (questionType === 'multiple_choice' || questionType === 'multiple_choice_images')
       ) {
-        choices = shuffleArray(choices);
+        const paired = choices.map((choice, index) => ({
+          choice,
+          caption: captions[index] ?? '',
+        }));
+        const shuffled = shuffleArray(paired);
+        choices = shuffled.map((item) => item.choice);
+        captions = shuffled.map((item) => item.caption);
       }
+
       return {
         id: question.id,
         question_type: questionType,
         question_text: question.question_text,
         choices,
+        choice_captions:
+          questionType === 'multiple_choice_images'
+            ? normalizeChoiceCaptions(captions, choices.length)
+            : [],
         start_seconds: segment?.start_seconds ?? 0,
         end_seconds: segment?.end_seconds ?? 0,
       };
