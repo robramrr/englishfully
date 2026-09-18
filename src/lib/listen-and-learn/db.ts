@@ -117,6 +117,10 @@ export async function ensureLearnSchema(): Promise<void> {
         ADD COLUMN IF NOT EXISTS choice_captions JSONB NOT NULL DEFAULT '[]'::jsonb
       `;
       await sql`
+        ALTER TABLE learn_questions
+        ADD COLUMN IF NOT EXISTS question_image_url TEXT NOT NULL DEFAULT ''
+      `;
+      await sql`
         CREATE TABLE IF NOT EXISTS learn_submissions (
           id TEXT PRIMARY KEY,
           assignment_id TEXT NOT NULL REFERENCES learn_assignments(id) ON DELETE CASCADE,
@@ -335,6 +339,7 @@ function rowToQuestion(row: Record<string, unknown>): LearnQuestion {
     sort_order: Number(row.sort_order ?? 0),
     question_type: normalizeLearnQuestionType(row.question_type),
     question_text: (row.question_text as string) ?? '',
+    question_image_url: safeTrim(row.question_image_url),
     choices,
     choice_captions: normalizeChoiceCaptions(row.choice_captions, choices.length),
     correct_answer: (row.correct_answer as string) ?? '',
@@ -679,8 +684,8 @@ async function replaceLearnChildren(
 
     await sql`
       INSERT INTO learn_questions (
-        id, assignment_id, segment_id, sort_order, question_type, question_text, choices,
-        choice_captions, correct_answer, explanation, keep_question
+        id, assignment_id, segment_id, sort_order, question_type, question_text,
+        question_image_url, choices, choice_captions, correct_answer, explanation, keep_question
       )
       VALUES (
         ${questionId},
@@ -689,6 +694,7 @@ async function replaceLearnChildren(
         ${index},
         ${normalizeLearnQuestionType(question.question_type)},
         ${question.question_text},
+        ${safeTrim(question.question_image_url)},
         ${JSON.stringify(question.choices ?? [])},
         ${JSON.stringify(
           normalizeChoiceCaptions(question.choice_captions, (question.choices ?? []).length)
@@ -940,6 +946,7 @@ export async function getPublicLearnAssignment(
         id: question.id,
         question_type: questionType,
         question_text: question.question_text,
+        question_image_url: safeTrim(question.question_image_url),
         choices,
         choice_captions:
           questionType === 'multiple_choice_images'

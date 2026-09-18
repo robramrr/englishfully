@@ -512,6 +512,15 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
               maxReplays={assignment.max_replays === 0 ? null : assignment.max_replays}
               label="Play Audio"
             />
+            {question.question_image_url?.trim() ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={question.question_image_url.trim()}
+                alt=""
+                referrerPolicy="no-referrer"
+                className="max-h-64 w-full object-contain comic-border-thick rounded-lg bg-white"
+              />
+            ) : null}
             <ComicText className="text-[var(--comic-dark)] font-black text-lg">
               {question.question_text}
             </ComicText>

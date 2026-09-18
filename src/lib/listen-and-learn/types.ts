@@ -96,6 +96,8 @@ export interface LearnQuestion {
   sort_order: number;
   question_type: LearnQuestionType;
   question_text: string;
+  /** Optional image shown above the question prompt. */
+  question_image_url: string;
   choices: string[];
   /** Optional captions for picture choices (same index as choices). */
   choice_captions: string[];
@@ -256,6 +258,7 @@ export interface SaveLearnAssignmentPayload {
     segment_id?: string | null;
     question_type?: LearnQuestionType;
     question_text: string;
+    question_image_url?: string;
     choices: string[];
     choice_captions?: string[];
     correct_answer: string;
@@ -306,6 +309,7 @@ export interface PublicLearnAssignment {
     id: string;
     question_type: LearnQuestionType;
     question_text: string;
+    question_image_url: string;
     choices: string[];
     choice_captions: string[];
     start_seconds: number;

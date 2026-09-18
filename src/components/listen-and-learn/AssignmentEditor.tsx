@@ -45,6 +45,7 @@ interface ClientLearnQuestion {
   segmentClientId?: string | null;
   question_type: LearnQuestionType;
   question_text: string;
+  question_image_url: string;
   choices: string[];
   choice_captions: string[];
   correct_answer: string;
@@ -114,6 +115,7 @@ function toClientQuestions(assignment: LearnAssignmentWithDetails): ClientLearnQ
         segmentClientId: question.segment_id,
         question_type: questionType,
         question_text: question.question_text,
+        question_image_url: question.question_image_url ?? '',
         choices,
         choice_captions: normalizeChoiceCaptions(
           question.choice_captions,
@@ -214,6 +216,7 @@ function buildPayload(
           : question.segment_id ?? question.segmentClientId ?? null,
         question_type: question.question_type || 'multiple_choice',
         question_text: question.question_text,
+        question_image_url: question.question_image_url ?? '',
         choices: question.choices,
         choice_captions: normalizeChoiceCaptions(
           question.choice_captions,
@@ -840,6 +843,7 @@ export default function AssignmentEditor({
           segment_id: segment?.id ?? null,
           question_type: 'multiple_choice',
           question_text: question.question_text,
+          question_image_url: '',
           choices,
           choice_captions: normalizeChoiceCaptions([], choices.length),
           correct_answer: matched,
@@ -893,6 +897,7 @@ export default function AssignmentEditor({
         segment_id: firstSelected?.id ?? null,
         question_type: 'multiple_choice',
         question_text: '',
+        question_image_url: '',
         choices: defaultLearnChoicesForType('multiple_choice'),
         choice_captions: ['', '', '', ''],
         correct_answer: '',
@@ -1576,6 +1581,33 @@ export default function AssignmentEditor({
                       Link a listening segment above so students hear the clip for this question.
                     </ComicText>
                   )}
+
+                  <label className="space-y-1 block">
+                    <ComicText className="font-black">Question image URL (optional)</ComicText>
+                    <input
+                      value={question.question_image_url}
+                      onChange={(event) =>
+                        updateQuestion(question.clientId, {
+                          question_image_url: event.target.value,
+                        })
+                      }
+                      className="w-full comic-border-thick rounded-md p-3 font-bold"
+                      placeholder="https://…/image.jpg — shown above the question"
+                    />
+                    {question.question_image_url.trim() ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={question.question_image_url.trim()}
+                        alt="Question image preview"
+                        referrerPolicy="no-referrer"
+                        className="mt-2 max-h-48 w-auto comic-border rounded-md object-contain bg-white"
+                      />
+                    ) : null}
+                    <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+                      Use this when the prompt refers to a picture (e.g. “What best describes this
+                      image?”).
+                    </ComicText>
+                  </label>
 
                   <label className="space-y-1 block">
                     <ComicText className="font-black">Question</ComicText>
