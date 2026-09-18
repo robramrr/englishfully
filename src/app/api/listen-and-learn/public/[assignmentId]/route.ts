@@ -58,17 +58,32 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
       if (
         fullAssignment?.makeup_enabled &&
-        fullAssignment.makeup_listen_assignment_ids.length > 0 &&
+        (fullAssignment.makeup_listen_assignment_ids.length > 0 ||
+          fullAssignment.makeup_project_ids.length > 0) &&
         !alreadyPassed
       ) {
-        const { hasFailedAnyTiedListenAssessment } = await import('@/lib/gradebook/db');
-        const failedOriginal = await hasFailedAnyTiedListenAssessment({
-          teacherId: fullAssignment.teacher_id,
-          listenAssignmentIds: fullAssignment.makeup_listen_assignment_ids,
-          studentNumber,
-          classNumber,
-        });
-        if (!failedOriginal) {
+        const { hasFailedAnyTiedListenAssessment, hasMissedAnyTiedProject } = await import(
+          '@/lib/gradebook/db'
+        );
+        const failedOriginal =
+          fullAssignment.makeup_listen_assignment_ids.length > 0
+            ? await hasFailedAnyTiedListenAssessment({
+                teacherId: fullAssignment.teacher_id,
+                listenAssignmentIds: fullAssignment.makeup_listen_assignment_ids,
+                studentNumber,
+                classNumber,
+              })
+            : false;
+        const missedProject =
+          fullAssignment.makeup_project_ids.length > 0
+            ? await hasMissedAnyTiedProject({
+                teacherId: fullAssignment.teacher_id,
+                projectIds: fullAssignment.makeup_project_ids,
+                studentNumber,
+                classNumber,
+              })
+            : false;
+        if (!failedOriginal && !missedProject) {
           makeupNotNeeded = true;
         }
       }

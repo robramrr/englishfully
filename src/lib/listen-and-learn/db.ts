@@ -162,6 +162,10 @@ export async function ensureLearnSchema(): Promise<void> {
       `;
       await sql`
         ALTER TABLE learn_assignments
+        ADD COLUMN IF NOT EXISTS makeup_project_ids TEXT NOT NULL DEFAULT '[]'
+      `;
+      await sql`
+        ALTER TABLE learn_assignments
         ADD COLUMN IF NOT EXISTS makeup_class_names TEXT NOT NULL DEFAULT '[]'
       `;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_segments_assignment ON learn_segments(assignment_id, sort_order)`;
@@ -208,6 +212,31 @@ function parseMakeupClassNames(value: unknown): string[] {
     .filter(Boolean);
 }
 
+function parseMakeupProjectIds(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item ?? '').trim()).filter(Boolean);
+  }
+  const raw = String(value ?? '').trim();
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.map((item) => String(item ?? '').trim()).filter(Boolean);
+    }
+  } catch {
+    // fall through
+  }
+  return raw
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function serializeMakeupProjectIds(value: unknown): string {
+  const ids = parseMakeupProjectIds(value);
+  return JSON.stringify(ids);
+}
+
 function parseDbBoolean(value: unknown): boolean {
   if (value === true || value === 1) return true;
   if (value === false || value === 0 || value == null) return false;
@@ -241,6 +270,7 @@ function rowToAssignment(row: Record<string, unknown>): LearnAssignment {
     makeup_listen_assignment_ids: parseMakeupListenAssignmentIds(row.makeup_listen_assignment_id),
     makeup_listen_assignment_id:
       parseMakeupListenAssignmentIds(row.makeup_listen_assignment_id)[0] || '',
+    makeup_project_ids: parseMakeupProjectIds(row.makeup_project_ids),
     makeup_class_names: parseMakeupClassNames(row.makeup_class_names),
     created_at: new Date(row.created_at as string).toISOString(),
     updated_at: new Date(row.updated_at as string).toISOString(),
@@ -342,7 +372,9 @@ export async function listPublishedMakeupAssignments(
     .map((row) => rowToAssignment(row))
     .filter(
       (assignment) =>
-        assignment.makeup_enabled && assignment.makeup_listen_assignment_ids.length > 0
+        assignment.makeup_enabled &&
+        (assignment.makeup_listen_assignment_ids.length > 0 ||
+          assignment.makeup_project_ids.length > 0)
     );
 }
 
@@ -743,6 +775,11 @@ export async function saveLearnAssignment(
             )
           : ''
       },
+      makeup_project_ids = ${
+        Boolean(payload.makeup_enabled)
+          ? serializeMakeupProjectIds(payload.makeup_project_ids)
+          : '[]'
+      },
       makeup_class_names = ${JSON.stringify(
         Boolean(payload.makeup_enabled)
           ? (payload.makeup_class_names || [])
@@ -937,17 +974,35 @@ export async function submitLearnAssignment(
     throw new Error('You already passed this assessment. Ask your teacher if you need another try.');
   }
 
-  if (assignment.makeup_enabled && assignment.makeup_listen_assignment_ids.length > 0) {
-    const { hasFailedAnyTiedListenAssessment } = await import('@/lib/gradebook/db');
-    const failedOriginal = await hasFailedAnyTiedListenAssessment({
-      teacherId: assignment.teacher_id || DEFAULT_TEACHER_ID,
-      listenAssignmentIds: assignment.makeup_listen_assignment_ids,
-      studentNumber,
-      classNumber,
-    });
-    if (!failedOriginal) {
+  if (
+    assignment.makeup_enabled &&
+    (assignment.makeup_listen_assignment_ids.length > 0 ||
+      assignment.makeup_project_ids.length > 0)
+  ) {
+    const { hasFailedAnyTiedListenAssessment, hasMissedAnyTiedProject } = await import(
+      '@/lib/gradebook/db'
+    );
+    const failedListen =
+      assignment.makeup_listen_assignment_ids.length > 0
+        ? await hasFailedAnyTiedListenAssessment({
+            teacherId: assignment.teacher_id || DEFAULT_TEACHER_ID,
+            listenAssignmentIds: assignment.makeup_listen_assignment_ids,
+            studentNumber,
+            classNumber,
+          })
+        : false;
+    const missedProject =
+      assignment.makeup_project_ids.length > 0
+        ? await hasMissedAnyTiedProject({
+            teacherId: assignment.teacher_id || DEFAULT_TEACHER_ID,
+            projectIds: assignment.makeup_project_ids,
+            studentNumber,
+            classNumber,
+          })
+        : false;
+    if (!failedListen && !missedProject) {
       throw new Error(
-        'This makeup is only for students who did not pass the original assessment (failed or not turned in).'
+        'This makeup is only for students who did not pass the original assessment or project (failed or not turned in).'
       );
     }
   }
@@ -1011,7 +1066,12 @@ export async function submitLearnAssignment(
 
   const passed = percent >= assignment.passing_score;
   let makeupCredited: boolean | null = null;
-  if (assignment.makeup_enabled && passed && assignment.makeup_listen_assignment_ids.length > 0) {
+  if (
+    assignment.makeup_enabled &&
+    passed &&
+    (assignment.makeup_listen_assignment_ids.length > 0 ||
+      assignment.makeup_project_ids.length > 0)
+  ) {
     try {
       const { creditListenLearnMakeup } = await import('@/lib/gradebook/db');
       const credit = await creditListenLearnMakeup({
@@ -1019,6 +1079,7 @@ export async function submitLearnAssignment(
         learnAssignmentId: assignment.id,
         learnTitle: assignment.title,
         makeupListenAssignmentIds: assignment.makeup_listen_assignment_ids,
+        makeupProjectIds: assignment.makeup_project_ids,
         makeupClassNames: assignment.makeup_class_names,
         studentNumber,
         classNumber,
@@ -1028,6 +1089,7 @@ export async function submitLearnAssignment(
         console.warn('Listen & Learn makeup not credited:', credit.reason, {
           learnAssignmentId: assignment.id,
           tiedIds: assignment.makeup_listen_assignment_ids,
+          projectIds: assignment.makeup_project_ids,
           studentNumber,
           classNumber,
         });

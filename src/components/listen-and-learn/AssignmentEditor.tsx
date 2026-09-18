@@ -117,6 +117,7 @@ function buildPayload(
     status: 'draft' | 'published';
     makeupEnabled: boolean;
     makeupListenAssignmentIds: string[];
+    makeupProjectIds: string[];
     makeupClassNames: string[];
   },
   vocabulary: ClientLearnVocabulary[],
@@ -144,6 +145,7 @@ function buildPayload(
     status: values.status,
     makeup_enabled: values.makeupEnabled,
     makeup_listen_assignment_ids: values.makeupListenAssignmentIds,
+    makeup_project_ids: values.makeupProjectIds,
     makeup_class_names: values.makeupClassNames,
     vocabulary: vocabulary.map((item) => ({
       id: item.id || item.clientId,
@@ -226,11 +228,17 @@ export default function AssignmentEditor({
         ? [initialAssignment.makeup_listen_assignment_id]
         : []
   );
+  const [makeupProjectIds, setMakeupProjectIds] = useState<string[]>(
+    initialAssignment.makeup_project_ids || []
+  );
   const [makeupClassNames, setMakeupClassNames] = useState<string[]>(
     initialAssignment.makeup_class_names || []
   );
   const [listenAssessments, setListenAssessments] = useState<
     Array<{ id: string; title: string; class_name: string }>
+  >([]);
+  const [projectOptions, setProjectOptions] = useState<
+    Array<{ id: string; title: string; class_label: string }>
   >([]);
   const [speakClasses, setSpeakClasses] = useState<Array<{ id: string; label: string }>>([]);
   const [vocabulary, setVocabulary] = useState<ClientLearnVocabulary[]>(() =>
@@ -280,6 +288,7 @@ export default function AssignmentEditor({
     status,
     makeupEnabled,
     makeupListenAssignmentIds,
+    makeupProjectIds,
     makeupClassNames,
   });
 
@@ -305,6 +314,7 @@ export default function AssignmentEditor({
       status,
       makeupEnabled,
       makeupListenAssignmentIds,
+      makeupProjectIds,
       makeupClassNames,
     }),
     [
@@ -328,6 +338,7 @@ export default function AssignmentEditor({
       status,
       makeupEnabled,
       makeupListenAssignmentIds,
+      makeupProjectIds,
       makeupClassNames,
     ]
   );
@@ -482,9 +493,10 @@ export default function AssignmentEditor({
     let cancelled = false;
     void Promise.all([
       fetch('/api/listen-and-answer/assignments', { cache: 'no-store' }),
+      fetch('/api/projects', { cache: 'no-store' }),
       fetch('/api/speak-and-submit/settings', { cache: 'no-store' }),
     ])
-      .then(async ([listenResponse, settingsResponse]) => {
+      .then(async ([listenResponse, projectsResponse, settingsResponse]) => {
         if (cancelled) return;
         if (listenResponse.ok) {
           const data = await listenResponse.json();
@@ -498,6 +510,20 @@ export default function AssignmentEditor({
             class_name: item.class_name || '',
           }));
           setListenAssessments(next);
+        }
+        if (projectsResponse.ok) {
+          const data = await projectsResponse.json();
+          const next = ((data.projects || []) as Array<{
+            id: string;
+            title: string;
+            class_label?: string;
+            class_name?: string;
+          }>).map((item) => ({
+            id: item.id,
+            title: item.title || 'Untitled project',
+            class_label: item.class_label || item.class_name || '',
+          }));
+          setProjectOptions(next);
         }
         if (settingsResponse.ok) {
           const data = await settingsResponse.json();
@@ -944,12 +970,13 @@ export default function AssignmentEditor({
               onChange={(event) => setMakeupEnabled(event.target.checked)}
             />
             <span>
-              <ComicText className="font-black">Makeup for failed / missed Listen &amp; Answer</ComicText>
+              <ComicText className="font-black">
+                Makeup for failed / missed Listen &amp; Answer or Projects
+              </ComicText>
               <ComicText className="text-sm mt-1 text-[var(--comic-dark)]">
-                Students who failed or never turned in any tied assessment see this on their grades
-                page. When they pass this Listen &amp; Learn, they get a separate makeup score (same
-                max points as the assessment). A failed original stays failed; a miss stays not
-                turned in. You can tie this to more than one Listen &amp; Answer assessment.
+                Students who failed or never turned in a tied Listen &amp; Answer assessment or
+                project see this on their grades page. When they pass this Listen &amp; Learn, they
+                get a separate makeup score. Tie this to assessments, projects, or both.
               </ComicText>
             </span>
           </label>
@@ -957,9 +984,9 @@ export default function AssignmentEditor({
           {makeupEnabled ? (
             <div className="grid md:grid-cols-2 gap-4 pt-2">
               <div className="space-y-2 md:col-span-2">
-                <ComicText className="font-black">Tied assessment(s)</ComicText>
+                <ComicText className="font-black">Tied Listen &amp; Answer assessment(s)</ComicText>
                 <ComicText className="text-sm text-[var(--comic-dark)]">
-                  Select one or more Listen &amp; Answer assessments this makeup covers.
+                  Optional. Select one or more Listen &amp; Answer assessments this makeup covers.
                 </ComicText>
                 {listenAssessments.length === 0 ? (
                   <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
@@ -996,22 +1023,76 @@ export default function AssignmentEditor({
                     })}
                   </div>
                 )}
-                {makeupListenAssignmentIds.length === 0 ? (
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <ComicText className="font-black">Tied project(s)</ComicText>
+                <ComicText className="text-sm text-[var(--comic-dark)]">
+                  Optional. Select projects this makeup covers for students who missed or scored
+                  below full points.
+                </ComicText>
+                {projectOptions.length === 0 ? (
+                  <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+                    No projects found yet.
+                  </ComicText>
+                ) : (
+                  <div className="flex flex-col gap-2 max-h-56 overflow-y-auto rounded-md border-2 border-[var(--comic-dark)] p-3 bg-white">
+                    {projectOptions.map((item) => {
+                      const checked = makeupProjectIds.includes(item.id);
+                      return (
+                        <label
+                          key={item.id}
+                          className="flex items-start gap-2 font-bold text-[var(--comic-dark)]"
+                        >
+                          <input
+                            type="checkbox"
+                            className="mt-1 h-4 w-4"
+                            checked={checked}
+                            onChange={(event) => {
+                              const on = event.target.checked;
+                              setMakeupProjectIds((prev) =>
+                                on
+                                  ? [...new Set([...prev, item.id])]
+                                  : prev.filter((id) => id !== item.id)
+                              );
+                            }}
+                          />
+                          <span>
+                            {item.title}
+                            {item.class_label ? ` (${item.class_label})` : ''}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+                {makeupListenAssignmentIds.length === 0 && makeupProjectIds.length === 0 ? (
                   <ComicText className="text-sm mt-1 font-bold text-[var(--comic-danger)]">
-                    Required: pick at least one failed assessment (e.g. English Listening). Until
+                    Required: pick at least one Listen &amp; Answer assessment or project. Until
                     this is set and the Learn assignment is Published, students will not see a
                     makeup row on their grades page.
                   </ComicText>
                 ) : status !== 'published' ? (
                   <ComicText className="text-sm mt-1 font-bold text-[var(--comic-danger)]">
                     Publish this Listen &amp; Learn assignment so the makeup link appears for
-                    students who failed a tied assessment.
+                    eligible students.
                   </ComicText>
                 ) : (
                   <ComicText className="text-sm mt-1 font-bold text-[var(--comic-success)]">
-                    Makeup is active for {makeupListenAssignmentIds.length} assessment
-                    {makeupListenAssignmentIds.length === 1 ? '' : 's'}. Failers on those
-                    assessments will see this row on their grades page (after you save).
+                    Makeup is active
+                    {makeupListenAssignmentIds.length > 0
+                      ? ` for ${makeupListenAssignmentIds.length} assessment${
+                          makeupListenAssignmentIds.length === 1 ? '' : 's'
+                        }`
+                      : ''}
+                    {makeupListenAssignmentIds.length > 0 && makeupProjectIds.length > 0
+                      ? ' and'
+                      : ''}
+                    {makeupProjectIds.length > 0
+                      ? ` for ${makeupProjectIds.length} project${
+                          makeupProjectIds.length === 1 ? '' : 's'
+                        }`
+                      : ''}
+                    . Eligible students will see this row on their grades page (after you save).
                   </ComicText>
                 )}
               </div>

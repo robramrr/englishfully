@@ -418,6 +418,7 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
                 <tbody>
                   {grade.tasks.map((task) => {
                     const isAssessment = task.tool === 'listen_and_answer';
+                    const isProject = task.tool === 'projects';
                     const isMakeup = task.tool === 'listen_and_learn' || Boolean(task.makeup_for_task_id);
                     const testLabel = formatTestScore(task.test_correct, task.test_total);
                     const earnedFull =
@@ -425,8 +426,7 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
                       task.points != null &&
                       task.points >= (task.max_points || 0);
                     const replacedByMakeup =
-                      isAssessment &&
-                      task.status === 'graded' &&
+                      (isAssessment || isProject) &&
                       !earnedFull &&
                       grade.tasks.some(
                         (other) =>
@@ -435,7 +435,16 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
                           other.status === 'graded'
                       );
                     let statusNode: ReactNode;
-                    if (task.status === 'graded') {
+                    if (replacedByMakeup && !(isAssessment && testLabel !== '—')) {
+                      statusNode = (
+                        <span className="text-[var(--brand-soft-gray)]">
+                          {task.status === 'graded' ? 'Incomplete' : 'Missed'}
+                          <span className="block text-xs font-medium normal-case tracking-normal">
+                            Replaced by makeup
+                          </span>
+                        </span>
+                      );
+                    } else if (task.status === 'graded') {
                       if (isAssessment && testLabel !== '—') {
                         statusNode = replacedByMakeup ? (
                           <span className="text-[var(--brand-soft-gray)]">

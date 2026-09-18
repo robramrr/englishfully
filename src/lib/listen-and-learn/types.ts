@@ -87,6 +87,8 @@ export interface LearnAssignment {
   makeup_listen_assignment_ids: string[];
   /** First tied assessment id (legacy / convenience). */
   makeup_listen_assignment_id: string;
+  /** Project id(s) this makeup covers for missed / incomplete project credit. */
+  makeup_project_ids: string[];
   /**
    * Class labels (Speak/entry config) allowed to earn makeup.
    * Empty array = all classes that failed the tied assessment.
@@ -159,6 +161,8 @@ export interface SaveLearnAssignmentPayload {
   makeup_listen_assignment_ids?: string[];
   /** Legacy single id — still accepted and merged into ids. */
   makeup_listen_assignment_id?: string;
+  /** Project id(s) this makeup covers for missed / incomplete projects. */
+  makeup_project_ids?: string[];
   makeup_class_names?: string[];
   vocabulary: Array<{
     id?: string;
