@@ -955,8 +955,9 @@ export async function getClassGradebook(
     a.task_title.localeCompare(b.task_title, undefined, { sensitivity: 'base' })
   );
 
-  // Possible = every non-makeup column in All Graded Tasks (same for every seat).
-  // A dash still counts in the denominator — e.g. Listen 10 + Speak missing = 10/20.
+  // Possible = every non-makeup column in All Graded Tasks (same for every seat that
+  // has at least one grade). A dash still counts in the denominator for partial work —
+  // e.g. Listen 10 + Speak missing = 10/20. Seats with zero grades show no running total.
   const assignedPossible = taskColumns
     .filter((column) => column.tool !== 'listen_and_learn')
     .reduce((sum, column) => sum + Math.max(0, column.max_points || 0), 0);
@@ -970,13 +971,14 @@ export async function getClassGradebook(
       totalEarned += entry.points;
     }
     const roll = rollByStudent.get(studentNumber) || '';
+    const hasAnyGrade = seatEntries.length > 0;
     return {
       student_number: studentNumber,
       display_name: nameByStudent.get(studentNumber) ?? null,
       roll_number: roll || null,
       entries_by_task: entriesByTask,
       total_earned: totalEarned,
-      total_possible: assignedPossible,
+      total_possible: hasAnyGrade ? assignedPossible : 0,
     };
   });
 
@@ -1914,16 +1916,22 @@ export async function lookupStudentGrades(params: {
 
   // Assigned tasks count toward possible. Makeup rows do not increase the denominator —
   // they only add earned points when completed (recovering the failed assessment's points).
+  // If this seat has never been graded on anything, omit the running total (show as —).
   let totalEarned = 0;
   let totalPossible = 0;
+  let hasAnyGrade = false;
   for (const task of tasks) {
     const isMakeup = task.tool === 'listen_and_learn' || Boolean(task.makeup_for_task_id);
     if (!isMakeup) {
       totalPossible += Math.max(0, task.max_points || 0);
     }
     if (task.status === 'graded' && task.points != null) {
+      hasAnyGrade = true;
       totalEarned += task.points;
     }
+  }
+  if (!hasAnyGrade) {
+    totalPossible = 0;
   }
 
   return {
@@ -1935,7 +1943,7 @@ export async function lookupStudentGrades(params: {
     tasks,
     total_earned: totalEarned,
     total_possible: totalPossible,
-    percent_label: formatPercent(totalEarned, totalPossible),
+    percent_label: totalPossible > 0 ? formatPercent(totalEarned, totalPossible) : '—',
   };
 }
 

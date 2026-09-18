@@ -399,7 +399,9 @@ export default function StudentGradeLookup({ schoolSlug, showHero = false }: Stu
                 : 'text-[var(--comic-primary)]'
             }`}
           >
-            Running total: {grade.total_earned}/{grade.total_possible} ({grade.percent_label})
+            {grade.total_possible > 0
+              ? `Running total: ${grade.total_earned}/${grade.total_possible} (${grade.percent_label})`
+              : 'Running total: —'}
           </ComicText>
 
           {grade.tasks.length === 0 ? (
