@@ -213,7 +213,7 @@ function buildPayload(
         id: question.id,
         segment_id: linkedSegment
           ? linkedSegment.id || linkedSegment.clientId
-          : question.segment_id ?? question.segmentClientId ?? null,
+          : null,
         question_type: question.question_type || 'multiple_choice',
         question_text: question.question_text,
         question_image_url: question.question_image_url ?? '',
@@ -1577,8 +1577,9 @@ export default function AssignmentEditor({
                       />
                     </div>
                   ) : (
-                    <ComicText className="text-[var(--comic-danger)] font-bold text-sm">
-                      Link a listening segment above so students hear the clip for this question.
+                    <ComicText className="text-[var(--comic-dark)] font-bold text-sm">
+                      No listening clip for this question — students will not see a Play Audio
+                      button here.
                     </ComicText>
                   )}
 

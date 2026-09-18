@@ -312,6 +312,8 @@ export interface PublicLearnAssignment {
     question_image_url: string;
     choices: string[];
     choice_captions: string[];
+    /** False when the teacher left “Select a segment” (no clip for this question). */
+    has_audio: boolean;
     start_seconds: number;
     end_seconds: number;
   }>;

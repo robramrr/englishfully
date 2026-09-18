@@ -505,13 +505,15 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
             <ComicTitle level={4} className="text-[var(--comic-secondary)]">
               Question {index + 1}
             </ComicTitle>
-            <SegmentAudioPlayer
-              audioUrl={assignment.audio_url}
-              startSeconds={question.start_seconds}
-              endSeconds={question.end_seconds}
-              maxReplays={assignment.max_replays === 0 ? null : assignment.max_replays}
-              label="Play Audio"
-            />
+            {question.has_audio ? (
+              <SegmentAudioPlayer
+                audioUrl={assignment.audio_url}
+                startSeconds={question.start_seconds}
+                endSeconds={question.end_seconds}
+                maxReplays={assignment.max_replays === 0 ? null : assignment.max_replays}
+                label="Play Audio"
+              />
+            ) : null}
             {question.question_image_url?.trim() ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img

@@ -674,11 +674,10 @@ async function replaceLearnChildren(
   for (let index = 0; index < payload.questions.length; index += 1) {
     const question = payload.questions[index];
     const questionId = question.id || nanoid(21);
-    let segmentId = question.segment_id ?? null;
+    // Keep null when the teacher intentionally left “Select a segment” (no audio).
+    let segmentId = question.segment_id ? String(question.segment_id).trim() : null;
     if (segmentId && !validSegmentIds.has(segmentId)) {
-      segmentId = segmentIdMap.get(index) ?? null;
-    }
-    if (!segmentId) {
+      // Stale client id after segment rebuild — only then fall back by question index.
       segmentId = segmentIdMap.get(index) ?? null;
     }
 
@@ -952,6 +951,7 @@ export async function getPublicLearnAssignment(
           questionType === 'multiple_choice_images'
             ? normalizeChoiceCaptions(captions, choices.length)
             : [],
+        has_audio: Boolean(segment),
         start_seconds: segment?.start_seconds ?? 0,
         end_seconds: segment?.end_seconds ?? 0,
       };
