@@ -8,6 +8,14 @@ export { CEFR_LEVELS, DEFAULT_QUESTION_FRAMEWORK } from '@/lib/listen-and-answer
 export type LearnTranscriptSource = 'auto' | 'manual';
 export type LearnDifficulty = 'easy' | 'medium' | 'hard';
 
+/** Digital question types for Listen & Learn (student answers on-screen). */
+export type LearnQuestionType =
+  | 'multiple_choice'
+  | 'multiple_choice_images'
+  | 'true_false'
+  | 'short_answer'
+  | 'fill_in_blank';
+
 export const LEARN_DIFFICULTIES: LearnDifficulty[] = ['easy', 'medium', 'hard'];
 
 export const LEARN_DIFFICULTY_LABELS: Record<LearnDifficulty, string> = {
@@ -15,6 +23,48 @@ export const LEARN_DIFFICULTY_LABELS: Record<LearnDifficulty, string> = {
   medium: 'Medium',
   hard: 'Hard',
 };
+
+export const LEARN_QUESTION_TYPES: LearnQuestionType[] = [
+  'multiple_choice',
+  'multiple_choice_images',
+  'true_false',
+  'short_answer',
+  'fill_in_blank',
+];
+
+export const LEARN_QUESTION_TYPE_LABELS: Record<LearnQuestionType, string> = {
+  multiple_choice: 'Multiple Choice',
+  multiple_choice_images: 'Multiple Choice (pictures)',
+  true_false: 'True / False',
+  short_answer: 'Short Answer',
+  fill_in_blank: 'Fill in the Blank',
+};
+
+export function defaultLearnChoicesForType(type: LearnQuestionType): string[] {
+  if (type === 'true_false') return ['True', 'False'];
+  if (type === 'short_answer' || type === 'fill_in_blank') return [];
+  return ['', '', '', ''];
+}
+
+export function isLearnChoiceQuestion(type: LearnQuestionType): boolean {
+  return (
+    type === 'multiple_choice' ||
+    type === 'multiple_choice_images' ||
+    type === 'true_false'
+  );
+}
+
+export function isLearnWriteInQuestion(type: LearnQuestionType): boolean {
+  return type === 'short_answer' || type === 'fill_in_blank';
+}
+
+export function normalizeLearnQuestionType(value: unknown): LearnQuestionType {
+  const raw = String(value ?? '').trim();
+  if ((LEARN_QUESTION_TYPES as string[]).includes(raw)) {
+    return raw as LearnQuestionType;
+  }
+  return 'multiple_choice';
+}
 
 export interface LearnSegment {
   id: string;
@@ -31,6 +81,7 @@ export interface LearnQuestion {
   assignment_id: string;
   segment_id: string | null;
   sort_order: number;
+  question_type: LearnQuestionType;
   question_text: string;
   choices: string[];
   correct_answer: string;
@@ -188,6 +239,7 @@ export interface SaveLearnAssignmentPayload {
   questions: Array<{
     id?: string;
     segment_id?: string | null;
+    question_type?: LearnQuestionType;
     question_text: string;
     choices: string[];
     correct_answer: string;
@@ -236,6 +288,7 @@ export interface PublicLearnAssignment {
   }>;
   questions: Array<{
     id: string;
+    question_type: LearnQuestionType;
     question_text: string;
     choices: string[];
     start_seconds: number;

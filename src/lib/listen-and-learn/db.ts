@@ -17,7 +17,7 @@ import type {
   SaveLearnAssignmentPayload,
   SubmitLearnPayload,
 } from './types';
-import { shuffleArray, stripChoiceLetterPrefix, parseMakeupListenAssignmentIds, serializeMakeupListenAssignmentIds } from './types';
+import { shuffleArray, stripChoiceLetterPrefix, parseMakeupListenAssignmentIds, serializeMakeupListenAssignmentIds, normalizeLearnQuestionType } from './types';
 
 const DEFAULT_TEACHER_ID = 'default';
 
@@ -100,12 +100,17 @@ export async function ensureLearnSchema(): Promise<void> {
           assignment_id TEXT NOT NULL REFERENCES learn_assignments(id) ON DELETE CASCADE,
           segment_id TEXT REFERENCES learn_segments(id) ON DELETE SET NULL,
           sort_order INTEGER NOT NULL DEFAULT 0,
+          question_type TEXT NOT NULL DEFAULT 'multiple_choice',
           question_text TEXT NOT NULL DEFAULT '',
           choices JSONB NOT NULL DEFAULT '[]'::jsonb,
           correct_answer TEXT NOT NULL DEFAULT '',
           explanation TEXT NOT NULL DEFAULT '',
           keep_question BOOLEAN NOT NULL DEFAULT true
         )
+      `;
+      await sql`
+        ALTER TABLE learn_questions
+        ADD COLUMN IF NOT EXISTS question_type TEXT NOT NULL DEFAULT 'multiple_choice'
       `;
       await sql`
         CREATE TABLE IF NOT EXISTS learn_submissions (
@@ -324,6 +329,7 @@ function rowToQuestion(row: Record<string, unknown>): LearnQuestion {
     assignment_id: row.assignment_id as string,
     segment_id: (row.segment_id as string | null) ?? null,
     sort_order: Number(row.sort_order ?? 0),
+    question_type: normalizeLearnQuestionType(row.question_type),
     question_text: (row.question_text as string) ?? '',
     choices: Array.isArray(choices) ? (choices as string[]) : [],
     correct_answer: (row.correct_answer as string) ?? '',
@@ -668,7 +674,7 @@ async function replaceLearnChildren(
 
     await sql`
       INSERT INTO learn_questions (
-        id, assignment_id, segment_id, sort_order, question_text, choices,
+        id, assignment_id, segment_id, sort_order, question_type, question_text, choices,
         correct_answer, explanation, keep_question
       )
       VALUES (
@@ -676,6 +682,7 @@ async function replaceLearnChildren(
         ${assignmentId},
         ${segmentId},
         ${index},
+        ${normalizeLearnQuestionType(question.question_type)},
         ${question.question_text},
         ${JSON.stringify(question.choices ?? [])},
         ${question.correct_answer},
@@ -894,14 +901,23 @@ export async function getPublicLearnAssignment(
       })),
     questions: questions.map((question) => {
       const segment = question.segment_id ? segmentById.get(question.segment_id) : null;
+      const questionType = normalizeLearnQuestionType(question.question_type);
       let choices = question.choices
-        .map((choice) => stripChoiceLetterPrefix(choice))
+        .map((choice) =>
+          questionType === 'multiple_choice_images'
+            ? String(choice ?? '').trim()
+            : stripChoiceLetterPrefix(choice)
+        )
         .filter((choice) => choice.trim());
-      if (assignment.randomize_answers) {
+      if (
+        assignment.randomize_answers &&
+        (questionType === 'multiple_choice' || questionType === 'multiple_choice_images')
+      ) {
         choices = shuffleArray(choices);
       }
       return {
         id: question.id,
+        question_type: questionType,
         question_text: question.question_text,
         choices,
         start_seconds: segment?.start_seconds ?? 0,
@@ -1023,9 +1039,13 @@ export async function submitLearnAssignment(
   let score = 0;
   const gradedAnswers = keepQuestions.map((question) => {
     const selected = answerByQuestion.get(question.id) ?? '';
-    const isCorrect =
-      stripChoiceLetterPrefix(selected).toLowerCase() ===
-      stripChoiceLetterPrefix(question.correct_answer).toLowerCase();
+    const questionType = normalizeLearnQuestionType(question.question_type);
+    const normalizeAnswer = (value: string) => {
+      const trimmed = value.trim();
+      if (questionType === 'multiple_choice_images') return trimmed;
+      return stripChoiceLetterPrefix(trimmed).toLowerCase();
+    };
+    const isCorrect = normalizeAnswer(selected) === normalizeAnswer(question.correct_answer);
     if (isCorrect) score += 1;
     return {
       question_id: question.id,

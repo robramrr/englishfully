@@ -17,6 +17,7 @@ import type {
   GeneratedVocabularyItem,
   LearnAssignmentWithDetails,
   LearnDifficulty,
+  LearnQuestionType,
   LearnTranscriptSource,
   SaveLearnAssignmentPayload,
 } from '@/lib/listen-and-learn/types';
@@ -25,7 +26,12 @@ import {
   DEFAULT_QUESTION_FRAMEWORK,
   LEARN_DIFFICULTIES,
   LEARN_DIFFICULTY_LABELS,
+  LEARN_QUESTION_TYPES,
+  LEARN_QUESTION_TYPE_LABELS,
+  defaultLearnChoicesForType,
   formatTimestamp,
+  isLearnChoiceQuestion,
+  isLearnWriteInQuestion,
   parseTimestamp,
   stripChoiceLetterPrefix,
 } from '@/lib/listen-and-learn/types';
@@ -36,6 +42,7 @@ interface ClientLearnQuestion {
   id?: string;
   segment_id?: string | null;
   segmentClientId?: string | null;
+  question_type: LearnQuestionType;
   question_text: string;
   choices: string[];
   correct_answer: string;
@@ -76,20 +83,34 @@ function toClientQuestions(assignment: LearnAssignmentWithDetails): ClientLearnQ
   return assignment.questions
     .filter((question) => question.keep_question !== false)
     .map((question) => {
-      const choices = (
-        question.choices.length >= 4
-          ? question.choices.slice(0, 4)
-          : [...question.choices, '', '', '', ''].slice(0, 4)
-      ).map((choice) => stripChoiceLetterPrefix(choice));
-      const correctAnswer = stripChoiceLetterPrefix(question.correct_answer);
+      const questionType = question.question_type || 'multiple_choice';
+      const rawChoices =
+        question.choices.length > 0
+          ? question.choices
+          : defaultLearnChoicesForType(questionType);
+      const choices =
+        questionType === 'multiple_choice_images' || questionType === 'true_false'
+          ? rawChoices.map((choice) => String(choice ?? ''))
+          : (
+              rawChoices.length >= 4
+                ? rawChoices.slice(0, Math.max(4, rawChoices.length))
+                : [...rawChoices, '', '', '', ''].slice(0, 4)
+            ).map((choice) => stripChoiceLetterPrefix(choice));
+      const correctAnswer =
+        questionType === 'multiple_choice_images'
+          ? String(question.correct_answer ?? '').trim()
+          : stripChoiceLetterPrefix(question.correct_answer);
       const matched =
-        choices.find((choice) => choice.toLowerCase() === correctAnswer.toLowerCase()) ||
-        correctAnswer;
+        questionType === 'short_answer' || questionType === 'fill_in_blank'
+          ? correctAnswer
+          : choices.find((choice) => choice.toLowerCase() === correctAnswer.toLowerCase()) ||
+            correctAnswer;
       return {
         clientId: question.id,
         id: question.id,
         segment_id: question.segment_id,
         segmentClientId: question.segment_id,
+        question_type: questionType,
         question_text: question.question_text,
         choices,
         correct_answer: matched,
@@ -185,6 +206,7 @@ function buildPayload(
         segment_id: linkedSegment
           ? linkedSegment.id || linkedSegment.clientId
           : question.segment_id ?? question.segmentClientId ?? null,
+        question_type: question.question_type || 'multiple_choice',
         question_text: question.question_text,
         choices: question.choices,
         correct_answer: question.correct_answer,
@@ -806,6 +828,7 @@ export default function AssignmentEditor({
           clientId: crypto.randomUUID(),
           segmentClientId: segment?.clientId ?? null,
           segment_id: segment?.id ?? null,
+          question_type: 'multiple_choice',
           question_text: question.question_text,
           choices,
           correct_answer: matched,
@@ -846,6 +869,26 @@ export default function AssignmentEditor({
         return matches ? { ...segment, ...updates } : segment;
       })
     );
+  }
+
+  function handleAddManualQuestion() {
+    const firstSelected =
+      segments.find((segment) => segment.selected) || segments[0] || null;
+    setQuestions((current) => [
+      ...current,
+      {
+        clientId: crypto.randomUUID(),
+        segmentClientId: firstSelected?.clientId ?? null,
+        segment_id: firstSelected?.id ?? null,
+        question_type: 'multiple_choice',
+        question_text: '',
+        choices: defaultLearnChoicesForType('multiple_choice'),
+        correct_answer: '',
+        explanation: '',
+        keep_question: true,
+      },
+    ]);
+    setSaveMessage('Added a blank question. Link a segment, set the type, and fill in answers.');
   }
 
   async function handleDelete() {
@@ -1358,23 +1401,32 @@ export default function AssignmentEditor({
           needed. Students only hear the selected segment for each question.
         </ComicText>
         <SegmentReviewTable audioUrl={audioUrl} segments={segments} onChange={setSegments} />
-        <ComicButton
-          variant="secondary"
-          size="sm"
-          disabled={generatingQuestions}
-          onClick={() => void handleGenerateQuestions()}
-        >
-          {generatingQuestions ? 'Generating questions…' : 'Generate questions for selected segments'}
-        </ComicButton>
       </ComicCard>
 
       <ComicCard className="comic-shadow-xl space-y-4">
         <ComicTitle level={3} className="text-[var(--comic-warning)]">
           Questions ({questions.length})
         </ComicTitle>
+        <ComicText className="text-[var(--comic-dark)] font-bold">
+          Generate from segments, or add questions manually. Picture multiple-choice uses image URLs
+          for A–D. Matching and Ordering stay on Listen &amp; Answer worksheets for now.
+        </ComicText>
+        <div className="flex flex-wrap gap-2">
+          <ComicButton
+            variant="secondary"
+            size="sm"
+            disabled={generatingQuestions}
+            onClick={() => void handleGenerateQuestions()}
+          >
+            {generatingQuestions ? 'Generating questions…' : 'Generate from selected segments'}
+          </ComicButton>
+          <ComicButton variant="accent" size="sm" onClick={handleAddManualQuestion}>
+            + Add question manually
+          </ComicButton>
+        </div>
         {questions.length === 0 ? (
           <ComicText className="text-[var(--comic-dark)] font-bold">
-            No questions yet. Select segments and generate questions.
+            No questions yet. Generate from segments or add one manually.
           </ComicText>
         ) : (
           <div className="space-y-6">
@@ -1383,6 +1435,7 @@ export default function AssignmentEditor({
                 (question.segmentClientId && segmentByClientId.get(question.segmentClientId)) ||
                 (question.segment_id && segmentByClientId.get(question.segment_id)) ||
                 null;
+              const questionType = question.question_type || 'multiple_choice';
               return (
                 <div
                   key={question.clientId}
@@ -1403,6 +1456,60 @@ export default function AssignmentEditor({
                     >
                       Remove
                     </ComicButton>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <label className="space-y-1 block">
+                      <ComicText className="font-black">Question type</ComicText>
+                      <select
+                        value={questionType}
+                        onChange={(event) => {
+                          const nextType = event.target.value as LearnQuestionType;
+                          updateQuestion(question.clientId, {
+                            question_type: nextType,
+                            choices: defaultLearnChoicesForType(nextType),
+                            correct_answer:
+                              nextType === 'true_false' ? 'True' : '',
+                          });
+                        }}
+                        className="w-full comic-border-thick rounded-md p-3 font-bold"
+                      >
+                        {LEARN_QUESTION_TYPES.map((type) => (
+                          <option key={type} value={type}>
+                            {LEARN_QUESTION_TYPE_LABELS[type]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="space-y-1 block">
+                      <ComicText className="font-black">Listening segment</ComicText>
+                      <select
+                        value={
+                          question.segmentClientId ||
+                          question.segment_id ||
+                          ''
+                        }
+                        onChange={(event) => {
+                          const nextId = event.target.value;
+                          const nextSegment = nextId
+                            ? segmentByClientId.get(nextId) || null
+                            : null;
+                          updateQuestion(question.clientId, {
+                            segmentClientId: nextSegment?.clientId ?? null,
+                            segment_id: nextSegment?.id ?? nextSegment?.clientId ?? null,
+                          });
+                        }}
+                        className="w-full comic-border-thick rounded-md p-3 font-bold"
+                      >
+                        <option value="">Select a segment</option>
+                        {segments.map((item, segmentIndex) => (
+                          <option key={item.clientId} value={item.clientId}>
+                            {segmentIndex + 1}. {item.sentence_text.slice(0, 80) || '(empty)'}
+                            {item.sentence_text.length > 80 ? '…' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                   </div>
 
                   {segment ? (
@@ -1449,14 +1556,10 @@ export default function AssignmentEditor({
                         endSeconds={segment.end_seconds}
                         maxReplays={null}
                       />
-                      <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
-                        Edit start/end (mm:ss.t), then preview. Changes also update the segment table
-                        above.
-                      </ComicText>
                     </div>
                   ) : (
                     <ComicText className="text-[var(--comic-danger)] font-bold text-sm">
-                      No listening segment linked — re-generate questions from selected segments.
+                      Link a listening segment above so students hear the clip for this question.
                     </ComicText>
                   )}
 
@@ -1471,48 +1574,115 @@ export default function AssignmentEditor({
                       }
                       rows={2}
                       className="w-full comic-border-thick rounded-md p-3 font-bold"
+                      placeholder={
+                        questionType === 'fill_in_blank'
+                          ? 'Use _____ for the blank students fill in'
+                          : 'Enter the question students answer after listening'
+                      }
                     />
                   </label>
 
-                  <div className="grid md:grid-cols-2 gap-3">
-                    {question.choices.map((choice, choiceIndex) => (
-                      <label key={choiceIndex} className="space-y-1">
-                        <ComicText className="font-black">
-                          {String.fromCharCode(65 + choiceIndex)}
-                        </ComicText>
-                        <input
-                          value={choice}
-                          onChange={(event) => {
-                            const next = [...question.choices];
-                            next[choiceIndex] = event.target.value;
-                            updateQuestion(question.clientId, { choices: next });
-                          }}
-                          className="w-full comic-border-thick rounded-md p-2 font-bold"
-                        />
-                      </label>
-                    ))}
-                  </div>
+                  {isLearnChoiceQuestion(questionType) ? (
+                    <div className="space-y-3">
+                      <ComicText className="font-black">
+                        {questionType === 'multiple_choice_images'
+                          ? 'Picture choices (image URLs)'
+                          : 'Answer choices'}
+                      </ComicText>
+                      <div
+                        className={
+                          questionType === 'multiple_choice_images'
+                            ? 'grid md:grid-cols-2 gap-4'
+                            : 'grid md:grid-cols-2 gap-3'
+                        }
+                      >
+                        {question.choices.map((choice, choiceIndex) => (
+                          <label key={choiceIndex} className="space-y-2 block">
+                            <ComicText className="font-black">
+                              {String.fromCharCode(65 + choiceIndex)}
+                              {questionType === 'multiple_choice_images' ? ' — image URL' : ''}
+                            </ComicText>
+                            <input
+                              value={choice}
+                              onChange={(event) => {
+                                const next = [...question.choices];
+                                next[choiceIndex] = event.target.value;
+                                updateQuestion(question.clientId, { choices: next });
+                              }}
+                              className="w-full comic-border-thick rounded-md p-2 font-bold"
+                              placeholder={
+                                questionType === 'multiple_choice_images'
+                                  ? 'https://…/image.jpg'
+                                  : `Choice ${String.fromCharCode(65 + choiceIndex)}`
+                              }
+                              disabled={questionType === 'true_false'}
+                            />
+                            {questionType === 'multiple_choice_images' && choice.trim() ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={choice.trim()}
+                                alt={`Choice ${String.fromCharCode(65 + choiceIndex)} preview`}
+                                referrerPolicy="no-referrer"
+                                className="max-h-32 w-auto comic-border rounded-md object-contain bg-white"
+                              />
+                            ) : null}
+                          </label>
+                        ))}
+                      </div>
+                      {questionType === 'multiple_choice' ||
+                      questionType === 'multiple_choice_images' ? (
+                        <ComicButton
+                          variant="accent"
+                          size="sm"
+                          onClick={() =>
+                            updateQuestion(question.clientId, {
+                              choices: [...question.choices, ''],
+                            })
+                          }
+                        >
+                          + Add choice
+                        </ComicButton>
+                      ) : null}
+                    </div>
+                  ) : null}
 
                   <label className="space-y-1 block">
                     <ComicText className="font-black">Correct answer</ComicText>
-                    <select
-                      value={question.correct_answer}
-                      onChange={(event) =>
-                        updateQuestion(question.clientId, {
-                          correct_answer: event.target.value,
-                        })
-                      }
-                      className="w-full comic-border-thick rounded-md p-3 font-bold"
-                    >
-                      <option value="">Select correct choice</option>
-                      {question.choices
-                        .filter((choice) => choice.trim())
-                        .map((choice) => (
-                          <option key={choice} value={choice}>
-                            {choice}
-                          </option>
-                        ))}
-                    </select>
+                    {isLearnWriteInQuestion(questionType) ? (
+                      <input
+                        value={question.correct_answer}
+                        onChange={(event) =>
+                          updateQuestion(question.clientId, {
+                            correct_answer: event.target.value,
+                          })
+                        }
+                        className="w-full comic-border-thick rounded-md p-3 font-bold"
+                        placeholder="Exact answer students should type (case-insensitive)"
+                      />
+                    ) : (
+                      <select
+                        value={question.correct_answer}
+                        onChange={(event) =>
+                          updateQuestion(question.clientId, {
+                            correct_answer: event.target.value,
+                          })
+                        }
+                        className="w-full comic-border-thick rounded-md p-3 font-bold"
+                      >
+                        <option value="">Select correct choice</option>
+                        {question.choices
+                          .filter((choice) => choice.trim())
+                          .map((choice, choiceIndex) => (
+                            <option key={`${choice}-${choiceIndex}`} value={choice}>
+                              {questionType === 'multiple_choice_images'
+                                ? `${String.fromCharCode(65 + choiceIndex)}. ${choice.slice(0, 60)}${
+                                    choice.length > 60 ? '…' : ''
+                                  }`
+                                : choice}
+                            </option>
+                          ))}
+                      </select>
+                    )}
                   </label>
 
                   <label className="space-y-1 block">

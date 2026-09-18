@@ -9,7 +9,11 @@ import SegmentAudioPlayer from './SegmentAudioPlayer';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHand } from '@fortawesome/free-solid-svg-icons';
 import type { PublicLearnAssignment, LearnSubmission } from '@/lib/listen-and-learn/types';
-import { stripChoiceLetterPrefix } from '@/lib/listen-and-learn/types';
+import {
+  isLearnWriteInQuestion,
+  normalizeLearnQuestionType,
+  stripChoiceLetterPrefix,
+} from '@/lib/listen-and-learn/types';
 import {
   STUDENT_LETTER_OPTIONS,
   getDefaultEntryConfig,
@@ -493,47 +497,101 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
         </ComicCard>
       ) : null}
 
-      {questions.map((question, index) => (
-        <ComicCard key={question.id} className="space-y-4">
-          <ComicTitle level={4} className="text-[var(--comic-secondary)]">
-            Question {index + 1}
-          </ComicTitle>
-          <SegmentAudioPlayer
-            audioUrl={assignment.audio_url}
-            startSeconds={question.start_seconds}
-            endSeconds={question.end_seconds}
-            maxReplays={assignment.max_replays === 0 ? null : assignment.max_replays}
-            label="Play Audio"
-          />
-          <ComicText className="text-[var(--comic-dark)] font-black text-lg">
-            {question.question_text}
-          </ComicText>
-          <div className="space-y-2">
-            {question.choices.map((choice, choiceIndex) => {
-              if (!choice.trim()) return null;
-              const letter = String.fromCharCode(65 + choiceIndex);
-              const label = stripChoiceLetterPrefix(choice);
-              const selected = answers[question.id] === choice;
-              return (
-                <button
-                  key={`${question.id}-${choiceIndex}`}
-                  type="button"
-                  onClick={() =>
-                    setAnswers((current) => ({ ...current, [question.id]: choice }))
+      {questions.map((question, index) => {
+        const questionType = normalizeLearnQuestionType(question.question_type);
+        const writeIn = isLearnWriteInQuestion(questionType);
+        return (
+          <ComicCard key={question.id} className="space-y-4">
+            <ComicTitle level={4} className="text-[var(--comic-secondary)]">
+              Question {index + 1}
+            </ComicTitle>
+            <SegmentAudioPlayer
+              audioUrl={assignment.audio_url}
+              startSeconds={question.start_seconds}
+              endSeconds={question.end_seconds}
+              maxReplays={assignment.max_replays === 0 ? null : assignment.max_replays}
+              label="Play Audio"
+            />
+            <ComicText className="text-[var(--comic-dark)] font-black text-lg">
+              {question.question_text}
+            </ComicText>
+            {writeIn ? (
+              <label className="space-y-1 block">
+                <ComicText className="font-black text-sm">Your answer</ComicText>
+                <input
+                  value={answers[question.id] ?? ''}
+                  onChange={(event) =>
+                    setAnswers((current) => ({
+                      ...current,
+                      [question.id]: event.target.value,
+                    }))
                   }
-                  className={`w-full text-left comic-border-thick rounded-md p-3 font-bold transition-colors ${
-                    selected
-                      ? 'comic-bg-selection-stripes text-[var(--comic-dark)]'
-                      : 'bg-white text-[var(--comic-dark)] hover:bg-[var(--comic-light)]'
-                  }`}
-                >
-                  {letter}. {label}
-                </button>
-              );
-            })}
-          </div>
-        </ComicCard>
-      ))}
+                  className="w-full comic-border-thick rounded-md p-3 font-bold"
+                  placeholder={
+                    questionType === 'fill_in_blank' ? 'Fill in the blank' : 'Type your answer'
+                  }
+                />
+              </label>
+            ) : questionType === 'multiple_choice_images' ? (
+              <div className="grid sm:grid-cols-2 gap-3">
+                {question.choices.map((choice, choiceIndex) => {
+                  if (!choice.trim()) return null;
+                  const letter = String.fromCharCode(65 + choiceIndex);
+                  const selected = answers[question.id] === choice;
+                  return (
+                    <button
+                      key={`${question.id}-${choiceIndex}`}
+                      type="button"
+                      onClick={() =>
+                        setAnswers((current) => ({ ...current, [question.id]: choice }))
+                      }
+                      className={`comic-border-thick rounded-md p-3 font-bold transition-colors space-y-2 ${
+                        selected
+                          ? 'comic-bg-selection-stripes text-[var(--comic-dark)]'
+                          : 'bg-white text-[var(--comic-dark)] hover:bg-[var(--comic-light)]'
+                      }`}
+                    >
+                      <ComicText className="font-black">{letter}</ComicText>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={choice.trim()}
+                        alt={`Choice ${letter}`}
+                        referrerPolicy="no-referrer"
+                        className="max-h-40 w-full object-contain rounded-md bg-white"
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {question.choices.map((choice, choiceIndex) => {
+                  if (!choice.trim()) return null;
+                  const letter = String.fromCharCode(65 + choiceIndex);
+                  const label = stripChoiceLetterPrefix(choice);
+                  const selected = answers[question.id] === choice;
+                  return (
+                    <button
+                      key={`${question.id}-${choiceIndex}`}
+                      type="button"
+                      onClick={() =>
+                        setAnswers((current) => ({ ...current, [question.id]: choice }))
+                      }
+                      className={`w-full text-left comic-border-thick rounded-md p-3 font-bold transition-colors ${
+                        selected
+                          ? 'comic-bg-selection-stripes text-[var(--comic-dark)]'
+                          : 'bg-white text-[var(--comic-dark)] hover:bg-[var(--comic-light)]'
+                      }`}
+                    >
+                      {letter}. {label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </ComicCard>
+        );
+      })}
 
       {error ? (
         <ComicText className="text-[var(--comic-danger)] font-bold text-center">{error}</ComicText>
