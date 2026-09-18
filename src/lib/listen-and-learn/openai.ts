@@ -153,6 +153,29 @@ export function buildSegmentsFromManualTranscript(
   );
 }
 
+/** Align a (manual or edited) transcript to Whisper word timestamps from the audio. */
+export async function alignTranscriptToAudio(
+  transcript: string,
+  audioUrl: string
+): Promise<TranscriptSegmentDraft[]> {
+  const sentences = splitIntoSentences(transcript);
+  if (sentences.length === 0) return [];
+
+  try {
+    const words = await getWhisperWordTimestamps(audioUrl);
+    if (words.length > 0) {
+      const lastWordEnd = words[words.length - 1]?.end ?? Math.max(8, sentences.length * 3);
+      return mergeShortSegments(
+        alignSentencesToWordTimestamps(sentences, words, 0, lastWordEnd)
+      );
+    }
+  } catch (error) {
+    console.error('alignTranscriptToAudio word timestamps failed:', error);
+  }
+
+  return buildSegmentsFromManualTranscript(transcript);
+}
+
 export async function generateQuestionForSegment(params: {
   framework: string;
   cefrLevel: CefrLevel;

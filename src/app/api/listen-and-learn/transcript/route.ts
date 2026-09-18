@@ -3,6 +3,7 @@ import { isTeacherAuthenticated } from '@/lib/speak-and-submit/auth';
 import { jsonError } from '@/lib/speak-and-submit/api';
 import {
   buildSegmentsFromManualTranscript,
+  alignTranscriptToAudio,
   transcribeAudioWithSegments,
 } from '@/lib/listen-and-learn/openai';
 
@@ -20,7 +21,10 @@ export async function POST(request: NextRequest) {
     const manualTranscript = String(body.transcript ?? '').trim();
 
     if (manualTranscript) {
-      const segments = buildSegmentsFromManualTranscript(manualTranscript);
+      // Prefer word-level sync from audio whenever a URL is available.
+      const segments = audioUrl
+        ? await alignTranscriptToAudio(manualTranscript, audioUrl)
+        : buildSegmentsFromManualTranscript(manualTranscript);
       return NextResponse.json({
         transcript: manualTranscript,
         segments,

@@ -349,7 +349,7 @@ export function mergeShortSegments(
 
 /**
  * Align sentence texts to word-level Whisper timestamps.
- * Falls back to proportional split within [rangeStart, rangeEnd] when words are missing.
+ * Walks the word list in order (transcript ≈ audio order) so clips stay in sync.
  */
 export function alignSentencesToWordTimestamps(
   sentences: string[],
@@ -390,33 +390,42 @@ export function alignSentencesToWordTimestamps(
 
     if (tokens.length === 0) continue;
 
+    // Look ahead a short window for the first token (Whisper may insert fillers).
+    const searchEnd = Math.min(stamps.length, cursor + 12);
     let matchStart = -1;
-    for (let index = cursor; index < stamps.length; index += 1) {
-      let matches = true;
-      for (let offset = 0; offset < tokens.length; offset += 1) {
-        if (stamps[index + offset]?.token !== tokens[offset]) {
-          matches = false;
-          break;
-        }
-      }
-      if (matches) {
+    for (let index = cursor; index < searchEnd; index += 1) {
+      if (stamps[index].token === tokens[0]) {
         matchStart = index;
         break;
       }
     }
 
-    // Fuzzy: find first token, then take the next tokens.length stamps.
-    if (matchStart < 0) {
-      for (let index = cursor; index < stamps.length; index += 1) {
-        if (stamps[index].token === tokens[0]) {
-          matchStart = index;
+    // Exact contiguous match from matchStart / cursor.
+    if (matchStart < 0) matchStart = cursor < stamps.length ? cursor : -1;
+
+    if (matchStart >= 0 && matchStart < stamps.length) {
+      let tokenIdx = 0;
+      let matchEnd = matchStart;
+      for (
+        let index = matchStart;
+        index < stamps.length && tokenIdx < tokens.length;
+        index += 1
+      ) {
+        if (stamps[index].token === tokens[tokenIdx]) {
+          matchEnd = index;
+          tokenIdx += 1;
+        } else if (tokenIdx === 0) {
+          // Still hunting first token — already set matchStart.
           break;
         }
+        // Extra whisper words between matches: skip stamp, keep tokenIdx.
       }
-    }
 
-    if (matchStart >= 0) {
-      const matchEnd = Math.min(stamps.length - 1, matchStart + tokens.length - 1);
+      // If too few tokens matched, fall back to positional word count.
+      if (tokenIdx < Math.max(1, Math.ceil(tokens.length * 0.5))) {
+        matchEnd = Math.min(stamps.length - 1, matchStart + tokens.length - 1);
+      }
+
       drafts.push({
         sentence_text: sentence,
         start_seconds: Number(Math.max(0, stamps[matchStart].start).toFixed(2)),
@@ -428,13 +437,10 @@ export function alignSentencesToWordTimestamps(
       continue;
     }
 
-    // No word match — estimate from neighbors / remaining range.
+    // No stamps left — estimate from previous end.
     const prevEnd = drafts.length > 0 ? drafts[drafts.length - 1].end_seconds : rangeStart;
-    const remainingSentences = sentences.length - sentenceIndex;
-    const remainingWords = Math.max(1, stamps.length - cursor);
-    const approxSpan = Math.max(0.8, (remainingWords / Math.max(1, tokens.length)) * 0.35);
     const start = prevEnd;
-    const end = Number((start + Math.max(0.8, tokens.length * 0.35, approxSpan)).toFixed(2));
+    const end = Number((start + Math.max(0.8, tokens.length * 0.35)).toFixed(2));
     drafts.push({
       sentence_text: sentence,
       start_seconds: Number(start.toFixed(2)),

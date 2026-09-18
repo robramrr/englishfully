@@ -25,6 +25,8 @@ import {
   DEFAULT_QUESTION_FRAMEWORK,
   LEARN_DIFFICULTIES,
   LEARN_DIFFICULTY_LABELS,
+  formatTimestamp,
+  parseTimestamp,
   stripChoiceLetterPrefix,
 } from '@/lib/listen-and-learn/types';
 import type { CefrLevel } from '@/lib/listen-and-answer/types';
@@ -828,6 +830,24 @@ export default function AssignmentEditor({
     );
   }
 
+  function updateQuestionSegmentTimes(
+    question: ClientLearnQuestion,
+    updates: { start_seconds?: number; end_seconds?: number }
+  ) {
+    const segmentClientId = question.segmentClientId || question.segment_id;
+    if (!segmentClientId) return;
+    setSegments((current) =>
+      current.map((segment) => {
+        const matches =
+          segment.clientId === segmentClientId ||
+          segment.id === segmentClientId ||
+          segment.clientId === question.segment_id ||
+          segment.id === question.segment_id;
+        return matches ? { ...segment, ...updates } : segment;
+      })
+    );
+  }
+
   async function handleDelete() {
     if (!window.confirm('Delete this Listen & Learn assessment?')) return;
     const response = await fetch(`/api/listen-and-learn/assignments/${assignmentId}`, {
@@ -968,7 +988,7 @@ export default function AssignmentEditor({
                 checked={vocabularyAudioEnabled}
                 onChange={(event) => setVocabularyAudioEnabled(event.target.checked)}
               />
-              Vocabulary play audio
+              Vocabulary play audio (also in Vocabulary section)
             </label>
             <label className="flex items-center gap-2 font-bold text-[var(--comic-dark)]">
               <input
@@ -1300,9 +1320,15 @@ export default function AssignmentEditor({
           {generatingSegments
             ? 'Processing segments…'
             : transcriptSource === 'manual' && transcript.trim()
-              ? 'Split transcript into listening segments'
+              ? 'Align transcript to audio & create segments'
               : 'Transcribe audio & create segments'}
         </ComicButton>
+        {transcript.trim() && audioUrl.trim() ? (
+          <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+            Times are synced from the audio word-by-word. Re-run this after editing the transcript to
+            refresh start/end times.
+          </ComicText>
+        ) : null}
       </ComicCard>
 
       <ComicCard className="comic-shadow-xl space-y-4">
@@ -1314,6 +1340,7 @@ export default function AssignmentEditor({
           audioUrl={audioUrl}
           vocabulary={vocabulary}
           vocabularyAudioEnabled={vocabularyAudioEnabled}
+          onVocabularyAudioEnabledChange={setVocabularyAudioEnabled}
           onChange={setVocabulary}
           onPersistVocabulary={(next) => void handlePersistVocabulary(next)}
           onGenerate={() => void handleGenerateVocabulary()}
@@ -1379,18 +1406,59 @@ export default function AssignmentEditor({
                   </div>
 
                   {segment ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3 comic-border-thick rounded-lg p-3 bg-[var(--comic-light)]">
                       <ComicText className="text-[var(--comic-dark)] text-sm font-bold">
-                        Segment: “{segment.sentence_text}”
+                        Listening clip for this question
                       </ComicText>
+                      <ComicText className="text-[var(--comic-dark)] text-sm font-bold">
+                        “{segment.sentence_text}”
+                      </ComicText>
+                      <div className="grid grid-cols-2 gap-3 max-w-md">
+                        <label className="space-y-1">
+                          <ComicText className="font-black text-sm">Start</ComicText>
+                          <input
+                            type="text"
+                            value={formatTimestamp(segment.start_seconds)}
+                            onChange={(event) =>
+                              updateQuestionSegmentTimes(question, {
+                                start_seconds: parseTimestamp(event.target.value),
+                              })
+                            }
+                            className="w-full comic-border-thick rounded-md p-2 font-bold bg-white"
+                            placeholder="00:00.0"
+                          />
+                        </label>
+                        <label className="space-y-1">
+                          <ComicText className="font-black text-sm">End</ComicText>
+                          <input
+                            type="text"
+                            value={formatTimestamp(segment.end_seconds)}
+                            onChange={(event) =>
+                              updateQuestionSegmentTimes(question, {
+                                end_seconds: parseTimestamp(event.target.value),
+                              })
+                            }
+                            className="w-full comic-border-thick rounded-md p-2 font-bold bg-white"
+                            placeholder="00:05.0"
+                          />
+                        </label>
+                      </div>
                       <SegmentAudioPlayer
                         audioUrl={audioUrl}
                         startSeconds={segment.start_seconds}
                         endSeconds={segment.end_seconds}
                         maxReplays={null}
                       />
+                      <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
+                        Edit start/end (mm:ss.t), then preview. Changes also update the segment table
+                        above.
+                      </ComicText>
                     </div>
-                  ) : null}
+                  ) : (
+                    <ComicText className="text-[var(--comic-danger)] font-bold text-sm">
+                      No listening segment linked — re-generate questions from selected segments.
+                    </ComicText>
+                  )}
 
                   <label className="space-y-1 block">
                     <ComicText className="font-black">Question</ComicText>

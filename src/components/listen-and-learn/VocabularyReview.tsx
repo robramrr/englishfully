@@ -24,6 +24,7 @@ interface VocabularyReviewProps {
   audioUrl: string;
   vocabulary: ClientLearnVocabulary[];
   vocabularyAudioEnabled?: boolean;
+  onVocabularyAudioEnabledChange?: (enabled: boolean) => void;
   onChange: (vocabulary: ClientLearnVocabulary[]) => void;
   onPersistVocabulary?: (vocabulary: ClientLearnVocabulary[]) => void | Promise<void>;
   onGenerate: () => void;
@@ -36,6 +37,7 @@ export default function VocabularyReview({
   audioUrl,
   vocabulary,
   vocabularyAudioEnabled = true,
+  onVocabularyAudioEnabledChange,
   onChange,
   onPersistVocabulary,
   onGenerate,
@@ -138,6 +140,24 @@ export default function VocabularyReview({
 
   return (
     <div className="space-y-4">
+      <div className="comic-border-thick rounded-lg p-4 bg-[var(--comic-light)] space-y-2">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            className="mt-1 h-5 w-5"
+            checked={vocabularyAudioEnabled}
+            onChange={(event) => onVocabularyAudioEnabledChange?.(event.target.checked)}
+          />
+          <span>
+            <ComicText className="font-black">Show play-audio button for vocabulary</ComicText>
+            <ComicText className="text-sm text-[var(--comic-dark)] font-bold">
+              Turn this off if word clips are out of sync — students will still see each word,
+              definition, and image.
+            </ComicText>
+          </span>
+        </label>
+      </div>
+
       <ComicText className="text-[var(--comic-dark)] font-bold">
         Generate about 5 key vocabulary words from the transcript. Each word gets a definition
         {vocabularyAudioEnabled ? ' and an audio clip from the recording' : ''}. Optionally add an AI
