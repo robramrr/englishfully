@@ -1347,7 +1347,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                       <div>
                         <Link
                           href={GRADEBOOK_TOOL_PATHS[column.tool]}
-                          className="underline text-[var(--comic-primary)] hover:opacity-80"
+                          className="text-inherit no-underline hover:no-underline"
                         >
                           {GRADEBOOK_TOOL_LABELS[column.tool]}
                         </Link>
@@ -1356,7 +1356,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                         {editorHref ? (
                           <Link
                             href={editorHref}
-                            className="underline text-[var(--comic-primary)] hover:opacity-80"
+                            className="text-inherit no-underline hover:no-underline"
                           >
                             {column.task_title}
                           </Link>
