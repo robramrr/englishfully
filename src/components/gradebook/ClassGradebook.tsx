@@ -21,7 +21,9 @@ import type {
 import {
   DEFAULT_MAX_POINTS,
   GRADEBOOK_TOOL_LABELS,
+  GRADEBOOK_TOOL_PATHS,
   LISTEN_PASS_PERCENT,
+  gradebookTaskEditorPath,
   formatPercent,
   formatTestScore,
   getTestPercent,
@@ -1338,12 +1340,33 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
             <thead>
               <tr className="border-b-4 border-[var(--comic-black)] text-left">
                 <th className="py-2 px-2 border-r border-[#ccc]">#</th>
-                {taskColumns.map((column) => (
-                  <th key={column.task_key} className="py-2 px-2 border-r border-[#ccc]">
-                    <div>{GRADEBOOK_TOOL_LABELS[column.tool]}</div>
-                    <div className="font-normal">{column.task_title}</div>
-                  </th>
-                ))}
+                {taskColumns.map((column) => {
+                  const editorHref = gradebookTaskEditorPath(column.tool, column.task_id);
+                  return (
+                    <th key={column.task_key} className="py-2 px-2 border-r border-[#ccc]">
+                      <div>
+                        <Link
+                          href={GRADEBOOK_TOOL_PATHS[column.tool]}
+                          className="underline text-[var(--comic-primary)] hover:opacity-80"
+                        >
+                          {GRADEBOOK_TOOL_LABELS[column.tool]}
+                        </Link>
+                      </div>
+                      <div className="font-normal">
+                        {editorHref ? (
+                          <Link
+                            href={editorHref}
+                            className="underline text-[var(--comic-primary)] hover:opacity-80"
+                          >
+                            {column.task_title}
+                          </Link>
+                        ) : (
+                          column.task_title
+                        )}
+                      </div>
+                    </th>
+                  );
+                })}
                 <th className="py-2 px-2">Total</th>
               </tr>
             </thead>

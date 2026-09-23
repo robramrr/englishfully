@@ -19,6 +19,21 @@ export const GRADEBOOK_TOOL_LABELS: Record<GradebookTool, string> = {
   projects: 'Projects',
 };
 
+/** Teacher-resources index for each gradebook tool. */
+export const GRADEBOOK_TOOL_PATHS: Record<GradebookTool, string> = {
+  speak_and_submit: '/teacher-resources/speak-and-submit',
+  listen_and_answer: '/teacher-resources/listen-and-answer',
+  listen_and_learn: '/teacher-resources/listen-and-learn',
+  projects: '/teacher-resources/projects',
+};
+
+/** Editor page for a graded task, e.g. /teacher-resources/listen-and-answer/{id}. */
+export function gradebookTaskEditorPath(tool: GradebookTool, taskId: string): string | null {
+  const id = taskId.trim();
+  if (!id) return null;
+  return `${GRADEBOOK_TOOL_PATHS[tool]}/${encodeURIComponent(id)}`;
+}
+
 export const DEFAULT_MAX_POINTS = 10;
 export const LISTEN_PASS_PERCENT = 70;
 
