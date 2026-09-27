@@ -23,6 +23,7 @@ import {
   GRADEBOOK_TOOL_LABELS,
   GRADEBOOK_TOOL_PATHS,
   LISTEN_PASS_PERCENT,
+  compareStudentNumbersByLetter,
   gradebookTaskEditorPath,
   formatPercent,
   formatTestScore,
@@ -122,6 +123,14 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
   const [draftRolls, setDraftRolls] = useState<Record<string, string>>({});
   const [savingRollNumber, setSavingRollNumber] = useState<string | null>(null);
   const [submittedNumbers, setSubmittedNumbers] = useState<Set<string>>(new Set());
+
+  const allGradedTaskSeats = useMemo(
+    () =>
+      [...seats].sort((a, b) =>
+        compareStudentNumbersByLetter(a.student_number, b.student_number)
+      ),
+    [seats]
+  );
 
   const filteredTasks = useMemo(() => {
     const matching: GradebookTaskOption[] = [];
@@ -1311,7 +1320,7 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
                     schoolYear: schoolYear || settings?.school_year || '',
                     semester,
                     taskColumns,
-                    seats,
+                    seats: allGradedTaskSeats,
                   })
                 }
               >
@@ -1371,12 +1380,12 @@ export default function ClassGradebook({ classId }: ClassGradebookProps) {
               </tr>
             </thead>
             <tbody>
-              {seats.map((seat, seatIndex) => (
+              {allGradedTaskSeats.map((seat, seatIndex) => (
                 <tr
                   key={`summary-${seat.student_number}`}
                   className={[
                     seatIndex % 2 === 0 ? 'bg-[#e1e1e1]' : undefined,
-                    seatIndex < seats.length - 1 ? 'border-b border-[#ccc]' : undefined,
+                    seatIndex < allGradedTaskSeats.length - 1 ? 'border-b border-[#ccc]' : undefined,
                   ]
                     .filter(Boolean)
                     .join(' ') || undefined}

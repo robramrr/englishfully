@@ -319,6 +319,32 @@ export function buildStudentRoster(
   return seats;
 }
 
+function parseSeatLabel(value: string): { number: number; letter: string; raw: string } {
+  const raw = String(value ?? '').trim();
+  const match = raw.match(/^(\d+)\s*([A-Za-z]*)$/);
+  if (!match) {
+    return { number: Number.POSITIVE_INFINITY, letter: raw.toLowerCase(), raw };
+  }
+  return {
+    number: Number(match[1]),
+    letter: match[2].toLowerCase(),
+    raw,
+  };
+}
+
+/**
+ * All Graded Tasks order: 1A, 2A, … then 1B, 2B, ….
+ * Seats with no letter stay in numeric order.
+ */
+export function compareStudentNumbersByLetter(a: string, b: string): number {
+  const left = parseSeatLabel(a);
+  const right = parseSeatLabel(b);
+  const byLetter = left.letter.localeCompare(right.letter);
+  if (byLetter !== 0) return byLetter;
+  if (left.number !== right.number) return left.number - right.number;
+  return left.raw.localeCompare(right.raw);
+}
+
 export function taskKey(tool: GradebookTool, taskId: string): string {
   return `${tool}:${taskId}`;
 }

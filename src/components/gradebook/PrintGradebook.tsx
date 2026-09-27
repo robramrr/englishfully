@@ -18,6 +18,7 @@ import {
   DEFAULT_MAX_POINTS,
   GRADEBOOK_TOOL_LABELS,
   LISTEN_PASS_PERCENT,
+  compareStudentNumbersByLetter,
   formatPercent,
   formatTestScore,
   getTestPercent,
@@ -85,6 +86,14 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
     const yearPart = resolvedYear || 'School-Year';
     document.title = `Class ${classPart} · ${yearPart} · Semester ${semester} · Gradebook`;
   }, [loaded, allTasksOnly, classLabel, resolvedYear, semester]);
+
+  const allGradedTaskSeats = useMemo(
+    () =>
+      [...seats].sort((a, b) =>
+        compareStudentNumbersByLetter(a.student_number, b.student_number)
+      ),
+    [seats]
+  );
 
   const selectedTask = useMemo(
     () =>
@@ -194,7 +203,7 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
                   schoolYear: resolvedYear,
                   semester,
                   taskColumns,
-                  seats,
+                  seats: allGradedTaskSeats,
                 })
               }
             >
@@ -349,7 +358,7 @@ export default function PrintGradebook({ classId }: PrintGradebookProps) {
                 </tr>
               </thead>
               <tbody>
-                {seats.map((seat, seatIndex) => (
+                {allGradedTaskSeats.map((seat, seatIndex) => (
                   <tr
                     key={`summary-${seat.student_number}`}
                     className={[
