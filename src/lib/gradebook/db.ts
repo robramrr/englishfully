@@ -36,6 +36,7 @@ import {
   classLabelsMatch,
   formatGradebookTaskTitle,
   taskAppliesToGradebookClass,
+  compareGradebookTasksByCreatedAt,
 } from './types';
 
 const DEFAULT_TEACHER_ID = 'default';
@@ -436,6 +437,7 @@ export async function listGradebookTasks(): Promise<GradebookTaskOption[]> {
         tool: 'speak_and_submit',
         class_name: String(task.class_name ?? ''),
         question_count: null,
+        created_at: task.created_at,
       });
     }
   } catch (error) {
@@ -458,6 +460,7 @@ export async function listGradebookTasks(): Promise<GradebookTaskOption[]> {
         tool: 'listen_and_answer',
         class_name: String(assignment.class_name ?? ''),
         question_count: questionCount,
+        created_at: assignment.created_at,
       });
     }
   } catch (error) {
@@ -474,6 +477,7 @@ export async function listGradebookTasks(): Promise<GradebookTaskOption[]> {
         tool: 'listen_and_learn',
         class_name: String(assignment.class_name ?? ''),
         question_count: assignment.question_count > 0 ? assignment.question_count : null,
+        created_at: assignment.created_at,
       });
     }
   } catch (error) {
@@ -492,6 +496,7 @@ export async function listGradebookTasks(): Promise<GradebookTaskOption[]> {
           project.class_label.trim() ||
           (project.class_names.length > 0 ? project.class_names.join(', ') : project.class_name),
         question_count: null,
+        created_at: project.created_at,
       });
     }
   } catch (error) {
@@ -951,8 +956,18 @@ export async function getClassGradebook(
     console.error('listGradebookTasks failed during class gradebook load:', error);
   }
 
+  const createdAtByTask = new Map<string, string>();
+  for (const task of availableTasks) {
+    if (task.created_at) {
+      createdAtByTask.set(taskKey(task.tool, task.id), task.created_at);
+    }
+  }
+
   const taskColumns = Array.from(taskMap.values()).sort((a, b) =>
-    a.task_title.localeCompare(b.task_title, undefined, { sensitivity: 'base' })
+    compareGradebookTasksByCreatedAt(
+      { task_title: a.task_title, created_at: createdAtByTask.get(a.task_key) },
+      { task_title: b.task_title, created_at: createdAtByTask.get(b.task_key) }
+    )
   );
 
   // Possible = every non-makeup column in All Graded Tasks (same for every seat that

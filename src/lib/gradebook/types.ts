@@ -78,6 +78,8 @@ export interface GradebookTaskOption {
   tool: GradebookTool;
   class_name: string;
   question_count: number | null;
+  /** When the source task was created. Used to order All Graded Tasks columns. */
+  created_at?: string;
 }
 
 export interface GradebookClassSummary {
@@ -347,6 +349,23 @@ export function compareStudentNumbersByLetter(a: string, b: string): number {
 
 export function taskKey(tool: GradebookTool, taskId: string): string {
   return `${tool}:${taskId}`;
+}
+
+function taskCreatedAtMillis(value: string | null | undefined): number {
+  if (!value) return Number.POSITIVE_INFINITY;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : Number.POSITIVE_INFINITY;
+}
+
+/** Oldest task first. Tasks with no creation time stay after dated tasks, then by title. */
+export function compareGradebookTasksByCreatedAt(
+  a: { task_title: string; created_at?: string | null },
+  b: { task_title: string; created_at?: string | null }
+): number {
+  const aTime = taskCreatedAtMillis(a.created_at);
+  const bTime = taskCreatedAtMillis(b.created_at);
+  if (aTime !== bTime) return aTime - bTime;
+  return a.task_title.localeCompare(b.task_title, undefined, { sensitivity: 'base' });
 }
 
 export function parseSemester(value: unknown): GradebookSemester {
