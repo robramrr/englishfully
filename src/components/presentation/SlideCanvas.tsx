@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import {
   presentationFontColorCss,
   presentationFontSizePx,
@@ -54,19 +55,101 @@ function textStyle(
   };
 }
 
+type ContentFigureImage = {
+  url: string;
+  alt: string;
+  title: string;
+  showTitle: boolean;
+  subtitle: string;
+  showSubtitle: boolean;
+};
+
+function ContentImageLightbox({
+  image,
+  title,
+  subtitle,
+  onClose,
+}: {
+  image: ContentFigureImage;
+  title: string;
+  subtitle: string;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (
+        event.key === 'Escape' ||
+        event.key === 'ArrowLeft' ||
+        event.key === 'ArrowRight' ||
+        event.key === 'PageUp' ||
+        event.key === 'PageDown' ||
+        event.key === ' '
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.key === 'Escape') onClose();
+      }
+    }
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [onClose]);
+
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--comic-secondary)]/90 p-4 md:p-8"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title || image.alt || 'Image'}
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-full w-full max-w-6xl flex-col items-center gap-4"
+        onClick={(event) => event.stopPropagation()}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={image.url}
+          alt={image.alt || title || 'Slide image'}
+          className="max-h-[78vh] w-auto max-w-full border-4 border-[var(--comic-black)] bg-white object-contain comic-shadow-xl"
+        />
+        {title || subtitle ? (
+          <div className="max-w-4xl text-center text-white">
+            {title ? <div className="font-bungee text-3xl leading-tight md:text-5xl">{title}</div> : null}
+            {subtitle ? (
+              <div className="mt-2 text-xl font-bold leading-snug md:text-3xl">{subtitle}</div>
+            ) : null}
+          </div>
+        ) : null}
+        <button
+          type="button"
+          className="border-4 border-[var(--comic-black)] bg-white px-4 py-2 font-black text-[var(--comic-secondary)] comic-shadow-md"
+          onClick={onClose}
+        >
+          Back to slide
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 function ContentSlideFigure({
   image,
   className = '',
   compact,
   present,
 }: {
-  image: { url: string; alt: string; title: string; showTitle: boolean; subtitle: string; showSubtitle: boolean };
+  image: ContentFigureImage;
   className?: string;
   compact: boolean;
   present: boolean;
 }) {
+  const [open, setOpen] = useState(false);
   const title = image.showTitle ? image.title.trim() : '';
   const subtitle = image.showSubtitle ? image.subtitle.trim() : '';
+  const canFocus = !compact && Boolean(image.url.trim());
   const titleClass = compact
     ? 'text-xs'
     : present
@@ -78,20 +161,56 @@ function ContentSlideFigure({
       ? 'text-base md:text-xl'
       : 'text-xs md:text-sm';
 
+  useEffect(() => {
+    setOpen(false);
+  }, [image.url]);
+
+  const caption =
+    title || subtitle ? (
+      <div className="shrink-0 text-center leading-tight">
+        {title ? (
+          <div className={`font-black text-[var(--comic-secondary)] ${titleClass}`}>{title}</div>
+        ) : null}
+        {subtitle ? (
+          <div className={`font-bold text-[var(--comic-dark)] ${subtitleClass}`}>{subtitle}</div>
+        ) : null}
+      </div>
+    ) : null;
+
+  const picture = <SlideImage url={image.url} alt={image.alt} className="min-h-0 w-full flex-1" />;
+
+  if (!canFocus) {
+    return (
+      <figure className={`flex h-full min-h-0 flex-col gap-1 ${className}`}>
+        {picture}
+        {caption}
+      </figure>
+    );
+  }
+
   return (
-    <figure className={`flex h-full min-h-0 flex-col gap-1 ${className}`}>
-      <SlideImage url={image.url} alt={image.alt} className="min-h-0 w-full flex-1" />
-      {title || subtitle ? (
-        <figcaption className="shrink-0 text-center leading-tight">
-          {title ? (
-            <div className={`font-black text-[var(--comic-secondary)] ${titleClass}`}>{title}</div>
-          ) : null}
-          {subtitle ? (
-            <div className={`font-bold text-[var(--comic-dark)] ${subtitleClass}`}>{subtitle}</div>
-          ) : null}
-        </figcaption>
+    <>
+      <button
+        type="button"
+        className={`flex h-full min-h-0 w-full cursor-zoom-in flex-col gap-1 border-0 bg-transparent p-0 text-center font-[inherit] ${className}`}
+        aria-label={title ? `Show ${title} larger` : 'Show this image larger'}
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen(true);
+        }}
+      >
+        {picture}
+        {caption}
+      </button>
+      {open ? (
+        <ContentImageLightbox
+          image={image}
+          title={title}
+          subtitle={subtitle}
+          onClose={() => setOpen(false)}
+        />
       ) : null}
-    </figure>
+    </>
   );
 }
 
@@ -426,9 +545,9 @@ export default function SlideCanvas({
                           : 'max-h-56 md:max-h-72',
                   ].join(' ')}
                 >
-                  {contentImages.map((image) => (
+                  {contentImages.map((image, index) => (
                     <ContentSlideFigure
-                      key={image.url}
+                      key={`${slide.id}-${index}-${image.url}`}
                       image={image}
                       compact={compact}
                       present={present}
@@ -455,6 +574,7 @@ export default function SlideCanvas({
                 </div>
                 {showRightColumn ? (
                   <ContentSlideFigure
+                    key={`${slide.id}-side`}
                     image={{
                       url: contentImages[0]?.url || slide.imageUrl,
                       alt: contentImages[0]?.alt || slide.imageAlt || title,
