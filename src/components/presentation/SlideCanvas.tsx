@@ -577,7 +577,7 @@ export default function SlideCanvas({
             ) : null}
             {multiContentImages ? (
               <>
-                <div className="min-h-0 overflow-auto">
+                <div className="flex min-h-0 flex-col gap-3 overflow-auto">
                   <ContentBody
                     slide={slide}
                     body={body}
@@ -586,6 +586,7 @@ export default function SlideCanvas({
                     liveEditable={liveEditable}
                     onGrammarTextChange={onGrammarTextChange}
                   />
+                  <PresentationQuiz slide={slide} compact={compact} present={present} />
                 </div>
                 <div
                   className={[
@@ -620,11 +621,11 @@ export default function SlideCanvas({
             ) : (
               <div
                 className={[
-                  'grid min-h-0 gap-4',
-                  showRightColumn ? 'flex-1 md:grid-cols-2' : 'grid-cols-1',
+                  'grid min-h-0 items-stretch gap-4',
+                  showRightColumn ? 'flex-1 grid-cols-2' : 'grid-cols-1',
                 ].join(' ')}
               >
-                <div className="min-h-0 overflow-auto">
+                <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-auto">
                   <ContentBody
                     slide={slide}
                     body={body}
@@ -633,6 +634,7 @@ export default function SlideCanvas({
                     liveEditable={liveEditable}
                     onGrammarTextChange={onGrammarTextChange}
                   />
+                  <PresentationQuiz slide={slide} compact={compact} present={present} />
                 </div>
                 {showRightColumn ? (
                   <ContentSlideFigure
@@ -653,7 +655,7 @@ export default function SlideCanvas({
                     }}
                     compact={compact}
                     present={present}
-                    className={compact ? 'max-h-40' : 'h-full max-h-full'}
+                    className={compact ? 'max-h-40 min-w-0' : 'h-full max-h-full min-w-0'}
                   />
                 ) : null}
               </div>
@@ -872,7 +874,9 @@ export default function SlideCanvas({
         ) : null}
         </div>
 
-        <PresentationQuiz slide={slide} compact={compact} present={present} />
+        {slide.layout === 'content' ? null : (
+          <PresentationQuiz slide={slide} compact={compact} present={present} />
+        )}
 
         <div
           className={[

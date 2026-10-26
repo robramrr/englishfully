@@ -40,15 +40,19 @@ export function PresentationQuiz({
   const fontSize = presentationFontSizePx(slide.bulletsFontSize, mode);
   const revealed = picked !== null;
   const prompt = slide.quizPrompt.trim();
+  const correctBorder = compact ? 6 : present ? 16 : 12;
 
   return (
-    <div className="relative z-[2] mt-3 shrink-0 space-y-2">
+    <div className="relative z-[2] flex w-full shrink-0 flex-col items-stretch gap-1.5">
       {prompt ? (
-        <p className="font-black text-[var(--comic-secondary)]" style={{ fontSize: `${fontSize}px` }}>
+        <p
+          className="text-left font-black leading-snug text-[var(--comic-secondary)]"
+          style={{ fontSize: `${fontSize}px` }}
+        >
           {prompt}
         </p>
       ) : null}
-      <div className={choices.length > 4 ? 'grid grid-cols-3 gap-2' : 'grid grid-cols-2 gap-2'}>
+      <div className="flex w-full flex-col items-stretch gap-2">
         {choices.map((choice) => {
           const letter = QUIZ_CHOICE_LETTERS[choice.index] || '';
           const isCorrect = choice.index === slide.quizCorrectIndex;
@@ -59,11 +63,16 @@ export function PresentationQuiz({
             <button
               key={choice.id}
               type="button"
-              className="flex items-baseline gap-2 border-4 border-[var(--comic-black)] bg-white px-3 py-2 text-left font-bold text-[var(--comic-dark)]"
+              className="flex w-full items-start gap-[0.55em] bg-white text-left font-bold text-[var(--comic-dark)]"
               style={{
-                fontSize: `${Math.max(14, fontSize - 2)}px`,
-                borderColor: showCorrect ? '#1f8a4c' : showWrong ? '#ea1225' : undefined,
-                backgroundColor: showCorrect ? '#e7f6ec' : showWrong ? '#fde8ea' : undefined,
+                fontSize: `${fontSize}px`,
+                lineHeight: 1.25,
+                boxSizing: 'border-box',
+                borderStyle: 'solid',
+                borderWidth: showCorrect ? correctBorder : 2,
+                borderColor: showCorrect ? '#1f8a4c' : showWrong ? '#ea1225' : 'var(--comic-black)',
+                backgroundColor: showCorrect ? '#e7f6ec' : showWrong ? '#fde8ea' : '#ffffff',
+                padding: compact ? '2px 6px' : present ? '6px 12px' : '4px 10px',
               }}
               aria-label={`${letter}. ${choice.text}`}
               onClick={(event) => {
@@ -71,8 +80,8 @@ export function PresentationQuiz({
                 setPicked((current) => (current === choice.index ? null : choice.index));
               }}
             >
-              <span className="font-bungee text-[var(--comic-primary)]">{letter}</span>
-              <span className="min-w-0 flex-1">{choice.text.trim()}</span>
+              <span className="shrink-0 font-bungee leading-[1.25] text-[var(--comic-primary)]">{letter}</span>
+              <span className="min-w-0 flex-1 leading-[1.25]">{choice.text.trim()}</span>
             </button>
           );
         })}
