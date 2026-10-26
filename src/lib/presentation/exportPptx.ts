@@ -465,36 +465,83 @@ export async function buildPresentationPptxBuffer(
       }
 
       if (multiImages) {
-        const imageY = Math.min(Math.max(y, 4.2), 4.8);
         const count = contentImages.length;
-        const gap = 0.25;
+        const cols = count >= 4 ? 2 : count;
+        const rows = count >= 4 ? 2 : 1;
+        const gap = 0.18;
         const totalW = 12.1;
-        const imgW = (totalW - gap * (count - 1)) / count;
+        const cellW = (totalW - gap * (cols - 1)) / cols;
+        const bandH = rows === 2 ? 3.5 : 2.35;
+        const startY = rows === 2 ? 3.45 : Math.min(Math.max(y, 4.15), 4.7);
+        const cellH = (bandH - gap * (rows - 1)) / rows;
         for (let i = 0; i < count; i += 1) {
-          const imageData = await fetchImageAsBase64(contentImages[i].url);
+          const image = contentImages[i];
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          const captionTitle = image.showTitle ? image.title.trim() : '';
+          const captionSubtitle = image.showSubtitle ? image.subtitle.trim() : '';
+          const captionH =
+            (captionTitle ? 0.28 : 0) + (captionSubtitle ? 0.24 : 0);
+          const x = 0.6 + col * (cellW + gap);
+          const cellY = startY + row * (cellH + gap);
+          const imgH = Math.max(0.7, cellH - captionH);
+          const imageData = await fetchImageAsBase64(image.url);
           if (imageData) {
             page.addImage({
               data: imageData,
-              x: 0.6 + i * (imgW + gap),
-              y: imageY,
-              w: imgW,
-              h: 2.0,
+              x,
+              y: cellY,
+              w: cellW,
+              h: imgH,
+            });
+          }
+          let captionY = cellY + imgH;
+          if (captionTitle) {
+            page.addText(captionTitle, {
+              x,
+              y: captionY,
+              w: cellW,
+              h: 0.26,
+              fontSize: rows === 2 ? 12 : 14,
+              bold: true,
+              color: NAVY,
+              fontFace: 'Arial',
+              align: 'center',
+            });
+            captionY += 0.26;
+          }
+          if (captionSubtitle) {
+            page.addText(captionSubtitle, {
+              x,
+              y: captionY,
+              w: cellW,
+              h: 0.22,
+              fontSize: rows === 2 ? 11 : 12,
+              bold: true,
+              color: NAVY,
+              fontFace: 'Arial',
+              align: 'center',
             });
           }
         }
       } else if (sideImage && (contentImages[0] || slide.imageUrl.trim() || String(slide.imageUrl2 ?? '').trim())) {
+        const image = contentImages[0];
         const imageSrc =
-          contentImages[0]?.url ||
+          image?.url ||
           slide.imageUrl.trim() ||
           slide.imageUrl2.trim();
+        const captionTitle = image?.showTitle ? image.title.trim() : '';
+        const captionSubtitle = image?.showSubtitle ? image.subtitle.trim() : '';
+        const captionH = (captionTitle ? 0.32 : 0) + (captionSubtitle ? 0.28 : 0);
         const imageData = await fetchImageAsBase64(imageSrc);
+        const imageH = Math.max(1.6, (showTable ? 3.2 : 4.8) - captionH);
         if (imageData) {
           page.addImage({
             data: imageData,
             x: 7.8,
             y: 1.35,
             w: 4.8,
-            h: showTable ? 3.2 : 4.8,
+            h: imageH,
           });
         } else {
           page.addText(imageSrc, {
@@ -505,6 +552,34 @@ export async function buildPresentationPptxBuffer(
             fontSize: 11,
             color: NAVY,
             fontFace: 'Arial',
+          });
+        }
+        let captionY = 1.35 + imageH;
+        if (captionTitle) {
+          page.addText(captionTitle, {
+            x: 7.8,
+            y: captionY,
+            w: 4.8,
+            h: 0.3,
+            fontSize: 14,
+            bold: true,
+            color: NAVY,
+            fontFace: 'Arial',
+            align: 'center',
+          });
+          captionY += 0.3;
+        }
+        if (captionSubtitle) {
+          page.addText(captionSubtitle, {
+            x: 7.8,
+            y: captionY,
+            w: 4.8,
+            h: 0.26,
+            fontSize: 12,
+            bold: true,
+            color: NAVY,
+            fontFace: 'Arial',
+            align: 'center',
           });
         }
       }

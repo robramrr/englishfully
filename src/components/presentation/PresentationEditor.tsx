@@ -21,13 +21,17 @@ import {
   createEmptyDeck,
   createEmptyDescribeWord,
   createEmptyMatchPair,
+  contentImagesToSlidePatch,
+  countFilledContentImages,
   createEmptySlide,
   createEmptyTableHeaders,
   createEmptyTableRows,
   createSlideId,
+  MAX_CONTENT_IMAGES,
   MAX_MATCH_PAIRS,
   normalizeBulletsKeepGaps,
   normalizeDeck,
+  readContentSlideImages,
   PRESENTATION_CHOICE_LETTERS,
   type PresentationDeck,
   type PresentationDescribeWord,
@@ -148,10 +152,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
       setContentImageSlots(1);
       return;
     }
-    const filled = [selected.imageUrl, selected.imageUrl2, selected.imageUrl3].filter((url) =>
-      String(url ?? '').trim()
-    ).length;
-    setContentImageSlots(Math.max(1, filled));
+    setContentImageSlots(Math.max(1, countFilledContentImages(selected)));
   }, [selected?.id, selected?.layout]);
 
   function handleStructurePaste() {
@@ -806,69 +807,30 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                       </>
                     ) : (
                       <>
-                        {(
-                          [
-                            {
-                              index: 1,
-                              urlKey: 'imageUrl' as const,
-                              altKey: 'imageAlt' as const,
-                              url: selected.imageUrl,
-                              alt: selected.imageAlt,
-                            },
-                            {
-                              index: 2,
-                              urlKey: 'imageUrl2' as const,
-                              altKey: 'imageAlt2' as const,
-                              url: selected.imageUrl2,
-                              alt: selected.imageAlt2,
-                            },
-                            {
-                              index: 3,
-                              urlKey: 'imageUrl3' as const,
-                              altKey: 'imageAlt3' as const,
-                              url: selected.imageUrl3,
-                              alt: selected.imageAlt3,
-                            },
-                          ] as const
-                        )
+                        {readContentSlideImages(selected)
                           .slice(0, contentImageSlots)
-                          .map((slot) => (
+                          .map((slot, index) => (
                             <div
-                              key={slot.index}
+                              key={`image-slot-${index}`}
                               className="space-y-2 border-4 border-[var(--comic-black)]/20 bg-[var(--comic-light)]/30 p-3"
                             >
                               <div className="flex items-center justify-between gap-2">
                                 <ComicText className="text-sm font-black">
-                                  Image {slot.index}
+                                  Image {index + 1}
                                 </ComicText>
-                                {slot.index > 1 ? (
+                                {index > 0 ? (
                                   <button
                                     type="button"
                                     className="text-sm font-bold text-[var(--comic-primary)] underline-offset-2 hover:underline"
                                     onClick={() => {
-                                      const urls = [
-                                        selected.imageUrl,
-                                        selected.imageUrl2,
-                                        selected.imageUrl3,
-                                      ];
-                                      const alts = [
-                                        selected.imageAlt,
-                                        selected.imageAlt2,
-                                        selected.imageAlt3,
-                                      ];
-                                      urls.splice(slot.index - 1, 1);
-                                      alts.splice(slot.index - 1, 1);
-                                      while (urls.length < 3) urls.push('');
-                                      while (alts.length < 3) alts.push('');
+                                      const images = readContentSlideImages(selected);
+                                      images.splice(index, 1);
                                       setDeck((prev) =>
-                                        updateSlide(prev, selected.id, {
-                                          imageUrl: urls[0] || '',
-                                          imageAlt: alts[0] || '',
-                                          imageUrl2: urls[1] || '',
-                                          imageAlt2: alts[1] || '',
-                                          imageUrl3: urls[2] || '',
-                                          imageAlt3: alts[2] || '',
-                                        })
+                                        updateSlide(
+                                          prev,
+                                          selected.id,
+                                          contentImagesToSlidePatch(images)
+                                        )
                                       );
                                       setContentImageSlots((count) => Math.max(1, count - 1));
                                     }}
@@ -882,47 +844,140 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                                 <input
                                   className="comic-input w-full"
                                   value={slot.url}
-                                  onChange={(event) =>
+                                  onChange={(event) => {
+                                    const images = readContentSlideImages(selected);
+                                    images[index] = {
+                                      ...images[index],
+                                      url: event.target.value.trim(),
+                                    };
                                     setDeck((prev) =>
-                                      updateSlide(prev, selected.id, {
-                                        [slot.urlKey]: event.target.value.trim(),
-                                      })
-                                    )
-                                  }
+                                      updateSlide(
+                                        prev,
+                                        selected.id,
+                                        contentImagesToSlidePatch(images)
+                                      )
+                                    );
+                                  }}
                                   placeholder="https://…"
                                 />
                               </label>
-                              <label className="block space-y-1">
-                                <ComicText className="text-sm font-bold">Image alt text</ComicText>
+                              <div className="block space-y-1">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <ComicText className="text-sm font-bold">Image title</ComicText>
+                                  <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
+                                    <span className="text-sm">
+                                      {slot.showTitle ? 'On' : 'Off'}
+                                    </span>
+                                    <input
+                                      type="checkbox"
+                                      className="h-5 w-9 accent-[var(--comic-primary)]"
+                                      checked={slot.showTitle}
+                                      onChange={(event) => {
+                                        const images = readContentSlideImages(selected);
+                                        images[index] = {
+                                          ...images[index],
+                                          showTitle: event.target.checked,
+                                        };
+                                        setDeck((prev) =>
+                                          updateSlide(
+                                            prev,
+                                            selected.id,
+                                            contentImagesToSlidePatch(images)
+                                          )
+                                        );
+                                      }}
+                                    />
+                                  </label>
+                                </div>
                                 <input
                                   className="comic-input w-full"
-                                  value={slot.alt}
-                                  onChange={(event) =>
+                                  value={slot.title}
+                                  onChange={(event) => {
+                                    const images = readContentSlideImages(selected);
+                                    images[index] = {
+                                      ...images[index],
+                                      title: event.target.value,
+                                    };
                                     setDeck((prev) =>
-                                      updateSlide(prev, selected.id, {
-                                        [slot.altKey]: event.target.value,
-                                      })
-                                    )
-                                  }
-                                  placeholder="Describe the image"
+                                      updateSlide(
+                                        prev,
+                                        selected.id,
+                                        contentImagesToSlidePatch(images)
+                                      )
+                                    );
+                                  }}
+                                  placeholder="Title under the image"
                                 />
-                              </label>
+                              </div>
+                              <div className="block space-y-1">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <ComicText className="text-sm font-bold">
+                                    Image subtitle
+                                  </ComicText>
+                                  <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
+                                    <span className="text-sm">
+                                      {slot.showSubtitle ? 'On' : 'Off'}
+                                    </span>
+                                    <input
+                                      type="checkbox"
+                                      className="h-5 w-9 accent-[var(--comic-primary)]"
+                                      checked={slot.showSubtitle}
+                                      onChange={(event) => {
+                                        const images = readContentSlideImages(selected);
+                                        images[index] = {
+                                          ...images[index],
+                                          showSubtitle: event.target.checked,
+                                        };
+                                        setDeck((prev) =>
+                                          updateSlide(
+                                            prev,
+                                            selected.id,
+                                            contentImagesToSlidePatch(images)
+                                          )
+                                        );
+                                      }}
+                                    />
+                                  </label>
+                                </div>
+                                <input
+                                  className="comic-input w-full"
+                                  value={slot.subtitle}
+                                  onChange={(event) => {
+                                    const images = readContentSlideImages(selected);
+                                    images[index] = {
+                                      ...images[index],
+                                      subtitle: event.target.value,
+                                    };
+                                    setDeck((prev) =>
+                                      updateSlide(
+                                        prev,
+                                        selected.id,
+                                        contentImagesToSlidePatch(images)
+                                      )
+                                    );
+                                  }}
+                                  placeholder="Optional subtitle"
+                                />
+                              </div>
                             </div>
                           ))}
-                        {contentImageSlots < 3 ? (
+                        {contentImageSlots < MAX_CONTENT_IMAGES ? (
                           <ComicButton
                             type="button"
                             variant="secondary"
                             size="sm"
                             onClick={() =>
-                              setContentImageSlots((count) => Math.min(3, count + 1))
+                              setContentImageSlots((count) =>
+                                Math.min(MAX_CONTENT_IMAGES, count + 1)
+                              )
                             }
                           >
                             + Add image
                           </ComicButton>
                         ) : null}
                         <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                          One image sits beside the text. Two or three sit in a row below.
+                          One image sits beside the text. Two or three sit in a row below. Four sit
+                          in a 2×2 grid. Turn a title or subtitle off to hide that line.
                         </ComicText>
                       </>
                     )}

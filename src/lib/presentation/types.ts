@@ -267,13 +267,32 @@ export interface PresentationSlide {
   showBody: boolean;
   bullets: string[];
   imageUrl: string;
+  /** Visible image title. Also used as the image alt text. */
   imageAlt: string;
+  /** Text + image: show this image's title under the picture. */
+  showImageTitle: boolean;
+  /** Text + image: optional line under the image title. */
+  imageSubtitle: string;
+  /** Text + image: show this image's subtitle under the picture. */
+  showImageSubtitle: boolean;
   /** Text + image: optional second image (2+ images → row below text). */
   imageUrl2: string;
   imageAlt2: string;
+  showImageTitle2: boolean;
+  imageSubtitle2: string;
+  showImageSubtitle2: boolean;
   /** Text + image: optional third image. */
   imageUrl3: string;
   imageAlt3: string;
+  showImageTitle3: boolean;
+  imageSubtitle3: string;
+  showImageSubtitle3: boolean;
+  /** Text + image: optional fourth image (4 images → 2×2 grid). */
+  imageUrl4: string;
+  imageAlt4: string;
+  showImageTitle4: boolean;
+  imageSubtitle4: string;
+  showImageSubtitle4: boolean;
   /** Font size for definition / explanation. */
   bodyFontSize: PresentationFontSize;
   /** Theme color for definition / explanation. */
@@ -379,35 +398,139 @@ export function createDeckId(): string {
   return `deck_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export function getContentSlideImages(
-  slide: Pick<
-    PresentationSlide,
-    'imageUrl' | 'imageAlt' | 'imageUrl2' | 'imageAlt2' | 'imageUrl3' | 'imageAlt3'
-  >,
-  titleFallback = ''
-): { url: string; alt: string }[] {
-  return [
-    { url: slide.imageUrl, alt: slide.imageAlt },
-    { url: slide.imageUrl2, alt: slide.imageAlt2 },
-    { url: slide.imageUrl3, alt: slide.imageAlt3 },
-  ]
-    .map((item) => {
-      const url = String(item.url ?? '').trim();
-      if (!url) return null;
-      return {
-        url,
-        alt: String(item.alt ?? '').trim() || titleFallback,
-      };
-    })
-    .filter((item): item is { url: string; alt: string } => Boolean(item));
+export const MAX_CONTENT_IMAGES = 4;
+
+export interface ContentSlideImage {
+  url: string;
+  /** Visible title. Also used as the image alt text. */
+  title: string;
+  showTitle: boolean;
+  subtitle: string;
+  showSubtitle: boolean;
 }
 
-export function countFilledContentImages(
-  slide: Pick<PresentationSlide, 'imageUrl' | 'imageUrl2' | 'imageUrl3'>
-): number {
-  return [slide.imageUrl, slide.imageUrl2, slide.imageUrl3].filter((url) =>
-    String(url ?? '').trim()
-  ).length;
+export interface ContentSlideImageView extends ContentSlideImage {
+  alt: string;
+}
+
+const CONTENT_IMAGE_KEYS = [
+  {
+    url: 'imageUrl',
+    title: 'imageAlt',
+    showTitle: 'showImageTitle',
+    subtitle: 'imageSubtitle',
+    showSubtitle: 'showImageSubtitle',
+  },
+  {
+    url: 'imageUrl2',
+    title: 'imageAlt2',
+    showTitle: 'showImageTitle2',
+    subtitle: 'imageSubtitle2',
+    showSubtitle: 'showImageSubtitle2',
+  },
+  {
+    url: 'imageUrl3',
+    title: 'imageAlt3',
+    showTitle: 'showImageTitle3',
+    subtitle: 'imageSubtitle3',
+    showSubtitle: 'showImageSubtitle3',
+  },
+  {
+    url: 'imageUrl4',
+    title: 'imageAlt4',
+    showTitle: 'showImageTitle4',
+    subtitle: 'imageSubtitle4',
+    showSubtitle: 'showImageSubtitle4',
+  },
+] as const;
+
+const EMPTY_CONTENT_IMAGE: ContentSlideImage = {
+  url: '',
+  title: '',
+  showTitle: true,
+  subtitle: '',
+  showSubtitle: true,
+};
+
+export function readContentSlideImages(
+  slide: Partial<PresentationSlide>
+): ContentSlideImage[] {
+  return CONTENT_IMAGE_KEYS.map((keys) => ({
+    url: String(slide[keys.url] ?? '').trim(),
+    title: String(slide[keys.title] ?? ''),
+    showTitle: slide[keys.showTitle] !== false,
+    subtitle: String(slide[keys.subtitle] ?? ''),
+    showSubtitle: slide[keys.showSubtitle] !== false,
+  }));
+}
+
+export function contentImagesToSlidePatch(
+  images: ContentSlideImage[]
+): Pick<
+  PresentationSlide,
+  | 'imageUrl'
+  | 'imageAlt'
+  | 'showImageTitle'
+  | 'imageSubtitle'
+  | 'showImageSubtitle'
+  | 'imageUrl2'
+  | 'imageAlt2'
+  | 'showImageTitle2'
+  | 'imageSubtitle2'
+  | 'showImageSubtitle2'
+  | 'imageUrl3'
+  | 'imageAlt3'
+  | 'showImageTitle3'
+  | 'imageSubtitle3'
+  | 'showImageSubtitle3'
+  | 'imageUrl4'
+  | 'imageAlt4'
+  | 'showImageTitle4'
+  | 'imageSubtitle4'
+  | 'showImageSubtitle4'
+> {
+  const padded = Array.from({ length: MAX_CONTENT_IMAGES }, (_, index) => ({
+    ...EMPTY_CONTENT_IMAGE,
+    ...(images[index] ?? {}),
+  }));
+  return {
+    imageUrl: padded[0].url.trim(),
+    imageAlt: padded[0].title,
+    showImageTitle: padded[0].showTitle,
+    imageSubtitle: padded[0].subtitle,
+    showImageSubtitle: padded[0].showSubtitle,
+    imageUrl2: padded[1].url.trim(),
+    imageAlt2: padded[1].title,
+    showImageTitle2: padded[1].showTitle,
+    imageSubtitle2: padded[1].subtitle,
+    showImageSubtitle2: padded[1].showSubtitle,
+    imageUrl3: padded[2].url.trim(),
+    imageAlt3: padded[2].title,
+    showImageTitle3: padded[2].showTitle,
+    imageSubtitle3: padded[2].subtitle,
+    showImageSubtitle3: padded[2].showSubtitle,
+    imageUrl4: padded[3].url.trim(),
+    imageAlt4: padded[3].title,
+    showImageTitle4: padded[3].showTitle,
+    imageSubtitle4: padded[3].subtitle,
+    showImageSubtitle4: padded[3].showSubtitle,
+  };
+}
+
+export function getContentSlideImages(
+  slide: Partial<PresentationSlide>,
+  titleFallback = ''
+): ContentSlideImageView[] {
+  return readContentSlideImages(slide)
+    .filter((item) => item.url)
+    .map((item) => ({
+      ...item,
+      alt: item.title.trim() || titleFallback,
+    }));
+}
+
+export function countFilledContentImages(slide: Partial<PresentationSlide>): number {
+  return readContentSlideImages(slide).filter((item) => item.url).length;
 }
 
 /** Keep blank lines for extra vertical spacing (including before the first bullet). */
@@ -474,10 +597,24 @@ export function createEmptySlide(
     bullets: [],
     imageUrl: '',
     imageAlt: '',
+    showImageTitle: true,
+    imageSubtitle: '',
+    showImageSubtitle: true,
     imageUrl2: '',
     imageAlt2: '',
+    showImageTitle2: true,
+    imageSubtitle2: '',
+    showImageSubtitle2: true,
     imageUrl3: '',
     imageAlt3: '',
+    showImageTitle3: true,
+    imageSubtitle3: '',
+    showImageSubtitle3: true,
+    imageUrl4: '',
+    imageAlt4: '',
+    showImageTitle4: true,
+    imageSubtitle4: '',
+    showImageSubtitle4: true,
     bodyFontSize: 'md',
     bodyColor: 'navy',
     bulletsFontSize: 'md',
@@ -536,10 +673,24 @@ export function normalizeSlide(
       : [],
     imageUrl: String(slide.imageUrl ?? ''),
     imageAlt: String(slide.imageAlt ?? ''),
+    showImageTitle: slide.showImageTitle !== false,
+    imageSubtitle: String(slide.imageSubtitle ?? ''),
+    showImageSubtitle: slide.showImageSubtitle !== false,
     imageUrl2: String(slide.imageUrl2 ?? ''),
     imageAlt2: String(slide.imageAlt2 ?? ''),
+    showImageTitle2: slide.showImageTitle2 !== false,
+    imageSubtitle2: String(slide.imageSubtitle2 ?? ''),
+    showImageSubtitle2: slide.showImageSubtitle2 !== false,
     imageUrl3: String(slide.imageUrl3 ?? ''),
     imageAlt3: String(slide.imageAlt3 ?? ''),
+    showImageTitle3: slide.showImageTitle3 !== false,
+    imageSubtitle3: String(slide.imageSubtitle3 ?? ''),
+    showImageSubtitle3: slide.showImageSubtitle3 !== false,
+    imageUrl4: String(slide.imageUrl4 ?? ''),
+    imageAlt4: String(slide.imageAlt4 ?? ''),
+    showImageTitle4: slide.showImageTitle4 !== false,
+    imageSubtitle4: String(slide.imageSubtitle4 ?? ''),
+    showImageSubtitle4: slide.showImageSubtitle4 !== false,
     bodyFontSize: normalizeFontSize(slide.bodyFontSize),
     bodyColor: normalizeFontColor(slide.bodyColor),
     bulletsFontSize: normalizeFontSize(slide.bulletsFontSize),

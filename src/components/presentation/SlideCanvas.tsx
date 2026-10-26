@@ -54,6 +54,47 @@ function textStyle(
   };
 }
 
+function ContentSlideFigure({
+  image,
+  className = '',
+  compact,
+  present,
+}: {
+  image: { url: string; alt: string; title: string; showTitle: boolean; subtitle: string; showSubtitle: boolean };
+  className?: string;
+  compact: boolean;
+  present: boolean;
+}) {
+  const title = image.showTitle ? image.title.trim() : '';
+  const subtitle = image.showSubtitle ? image.subtitle.trim() : '';
+  const titleClass = compact
+    ? 'text-xs'
+    : present
+      ? 'text-lg md:text-2xl'
+      : 'text-sm md:text-base';
+  const subtitleClass = compact
+    ? 'text-[10px]'
+    : present
+      ? 'text-base md:text-xl'
+      : 'text-xs md:text-sm';
+
+  return (
+    <figure className={`flex h-full min-h-0 flex-col gap-1 ${className}`}>
+      <SlideImage url={image.url} alt={image.alt} className="min-h-0 w-full flex-1" />
+      {title || subtitle ? (
+        <figcaption className="shrink-0 text-center leading-tight">
+          {title ? (
+            <div className={`font-black text-[var(--comic-secondary)] ${titleClass}`}>{title}</div>
+          ) : null}
+          {subtitle ? (
+            <div className={`font-bold text-[var(--comic-dark)] ${subtitleClass}`}>{subtitle}</div>
+          ) : null}
+        </figcaption>
+      ) : null}
+    </figure>
+  );
+}
+
 function SlideImage({ url, alt, className = '' }: { url: string; alt: string; className?: string }) {
   if (!url.trim()) {
     return (
@@ -153,28 +194,20 @@ function ContentBody({
   const mode = sizeMode(compact, present);
   const bodyPx = presentationFontSizePx(slide.bodyFontSize, mode);
   const showBody = slide.showBody !== false;
+  const bodyText = body.trim();
   const hasBullets = slide.bullets.filter((item) => item.trim()).length > 0;
   const showTable = Boolean(slide.tableEnabled);
 
-  if (!showBody && !hasBullets && !grammarOn && !showTable) {
+  if ((!showBody || !bodyText) && !hasBullets && !grammarOn && !showTable) {
     return null;
   }
 
   return (
     <div className="space-y-3">
-      {showBody ? (
-        body ? (
-          <p className="font-bold whitespace-pre-wrap" style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}>
-            {body}
-          </p>
-        ) : (
-          <p
-            className="font-bold whitespace-pre-wrap text-[var(--comic-dark)]/50"
-            style={{ fontSize: `${bodyPx}px`, lineHeight: 1.35 }}
-          >
-            Add a definition or explanation…
-          </p>
-        )
+      {showBody && bodyText ? (
+        <p className="font-bold whitespace-pre-wrap" style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}>
+          {body}
+        </p>
       ) : null}
 
       {showTable ? (
@@ -377,20 +410,28 @@ export default function SlideCanvas({
                 <div
                   className={[
                     'grid min-h-0 gap-3',
-                    contentImages.length >= 3 ? 'grid-cols-3' : 'grid-cols-2',
+                    contentImages.length >= 4
+                      ? 'grid-cols-2 auto-rows-fr'
+                      : contentImages.length === 3
+                        ? 'grid-cols-3'
+                        : 'grid-cols-2',
                     compact
-                      ? 'max-h-32'
+                      ? contentImages.length >= 4
+                        ? 'max-h-48'
+                        : 'max-h-32'
                       : present
                         ? 'flex-1'
-                        : 'max-h-56 md:max-h-72',
+                        : contentImages.length >= 4
+                          ? 'max-h-[28rem] flex-1'
+                          : 'max-h-56 md:max-h-72',
                   ].join(' ')}
                 >
                   {contentImages.map((image) => (
-                    <SlideImage
+                    <ContentSlideFigure
                       key={image.url}
-                      url={image.url}
-                      alt={image.alt}
-                      className="h-full max-h-full w-full min-h-0"
+                      image={image}
+                      compact={compact}
+                      present={present}
                     />
                   ))}
                 </div>
@@ -413,10 +454,19 @@ export default function SlideCanvas({
                   />
                 </div>
                 {showRightColumn ? (
-                  <SlideImage
-                    url={contentImages[0]?.url || slide.imageUrl}
-                    alt={contentImages[0]?.alt || slide.imageAlt || title}
-                    className={compact ? 'h-full max-h-40 w-full' : 'h-full max-h-full w-full'}
+                  <ContentSlideFigure
+                    image={{
+                      url: contentImages[0]?.url || slide.imageUrl,
+                      alt: contentImages[0]?.alt || slide.imageAlt || title,
+                      title: contentImages[0]?.title || slide.imageAlt,
+                      showTitle: contentImages[0]?.showTitle ?? slide.showImageTitle !== false,
+                      subtitle: contentImages[0]?.subtitle || slide.imageSubtitle,
+                      showSubtitle:
+                        contentImages[0]?.showSubtitle ?? slide.showImageSubtitle !== false,
+                    }}
+                    compact={compact}
+                    present={present}
+                    className={compact ? 'max-h-40' : 'h-full max-h-full'}
                   />
                 ) : null}
               </div>

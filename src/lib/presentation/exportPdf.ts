@@ -213,23 +213,61 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                        }
                        if (slide.layout === 'content') {
                          const images = getContentSlideImages(slide, title);
+                         const figure = (
+                           image: (typeof images)[number],
+                           imgStyle: string,
+                           figureStyle = 'margin:0;'
+                         ) => {
+                           const captionTitle = image.showTitle ? image.title.trim() : '';
+                           const captionSubtitle = image.showSubtitle ? image.subtitle.trim() : '';
+                           return `<figure style="${figureStyle}">
+                              <img src="${escapeAttr(image.url)}" alt="${escapeAttr(
+                                image.alt
+                              )}" style="${imgStyle}" />
+                              ${
+                                captionTitle
+                                  ? `<div style="font-weight:800;color:#001a48;text-align:center;margin-top:4px;">${escapeHtml(
+                                      captionTitle
+                                    )}</div>`
+                                  : ''
+                              }
+                              ${
+                                captionSubtitle
+                                  ? `<div style="font-weight:700;text-align:center;">${escapeHtml(
+                                      captionSubtitle
+                                    )}</div>`
+                                  : ''
+                              }
+                            </figure>`;
+                         };
+                         if (images.length >= 4) {
+                           return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+                              ${images
+                                .map((image) =>
+                                  figure(
+                                    image,
+                                    'width:100%;max-height:180px;object-fit:cover;'
+                                  )
+                                )
+                                .join('')}
+                            </div>`;
+                         }
                          if (images.length >= 2) {
                            const width = images.length >= 3 ? '32%' : '48%';
                            return `<div style="display:flex;gap:12px;margin-top:12px;">
                               ${images
-                                .map(
-                                  (image) =>
-                                    `<img src="${escapeAttr(image.url)}" alt="${escapeAttr(
-                                      image.alt
-                                    )}" style="width:${width};max-height:220px;object-fit:cover;" />`
+                                .map((image) =>
+                                  figure(
+                                    image,
+                                    'width:100%;max-height:220px;object-fit:cover;',
+                                    `margin:0;width:${width};`
+                                  )
                                 )
                                 .join('')}
                             </div>`;
                          }
                          if (images.length === 1) {
-                           return `<img src="${escapeAttr(images[0].url)}" alt="${escapeAttr(
-                             images[0].alt
-                           )}" />`;
+                           return figure(images[0], 'max-width:100%;max-height:320px;object-fit:cover;');
                          }
                          return '';
                        }
