@@ -720,14 +720,14 @@ export default function SlideCanvas({
 
         {slide.layout === 'pie_timer' ? (
           <div className="flex min-h-0 flex-1 flex-col gap-3">
-            {showTitle ? (
+            {showTitle && slide.title.trim() ? (
               <h2
                 className={[
-                  'font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
+                  'shrink-0 font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
                   compact ? 'text-base' : present ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl',
                 ].join(' ')}
               >
-                <SlideRichText text={title || 'Pie timer'} />
+                <SlideRichText text={slide.title} />
               </h2>
             ) : null}
             <div className="min-h-0 flex-1">

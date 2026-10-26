@@ -285,11 +285,6 @@ export function PresentationPieTimer({
   const safeElapsed = Math.min(elapsed, totalMs);
   const position = positionAt(safeElapsed, slices);
   const active = slices[position.index];
-  const activeLabel = done
-    ? 'All slices complete'
-    : active
-      ? sliceLabel(active, position.index)
-      : 'Pie timer';
   const remainingMs = done ? 0 : running || safeElapsed > 0 ? position.remainingMs : (active?.seconds || 0) * 1000;
   const clock = clockFromMs(done ? 0 : remainingMs);
   const urgent = done || (running && position.remainingMs <= 10_000);
@@ -339,7 +334,6 @@ export function PresentationPieTimer({
     setDone(false);
   }
 
-  const labelSize = compact ? 14 : present ? 44 : 28;
   const clockSize = compact ? 28 : present ? 104 : 68;
   const centerSize = compact ? 16 : present ? 42 : 28;
 
@@ -434,12 +428,6 @@ export function PresentationPieTimer({
       </div>
 
       <div className="flex min-h-0 min-w-0 flex-col justify-center gap-3 overflow-auto">
-        <p
-          className="font-black leading-tight text-[var(--comic-secondary)]"
-          style={{ fontSize: labelSize }}
-        >
-          {activeLabel}
-        </p>
         <div
           role="timer"
           aria-live="polite"
