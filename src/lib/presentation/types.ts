@@ -6,7 +6,8 @@ export type PresentationSlideLayout =
   | 'audio_image'
   | 'describe_image'
   | 'match_text_image'
-  | 'fill_blank';
+  | 'fill_blank'
+  | 'pie_timer';
 
 export type PresentationChoiceLetter = 'A' | 'B' | 'C' | 'D';
 
@@ -81,6 +82,62 @@ export function normalizeQuizCorrectIndex(value: unknown, count: number): number
   const index = Number(value);
   if (!Number.isInteger(index) || index < 0 || index >= count) return 0;
   return index;
+}
+
+/** Pie timer: one labeled wedge with its own duration. */
+export interface PresentationPieSlice {
+  id: string;
+  /** What this slice is for, e.g. "Partner A talks to Partner B". */
+  label: string;
+  /** How long this slice lasts, in seconds. */
+  seconds: number;
+}
+
+export const MAX_PIE_SLICES = 8;
+export const MIN_PIE_SLICE_SECONDS = 1;
+export const MAX_PIE_SLICE_SECONDS = 3600;
+
+export function createPieSliceId(): string {
+  return `pie_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function createEmptyPieSlice(
+  patch: Partial<PresentationPieSlice> = {}
+): PresentationPieSlice {
+  const seconds = Number(patch.seconds);
+  const safe = Number.isFinite(seconds) ? Math.round(seconds) : 60;
+  return {
+    id: patch.id || createPieSliceId(),
+    label: String(patch.label ?? ''),
+    seconds: Math.max(MIN_PIE_SLICE_SECONDS, Math.min(MAX_PIE_SLICE_SECONDS, safe)),
+  };
+}
+
+export function defaultPieSlices(): PresentationPieSlice[] {
+  return [
+    createEmptyPieSlice({ label: 'Partner A talks to Partner B', seconds: 60 }),
+    createEmptyPieSlice({ label: 'Partner B talks to Partner A', seconds: 60 }),
+  ];
+}
+
+export function normalizePieSlices(value: unknown): PresentationPieSlice[] {
+  if (!Array.isArray(value) || value.length === 0) return defaultPieSlices();
+  return value.slice(0, MAX_PIE_SLICES).map((item) => {
+    if (!item || typeof item !== 'object') return createEmptyPieSlice();
+    const raw = item as Partial<PresentationPieSlice>;
+    return createEmptyPieSlice({
+      id: raw.id,
+      label: raw.label,
+      seconds: raw.seconds,
+    });
+  });
+}
+
+export function formatPieDuration(seconds: number): string {
+  const safe = Math.max(0, Math.round(seconds));
+  const minutes = Math.floor(safe / 60);
+  const rest = safe % 60;
+  return `${minutes}:${rest.toString().padStart(2, '0')}`;
 }
 
 export function createBlankItemId(): string {
@@ -550,6 +607,13 @@ export interface PresentationSlide {
   /** Theme color for the multiple-choice prompt and choices. */
   quizColor: PresentationFontColor;
   /**
+   * When true, the question shows first. Clicking it reveals A, B, C…
+   * When false, choices are visible immediately.
+   */
+  quizRevealOnClick: boolean;
+  /** Pie timer: ordered slices. Each slice has a label and a duration. */
+  pieSlices: PresentationPieSlice[];
+  /**
    * Optional countdown on any slide (think / speak / activity time).
    * Started from present mode.
    */
@@ -854,6 +918,8 @@ export function createEmptySlide(
     quizCorrectIndex: 0,
     quizFontSize: 'sm',
     quizColor: 'navy',
+    quizRevealOnClick: false,
+    pieSlices: defaultPieSlices(),
     timerEnabled: false,
     timerSeconds: 60,
   };
@@ -951,6 +1017,8 @@ export function normalizeSlide(
         ? slide.quizFontSize
         : 'sm',
     quizColor: normalizeFontColor(slide.quizColor),
+    quizRevealOnClick: Boolean(slide.quizRevealOnClick),
+    pieSlices: normalizePieSlices(slide.pieSlices),
     timerEnabled: Boolean(
       slide.timerEnabled ?? slide.describeTimerEnabled ?? false
     ),

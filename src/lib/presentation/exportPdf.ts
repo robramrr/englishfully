@@ -3,7 +3,8 @@ import type {
   PresentationFontColor,
   PresentationFontSize,
 } from './types';
-import { QUIZ_CHOICE_LETTERS, blankSentencePlain, getContentSlideImages } from './types';
+import { linkifyHtml } from './linkify';
+import { QUIZ_CHOICE_LETTERS, blankSentencePlain, formatPieDuration, getContentSlideImages } from './types';
 
 function safeFilename(value: string): string {
   return (value || 'presentation').replace(/[^\w.-]+/g, '_').slice(0, 80);
@@ -43,7 +44,7 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
               if (!text) return '';
               const letter = QUIZ_CHOICE_LETTERS[choiceIndex] || '';
               const mark = choiceIndex === slide.quizCorrectIndex ? ' ✓' : '';
-              return `<div style="margin:4px 0;">${escapeHtml(letter + '. ' + text + mark)}</div>`;
+              return `<div style="margin:4px 0;">${escapeHtml(letter + '. ')}${linkifyHtml(text)}${escapeHtml(mark)}</div>`;
             })
             .join('')
         : '';
@@ -57,7 +58,7 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
         slide.quizEnabled && (slide.quizPrompt.trim() || quizLines)
           ? `<div style="${quizStyle}">${
               slide.quizPrompt.trim()
-                ? `<div style="margin-bottom:8px;">${escapeHtml(slide.quizPrompt.trim())}</div>`
+                ? `<div style="margin-bottom:8px;">${linkifyHtml(slide.quizPrompt.trim())}</div>`
                 : ''
             }${quizLines}</div>`
           : '';
@@ -68,18 +69,18 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
             ${
               slide.layout === 'title'
                 ? `<p class="brand">${escapeHtml(brand)}</p>
-                   ${showTitle ? `<h1>${escapeHtml(title || 'Presentation')}</h1>` : ''}
+                   ${showTitle ? `<h1>${linkifyHtml(title || 'Presentation')}</h1>` : ''}
                    ${showBody && body ? `<p class="subtitle" style="color:${pdfColor(slide.bodyColor)};font-size:${pdfFontSize(
                        slide.bodyFontSize,
                        22
-                     )}px">${escapeHtml(body)}</p>` : ''}`
-                : `${showTitle ? `<h2>${escapeHtml(title)}</h2>` : ''}
+                     )}px">${linkifyHtml(body)}</p>` : ''}`
+                : `${showTitle ? `<h2>${linkifyHtml(title)}</h2>` : ''}
                    ${
-                     showBody && body
+                     showBody && body && slide.layout !== 'pie_timer'
                        ? `<p class="body" style="color:${pdfColor(slide.bodyColor)};font-size:${pdfFontSize(
                            slide.bodyFontSize,
                            18
-                         )}px">${escapeHtml(body)}</p>`
+                         )}px">${linkifyHtml(body)}</p>`
                        : ''
                    }
                    ${
@@ -120,6 +121,18 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                        : ''
                    }
                    ${
+                     slide.layout === 'pie_timer'
+                       ? `<ol style="margin:12px 0 0;padding-left:1.2em;">${(slide.pieSlices || [])
+                           .map(
+                             (slice, sliceIndex) =>
+                               `<li style="margin:8px 0;font-size:20px;font-weight:700;">${escapeHtml(
+                                 slice.label.trim() || `Slice ${sliceIndex + 1}`
+                               )} — ${escapeHtml(formatPieDuration(slice.seconds))}</li>`
+                           )
+                           .join('')}</ol>`
+                       : ''
+                   }
+                   ${
                      slide.layout === 'content' && slide.tableEnabled
                        ? `<div style="display:flex;justify-content:flex-start;margin:12px 0;">
                             <table style="width:auto;min-width:50%;max-width:100%;border-collapse:collapse;color:${pdfColor(
@@ -157,7 +170,7 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                          )}px">${bullets
                            .map((item) =>
                              item.trim()
-                               ? `<li>${escapeHtml(item)}</li>`
+                               ? `<li>${linkifyHtml(item)}</li>`
                                : `<li style="list-style:none;height:0.7em"></li>`
                            )
                            .join('')}</ul>`
@@ -269,7 +282,8 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                        if (
                          slide.layout === 'audio_image' ||
                          slide.layout === 'describe_image' ||
-                         slide.layout === 'match_text_image'
+                         slide.layout === 'match_text_image' ||
+                         slide.layout === 'pie_timer'
                        ) {
                          return '';
                        }
@@ -329,7 +343,10 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                             </div>`;
                          }
                          if (images.length === 1) {
-                           return figure(images[0], 'max-width:100%;max-height:320px;object-fit:cover;');
+                           return figure(
+                             images[0],
+                             'max-width:100%;max-height:320px;object-fit:cover;object-position:center top;'
+                           );
                          }
                          return '';
                        }
@@ -398,6 +415,7 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
     h2 { font-size: 28px; margin: 0; border-bottom: 3px solid #001a48; padding-bottom: 8px; }
     .subtitle { font-size: 22px; font-weight: 700; }
     .body { font-size: 18px; font-weight: 600; white-space: pre-wrap; }
+    a { color: #ea1225; font-weight: 800; }
     ul { margin: 0; padding-left: 24px; font-size: 18px; font-weight: 600; }
     .grammar {
       border: 3px solid #001a48;

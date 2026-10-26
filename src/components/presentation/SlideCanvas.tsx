@@ -14,7 +14,9 @@ import PresentationAudioMatch from './PresentationAudioMatch';
 import PresentationDescribeImage from './PresentationDescribeImage';
 import PresentationMatchTextImage from './PresentationMatchTextImage';
 import { PresentationFillBlank } from './PresentationFillBlank';
+import { PresentationPieTimer } from './PresentationPieTimer';
 import { PresentationQuiz } from './PresentationQuiz';
+import { SlideRichText } from './SlideRichText';
 import PresentationSlideTimer, { type SlideTimerState } from './PresentationSlideTimer';
 
 interface SlideCanvasProps {
@@ -185,9 +187,15 @@ function ContentImageLightbox({
         />
         {title || subtitle ? (
           <div className="max-w-4xl text-center text-white">
-            {title ? <div className="font-bungee text-3xl leading-tight md:text-5xl">{title}</div> : null}
+            {title ? (
+            <div className="font-bungee text-3xl leading-tight md:text-5xl">
+              <SlideRichText text={title} />
+            </div>
+          ) : null}
             {subtitle ? (
-              <div className="mt-2 text-xl font-bold leading-snug md:text-3xl">{subtitle}</div>
+              <div className="mt-2 text-xl font-bold leading-snug md:text-3xl">
+                <SlideRichText text={subtitle} />
+              </div>
             ) : null}
           </div>
         ) : null}
@@ -209,12 +217,15 @@ function ContentSlideFigure({
   className = '',
   compact,
   present,
+  alignTop = false,
   onOpen,
 }: {
   image: ContentFigureImage;
   className?: string;
   compact: boolean;
   present: boolean;
+  /** Single text+image photo: keep the top of the picture visible. */
+  alignTop?: boolean;
   onOpen?: () => void;
 }) {
   const title = image.showTitle ? image.title.trim() : '';
@@ -235,15 +246,26 @@ function ContentSlideFigure({
     title || subtitle ? (
       <div className="shrink-0 text-center leading-tight">
         {title ? (
-          <div className={`font-black text-[var(--comic-secondary)] ${titleClass}`}>{title}</div>
+          <div className={`font-black text-[var(--comic-secondary)] ${titleClass}`}>
+            <SlideRichText text={title} />
+          </div>
         ) : null}
         {subtitle ? (
-          <div className={`font-bold text-[var(--comic-dark)] ${subtitleClass}`}>{subtitle}</div>
+          <div className={`font-bold text-[var(--comic-dark)] ${subtitleClass}`}>
+            <SlideRichText text={subtitle} />
+          </div>
         ) : null}
       </div>
     ) : null;
 
-  const picture = <SlideImage url={image.url} alt={image.alt} className="min-h-0 w-full flex-1" />;
+  const picture = (
+    <SlideImage
+      url={image.url}
+      alt={image.alt}
+      alignTop={alignTop}
+      className="h-full min-h-0 w-full flex-1"
+    />
+  );
 
   if (!canFocus) {
     return (
@@ -270,7 +292,17 @@ function ContentSlideFigure({
   );
 }
 
-function SlideImage({ url, alt, className = '' }: { url: string; alt: string; className?: string }) {
+function SlideImage({
+  url,
+  alt,
+  className = '',
+  alignTop = false,
+}: {
+  url: string;
+  alt: string;
+  className?: string;
+  alignTop?: boolean;
+}) {
   if (!url.trim()) {
     return (
       <div
@@ -286,7 +318,10 @@ function SlideImage({ url, alt, className = '' }: { url: string; alt: string; cl
     <img
       src={url}
       alt={alt || 'Slide image'}
-      className={`object-cover border-4 border-[var(--comic-black)] comic-shadow-md bg-white ${className}`}
+      className={`border-4 border-[var(--comic-black)] comic-shadow-md bg-white object-cover ${
+        alignTop ? 'object-top' : 'object-center'
+      } ${className}`}
+      style={alignTop ? { objectPosition: 'center top' } : undefined}
     />
   );
 }
@@ -325,7 +360,7 @@ function SlideTable({
                 key={`h-${index}`}
                 className="border-2 border-[var(--comic-black)] px-2 py-1.5 text-left font-black"
               >
-                {cell.trim() || (compact ? '…' : 'Heading')}
+                {cell.trim() ? <SlideRichText text={cell} /> : compact ? '…' : 'Heading'}
               </th>
             ))}
           </tr>
@@ -338,7 +373,7 @@ function SlideTable({
                   key={`c-${rowIndex}-${colIndex}`}
                   className="border-2 border-[var(--comic-black)] px-2 py-1.5 font-bold align-top"
                 >
-                  {row[colIndex]?.trim() || ''}
+                  {row[colIndex]?.trim() ? <SlideRichText text={row[colIndex]} /> : ''}
                 </td>
               ))}
             </tr>
@@ -381,7 +416,7 @@ function ContentBody({
     <div className="space-y-3">
       {showBody && bodyText ? (
         <p className="font-bold whitespace-pre-wrap" style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}>
-          {body}
+          <SlideRichText text={body} />
         </p>
       ) : null}
 
@@ -401,7 +436,9 @@ function ContentBody({
                 <span className="shrink-0 leading-[1.35]" aria-hidden>
                   ●
                 </span>
-                <span className="min-w-0 flex-1 leading-[1.35]">{item}</span>
+                <span className="min-w-0 flex-1 leading-[1.35]">
+                  <SlideRichText text={item} />
+                </span>
               </li>
             ) : (
               <li
@@ -502,7 +539,7 @@ export default function SlideCanvas({
       <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[var(--comic-primary)]/15 border-4 border-[var(--comic-black)]/20" />
       <div className="pointer-events-none absolute -bottom-10 -left-6 h-28 w-28 rounded-full bg-[var(--comic-secondary)]/10 border-4 border-[var(--comic-black)]/15" />
 
-      {timerOn ? (
+      {timerOn && slide.layout !== 'pie_timer' ? (
         <div
           className={[
             'absolute z-20',
@@ -549,7 +586,7 @@ export default function SlideCanvas({
                   compact ? 'text-xl' : present ? 'text-4xl md:text-6xl' : 'text-3xl md:text-5xl',
                 ].join(' ')}
               >
-                {title || 'Presentation title'}
+                <SlideRichText text={title || 'Presentation title'} />
               </h2>
             ) : null}
             {showBody && body ? (
@@ -557,7 +594,7 @@ export default function SlideCanvas({
                 className="max-w-4xl font-bold whitespace-pre-wrap"
                 style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}
               >
-                {body}
+                <SlideRichText text={body} />
               </p>
             ) : null}
           </div>
@@ -572,7 +609,7 @@ export default function SlideCanvas({
                   compact ? 'text-base' : present ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl',
                 ].join(' ')}
               >
-                {title}
+                <SlideRichText text={title} />
               </h2>
             ) : null}
             {multiContentImages ? (
@@ -655,6 +692,7 @@ export default function SlideCanvas({
                     }}
                     compact={compact}
                     present={present}
+                    alignTop
                     className={compact ? 'max-h-40 min-w-0' : 'h-full max-h-full min-w-0'}
                   />
                 ) : null}
@@ -680,6 +718,24 @@ export default function SlideCanvas({
           </div>
         ) : null}
 
+        {slide.layout === 'pie_timer' ? (
+          <div className="flex min-h-0 flex-1 flex-col gap-3">
+            {showTitle ? (
+              <h2
+                className={[
+                  'font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
+                  compact ? 'text-base' : present ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl',
+                ].join(' ')}
+              >
+                <SlideRichText text={title || 'Pie timer'} />
+              </h2>
+            ) : null}
+            <div className="min-h-0 flex-1">
+              <PresentationPieTimer slide={slide} present={present} compact={compact} />
+            </div>
+          </div>
+        ) : null}
+
         {slide.layout === 'fill_blank' ? (
           <PresentationFillBlank
             slide={slide}
@@ -698,7 +754,7 @@ export default function SlideCanvas({
                   compact ? 'text-base' : present ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl',
                 ].join(' ')}
               >
-                {title}
+                <SlideRichText text={title} />
               </h2>
             ) : null}
             <ul className="flex-1 space-y-2 overflow-auto font-bold">
@@ -711,7 +767,9 @@ export default function SlideCanvas({
                       style={textStyle(slide.bulletsFontSize, slide.bulletsColor, mode)}
                     >
                       <span className="text-[var(--comic-primary)]">●</span>
-                      <span>{item}</span>
+                      <span>
+                        <SlideRichText text={item} />
+                      </span>
                     </li>
                   ) : (
                     <li
@@ -737,7 +795,7 @@ export default function SlideCanvas({
                   compact ? 'text-base' : present ? 'text-3xl md:text-5xl' : 'text-2xl md:text-4xl',
                 ].join(' ')}
               >
-                {title}
+                <SlideRichText text={title} />
               </h2>
             ) : null}
             <SlideImage
@@ -750,7 +808,7 @@ export default function SlideCanvas({
                 className="font-bold whitespace-pre-wrap"
                 style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}
               >
-                {body}
+                <SlideRichText text={body} />
               </p>
             ) : null}
             {slide.bullets.filter((item) => item.trim()).length > 0 ? (
@@ -765,7 +823,9 @@ export default function SlideCanvas({
                       <span className="shrink-0 leading-[1.35]" aria-hidden>
                         ●
                       </span>
-                      <span className="min-w-0 flex-1 leading-[1.35]">{item}</span>
+                      <span className="min-w-0 flex-1 leading-[1.35]">
+                  <SlideRichText text={item} />
+                </span>
                     </li>
                   ) : (
                     <li
@@ -792,7 +852,7 @@ export default function SlideCanvas({
                   compact ? 'text-base' : present ? 'text-2xl md:text-4xl' : 'text-xl md:text-3xl',
                 ].join(' ')}
               >
-                {title || 'Listen and choose'}
+                <SlideRichText text={title || 'Listen and choose'} />
               </h2>
             ) : null}
             {showBody && body ? (
@@ -800,7 +860,7 @@ export default function SlideCanvas({
                 className="font-bold whitespace-pre-wrap"
                 style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}
               >
-                {body}
+                <SlideRichText text={body} />
               </p>
             ) : null}
             <div className="min-h-0 flex-1">
@@ -818,7 +878,7 @@ export default function SlideCanvas({
                   compact ? 'text-base' : present ? 'text-2xl md:text-4xl' : 'text-xl md:text-3xl',
                 ].join(' ')}
               >
-                {title || 'Describe the image'}
+                <SlideRichText text={title || 'Describe the image'} />
               </h2>
             ) : null}
             {showBody && body ? (
@@ -826,7 +886,7 @@ export default function SlideCanvas({
                 className="font-bold whitespace-pre-wrap"
                 style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}
               >
-                {body}
+                <SlideRichText text={body} />
               </p>
             ) : null}
             <div className="min-h-0 flex-1">
@@ -850,7 +910,7 @@ export default function SlideCanvas({
                   compact ? 'text-base' : present ? 'text-2xl md:text-4xl' : 'text-xl md:text-3xl',
                 ].join(' ')}
               >
-                {title || 'Match the words'}
+                <SlideRichText text={title || 'Match the words'} />
               </h2>
             ) : null}
             {showBody && body ? (
@@ -858,7 +918,7 @@ export default function SlideCanvas({
                 className="font-bold whitespace-pre-wrap"
                 style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}
               >
-                {body}
+                <SlideRichText text={body} />
               </p>
             ) : null}
             <div className="min-h-0 flex-1">

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
 import SlideTextStyleControls from './SlideTextStyleControls';
+import { SlideRichText } from './SlideRichText';
 import {
   QUIZ_CHOICE_LETTERS,
   createEmptyQuizChoice,
@@ -28,12 +29,15 @@ export function PresentationQuiz({
   present?: boolean;
 }) {
   const [picked, setPicked] = useState<number | null>(null);
+  const [revealed, setRevealed] = useState(false);
   const choices = (slide.quizChoices || [])
     .map((choice, index) => ({ ...choice, index }))
     .filter((choice) => choice.text.trim());
+  const revealOnClick = Boolean(slide.quizRevealOnClick);
 
   useEffect(() => {
     setPicked(null);
+    setRevealed(false);
   }, [slide.id]);
 
   if (!slide.quizEnabled || choices.length === 0) return null;
@@ -43,14 +47,41 @@ export function PresentationQuiz({
   const color = presentationFontColorCss(slide.quizColor);
   const prompt = slide.quizPrompt.trim();
   const pickedBorder = compact ? 6 : present ? 16 : 12;
+  const showChoices = !revealOnClick || revealed;
 
   return (
     <div className="relative z-[2] flex w-full shrink-0 flex-col items-stretch gap-1.5">
-      {prompt ? (
+      {revealOnClick && !revealed ? (
+        <div className="text-left font-black leading-snug" style={{ fontSize: `${fontSize}px`, color }}>
+          {prompt ? (
+            <p
+              className="cursor-pointer"
+              onClick={(event) => {
+                event.stopPropagation();
+                setRevealed(true);
+              }}
+            >
+              <SlideRichText text={prompt} />
+            </p>
+          ) : null}
+          <button
+            type="button"
+            className="mt-1 border-0 bg-transparent p-0 text-left font-bold opacity-70"
+            style={{ fontSize: '0.55em', color }}
+            onClick={(event) => {
+              event.stopPropagation();
+              setRevealed(true);
+            }}
+          >
+            Click to show the choices
+          </button>
+        </div>
+      ) : prompt ? (
         <p className="text-left font-black leading-snug" style={{ fontSize: `${fontSize}px`, color }}>
-          {prompt}
+          <SlideRichText text={prompt} />
         </p>
       ) : null}
+      {showChoices ? (
       <div className="flex w-full flex-col items-stretch gap-2">
         {choices.map((choice) => {
           const letter = QUIZ_CHOICE_LETTERS[choice.index] || '';
@@ -78,11 +109,14 @@ export function PresentationQuiz({
               }}
             >
               <span className="shrink-0 font-black leading-[1.25]">{letter}</span>
-              <span className="min-w-0 flex-1 leading-[1.25]">{choice.text.trim()}</span>
+              <span className="min-w-0 flex-1 leading-[1.25]">
+                <SlideRichText text={choice.text.trim()} />
+              </span>
             </button>
           );
         })}
       </div>
+      ) : null}
     </div>
   );
 }
@@ -136,6 +170,21 @@ export function QuizEditor({
               onChange={(event) => onChange({ quizPrompt: event.target.value })}
               placeholder="Leave blank if the slide already asks the question"
             />
+          </label>
+          <label className="flex cursor-pointer items-start gap-2 font-bold">
+            <input
+              type="checkbox"
+              className="mt-1 h-5 w-5 accent-[var(--comic-primary)]"
+              checked={Boolean(slide.quizRevealOnClick)}
+              onChange={(event) => onChange({ quizRevealOnClick: event.target.checked })}
+            />
+            <span>
+              <span className="block">Show the question first</span>
+              <span className="block text-sm font-bold text-[var(--comic-dark)]">
+                The question appears on its own. Click it while presenting to reveal A, B, C…
+                Leave this off and the choices show with the question.
+              </span>
+            </span>
           </label>
           <div className="space-y-2">
             {choices.map((choice, index) => {

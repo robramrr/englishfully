@@ -11,6 +11,7 @@ import PresentationShareBar from './PresentationShareBar';
 import SlideTextStyleControls from './SlideTextStyleControls';
 import PresentationAudioClipEditor from './PresentationAudioClipEditor';
 import { FillBlankEditor } from './PresentationFillBlank';
+import { PieTimerEditor } from './PresentationPieTimer';
 import { QuizEditor } from './PresentationQuiz';
 import { structurePastedContent, cleanSlideText } from '@/lib/presentation/parsePaste';
 import {
@@ -50,6 +51,7 @@ const LAYOUT_OPTIONS: { value: PresentationSlideLayout; label: string }[] = [
   { value: 'describe_image', label: 'Describe + image' },
   { value: 'match_text_image', label: 'Match text → image' },
   { value: 'fill_blank', label: 'Fill in the blank' },
+  { value: 'pie_timer', label: 'Pie timer' },
 ];
 
 function updateSlide(
@@ -660,6 +662,13 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
 
                 {selected.layout === 'fill_blank' ? (
                   <FillBlankEditor
+                    slide={selected}
+                    onChange={(patch) =>
+                      setDeck((prev) => updateSlide(prev, selected.id, patch))
+                    }
+                  />
+                ) : selected.layout === 'pie_timer' ? (
+                  <PieTimerEditor
                     slide={selected}
                     onChange={(patch) =>
                       setDeck((prev) => updateSlide(prev, selected.id, patch))
@@ -1529,6 +1538,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                   }
                 />
 
+                {selected.layout === 'pie_timer' ? null : (
                 <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -1578,6 +1588,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                     </label>
                   ) : null}
                 </div>
+                )}
 
                 {selected.layout === 'content' ? (
                   <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">

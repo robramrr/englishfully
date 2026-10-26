@@ -5,7 +5,8 @@ import type {
   PresentationFontColor,
   PresentationFontSize,
 } from './types';
-import { QUIZ_CHOICE_LETTERS, blankSentencePlain, getContentSlideImages } from './types';
+import { splitSlideLinks } from './linkify';
+import { QUIZ_CHOICE_LETTERS, blankSentencePlain, formatPieDuration, getContentSlideImages } from './types';
 
 const NAVY = '001a48';
 const RED = 'EA1225';
@@ -17,6 +18,24 @@ function pptxFontColor(color: PresentationFontColor | undefined): string {
   if (color === 'mediumGray') return '3F4A5C';
   if (color === 'softGray') return '6B7588';
   return NAVY;
+}
+
+function pptxText(value: string, color: string): string | PptxGenJS.TextProps[] {
+  const parts = splitSlideLinks(value);
+  if (!parts.some((part) => part.type === 'link')) return value;
+  return parts.map((part) =>
+    part.type === 'link'
+      ? {
+          text: part.label,
+          options: {
+            color: RED,
+            bold: true,
+            underline: { style: 'sng' },
+            hyperlink: { url: part.href },
+          },
+        }
+      : { text: part.value, options: { color } }
+  );
 }
 
 function pptxFontSize(size: PresentationFontSize | undefined, base = 18): number {
@@ -90,7 +109,7 @@ export async function buildPresentationPptxBuffer(
       }
       const subtitle = slide.body || deck.subtitle;
       if (slide.showBody !== false && subtitle) {
-        page.addText(subtitle, {
+        page.addText(pptxText(subtitle, NAVY), {
           x: 0.7,
           y: 4.0,
           w: 12,
@@ -117,7 +136,7 @@ export async function buildPresentationPptxBuffer(
         y = 1.25;
       }
       if (slide.showBody !== false && slide.body.trim()) {
-        page.addText(slide.body, {
+        page.addText(pptxText(slide.body, pptxFontColor(slide.bodyColor)), {
           x: 0.6,
           y,
           w: 12.1,
@@ -197,7 +216,7 @@ export async function buildPresentationPptxBuffer(
         y = 1.25;
       }
       if (slide.showBody !== false && slide.body.trim()) {
-        page.addText(slide.body, {
+        page.addText(pptxText(slide.body, pptxFontColor(slide.bodyColor)), {
           x: 0.6,
           y,
           w: slide.imageUrl.trim() ? 6.8 : 12.1,
@@ -274,7 +293,7 @@ export async function buildPresentationPptxBuffer(
         y = 1.25;
       }
       if (slide.showBody !== false && slide.body.trim()) {
-        page.addText(slide.body, {
+        page.addText(pptxText(slide.body, pptxFontColor(slide.bodyColor)), {
           x: 0.6,
           y,
           w: 12.1,
@@ -385,6 +404,37 @@ export async function buildPresentationPptxBuffer(
         });
         y += 0.2;
       });
+    } else if (slide.layout === 'pie_timer') {
+      let y = 0.45;
+      if (slide.showTitle !== false) {
+        page.addText(slide.title || 'Pie timer', {
+          x: 0.6,
+          y,
+          w: 12.1,
+          h: 0.7,
+          fontSize: 28,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+        });
+        y = 1.35;
+      }
+      (slide.pieSlices || []).forEach((slice, index) => {
+        page.addText(
+          `${index + 1}. ${slice.label.trim() || `Slice ${index + 1}`}  —  ${formatPieDuration(slice.seconds)}`,
+          {
+            x: 0.8,
+            y,
+            w: 11.5,
+            h: 0.45,
+            fontSize: 20,
+            bold: true,
+            color: index % 2 === 0 ? NAVY : RED,
+            fontFace: 'Arial',
+          }
+        );
+        y += 0.55;
+      });
     } else {
       const contentImages =
         slide.layout === 'content' ? getContentSlideImages(slide) : [];
@@ -414,7 +464,7 @@ export async function buildPresentationPptxBuffer(
       }
 
       if (showBody && slide.body.trim()) {
-        page.addText(slide.body, {
+        page.addText(pptxText(slide.body, pptxFontColor(slide.bodyColor)), {
           x: 0.6,
           y,
           w: textWidth,
@@ -480,11 +530,20 @@ export async function buildPresentationPptxBuffer(
       const bullets = slide.bullets;
       if (bullets.some((item) => item.trim())) {
         page.addText(
-          bullets.map((item) =>
-            item.trim()
-              ? { text: item, options: { bullet: true } }
-              : { text: ' ', options: { bullet: false } }
-          ),
+          bullets.flatMap((item): PptxGenJS.TextProps[] => {
+            if (!item.trim()) return [{ text: ' ', options: { bullet: false } }];
+            const color = pptxFontColor(slide.bulletsColor);
+            const linked = pptxText(item, color);
+            if (typeof linked === 'string') return [{ text: item, options: { bullet: true } }];
+            return linked.map((part, index) => ({
+              text: part.text,
+              options: {
+                ...(part.options || {}),
+                bullet: index === 0,
+                breakLine: index === linked.length - 1,
+              },
+            }));
+          }),
           {
             x: 0.6,
             y,
@@ -656,7 +715,10 @@ export async function buildPresentationPptxBuffer(
         .filter(Boolean);
       if (slide.quizPrompt.trim() || lines.length > 0) {
         page.addText(
-          [slide.quizPrompt.trim(), ...lines].filter(Boolean).join('\n'),
+          pptxText(
+            [slide.quizPrompt.trim(), ...lines].filter(Boolean).join('\n'),
+            pptxFontColor(slide.quizColor)
+          ),
           {
             x: 0.6,
             y: 5.85,

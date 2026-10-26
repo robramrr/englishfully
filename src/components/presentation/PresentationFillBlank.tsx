@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
 import SlideTextStyleControls from './SlideTextStyleControls';
+import { SlideRichText } from './SlideRichText';
 import {
   blankSentenceParts,
   blankTokens,
@@ -67,7 +68,7 @@ function FillBlankSentence({
           return (
             <span key={`${item.id}-t-${index}`}>
               {index > 0 ? ' ' : ''}
-              {part.value}
+              <SlideRichText text={part.value} />
             </span>
           );
         }
@@ -162,7 +163,7 @@ export function PresentationFillBlank({
                     compact ? 'text-sm' : present ? 'text-2xl md:text-4xl' : 'text-xl md:text-2xl',
                   ].join(' ')}
                 >
-                  {group.heading.trim()}
+                  <SlideRichText text={group.heading.trim()} />
                 </h3>
               ) : null}
               {group.items.length > 0 ? (
