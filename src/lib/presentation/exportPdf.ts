@@ -63,7 +63,7 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                            ? slide.blankGroups
                            : [{ heading: '', items: slide.blankItems || [] }]
                          )
-                           .map((group) => {
+                           .map((group, groupIndex) => {
                              const lines = (group.items || []).filter((item) => item.text.trim());
                              if (!group.heading.trim() && lines.length === 0) return '';
                              const sentences = lines
@@ -78,14 +78,20 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                                  )}</div>`;
                                })
                                .join('');
-                             const lead = group.heading.trim()
-                               ? `<div style="margin:18px 0 6px;font-size:${pdfFontSize(
-                                   slide.bulletsFontSize,
-                                   24
-                                 )}px;color:#001a48;font-weight:800;">${escapeHtml(
-                                   group.heading.trim()
-                                 )}</div>`
-                               : '';
+                             const lead = `${
+                               groupIndex > 0
+                                 ? '<hr style="border:0;border-top:1px solid rgba(0,26,72,0.2);margin:16px 0;" />'
+                                 : ''
+                             }${
+                               group.heading.trim()
+                                 ? `<div style="margin:8px 0 6px;font-size:${pdfFontSize(
+                                     slide.bulletsFontSize,
+                                     24
+                                   )}px;color:#001a48;font-weight:800;">${escapeHtml(
+                                     group.heading.trim()
+                                   )}</div>`
+                                 : ''
+                             }
                              return `${lead}${sentences}`;
                            })
                            .join('')}</div>`

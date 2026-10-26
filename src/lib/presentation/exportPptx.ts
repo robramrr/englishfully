@@ -344,8 +344,18 @@ export async function buildPresentationPptxBuffer(
       const groups = slide.blankGroups?.length
         ? slide.blankGroups
         : [{ heading: '', items: slide.blankItems || [] }];
-      groups.forEach((group) => {
+      groups.forEach((group, groupIndex) => {
         const lines = (group.items || []).filter((item) => item.text.trim());
+        if (groupIndex > 0 && (group.heading.trim() || lines.length > 0)) {
+          page.addShape(pptx.ShapeType.line, {
+            x: 0.6,
+            y,
+            w: 12.1,
+            h: 0,
+            line: { color: '001A48', width: 0.75, transparency: 80 },
+          });
+          y += 0.28;
+        }
         if (group.heading.trim()) {
           page.addText(group.heading.trim(), {
             x: 0.6,
