@@ -59,17 +59,34 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                    }
                    ${
                      slide.layout === 'fill_blank'
-                       ? `<div style="margin-top:12px;font-size:${pdfFontSize(
-                           slide.bulletsFontSize,
-                           20
-                         )}px;color:${pdfColor(slide.bulletsColor)};font-weight:700;">${(
-                           slide.blankItems || []
+                       ? `<div style="margin-top:16px;">${(slide.blankGroups?.length
+                           ? slide.blankGroups
+                           : [{ heading: '', items: slide.blankItems || [] }]
                          )
-                           .filter((item) => item.text.trim())
-                           .map((item) => {
-                             const line = blankSentencePlain(item.text, item.blankIndex);
-                             const marker = slide.blankBullets ? '● ' : '';
-                             return `<div style="margin:10px 0;">${escapeHtml(marker + line)}</div>`;
+                           .map((group) => {
+                             const lines = (group.items || []).filter((item) => item.text.trim());
+                             if (!group.heading.trim() && lines.length === 0) return '';
+                             const sentences = lines
+                               .map((item) => {
+                                 const line = blankSentencePlain(item.text, item.blankIndex);
+                                 const marker = slide.blankBullets ? '● ' : '';
+                                 return `<div style="margin:14px 0;font-size:${pdfFontSize(
+                                   slide.bulletsFontSize,
+                                   20
+                                 )}px;color:${pdfColor(slide.bulletsColor)};font-weight:700;">${escapeHtml(
+                                   marker + line
+                                 )}</div>`;
+                               })
+                               .join('');
+                             const lead = group.heading.trim()
+                               ? `<div style="margin:18px 0 6px;font-size:${pdfFontSize(
+                                   slide.bulletsFontSize,
+                                   24
+                                 )}px;color:#001a48;font-weight:800;">${escapeHtml(
+                                   group.heading.trim()
+                                 )}</div>`
+                               : '';
+                             return `${lead}${sentences}`;
                            })
                            .join('')}</div>`
                        : ''

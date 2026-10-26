@@ -622,11 +622,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                 <div className="block space-y-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <ComicText className="text-sm font-bold">
-                      {selected.layout === 'title'
-                        ? 'Title'
-                        : selected.layout === 'fill_blank'
-                          ? 'Heading'
-                          : 'Slide title'}
+                      {selected.layout === 'title' ? 'Title' : 'Slide title'}
                     </ComicText>
                     <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
                       <span className="text-sm">{selected.showTitle ? 'On' : 'Off'}</span>
@@ -657,9 +653,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                         return next;
                       });
                     }}
-                    placeholder={
-                      selected.layout === 'fill_blank' ? 'Past tense of be' : 'Slide heading'
-                    }
+                    placeholder="Slide heading"
                   />
                 </div>
 

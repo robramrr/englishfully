@@ -341,20 +341,39 @@ export async function buildPresentationPptxBuffer(
         });
         y = 1.35;
       }
-      const lines = (slide.blankItems || []).filter((item) => item.text.trim());
-      lines.forEach((item) => {
-        const line = blankSentencePlain(item.text, item.blankIndex);
-        page.addText(`${slide.blankBullets ? '●  ' : ''}${line}`, {
-          x: 0.6,
-          y,
-          w: 12.1,
-          h: 0.45,
-          fontSize: pptxFontSize(slide.bulletsFontSize, 20),
-          bold: true,
-          color: pptxFontColor(slide.bulletsColor),
-          fontFace: 'Arial',
+      const groups = slide.blankGroups?.length
+        ? slide.blankGroups
+        : [{ heading: '', items: slide.blankItems || [] }];
+      groups.forEach((group) => {
+        const lines = (group.items || []).filter((item) => item.text.trim());
+        if (group.heading.trim()) {
+          page.addText(group.heading.trim(), {
+            x: 0.6,
+            y,
+            w: 12.1,
+            h: 0.45,
+            fontSize: pptxFontSize(slide.bulletsFontSize, 24),
+            bold: true,
+            color: NAVY,
+            fontFace: 'Arial',
+          });
+          y += 0.5;
+        }
+        lines.forEach((item) => {
+          const line = blankSentencePlain(item.text, item.blankIndex);
+          page.addText(`${slide.blankBullets ? '●  ' : ''}${line}`, {
+            x: 0.8,
+            y,
+            w: 11.9,
+            h: 0.42,
+            fontSize: pptxFontSize(slide.bulletsFontSize, 20),
+            bold: true,
+            color: pptxFontColor(slide.bulletsColor),
+            fontFace: 'Arial',
+          });
+          y += 0.55;
         });
-        y += 0.55;
+        y += 0.2;
       });
     } else {
       const contentImages =

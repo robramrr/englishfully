@@ -34,10 +34,36 @@ export interface PresentationBlankItem {
   blankIndex: number;
 }
 
-export const MAX_BLANK_ITEMS = 10;
+/** One lead-in plus the sentences under it. */
+export interface PresentationBlankGroup {
+  id: string;
+  /** Example heading, e.g. "Past tense of be". The slide title stays separate. */
+  heading: string;
+  items: PresentationBlankItem[];
+}
+
+export const MAX_BLANK_GROUPS = 6;
+export const MAX_BLANK_ITEMS = 8;
 
 export function createBlankItemId(): string {
   return `bl_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function createBlankGroupId(): string {
+  return `bg_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function createEmptyBlankGroup(
+  patch: Partial<PresentationBlankGroup> = {}
+): PresentationBlankGroup {
+  const items = Array.isArray(patch.items) && patch.items.length > 0
+    ? patch.items.map((item) => createEmptyBlankItem(item))
+    : [createEmptyBlankItem()];
+  return {
+    id: patch.id || createBlankGroupId(),
+    heading: String(patch.heading ?? ''),
+    items,
+  };
 }
 
 export function createEmptyBlankItem(
@@ -125,6 +151,28 @@ function normalizeBlankItems(value: unknown): PresentationBlankItem[] {
     }
     return createEmptyBlankItem({ id: raw.id, text, blankIndex });
   });
+}
+
+function normalizeBlankGroups(
+  groups: unknown,
+  legacyItems: unknown
+): PresentationBlankGroup[] {
+  if (Array.isArray(groups) && groups.length > 0) {
+    return groups.slice(0, MAX_BLANK_GROUPS).map((group) => {
+      if (!group || typeof group !== 'object') return createEmptyBlankGroup();
+      const raw = group as Partial<PresentationBlankGroup>;
+      return createEmptyBlankGroup({
+        id: raw.id,
+        heading: String(raw.heading ?? ''),
+        items: normalizeBlankItems(raw.items),
+      });
+    });
+  }
+  return [
+    createEmptyBlankGroup({
+      items: normalizeBlankItems(legacyItems),
+    }),
+  ];
 }
 
 export function createMatchPairId(): string {
@@ -446,7 +494,9 @@ export interface PresentationSlide {
   describeWordsNeeded: number;
   /** Match text → image: up to 6 word/image pairs. */
   matchPairs: PresentationMatchPair[];
-  /** Fill in the blank: sentences under the heading. */
+  /** Fill in the blank: lead-in groups, each with its own sentences. */
+  blankGroups: PresentationBlankGroup[];
+  /** Older decks stored one flat sentence list. Kept so those slides still load. */
   blankItems: PresentationBlankItem[];
   /** When true, each fill-in sentence shows a bullet. */
   blankBullets: boolean;
@@ -746,6 +796,7 @@ export function createEmptySlide(
     describeWords: [],
     describeWordsNeeded: 10,
     matchPairs: [],
+    blankGroups: [createEmptyBlankGroup()],
     blankItems: [createEmptyBlankItem()],
     blankBullets: false,
     timerEnabled: false,
@@ -827,6 +878,7 @@ export function normalizeSlide(
     describeWords: normalizeDescribeWords(slide.describeWords),
     describeWordsNeeded: normalizePositiveInt(slide.describeWordsNeeded, 10),
     matchPairs: normalizeMatchPairs(slide.matchPairs),
+    blankGroups: normalizeBlankGroups(slide.blankGroups, slide.blankItems),
     blankItems: normalizeBlankItems(slide.blankItems),
     blankBullets: Boolean(slide.blankBullets),
     timerEnabled: Boolean(
