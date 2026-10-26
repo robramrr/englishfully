@@ -64,17 +64,42 @@ type ContentFigureImage = {
   showSubtitle: boolean;
 };
 
+/** Fullscreen only shows the element that was expanded, so the popup must mount inside it. */
+function presentationOverlayRoot(): HTMLElement {
+  const doc = document as Document & { webkitFullscreenElement?: Element | null };
+  const fullscreen = document.fullscreenElement || doc.webkitFullscreenElement || null;
+  if (fullscreen instanceof HTMLElement) return fullscreen;
+  return document.body;
+}
+
 function ContentImageLightbox({
   image,
   title,
   subtitle,
   onClose,
+  onPrev,
+  onNext,
 }: {
   image: ContentFigureImage;
   title: string;
   subtitle: string;
   onClose: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
 }) {
+  const [overlayRoot, setOverlayRoot] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const update = () => setOverlayRoot(presentationOverlayRoot());
+    update();
+    document.addEventListener('fullscreenchange', update);
+    document.addEventListener('webkitfullscreenchange', update as EventListener);
+    return () => {
+      document.removeEventListener('fullscreenchange', update);
+      document.removeEventListener('webkitfullscreenchange', update as EventListener);
+    };
+  }, []);
+
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (
@@ -87,14 +112,19 @@ function ContentImageLightbox({
       ) {
         event.preventDefault();
         event.stopPropagation();
-        if (event.key === 'Escape') onClose();
       }
+      if (event.key === 'Escape') onClose();
+      if (event.key === 'ArrowRight' && onNext) onNext();
+      if (event.key === 'ArrowLeft' && onPrev) onPrev();
     }
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [onClose]);
+  }, [onClose, onNext, onPrev]);
 
-  if (typeof document === 'undefined') return null;
+  if (!overlayRoot) return null;
+
+  const arrowClass =
+    'flex h-16 w-16 shrink-0 items-center justify-center border-4 border-[var(--comic-black)] bg-white text-4xl font-black leading-none text-[var(--comic-secondary)] comic-shadow-md md:h-20 md:w-20 md:text-5xl';
 
   return createPortal(
     <div
@@ -104,15 +134,41 @@ function ContentImageLightbox({
       aria-label={title || image.alt || 'Image'}
       onClick={onClose}
     >
+      {onPrev ? (
+        <button
+          type="button"
+          className={`absolute left-3 top-1/2 z-[101] -translate-y-1/2 md:left-6 ${arrowClass}`}
+          aria-label="Previous image"
+          onClick={(event) => {
+            event.stopPropagation();
+            onPrev();
+          }}
+        >
+          ←
+        </button>
+      ) : null}
+      {onNext ? (
+        <button
+          type="button"
+          className={`absolute right-3 top-1/2 z-[101] -translate-y-1/2 md:right-6 ${arrowClass}`}
+          aria-label="Next image"
+          onClick={(event) => {
+            event.stopPropagation();
+            onNext();
+          }}
+        >
+          →
+        </button>
+      ) : null}
       <div
-        className="flex max-h-full w-full max-w-6xl flex-col items-center gap-4"
+        className="flex max-h-full w-full max-w-6xl flex-col items-center gap-4 px-16 md:px-24"
         onClick={(event) => event.stopPropagation()}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={image.url}
           alt={image.alt || title || 'Slide image'}
-          className="max-h-[78vh] w-auto max-w-full border-4 border-[var(--comic-black)] bg-white object-contain comic-shadow-xl"
+          className="max-h-[72vh] w-auto max-w-full border-4 border-[var(--comic-black)] bg-white object-contain comic-shadow-xl"
         />
         {title || subtitle ? (
           <div className="max-w-4xl text-center text-white">
@@ -131,8 +187,15 @@ function ContentImageLightbox({
         </button>
       </div>
     </div>,
-    document.body
+    overlayRoot
   );
+}
+
+function contentImageCaption(image: ContentFigureImage): { title: string; subtitle: string } {
+  return {
+    title: image.showTitle ? image.title.trim() : '',
+    subtitle: image.showSubtitle ? image.subtitle.trim() : '',
+  };
 }
 
 function ContentSlideFigure({
@@ -140,16 +203,17 @@ function ContentSlideFigure({
   className = '',
   compact,
   present,
+  onOpen,
 }: {
   image: ContentFigureImage;
   className?: string;
   compact: boolean;
   present: boolean;
+  onOpen?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
   const title = image.showTitle ? image.title.trim() : '';
   const subtitle = image.showSubtitle ? image.subtitle.trim() : '';
-  const canFocus = !compact && Boolean(image.url.trim());
+  const canFocus = Boolean(onOpen) && !compact && Boolean(image.url.trim());
   const titleClass = compact
     ? 'text-xs'
     : present
@@ -160,10 +224,6 @@ function ContentSlideFigure({
     : present
       ? 'text-base md:text-xl'
       : 'text-xs md:text-sm';
-
-  useEffect(() => {
-    setOpen(false);
-  }, [image.url]);
 
   const caption =
     title || subtitle ? (
@@ -189,28 +249,18 @@ function ContentSlideFigure({
   }
 
   return (
-    <>
-      <button
-        type="button"
-        className={`flex h-full min-h-0 w-full cursor-zoom-in flex-col gap-1 border-0 bg-transparent p-0 text-center font-[inherit] ${className}`}
-        aria-label={title ? `Show ${title} larger` : 'Show this image larger'}
-        onClick={(event) => {
-          event.stopPropagation();
-          setOpen(true);
-        }}
-      >
-        {picture}
-        {caption}
-      </button>
-      {open ? (
-        <ContentImageLightbox
-          image={image}
-          title={title}
-          subtitle={subtitle}
-          onClose={() => setOpen(false)}
-        />
-      ) : null}
-    </>
+    <button
+      type="button"
+      className={`flex h-full min-h-0 w-full cursor-zoom-in flex-col gap-1 border-0 bg-transparent p-0 text-center font-[inherit] ${className}`}
+      aria-label={title ? `Show ${title} larger` : 'Show this image larger'}
+      onClick={(event) => {
+        event.stopPropagation();
+        onOpen?.();
+      }}
+    >
+      {picture}
+      {caption}
+    </button>
   );
 }
 
@@ -417,6 +467,11 @@ export default function SlideCanvas({
     timeUp: false,
   });
   const [localResetKey, setLocalResetKey] = useState(0);
+  const [focusedImageIndex, setFocusedImageIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    setFocusedImageIndex(null);
+  }, [slide.id]);
 
   useEffect(() => {
     onTimerStateChange?.(timerState);
@@ -551,6 +606,7 @@ export default function SlideCanvas({
                       image={image}
                       compact={compact}
                       present={present}
+                      onOpen={() => setFocusedImageIndex(index)}
                     />
                   ))}
                 </div>
@@ -575,6 +631,11 @@ export default function SlideCanvas({
                 {showRightColumn ? (
                   <ContentSlideFigure
                     key={`${slide.id}-side`}
+                    onOpen={
+                      contentImages[0]?.url
+                        ? () => setFocusedImageIndex(0)
+                        : undefined
+                    }
                     image={{
                       url: contentImages[0]?.url || slide.imageUrl,
                       alt: contentImages[0]?.alt || slide.imageAlt || title,
@@ -591,6 +652,23 @@ export default function SlideCanvas({
                 ) : null}
               </div>
             )}
+            {focusedImageIndex !== null && contentImages[focusedImageIndex] ? (
+              <ContentImageLightbox
+                image={contentImages[focusedImageIndex]}
+                {...contentImageCaption(contentImages[focusedImageIndex])}
+                onClose={() => setFocusedImageIndex(null)}
+                onPrev={
+                  focusedImageIndex > 0
+                    ? () => setFocusedImageIndex(focusedImageIndex - 1)
+                    : undefined
+                }
+                onNext={
+                  focusedImageIndex < contentImages.length - 1
+                    ? () => setFocusedImageIndex(focusedImageIndex + 1)
+                    : undefined
+                }
+              />
+            ) : null}
           </div>
         ) : null}
 
