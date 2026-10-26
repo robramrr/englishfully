@@ -10,6 +10,7 @@ import PresentationPreview from './PresentationPreview';
 import PresentationShareBar from './PresentationShareBar';
 import SlideTextStyleControls from './SlideTextStyleControls';
 import PresentationAudioClipEditor from './PresentationAudioClipEditor';
+import { FillBlankEditor } from './PresentationFillBlank';
 import { structurePastedContent, cleanSlideText } from '@/lib/presentation/parsePaste';
 import {
   clearPresentationDraftById,
@@ -47,6 +48,7 @@ const LAYOUT_OPTIONS: { value: PresentationSlideLayout; label: string }[] = [
   { value: 'audio_image', label: 'Audio + image' },
   { value: 'describe_image', label: 'Describe + image' },
   { value: 'match_text_image', label: 'Match text → image' },
+  { value: 'fill_blank', label: 'Fill in the blank' },
 ];
 
 function updateSlide(
@@ -620,7 +622,11 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                 <div className="block space-y-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <ComicText className="text-sm font-bold">
-                      {selected.layout === 'title' ? 'Title' : 'Slide title'}
+                      {selected.layout === 'title'
+                        ? 'Title'
+                        : selected.layout === 'fill_blank'
+                          ? 'Heading'
+                          : 'Slide title'}
                     </ComicText>
                     <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
                       <span className="text-sm">{selected.showTitle ? 'On' : 'Off'}</span>
@@ -651,10 +657,20 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                         return next;
                       });
                     }}
-                    placeholder="Slide heading"
+                    placeholder={
+                      selected.layout === 'fill_blank' ? 'Past tense of be' : 'Slide heading'
+                    }
                   />
                 </div>
 
+                {selected.layout === 'fill_blank' ? (
+                  <FillBlankEditor
+                    slide={selected}
+                    onChange={(patch) =>
+                      setDeck((prev) => updateSlide(prev, selected.id, patch))
+                    }
+                  />
+                ) : (
                 <div className="block space-y-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <ComicText className="text-sm font-bold">
@@ -723,6 +739,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                     }
                   />
                 </div>
+                )}
 
                 {(selected.layout === 'content' ||
                   selected.layout === 'image' ||

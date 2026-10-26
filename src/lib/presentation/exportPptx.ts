@@ -5,7 +5,7 @@ import type {
   PresentationFontColor,
   PresentationFontSize,
 } from './types';
-import { getContentSlideImages } from './types';
+import { blankSentencePlain, getContentSlideImages } from './types';
 
 const NAVY = '001a48';
 const RED = 'EA1225';
@@ -326,6 +326,36 @@ export async function buildPresentationPptxBuffer(
           fontFace: 'Arial',
         });
       }
+    } else if (slide.layout === 'fill_blank') {
+      let y = 0.45;
+      if (slide.showTitle !== false) {
+        page.addText(slide.title || 'Fill in the blank', {
+          x: 0.6,
+          y,
+          w: 12.1,
+          h: 0.7,
+          fontSize: 28,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+        });
+        y = 1.35;
+      }
+      const lines = (slide.blankItems || []).filter((item) => item.text.trim());
+      lines.forEach((item) => {
+        const line = blankSentencePlain(item.text, item.blankIndex);
+        page.addText(`${slide.blankBullets ? '●  ' : ''}${line}`, {
+          x: 0.6,
+          y,
+          w: 12.1,
+          h: 0.45,
+          fontSize: pptxFontSize(slide.bulletsFontSize, 20),
+          bold: true,
+          color: pptxFontColor(slide.bulletsColor),
+          fontFace: 'Arial',
+        });
+        y += 0.55;
+      });
     } else {
       const contentImages =
         slide.layout === 'content' ? getContentSlideImages(slide) : [];

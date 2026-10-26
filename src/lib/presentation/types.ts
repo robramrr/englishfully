@@ -5,7 +5,8 @@ export type PresentationSlideLayout =
   | 'image'
   | 'audio_image'
   | 'describe_image'
-  | 'match_text_image';
+  | 'match_text_image'
+  | 'fill_blank';
 
 export type PresentationChoiceLetter = 'A' | 'B' | 'C' | 'D';
 
@@ -24,6 +25,107 @@ export interface PresentationMatchPair {
 }
 
 export const MAX_MATCH_PAIRS = 6;
+
+/** Fill-in-the-blank: one sentence with a single hidden word. */
+export interface PresentationBlankItem {
+  id: string;
+  text: string;
+  /** Index into the sentence's words. -1 means no blank chosen yet. */
+  blankIndex: number;
+}
+
+export const MAX_BLANK_ITEMS = 10;
+
+export function createBlankItemId(): string {
+  return `bl_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function createEmptyBlankItem(
+  patch: Partial<PresentationBlankItem> = {}
+): PresentationBlankItem {
+  const blankIndex = Number(patch.blankIndex);
+  return {
+    id: patch.id || createBlankItemId(),
+    text: String(patch.text ?? ''),
+    blankIndex: Number.isInteger(blankIndex) ? blankIndex : -1,
+  };
+}
+
+export function blankTokens(text: string): string[] {
+  return String(text ?? '')
+    .trim()
+    .split(/\s+/)
+    .filter((token) => token.length > 0);
+}
+
+/** Keep punctuation outside the hidden word so "terrible." becomes a blank plus a period. */
+export function splitBlankToken(token: string): {
+  leading: string;
+  word: string;
+  trailing: string;
+} {
+  const match = token.match(/^([^A-Za-z0-9'-]*)([A-Za-z0-9'-]*)([^A-Za-z0-9'-]*)$/);
+  if (!match || !match[2]) return { leading: '', word: token, trailing: '' };
+  return { leading: match[1], word: match[2], trailing: match[3] };
+}
+
+export type BlankSentencePart =
+  | { type: 'text'; value: string }
+  | { type: 'blank'; word: string; leading: string; trailing: string };
+
+export function blankSentenceParts(text: string, blankIndex: number): BlankSentencePart[] {
+  return blankTokens(text).map((token, index) => {
+    if (index !== blankIndex) return { type: 'text', value: token };
+    const split = splitBlankToken(token);
+    if (!/[A-Za-z0-9]/.test(split.word)) return { type: 'text', value: token };
+    return {
+      type: 'blank',
+      word: split.word,
+      leading: split.leading,
+      trailing: split.trailing,
+    };
+  });
+}
+
+/** Plain sentence with the chosen word replaced by underscores. */
+export function blankSentencePlain(text: string, blankIndex: number): string {
+  return blankSentenceParts(text, blankIndex)
+    .map((part) => {
+      if (part.type === 'text') return part.value;
+      return `${part.leading}${'_'.repeat(Math.max(part.word.length, 4))}${part.trailing}`;
+    })
+    .join(' ');
+}
+
+/** Keep the blank on the same word when the sentence is edited. */
+export function retargetBlankIndex(
+  previousText: string,
+  nextText: string,
+  blankIndex: number
+): number {
+  if (blankIndex < 0) return -1;
+  const previous = blankTokens(previousText);
+  const next = blankTokens(nextText);
+  const chosen = previous[blankIndex];
+  if (!chosen) return blankIndex < next.length ? blankIndex : -1;
+  if (next[blankIndex] === chosen) return blankIndex;
+  return next.findIndex((token) => token === chosen);
+}
+
+function normalizeBlankItems(value: unknown): PresentationBlankItem[] {
+  if (!Array.isArray(value) || value.length === 0) return [createEmptyBlankItem()];
+  return value.slice(0, MAX_BLANK_ITEMS).map((item) => {
+    if (!item || typeof item !== 'object') return createEmptyBlankItem();
+    const raw = item as Partial<PresentationBlankItem>;
+    const text = String(raw.text ?? '');
+    const tokens = blankTokens(text);
+    let blankIndex = Number(raw.blankIndex);
+    if (!Number.isInteger(blankIndex) || blankIndex < 0 || blankIndex >= tokens.length) {
+      blankIndex = -1;
+    }
+    return createEmptyBlankItem({ id: raw.id, text, blankIndex });
+  });
+}
 
 export function createMatchPairId(): string {
   return `mp_${Math.random().toString(36).slice(2, 10)}`;
@@ -344,6 +446,10 @@ export interface PresentationSlide {
   describeWordsNeeded: number;
   /** Match text → image: up to 6 word/image pairs. */
   matchPairs: PresentationMatchPair[];
+  /** Fill in the blank: sentences under the heading. */
+  blankItems: PresentationBlankItem[];
+  /** When true, each fill-in sentence shows a bullet. */
+  blankBullets: boolean;
   /**
    * Optional countdown on any slide (think / speak / activity time).
    * Started from present mode.
@@ -640,6 +746,8 @@ export function createEmptySlide(
     describeWords: [],
     describeWordsNeeded: 10,
     matchPairs: [],
+    blankItems: [createEmptyBlankItem()],
+    blankBullets: false,
     timerEnabled: false,
     timerSeconds: 60,
   };
@@ -719,6 +827,8 @@ export function normalizeSlide(
     describeWords: normalizeDescribeWords(slide.describeWords),
     describeWordsNeeded: normalizePositiveInt(slide.describeWordsNeeded, 10),
     matchPairs: normalizeMatchPairs(slide.matchPairs),
+    blankItems: normalizeBlankItems(slide.blankItems),
+    blankBullets: Boolean(slide.blankBullets),
     timerEnabled: Boolean(
       slide.timerEnabled ?? slide.describeTimerEnabled ?? false
     ),

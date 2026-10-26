@@ -13,6 +13,7 @@ import { GrammarLiveTextBox } from './GrammarHighlight';
 import PresentationAudioMatch from './PresentationAudioMatch';
 import PresentationDescribeImage from './PresentationDescribeImage';
 import PresentationMatchTextImage from './PresentationMatchTextImage';
+import { PresentationFillBlank } from './PresentationFillBlank';
 import PresentationSlideTimer, { type SlideTimerState } from './PresentationSlideTimer';
 
 interface SlideCanvasProps {
@@ -674,6 +675,15 @@ export default function SlideCanvas({
               />
             ) : null}
           </div>
+        ) : null}
+
+        {slide.layout === 'fill_blank' ? (
+          <PresentationFillBlank
+            slide={slide}
+            title={title}
+            compact={compact}
+            present={present}
+          />
         ) : null}
 
         {slide.layout === 'bullets' ? (

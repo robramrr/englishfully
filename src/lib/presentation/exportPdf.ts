@@ -3,7 +3,7 @@ import type {
   PresentationFontColor,
   PresentationFontSize,
 } from './types';
-import { getContentSlideImages } from './types';
+import { blankSentencePlain, getContentSlideImages } from './types';
 
 function safeFilename(value: string): string {
   return (value || 'presentation').replace(/[^\w.-]+/g, '_').slice(0, 80);
@@ -55,6 +55,23 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                            slide.bodyFontSize,
                            18
                          )}px">${escapeHtml(body)}</p>`
+                       : ''
+                   }
+                   ${
+                     slide.layout === 'fill_blank'
+                       ? `<div style="margin-top:12px;font-size:${pdfFontSize(
+                           slide.bulletsFontSize,
+                           20
+                         )}px;color:${pdfColor(slide.bulletsColor)};font-weight:700;">${(
+                           slide.blankItems || []
+                         )
+                           .filter((item) => item.text.trim())
+                           .map((item) => {
+                             const line = blankSentencePlain(item.text, item.blankIndex);
+                             const marker = slide.blankBullets ? '● ' : '';
+                             return `<div style="margin:10px 0;">${escapeHtml(marker + line)}</div>`;
+                           })
+                           .join('')}</div>`
                        : ''
                    }
                    ${
