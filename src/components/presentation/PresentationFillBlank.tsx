@@ -144,11 +144,16 @@ export function PresentationFillBlank({
         </h2>
       ) : null}
       {groups.length > 0 ? (
-        <div className="min-h-0 flex-1 space-y-8 overflow-auto">
+        <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-auto">
           {groups.map((group, groupIndex) => (
-            <section key={group.id} className="space-y-4">
+            <section key={group.id} className="flex flex-col gap-4">
               {groupIndex > 0 ? (
-                <hr className="h-px border-0 bg-[var(--comic-black)]/20" />
+                <div
+                  role="separator"
+                  aria-hidden
+                  className="w-full shrink-0"
+                  style={{ height: 2, backgroundColor: '#c8c8c8' }}
+                />
               ) : null}
               {group.heading.trim() ? (
                 <h3
