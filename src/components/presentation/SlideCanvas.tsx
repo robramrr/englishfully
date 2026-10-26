@@ -14,6 +14,7 @@ import PresentationAudioMatch from './PresentationAudioMatch';
 import PresentationDescribeImage from './PresentationDescribeImage';
 import PresentationMatchTextImage from './PresentationMatchTextImage';
 import { PresentationFillBlank } from './PresentationFillBlank';
+import { PresentationQuiz } from './PresentationQuiz';
 import PresentationSlideTimer, { type SlideTimerState } from './PresentationSlideTimer';
 
 interface SlideCanvasProps {
@@ -870,6 +871,8 @@ export default function SlideCanvas({
           </div>
         ) : null}
         </div>
+
+        <PresentationQuiz slide={slide} compact={compact} present={present} />
 
         <div
           className={[

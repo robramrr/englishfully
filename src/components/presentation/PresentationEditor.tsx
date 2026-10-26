@@ -11,6 +11,7 @@ import PresentationShareBar from './PresentationShareBar';
 import SlideTextStyleControls from './SlideTextStyleControls';
 import PresentationAudioClipEditor from './PresentationAudioClipEditor';
 import { FillBlankEditor } from './PresentationFillBlank';
+import { QuizEditor } from './PresentationQuiz';
 import { structurePastedContent, cleanSlideText } from '@/lib/presentation/parsePaste';
 import {
   clearPresentationDraftById,
@@ -1520,6 +1521,13 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                     </div>
                   </div>
                 ) : null}
+
+                <QuizEditor
+                  slide={selected}
+                  onChange={(patch) =>
+                    setDeck((prev) => updateSlide(prev, selected.id, patch))
+                  }
+                />
 
                 <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">

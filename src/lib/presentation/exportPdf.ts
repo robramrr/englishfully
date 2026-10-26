@@ -3,7 +3,7 @@ import type {
   PresentationFontColor,
   PresentationFontSize,
 } from './types';
-import { blankSentencePlain, getContentSlideImages } from './types';
+import { QUIZ_CHOICE_LETTERS, blankSentencePlain, getContentSlideImages } from './types';
 
 function safeFilename(value: string): string {
   return (value || 'presentation').replace(/[^\w.-]+/g, '_').slice(0, 80);
@@ -36,6 +36,25 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
       const showBody = slide.showBody !== false;
       const bullets = slide.bullets;
       const brand = deck.brandLabel?.trim() || 'Englishfully';
+      const quizLines = slide.quizEnabled
+        ? (slide.quizChoices || [])
+            .map((choice, choiceIndex) => {
+              const text = choice.text.trim();
+              if (!text) return '';
+              const letter = QUIZ_CHOICE_LETTERS[choiceIndex] || '';
+              const mark = choiceIndex === slide.quizCorrectIndex ? ' ✓' : '';
+              return `<div style="margin:4px 0;">${escapeHtml(letter + '. ' + text + mark)}</div>`;
+            })
+            .join('')
+        : '';
+      const quizHtml =
+        slide.quizEnabled && (slide.quizPrompt.trim() || quizLines)
+          ? `<div style="margin-top:16px;font-weight:700;">${
+              slide.quizPrompt.trim()
+                ? `<div style="margin-bottom:8px;">${escapeHtml(slide.quizPrompt.trim())}</div>`
+                : ''
+            }${quizLines}</div>`
+          : '';
 
       return `
         <section class="slide">
@@ -78,21 +97,18 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                                  )}</div>`;
                                })
                                .join('');
-                             const lead = `${
+                             const rule =
                                groupIndex > 0
                                  ? '<hr style="border:0;border-top:1px solid rgba(0,26,72,0.2);margin:16px 0;" />'
-                                 : ''
-                             }${
-                               group.heading.trim()
-                                 ? `<div style="margin:8px 0 6px;font-size:${pdfFontSize(
-                                     slide.bulletsFontSize,
-                                     24
-                                   )}px;color:#001a48;font-weight:800;">${escapeHtml(
-                                     group.heading.trim()
-                                   )}</div>`
-                                 : ''
-                             }
-                             return `${lead}${sentences}`;
+                                 : '';
+                             const lead = group.heading.trim()
+                               ? '<div style="margin:8px 0 6px;font-size:' +
+                                 pdfFontSize(slide.bulletsFontSize, 24) +
+                                 'px;color:#001a48;font-weight:800;">' +
+                                 escapeHtml(group.heading.trim()) +
+                                 '</div>'
+                               : '';
+                             return rule + lead + sentences;
                            })
                            .join('')}</div>`
                        : ''
@@ -320,6 +336,7 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                      })()
                    }`
             }
+            ${quizHtml}
             <div class="footer">
               <span>${escapeHtml(deck.title || 'Presentation')}</span>
               <span>${index + 1} / ${deck.slides.length}</span>

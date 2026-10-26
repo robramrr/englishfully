@@ -5,7 +5,7 @@ import type {
   PresentationFontColor,
   PresentationFontSize,
 } from './types';
-import { blankSentencePlain, getContentSlideImages } from './types';
+import { QUIZ_CHOICE_LETTERS, blankSentencePlain, getContentSlideImages } from './types';
 
 const NAVY = '001a48';
 const RED = 'EA1225';
@@ -641,6 +641,34 @@ export async function buildPresentationPptxBuffer(
             align: 'center',
           });
         }
+      }
+    }
+
+    if (slide.quizEnabled) {
+      const lines = (slide.quizChoices || [])
+        .map((choice, choiceIndex) => {
+          const text = choice.text.trim();
+          if (!text) return '';
+          const letter = QUIZ_CHOICE_LETTERS[choiceIndex] || '';
+          const mark = choiceIndex === slide.quizCorrectIndex ? ' ✓' : '';
+          return `${letter}. ${text}${mark}`;
+        })
+        .filter(Boolean);
+      if (slide.quizPrompt.trim() || lines.length > 0) {
+        page.addText(
+          [slide.quizPrompt.trim(), ...lines].filter(Boolean).join('\n'),
+          {
+            x: 0.6,
+            y: 5.85,
+            w: 12.1,
+            h: 1.1,
+            fontSize: 14,
+            bold: true,
+            color: NAVY,
+            fontFace: 'Arial',
+            valign: 'bottom',
+          }
+        );
       }
     }
 

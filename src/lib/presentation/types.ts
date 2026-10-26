@@ -45,6 +45,44 @@ export interface PresentationBlankGroup {
 export const MAX_BLANK_GROUPS = 6;
 export const MAX_BLANK_ITEMS = 8;
 
+export const QUIZ_CHOICE_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
+export const MAX_QUIZ_CHOICES = QUIZ_CHOICE_LETTERS.length;
+
+export interface PresentationQuizChoice {
+  id: string;
+  text: string;
+}
+
+export function createQuizChoiceId(): string {
+  return `qc_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function createEmptyQuizChoice(
+  patch: Partial<PresentationQuizChoice> = {}
+): PresentationQuizChoice {
+  return {
+    id: patch.id || createQuizChoiceId(),
+    text: String(patch.text ?? ''),
+  };
+}
+
+export function normalizeQuizChoices(value: unknown): PresentationQuizChoice[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    return [createEmptyQuizChoice(), createEmptyQuizChoice()];
+  }
+  return value.slice(0, MAX_QUIZ_CHOICES).map((item) => {
+    if (!item || typeof item !== 'object') return createEmptyQuizChoice();
+    const raw = item as Partial<PresentationQuizChoice>;
+    return createEmptyQuizChoice({ id: raw.id, text: String(raw.text ?? '') });
+  });
+}
+
+export function normalizeQuizCorrectIndex(value: unknown, count: number): number {
+  const index = Number(value);
+  if (!Number.isInteger(index) || index < 0 || index >= count) return 0;
+  return index;
+}
+
 export function createBlankItemId(): string {
   return `bl_${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -500,6 +538,13 @@ export interface PresentationSlide {
   blankItems: PresentationBlankItem[];
   /** When true, each fill-in sentence shows a bullet. */
   blankBullets: boolean;
+  /** Optional multiple choice shown on any slide. */
+  quizEnabled: boolean;
+  /** Optional question above the choices. Leave blank when the slide already asks it. */
+  quizPrompt: string;
+  quizChoices: PresentationQuizChoice[];
+  /** Index of the correct choice. */
+  quizCorrectIndex: number;
   /**
    * Optional countdown on any slide (think / speak / activity time).
    * Started from present mode.
@@ -799,6 +844,10 @@ export function createEmptySlide(
     blankGroups: [createEmptyBlankGroup()],
     blankItems: [createEmptyBlankItem()],
     blankBullets: false,
+    quizEnabled: false,
+    quizPrompt: '',
+    quizChoices: [createEmptyQuizChoice(), createEmptyQuizChoice()],
+    quizCorrectIndex: 0,
     timerEnabled: false,
     timerSeconds: 60,
   };
@@ -881,6 +930,13 @@ export function normalizeSlide(
     blankGroups: normalizeBlankGroups(slide.blankGroups, slide.blankItems),
     blankItems: normalizeBlankItems(slide.blankItems),
     blankBullets: Boolean(slide.blankBullets),
+    quizEnabled: Boolean(slide.quizEnabled),
+    quizPrompt: String(slide.quizPrompt ?? ''),
+    quizChoices: normalizeQuizChoices(slide.quizChoices),
+    quizCorrectIndex: normalizeQuizCorrectIndex(
+      slide.quizCorrectIndex,
+      normalizeQuizChoices(slide.quizChoices).length
+    ),
     timerEnabled: Boolean(
       slide.timerEnabled ?? slide.describeTimerEnabled ?? false
     ),
