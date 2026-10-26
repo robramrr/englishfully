@@ -545,6 +545,10 @@ export interface PresentationSlide {
   quizChoices: PresentationQuizChoice[];
   /** Index of the correct choice. */
   quizCorrectIndex: number;
+  /** Font size for the multiple-choice prompt and choices. */
+  quizFontSize: PresentationFontSize;
+  /** Theme color for the multiple-choice prompt and choices. */
+  quizColor: PresentationFontColor;
   /**
    * Optional countdown on any slide (think / speak / activity time).
    * Started from present mode.
@@ -848,6 +852,8 @@ export function createEmptySlide(
     quizPrompt: '',
     quizChoices: [createEmptyQuizChoice(), createEmptyQuizChoice()],
     quizCorrectIndex: 0,
+    quizFontSize: 'sm',
+    quizColor: 'navy',
     timerEnabled: false,
     timerSeconds: 60,
   };
@@ -937,6 +943,14 @@ export function normalizeSlide(
       slide.quizCorrectIndex,
       normalizeQuizChoices(slide.quizChoices).length
     ),
+    quizFontSize:
+      slide.quizFontSize === 'sm' ||
+      slide.quizFontSize === 'md' ||
+      slide.quizFontSize === 'lg' ||
+      slide.quizFontSize === 'xl'
+        ? slide.quizFontSize
+        : 'sm',
+    quizColor: normalizeFontColor(slide.quizColor),
     timerEnabled: Boolean(
       slide.timerEnabled ?? slide.describeTimerEnabled ?? false
     ),

@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
+import SlideTextStyleControls from './SlideTextStyleControls';
 import {
   QUIZ_CHOICE_LETTERS,
   createEmptyQuizChoice,
+  presentationFontColorCss,
   presentationFontSizePx,
   type PresentationSlide,
 } from '@/lib/presentation/types';
@@ -37,18 +39,15 @@ export function PresentationQuiz({
   if (!slide.quizEnabled || choices.length === 0) return null;
 
   const mode = sizeMode(compact, present);
-  const fontSize = presentationFontSizePx(slide.bulletsFontSize, mode);
-  const revealed = picked !== null;
+  const fontSize = presentationFontSizePx(slide.quizFontSize, mode);
+  const color = presentationFontColorCss(slide.quizColor);
   const prompt = slide.quizPrompt.trim();
-  const correctBorder = compact ? 6 : present ? 16 : 12;
+  const pickedBorder = compact ? 6 : present ? 16 : 12;
 
   return (
     <div className="relative z-[2] flex w-full shrink-0 flex-col items-stretch gap-1.5">
       {prompt ? (
-        <p
-          className="text-left font-black leading-snug text-[var(--comic-secondary)]"
-          style={{ fontSize: `${fontSize}px` }}
-        >
+        <p className="text-left font-black leading-snug" style={{ fontSize: `${fontSize}px`, color }}>
           {prompt}
         </p>
       ) : null}
@@ -57,22 +56,20 @@ export function PresentationQuiz({
           const letter = QUIZ_CHOICE_LETTERS[choice.index] || '';
           const isCorrect = choice.index === slide.quizCorrectIndex;
           const isPicked = picked === choice.index;
-          const showCorrect = revealed && isCorrect;
-          const showWrong = revealed && isPicked && !isCorrect;
           return (
             <button
               key={choice.id}
               type="button"
-              className="flex w-full items-start gap-[0.55em] bg-white text-left font-bold text-[var(--comic-dark)]"
+              className="flex w-full items-start gap-[0.55em] bg-transparent text-left font-bold"
               style={{
                 fontSize: `${fontSize}px`,
+                color,
                 lineHeight: 1.25,
                 boxSizing: 'border-box',
                 borderStyle: 'solid',
-                borderWidth: showCorrect ? correctBorder : 2,
-                borderColor: showCorrect ? '#1f8a4c' : showWrong ? '#ea1225' : 'var(--comic-black)',
-                backgroundColor: showCorrect ? '#e7f6ec' : showWrong ? '#fde8ea' : '#ffffff',
-                padding: compact ? '2px 6px' : present ? '6px 12px' : '4px 10px',
+                borderWidth: isPicked ? pickedBorder : 0,
+                borderColor: isCorrect ? '#1f8a4c' : '#ea1225',
+                padding: isPicked ? (compact ? '2px 6px' : present ? '6px 12px' : '4px 10px') : 0,
               }}
               aria-label={`${letter}. ${choice.text}`}
               onClick={(event) => {
@@ -80,7 +77,7 @@ export function PresentationQuiz({
                 setPicked((current) => (current === choice.index ? null : choice.index));
               }}
             >
-              <span className="shrink-0 font-bungee leading-[1.25] text-[var(--comic-primary)]">{letter}</span>
+              <span className="shrink-0 font-black leading-[1.25]">{letter}</span>
               <span className="min-w-0 flex-1 leading-[1.25]">{choice.text.trim()}</span>
             </button>
           );
@@ -199,6 +196,12 @@ export function QuizEditor({
               + Add choice
             </ComicButton>
           ) : null}
+          <SlideTextStyleControls
+            fontSize={slide.quizFontSize}
+            color={slide.quizColor}
+            onFontSizeChange={(quizFontSize) => onChange({ quizFontSize })}
+            onColorChange={(quizColor) => onChange({ quizColor })}
+          />
         </>
       ) : null}
     </div>

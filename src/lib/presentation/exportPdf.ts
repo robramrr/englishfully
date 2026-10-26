@@ -47,9 +47,15 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
             })
             .join('')
         : '';
+      const quizStyle =
+        'margin-top:16px;font-weight:700;color:' +
+        pdfColor(slide.quizColor) +
+        ';font-size:' +
+        pdfFontSize(slide.quizFontSize, 18) +
+        'px;';
       const quizHtml =
         slide.quizEnabled && (slide.quizPrompt.trim() || quizLines)
-          ? `<div style="margin-top:16px;font-weight:700;">${
+          ? `<div style="${quizStyle}">${
               slide.quizPrompt.trim()
                 ? `<div style="margin-bottom:8px;">${escapeHtml(slide.quizPrompt.trim())}</div>`
                 : ''

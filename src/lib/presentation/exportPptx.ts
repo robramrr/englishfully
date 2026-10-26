@@ -662,9 +662,9 @@ export async function buildPresentationPptxBuffer(
             y: 5.85,
             w: 12.1,
             h: 1.1,
-            fontSize: 14,
+            fontSize: pptxFontSize(slide.quizFontSize, 16),
             bold: true,
-            color: NAVY,
+            color: pptxFontColor(slide.quizColor),
             fontFace: 'Arial',
             valign: 'bottom',
           }
