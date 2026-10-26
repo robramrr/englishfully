@@ -160,6 +160,17 @@ function ContentImageLightbox({
           →
         </button>
       ) : null}
+      <button
+        type="button"
+        className="absolute right-4 top-4 z-[102] flex h-9 w-9 items-center justify-center text-3xl font-bold leading-none text-white/70 hover:text-white"
+        aria-label="Close image"
+        onClick={(event) => {
+          event.stopPropagation();
+          onClose();
+        }}
+      >
+        ×
+      </button>
       <div
         className="flex max-h-full w-full max-w-6xl flex-col items-center gap-4 px-16 md:px-24"
         onClick={(event) => event.stopPropagation()}
@@ -178,13 +189,6 @@ function ContentImageLightbox({
             ) : null}
           </div>
         ) : null}
-        <button
-          type="button"
-          className="border-4 border-[var(--comic-black)] bg-white px-4 py-2 font-black text-[var(--comic-secondary)] comic-shadow-md"
-          onClick={onClose}
-        >
-          Back to slide
-        </button>
       </div>
     </div>,
     overlayRoot
