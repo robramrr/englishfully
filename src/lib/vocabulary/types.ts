@@ -20,6 +20,11 @@ export interface VocabDeck {
   title: string;
   topic: string;
   level: VocabLevel;
+  /**
+   * When true, a pictured card starts as the picture only.
+   * The first click or space reveals the word and part of speech.
+   */
+  pictureFirst: boolean;
   cards: VocabCard[];
   updatedAt: string;
 }
@@ -77,6 +82,7 @@ export function createEmptyVocabDeck(): VocabDeck {
     title: '',
     topic: '',
     level: 'A2',
+    pictureFirst: false,
     cards: [],
     updatedAt: new Date().toISOString(),
   };
@@ -91,6 +97,7 @@ export function normalizeVocabDeck(deck: Partial<VocabDeck>): VocabDeck {
     title: String(deck.title ?? ''),
     topic: String(deck.topic ?? ''),
     level: normalizeLevel(deck.level),
+    pictureFirst: deck.pictureFirst === true,
     cards: normalizeCards(deck.cards),
     updatedAt: String(deck.updatedAt || base.updatedAt),
   };

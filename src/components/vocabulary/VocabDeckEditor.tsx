@@ -390,7 +390,9 @@ export default function VocabDeckEditor({ deckId }: { deckId: string }) {
               Vocabulary deck
             </ComicTitle>
             <ComicText className="font-bold text-[var(--comic-dark)]">
-              Front of the card: word and picture. Back: simple meaning and one example.
+              {deck.pictureFirst
+                ? 'Pictured cards start with the picture only. Click or press space to reveal the word, then again for the meaning.'
+                : 'Front of the card: word and picture. Back: simple meaning and one example.'}
             </ComicText>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -450,6 +452,26 @@ export default function VocabDeckEditor({ deckId }: { deckId: string }) {
                 </option>
               ))}
             </select>
+          </label>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-4 border-[var(--comic-black)]/20 bg-[var(--comic-light)]/40 p-3">
+          <div className="min-w-0 max-w-xl">
+            <ComicText className="font-black">Picture first</ComicText>
+            <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+              Show the picture alone. The first click or space reveals the word and its type. The next one shows the meaning.
+            </ComicText>
+          </div>
+          <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
+            <span className="text-sm">{deck.pictureFirst ? 'On' : 'Off'}</span>
+            <input
+              type="checkbox"
+              className="h-5 w-9 accent-[var(--comic-primary)]"
+              checked={deck.pictureFirst}
+              onChange={(event) =>
+                setDeck({ ...deck, pictureFirst: event.target.checked })
+              }
+            />
           </label>
         </div>
         {error ? (

@@ -59,11 +59,14 @@ function shuffleIndexes(length: number): number[] {
 function FlashcardFace({
   card,
   flipped,
-  onFlip,
+  wordHidden,
+  onAdvance,
 }: {
   card: VocabCard;
   flipped: boolean;
-  onFlip: () => void;
+  /** Picture is showing, and the word is still hidden. */
+  wordHidden: boolean;
+  onAdvance: () => void;
 }) {
   return (
     <div className="h-[min(68vh,620px)] w-full [perspective:1200px]">
@@ -77,13 +80,15 @@ function FlashcardFace({
           type="button"
           className="absolute inset-0 flex h-full w-full cursor-pointer flex-col overflow-hidden border-4 border-[var(--comic-black)] bg-white text-left [backface-visibility:hidden]"
           style={{ pointerEvents: flipped ? 'none' : 'auto' }}
-          onClick={onFlip}
+          onClick={onAdvance}
         >
           <div className="flex items-center justify-between gap-3 border-b-4 border-[var(--comic-black)] bg-[var(--comic-light)] px-4 py-2">
             <span className="font-bungee text-xs uppercase tracking-wide text-[var(--comic-secondary)]">
-              Word
+              {wordHidden ? 'Picture' : 'Word'}
             </span>
-            <span className="text-xs font-bold text-[var(--comic-dark)]">Click to see the meaning</span>
+            <span className="text-xs font-bold text-[var(--comic-dark)]">
+              {wordHidden ? 'Click or space to reveal the word' : 'Click to see the meaning'}
+            </span>
           </div>
           <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 px-6 py-5">
             {card.imageUrl.trim() ? (
@@ -91,19 +96,24 @@ function FlashcardFace({
               <img
                 src={card.imageUrl}
                 alt=""
-                className="max-h-[42%] w-full max-w-sm object-contain"
+                className={[
+                  'w-full max-w-sm object-contain',
+                  wordHidden ? 'max-h-[78%]' : 'max-h-[42%]',
+                ].join(' ')}
               />
             ) : null}
-            <div className="text-center">
-              <div className="font-bungee text-4xl leading-tight text-[var(--comic-secondary)] md:text-6xl">
-                {card.word || 'New word'}
-              </div>
-              {card.partOfSpeech.trim() ? (
-                <div className="mt-2 text-sm font-bold uppercase tracking-wide text-[var(--comic-primary)]">
-                  {card.partOfSpeech}
+            {wordHidden ? null : (
+              <div className="text-center">
+                <div className="font-bungee text-4xl leading-tight text-[var(--comic-secondary)] md:text-6xl">
+                  {card.word || 'New word'}
                 </div>
-              ) : null}
-            </div>
+                {card.partOfSpeech.trim() ? (
+                  <div className="mt-2 text-sm font-bold uppercase tracking-wide text-[var(--comic-primary)]">
+                    {card.partOfSpeech}
+                  </div>
+                ) : null}
+              </div>
+            )}
           </div>
         </button>
 
@@ -111,7 +121,7 @@ function FlashcardFace({
           type="button"
           className="absolute inset-0 flex h-full w-full cursor-pointer flex-col overflow-hidden border-4 border-[var(--comic-black)] bg-[#fff8dc] text-left [backface-visibility:hidden] [transform:rotateY(180deg)]"
           style={{ pointerEvents: flipped ? 'auto' : 'none' }}
-          onClick={onFlip}
+          onClick={onAdvance}
         >
           <div className="flex items-center justify-between gap-3 border-b-4 border-[var(--comic-black)] bg-[var(--comic-yellow)] px-4 py-2">
             <span className="font-bungee text-xs uppercase tracking-wide text-[var(--comic-secondary)]">
@@ -153,6 +163,7 @@ export default function VocabFlashcardStage({
   const [order, setOrder] = useState<number[]>([]);
   const [cursor, setCursor] = useState(0);
   const [flipped, setFlipped] = useState(false);
+  const [wordRevealed, setWordRevealed] = useState(false);
   const [shuffled, setShuffled] = useState(false);
   const [overlayRoot, setOverlayRoot] = useState<HTMLElement | null>(null);
 
@@ -186,6 +197,7 @@ export default function VocabFlashcardStage({
     setOrder(cards.map((_, index) => index));
     setCursor(0);
     setFlipped(false);
+    setWordRevealed(false);
     setShuffled(false);
   }, [cards]);
 
@@ -205,10 +217,26 @@ export default function VocabFlashcardStage({
     setCursor((current) => {
       const next = current + direction;
       if (next < 0 || next >= order.length) return current;
+      setFlipped(false);
+      setWordRevealed(false);
       return next;
     });
-    setFlipped(false);
   }, [order.length]);
+
+  const card = cards[order[cursor] ?? 0];
+  const wordHidden = Boolean(
+    deck?.pictureFirst && card?.imageUrl.trim() && !wordRevealed && !flipped
+  );
+
+  const revealOrFlip = useCallback(() => {
+    if (!card) return;
+    const holdWord = Boolean(deck?.pictureFirst) && Boolean(card.imageUrl.trim());
+    if (holdWord && !wordRevealed && !flipped) {
+      setWordRevealed(true);
+      return;
+    }
+    setFlipped((value) => !value);
+  }, [card, deck?.pictureFirst, flipped, wordRevealed]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -231,7 +259,7 @@ export default function VocabFlashcardStage({
       if (event.key === ' ' || event.key === 'Enter') {
         event.preventDefault();
         event.stopPropagation();
-        setFlipped((value) => !value);
+        revealOrFlip();
         return;
       }
       if (event.key === 'ArrowRight' || event.key === 'PageDown') {
@@ -247,9 +275,8 @@ export default function VocabFlashcardStage({
     }
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [go, onClose]);
+  }, [go, onClose, revealOrFlip]);
 
-  const card = cards[order[cursor] ?? 0];
   const title = deck?.title?.trim() || deck?.topic?.trim() || 'Vocabulary';
 
   const body = (
@@ -298,7 +325,12 @@ export default function VocabFlashcardStage({
         {card ? (
           <>
             <div className="w-full max-w-xl">
-              <FlashcardFace card={card} flipped={flipped} onFlip={() => setFlipped((value) => !value)} />
+              <FlashcardFace
+                card={card}
+                flipped={flipped}
+                wordHidden={wordHidden}
+                onAdvance={revealOrFlip}
+              />
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2">
               <ComicButton
@@ -310,11 +342,17 @@ export default function VocabFlashcardStage({
               >
                 Previous
               </ComicButton>
-              <ComicButton type="button" variant="accent" size="sm" onClick={() => speakWord(card.word)}>
+              <ComicButton
+                type="button"
+                variant="accent"
+                size="sm"
+                disabled={wordHidden}
+                onClick={() => speakWord(card.word)}
+              >
                 Listen
               </ComicButton>
-              <ComicButton type="button" variant="primary" size="sm" onClick={() => setFlipped((value) => !value)}>
-                {flipped ? 'Show word' : 'Show meaning'}
+              <ComicButton type="button" variant="primary" size="sm" onClick={revealOrFlip}>
+                {wordHidden ? 'Show word' : flipped ? 'Show word' : 'Show meaning'}
               </ComicButton>
               <ComicButton
                 type="button"
@@ -339,13 +377,16 @@ export default function VocabFlashcardStage({
                   setShuffled((value) => !value);
                   setCursor(0);
                   setFlipped(false);
+                  setWordRevealed(false);
                 }}
               >
                 {shuffled ? 'Back in order' : 'Shuffle'}
               </button>
             </div>
             <p className="text-center text-sm font-bold text-[var(--comic-dark)]">
-              Space flips the card. Arrow keys move between words.
+              {wordHidden
+                ? 'Space reveals the word and its type. Arrow keys move between pictures.'
+                : 'Space flips the card. Arrow keys move between words.'}
             </p>
           </>
         ) : null}

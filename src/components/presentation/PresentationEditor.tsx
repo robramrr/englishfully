@@ -161,6 +161,20 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
     setContentImageSlots(Math.max(1, countFilledContentImages(selected)));
   }, [selected?.id, selected?.layout]);
 
+  function moveContentImage(index: number, direction: -1 | 1) {
+    if (!selected) return;
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= contentImageSlots) return;
+    const images = readContentSlideImages(selected);
+    const visible = images.slice(0, contentImageSlots);
+    const rest = images.slice(contentImageSlots);
+    const [item] = visible.splice(index, 1);
+    visible.splice(nextIndex, 0, item);
+    setDeck((prev) =>
+      updateSlide(prev, selected.id, contentImagesToSlidePatch([...visible, ...rest]))
+    );
+  }
+
   function handleStructurePaste() {
     const next = structurePastedContent(pasteText);
     setDeck((prev) =>
@@ -845,9 +859,33 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                               className="space-y-2 border-4 border-[var(--comic-black)]/20 bg-[var(--comic-light)]/30 p-3"
                             >
                               <div className="flex items-center justify-between gap-2">
-                                <ComicText className="text-sm font-black">
-                                  Image {index + 1}
-                                </ComicText>
+                                <div className="flex items-center gap-1">
+                                  <ComicText className="text-sm font-black">
+                                    Image {index + 1}
+                                  </ComicText>
+                                  {contentImageSlots > 1 ? (
+                                    <span className="inline-flex items-center">
+                                      <button
+                                        type="button"
+                                        aria-label={`Move image ${index + 1} up`}
+                                        disabled={index === 0}
+                                        className="px-1 text-xs leading-none text-[var(--comic-dark)]/70 hover:text-[var(--comic-secondary)] disabled:opacity-25"
+                                        onClick={() => moveContentImage(index, -1)}
+                                      >
+                                        ↑
+                                      </button>
+                                      <button
+                                        type="button"
+                                        aria-label={`Move image ${index + 1} down`}
+                                        disabled={index >= contentImageSlots - 1}
+                                        className="px-1 text-xs leading-none text-[var(--comic-dark)]/70 hover:text-[var(--comic-secondary)] disabled:opacity-25"
+                                        onClick={() => moveContentImage(index, 1)}
+                                      >
+                                        ↓
+                                      </button>
+                                    </span>
+                                  ) : null}
+                                </div>
                                 {index > 0 ? (
                                   <button
                                     type="button"
