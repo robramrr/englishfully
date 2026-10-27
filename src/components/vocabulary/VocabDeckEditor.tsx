@@ -155,7 +155,7 @@ function CardFields({
           <img
             src={card.imageUrl}
             alt=""
-            className="h-28 w-28 border-4 border-[var(--comic-black)] bg-[var(--comic-light)] object-contain"
+            className="h-28 w-28 object-contain"
           />
         ) : null}
       </div>

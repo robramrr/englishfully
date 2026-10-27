@@ -91,7 +91,7 @@ function FlashcardFace({
               <img
                 src={card.imageUrl}
                 alt=""
-                className="max-h-[42%] w-full max-w-sm border-4 border-[var(--comic-black)] bg-[var(--comic-light)] object-contain"
+                className="max-h-[42%] w-full max-w-sm object-contain"
               />
             ) : null}
             <div className="text-center">
