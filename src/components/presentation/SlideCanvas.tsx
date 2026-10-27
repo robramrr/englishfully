@@ -18,6 +18,7 @@ import { PresentationPieTimer } from './PresentationPieTimer';
 import { PresentationQuiz } from './PresentationQuiz';
 import { SlideRichText } from './SlideRichText';
 import PresentationSlideTimer, { type SlideTimerState } from './PresentationSlideTimer';
+import VocabFlashcardStage from '../vocabulary/VocabFlashcardStage';
 
 interface SlideCanvasProps {
   slide: PresentationSlide;
@@ -66,6 +67,7 @@ type ContentFigureImage = {
   showTitle: boolean;
   subtitle: string;
   showSubtitle: boolean;
+  vocabDeckId?: string;
 };
 
 /** Fullscreen only shows the element that was expanded, so the popup must mount inside it. */
@@ -83,6 +85,7 @@ function ContentImageLightbox({
   onClose,
   onPrev,
   onNext,
+  onOpenVocab,
 }: {
   image: ContentFigureImage;
   title: string;
@@ -90,6 +93,7 @@ function ContentImageLightbox({
   onClose: () => void;
   onPrev?: () => void;
   onNext?: () => void;
+  onOpenVocab?: () => void;
 }) {
   const [overlayRoot, setOverlayRoot] = useState<HTMLElement | null>(null);
 
@@ -164,6 +168,18 @@ function ContentImageLightbox({
           →
         </button>
       ) : null}
+      {onOpenVocab ? (
+        <button
+          type="button"
+          className="absolute left-4 top-4 z-[102] border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)] px-4 py-2 font-bungee text-sm uppercase text-[var(--comic-secondary)]"
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpenVocab();
+          }}
+        >
+          Pre-teach vocab
+        </button>
+      ) : null}
       <button
         type="button"
         className="absolute right-4 top-4 z-[102] flex h-9 w-9 items-center justify-center text-3xl font-bold leading-none text-white/70 hover:text-white"
@@ -212,6 +228,32 @@ function contentImageCaption(image: ContentFigureImage): { title: string; subtit
   };
 }
 
+function VocabChip({
+  present,
+  onClick,
+}: {
+  present: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={[
+        'absolute right-2 top-2 z-10 border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)] font-bungee uppercase leading-none text-[var(--comic-secondary)]',
+        present ? 'px-3 py-2 text-sm md:text-base' : 'px-2.5 py-1.5 text-xs',
+      ].join(' ')}
+      aria-label="Pre-teach vocabulary"
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onClick();
+      }}
+    >
+      Vocab
+    </button>
+  );
+}
+
 function ContentSlideFigure({
   image,
   className = '',
@@ -219,6 +261,7 @@ function ContentSlideFigure({
   present,
   alignTop = false,
   onOpen,
+  onOpenVocab,
 }: {
   image: ContentFigureImage;
   className?: string;
@@ -227,6 +270,7 @@ function ContentSlideFigure({
   /** Single text+image photo: keep the top of the picture visible. */
   alignTop?: boolean;
   onOpen?: () => void;
+  onOpenVocab?: () => void;
 }) {
   const title = image.showTitle ? image.title.trim() : '';
   const subtitle = image.showSubtitle ? image.subtitle.trim() : '';
@@ -258,37 +302,55 @@ function ContentSlideFigure({
       </div>
     ) : null;
 
-  const picture = (
+  const showVocab = Boolean(onOpenVocab) && Boolean(image.vocabDeckId?.trim()) && !compact;
+  const picture = image.url.trim() ? (
     <SlideImage
       url={image.url}
       alt={image.alt}
       alignTop={alignTop}
       className="h-full min-h-0 w-full flex-1"
     />
-  );
-
-  if (!canFocus) {
-    return (
-      <figure className={`flex h-full min-h-0 flex-col gap-1 ${className}`}>
-        {picture}
-        {caption}
-      </figure>
-    );
-  }
-
-  return (
+  ) : showVocab ? (
     <button
       type="button"
-      className={`flex h-full min-h-0 w-full cursor-zoom-in flex-col gap-1 border-0 bg-transparent p-0 text-center font-[inherit] ${className}`}
-      aria-label={title ? `Show ${title} larger` : 'Show this image larger'}
+      className={[
+        'flex h-full min-h-0 w-full flex-col items-center justify-center gap-2 border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)] font-bungee uppercase text-[var(--comic-secondary)]',
+        present ? 'text-2xl md:text-4xl' : 'text-lg',
+      ].join(' ')}
       onClick={(event) => {
         event.stopPropagation();
-        onOpen?.();
+        onOpenVocab?.();
       }}
     >
-      {picture}
-      {caption}
+      <span>Vocab</span>
+      <span className="text-sm font-bold normal-case tracking-normal">Pre-teach</span>
     </button>
+  ) : (
+    <SlideImage url="" alt={image.alt} alignTop={alignTop} className="h-full min-h-0 w-full flex-1" />
+  );
+
+  return (
+    <figure className={`flex h-full min-h-0 flex-col gap-1 ${className}`}>
+      <div className="relative min-h-0 flex-1">
+        {canFocus ? (
+          <button
+            type="button"
+            className="flex h-full min-h-0 w-full cursor-zoom-in flex-col border-0 bg-transparent p-0 text-center font-[inherit]"
+            aria-label={title ? `Show ${title} larger` : 'Show this image larger'}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpen?.();
+            }}
+          >
+            {picture}
+          </button>
+        ) : (
+          picture
+        )}
+        {showVocab && image.url.trim() ? <VocabChip present={present} onClick={() => onOpenVocab?.()} /> : null}
+      </div>
+      {caption}
+    </figure>
   );
 }
 
@@ -494,7 +556,9 @@ export default function SlideCanvas({
   const showTitle = slide.showTitle !== false;
   const showBody = slide.showBody !== false;
   const contentImages =
-    slide.layout === 'content' ? getContentSlideImages(slide, title) : [];
+    slide.layout === 'content'
+      ? getContentSlideImages(slide, title, { includeDeckOnly: true })
+      : [];
   const multiContentImages = contentImages.length >= 2;
   const showContentImageColumn =
     slide.layout === 'content' &&
@@ -511,9 +575,11 @@ export default function SlideCanvas({
   });
   const [localResetKey, setLocalResetKey] = useState(0);
   const [focusedImageIndex, setFocusedImageIndex] = useState<number | null>(null);
+  const [openVocabDeckId, setOpenVocabDeckId] = useState<string | null>(null);
 
   useEffect(() => {
     setFocusedImageIndex(null);
+    setOpenVocabDeckId(null);
   }, [slide.id]);
 
   useEffect(() => {
@@ -646,11 +712,16 @@ export default function SlideCanvas({
                 >
                   {contentImages.map((image, index) => (
                     <ContentSlideFigure
-                      key={`${slide.id}-${index}-${image.url}`}
+                      key={`${slide.id}-${index}-${image.url}-${image.vocabDeckId || ''}`}
                       image={image}
                       compact={compact}
                       present={present}
                       onOpen={() => setFocusedImageIndex(index)}
+                      onOpenVocab={
+                        image.vocabDeckId
+                          ? () => setOpenVocabDeckId(image.vocabDeckId || null)
+                          : undefined
+                      }
                     />
                   ))}
                 </div>
@@ -681,6 +752,11 @@ export default function SlideCanvas({
                         ? () => setFocusedImageIndex(0)
                         : undefined
                     }
+                    onOpenVocab={
+                      contentImages[0]?.vocabDeckId
+                        ? () => setOpenVocabDeckId(contentImages[0]?.vocabDeckId || null)
+                        : undefined
+                    }
                     image={{
                       url: contentImages[0]?.url || slide.imageUrl,
                       alt: contentImages[0]?.alt || slide.imageAlt || title,
@@ -689,6 +765,7 @@ export default function SlideCanvas({
                       subtitle: contentImages[0]?.subtitle || slide.imageSubtitle,
                       showSubtitle:
                         contentImages[0]?.showSubtitle ?? slide.showImageSubtitle !== false,
+                      vocabDeckId: contentImages[0]?.vocabDeckId || slide.vocabDeckId,
                     }}
                     compact={compact}
                     present={present}
@@ -703,6 +780,14 @@ export default function SlideCanvas({
                 image={contentImages[focusedImageIndex]}
                 {...contentImageCaption(contentImages[focusedImageIndex])}
                 onClose={() => setFocusedImageIndex(null)}
+                onOpenVocab={
+                  contentImages[focusedImageIndex].vocabDeckId
+                    ? () => {
+                        setOpenVocabDeckId(contentImages[focusedImageIndex].vocabDeckId || null);
+                        setFocusedImageIndex(null);
+                      }
+                    : undefined
+                }
                 onPrev={
                   focusedImageIndex > 0
                     ? () => setFocusedImageIndex(focusedImageIndex - 1)
@@ -798,11 +883,29 @@ export default function SlideCanvas({
                 <SlideRichText text={title} />
               </h2>
             ) : null}
-            <SlideImage
-              url={slide.imageUrl}
-              alt={slide.imageAlt || title}
-              className="min-h-0 flex-1 w-full"
-            />
+            <div className="relative min-h-0 flex-1">
+              {!slide.imageUrl.trim() && slide.vocabDeckId.trim() && !compact ? (
+                <button
+                  type="button"
+                  className="flex h-full min-h-[8rem] w-full flex-col items-center justify-center gap-2 border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)] font-bungee text-2xl uppercase text-[var(--comic-secondary)] md:text-4xl"
+                  onClick={() => setOpenVocabDeckId(slide.vocabDeckId)}
+                >
+                  <span>Vocab</span>
+                  <span className="text-sm font-bold normal-case tracking-normal">Pre-teach</span>
+                </button>
+              ) : (
+                <>
+                  <SlideImage
+                    url={slide.imageUrl}
+                    alt={slide.imageAlt || title}
+                    className="h-full min-h-0 w-full"
+                  />
+                  {!compact && slide.vocabDeckId.trim() ? (
+                    <VocabChip present={present} onClick={() => setOpenVocabDeckId(slide.vocabDeckId)} />
+                  ) : null}
+                </>
+              )}
+            </div>
             {showBody && body ? (
               <p
                 className="font-bold whitespace-pre-wrap"
@@ -950,6 +1053,13 @@ export default function SlideCanvas({
           </span>
         </div>
       </div>
+      {openVocabDeckId ? (
+        <VocabFlashcardStage
+          deckId={openVocabDeckId}
+          overlay
+          onClose={() => setOpenVocabDeckId(null)}
+        />
+      ) : null}
     </article>
   );
 }

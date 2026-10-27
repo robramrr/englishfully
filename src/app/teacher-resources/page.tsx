@@ -9,6 +9,7 @@ import {
   faBook,
   faChalkboard,
   faChartColumn,
+  faClone,
   faDoorOpen,
   faEarListen,
   faFolderOpen,
@@ -197,6 +198,16 @@ function ResourceCategoriesSection() {
                 {t.teacherResources.viewWorksheets}
               </ButtonWithIcon>
             </ComicButton>
+            <ComicButton
+              href="/teacher-resources/vocabulary"
+              variant="primary"
+              size="sm"
+              className="!inline-flex items-center justify-center"
+            >
+              <ButtonWithIcon icon={faClone}>
+                {t.teacherResources.openVocabulary}
+              </ButtonWithIcon>
+            </ComicButton>
           </div>
         </ComicCard>
       </div>
@@ -338,6 +349,33 @@ function FeaturedResourcesSection() {
             >
               <ButtonWithIcon icon={faFolderOpen}>
                 {t.teacherResources.openProjects}
+              </ButtonWithIcon>
+            </ComicButton>
+          </ComicCard>
+
+          <ComicCard className="flex flex-col">
+            <ComicTitle level={4} className="comic-title-no-shadow mb-4 text-[var(--comic-secondary)]">
+              <TitleWithIcon icon={faClone}>
+                {t.teacherResources.vocabTitle}
+              </TitleWithIcon>
+            </ComicTitle>
+            <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
+              {t.teacherResources.vocabDesc}
+            </ComicText>
+            <ul className="text-[var(--comic-dark)] space-y-1 mb-6 text-sm flex-grow">
+              <li>• {t.teacherResources.vocabItem1}</li>
+              <li>• {t.teacherResources.vocabItem2}</li>
+              <li>• {t.teacherResources.vocabItem3}</li>
+              <li>• {t.teacherResources.vocabItem4}</li>
+            </ul>
+            <ComicButton
+              href="/teacher-resources/vocabulary"
+              variant="secondary"
+              size="sm"
+              className="w-full !inline-flex items-center justify-center"
+            >
+              <ButtonWithIcon icon={faClone}>
+                {t.teacherResources.openVocabulary}
               </ButtonWithIcon>
             </ComicButton>
           </ComicCard>

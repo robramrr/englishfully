@@ -538,6 +538,11 @@ export interface PresentationSlide {
   showImageTitle4: boolean;
   imageSubtitle4: string;
   showImageSubtitle4: boolean;
+  /** Vocabulary deck opened from this picture during a presentation. */
+  vocabDeckId: string;
+  vocabDeckId2: string;
+  vocabDeckId3: string;
+  vocabDeckId4: string;
   /** Font size for definition / explanation. */
   bodyFontSize: PresentationFontSize;
   /** Theme color for definition / explanation. */
@@ -676,6 +681,8 @@ export interface ContentSlideImage {
   showTitle: boolean;
   subtitle: string;
   showSubtitle: boolean;
+  /** Vocabulary deck to pre-teach from this picture. */
+  vocabDeckId: string;
 }
 
 export interface ContentSlideImageView extends ContentSlideImage {
@@ -689,6 +696,7 @@ const CONTENT_IMAGE_KEYS = [
     showTitle: 'showImageTitle',
     subtitle: 'imageSubtitle',
     showSubtitle: 'showImageSubtitle',
+    vocabDeckId: 'vocabDeckId',
   },
   {
     url: 'imageUrl2',
@@ -696,6 +704,7 @@ const CONTENT_IMAGE_KEYS = [
     showTitle: 'showImageTitle2',
     subtitle: 'imageSubtitle2',
     showSubtitle: 'showImageSubtitle2',
+    vocabDeckId: 'vocabDeckId2',
   },
   {
     url: 'imageUrl3',
@@ -703,6 +712,7 @@ const CONTENT_IMAGE_KEYS = [
     showTitle: 'showImageTitle3',
     subtitle: 'imageSubtitle3',
     showSubtitle: 'showImageSubtitle3',
+    vocabDeckId: 'vocabDeckId3',
   },
   {
     url: 'imageUrl4',
@@ -710,6 +720,7 @@ const CONTENT_IMAGE_KEYS = [
     showTitle: 'showImageTitle4',
     subtitle: 'imageSubtitle4',
     showSubtitle: 'showImageSubtitle4',
+    vocabDeckId: 'vocabDeckId4',
   },
 ] as const;
 
@@ -719,6 +730,7 @@ const EMPTY_CONTENT_IMAGE: ContentSlideImage = {
   showTitle: true,
   subtitle: '',
   showSubtitle: true,
+  vocabDeckId: '',
 };
 
 export function readContentSlideImages(
@@ -730,6 +742,7 @@ export function readContentSlideImages(
     showTitle: slide[keys.showTitle] !== false,
     subtitle: String(slide[keys.subtitle] ?? ''),
     showSubtitle: slide[keys.showSubtitle] !== false,
+    vocabDeckId: String(slide[keys.vocabDeckId] ?? '').trim(),
   }));
 }
 
@@ -757,6 +770,10 @@ export function contentImagesToSlidePatch(
   | 'showImageTitle4'
   | 'imageSubtitle4'
   | 'showImageSubtitle4'
+  | 'vocabDeckId'
+  | 'vocabDeckId2'
+  | 'vocabDeckId3'
+  | 'vocabDeckId4'
 > {
   const padded = Array.from({ length: MAX_CONTENT_IMAGES }, (_, index) => ({
     ...EMPTY_CONTENT_IMAGE,
@@ -768,30 +785,35 @@ export function contentImagesToSlidePatch(
     showImageTitle: padded[0].showTitle,
     imageSubtitle: padded[0].subtitle,
     showImageSubtitle: padded[0].showSubtitle,
+    vocabDeckId: padded[0].vocabDeckId.trim(),
     imageUrl2: padded[1].url.trim(),
     imageAlt2: padded[1].title,
     showImageTitle2: padded[1].showTitle,
     imageSubtitle2: padded[1].subtitle,
     showImageSubtitle2: padded[1].showSubtitle,
+    vocabDeckId2: padded[1].vocabDeckId.trim(),
     imageUrl3: padded[2].url.trim(),
     imageAlt3: padded[2].title,
     showImageTitle3: padded[2].showTitle,
     imageSubtitle3: padded[2].subtitle,
     showImageSubtitle3: padded[2].showSubtitle,
+    vocabDeckId3: padded[2].vocabDeckId.trim(),
     imageUrl4: padded[3].url.trim(),
     imageAlt4: padded[3].title,
     showImageTitle4: padded[3].showTitle,
     imageSubtitle4: padded[3].subtitle,
     showImageSubtitle4: padded[3].showSubtitle,
+    vocabDeckId4: padded[3].vocabDeckId.trim(),
   };
 }
 
 export function getContentSlideImages(
   slide: Partial<PresentationSlide>,
-  titleFallback = ''
+  titleFallback = '',
+  options?: { includeDeckOnly?: boolean }
 ): ContentSlideImageView[] {
   return readContentSlideImages(slide)
-    .filter((item) => item.url)
+    .filter((item) => item.url || (options?.includeDeckOnly && item.vocabDeckId))
     .map((item) => ({
       ...item,
       alt: item.title.trim() || titleFallback,
@@ -799,7 +821,7 @@ export function getContentSlideImages(
 }
 
 export function countFilledContentImages(slide: Partial<PresentationSlide>): number {
-  return readContentSlideImages(slide).filter((item) => item.url).length;
+  return readContentSlideImages(slide).filter((item) => item.url || item.vocabDeckId).length;
 }
 
 /** Keep blank lines for extra vertical spacing (including before the first bullet). */
@@ -884,6 +906,10 @@ export function createEmptySlide(
     showImageTitle4: true,
     imageSubtitle4: '',
     showImageSubtitle4: true,
+    vocabDeckId: '',
+    vocabDeckId2: '',
+    vocabDeckId3: '',
+    vocabDeckId4: '',
     bodyFontSize: 'md',
     bodyColor: 'navy',
     bulletsFontSize: 'md',
@@ -971,6 +997,10 @@ export function normalizeSlide(
     showImageTitle4: slide.showImageTitle4 !== false,
     imageSubtitle4: String(slide.imageSubtitle4 ?? ''),
     showImageSubtitle4: slide.showImageSubtitle4 !== false,
+    vocabDeckId: String(slide.vocabDeckId ?? '').trim(),
+    vocabDeckId2: String(slide.vocabDeckId2 ?? '').trim(),
+    vocabDeckId3: String(slide.vocabDeckId3 ?? '').trim(),
+    vocabDeckId4: String(slide.vocabDeckId4 ?? '').trim(),
     bodyFontSize: normalizeFontSize(slide.bodyFontSize),
     bodyColor: normalizeFontColor(slide.bodyColor),
     bulletsFontSize: normalizeFontSize(slide.bulletsFontSize),

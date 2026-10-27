@@ -70,6 +70,17 @@ function playTone(options: {
   osc.stop(now + options.duration + 0.03);
 }
 
+/** Steady clock tick while a slice still has more than 10 seconds left. */
+function playClockTick(secondsLeft: number) {
+  const tock = secondsLeft % 2 === 0;
+  playTone({
+    frequency: tock ? 740 : 1180,
+    duration: 0.045,
+    type: 'triangle',
+    gain: tock ? 0.12 : 0.16,
+  });
+}
+
 /** Loud game-show countdown used while a slice is running out. */
 function playDwindleBeep(secondsLeft: number) {
   const urgent = secondsLeft <= 3;
@@ -265,15 +276,16 @@ export function PresentationPieTimer({
         return;
       }
       const pos = positionAt(next, slicesRef.current);
+      const whole = Math.ceil(pos.remainingMs / 1000);
       if (pos.index !== lastIndexRef.current) {
         if (lastIndexRef.current !== null) playSliceAdvance();
         lastIndexRef.current = pos.index;
-        lastWholeRef.current = null;
-      }
-      const whole = Math.ceil(pos.remainingMs / 1000);
-      if (whole >= 1 && whole <= 10 && whole !== lastWholeRef.current) {
         lastWholeRef.current = whole;
-        playDwindleBeep(whole);
+        if (whole >= 1 && whole <= 10) playDwindleBeep(whole);
+      } else if (whole >= 1 && whole !== lastWholeRef.current) {
+        lastWholeRef.current = whole;
+        if (whole <= 10) playDwindleBeep(whole);
+        else playClockTick(whole);
       }
       setElapsed(next);
       frame = requestAnimationFrame(loop);
@@ -531,8 +543,8 @@ export function PieTimerEditor({
         <ComicText className="font-black">Pie timer</ComicText>
         <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
           Each slice is one timed step. Write what it is for, then set minutes and seconds.
-          Press Start while presenting. Slices shrink clockwise until the pie is done. The last
-          10 seconds of each slice play a game-show countdown.
+          Press Start while presenting. Slices shrink clockwise until the pie is done. The clock
+          ticks each second, then the last 10 seconds of each slice play a louder game-show countdown.
         </ComicText>
       </div>
       <div className="space-y-3">

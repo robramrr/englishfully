@@ -29,6 +29,7 @@ export default function HeaderWrapper() {
   const hideHeader =
     pathname.startsWith('/speak/') ||
     pathname.startsWith('/listen-learn/') ||
+    pathname.startsWith('/vocabulary/') ||
     pathname.startsWith('/escape-room/') ||
     pathname.startsWith('/projects/') ||
     (pathname.includes('/escape-room/') && pathname.endsWith('/preview')) ||

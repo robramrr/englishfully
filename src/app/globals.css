@@ -168,27 +168,41 @@ body::before {
   box-shadow: none !important;
 }
 
-/* Presentation teacher tools — flat cards / buttons / titles */
+/* Presentation and vocabulary teacher tools — flat cards / buttons / titles */
 .presentation-page .comic-card,
+.vocabulary-page .comic-card,
 .presentation-page .comic-button,
+.vocabulary-page .comic-button,
 .presentation-page .comic-input,
+.vocabulary-page .comic-input,
 .presentation-page .comic-textarea,
+.vocabulary-page .comic-textarea,
 .presentation-page .comic-shadow-sm,
+.vocabulary-page .comic-shadow-sm,
 .presentation-page .comic-shadow-md,
+.vocabulary-page .comic-shadow-md,
 .presentation-page .comic-shadow-lg,
+.vocabulary-page .comic-shadow-lg,
 .presentation-page .comic-shadow-xl,
-.presentation-page .comic-shadow-2xl {
+.vocabulary-page .comic-shadow-xl,
+.presentation-page .comic-shadow-2xl,
+.vocabulary-page .comic-shadow-2xl {
   box-shadow: none !important;
 }
 
 .presentation-page .comic-card:hover,
+.vocabulary-page .comic-card:hover,
 .presentation-page .comic-button:hover,
+.vocabulary-page .comic-button:hover,
 .presentation-page .comic-button:active,
-.presentation-page .comic-input:focus {
+.vocabulary-page .comic-button:active,
+.presentation-page .comic-input:focus,
+.vocabulary-page .comic-input:focus {
   box-shadow: none !important;
 }
 
-.presentation-page .comic-title {
+.presentation-page .comic-title,
+.vocabulary-page .comic-title {
   text-shadow: none;
 }
 

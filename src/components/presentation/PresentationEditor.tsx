@@ -10,6 +10,7 @@ import PresentationPreview from './PresentationPreview';
 import PresentationShareBar from './PresentationShareBar';
 import SlideTextStyleControls from './SlideTextStyleControls';
 import PresentationAudioClipEditor from './PresentationAudioClipEditor';
+import VocabDeckLinkSelect from './VocabDeckLinkSelect';
 import { FillBlankEditor } from './PresentationFillBlank';
 import { PieTimerEditor } from './PresentationPieTimer';
 import { QuizEditor } from './PresentationQuiz';
@@ -825,6 +826,14 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                             placeholder="Describe the image"
                           />
                         </label>
+                        <VocabDeckLinkSelect
+                          value={selected.vocabDeckId}
+                          onChange={(vocabDeckId) =>
+                            setDeck((prev) =>
+                              updateSlide(prev, selected.id, { vocabDeckId })
+                            )
+                          }
+                        />
                       </>
                     ) : (
                       <>
@@ -980,6 +989,20 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                                   placeholder="Optional subtitle"
                                 />
                               </div>
+                              <VocabDeckLinkSelect
+                                value={slot.vocabDeckId}
+                                onChange={(vocabDeckId) => {
+                                  const images = readContentSlideImages(selected);
+                                  images[index] = { ...images[index], vocabDeckId };
+                                  setDeck((prev) =>
+                                    updateSlide(
+                                      prev,
+                                      selected.id,
+                                      contentImagesToSlidePatch(images)
+                                    )
+                                  );
+                                }}
+                              />
                             </div>
                           ))}
                         {contentImageSlots < MAX_CONTENT_IMAGES ? (
@@ -998,7 +1021,8 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                         ) : null}
                         <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
                           One image sits beside the text. Two or three sit in a row below. Four sit
-                          in a 2×2 grid. Turn a title or subtitle off to hide that line.
+                          in a 2×2 grid. Link a vocabulary deck on any picture to pre-teach those
+                          words during the presentation.
                         </ComicText>
                       </>
                     )}
