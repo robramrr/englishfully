@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import Link from 'next/link';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowLeft, faArrowRight, faVolumeHigh } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
 import {
@@ -295,19 +296,13 @@ export default function VocabFlashcardStage({
             {title}
           </h1>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {onClose ? (
+        {onClose ? (
+          <div className="flex flex-wrap gap-2">
             <ComicButton type="button" variant="warning" size="sm" onClick={onClose}>
               Back to slide
             </ComicButton>
-          ) : (
-            <Link href={`/teacher-resources/vocabulary/${deckId}`}>
-              <ComicButton variant="secondary" size="sm">
-                Edit deck
-              </ComicButton>
-            </Link>
-          )}
-        </div>
+          </div>
+        ) : null}
       </header>
 
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-5 px-4 py-6">
@@ -332,15 +327,17 @@ export default function VocabFlashcardStage({
                 onAdvance={revealOrFlip}
               />
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="flex w-full max-w-xl flex-nowrap items-center justify-center gap-2 self-stretch">
               <ComicButton
                 type="button"
                 variant="secondary"
                 size="sm"
                 disabled={cursor <= 0}
                 onClick={() => go(-1)}
+                className="shrink-0 !px-3"
               >
-                Previous
+                <span className="sr-only">Previous</span>
+                <FontAwesomeIcon icon={faArrowLeft} className="h-5 w-5" />
               </ComicButton>
               <ComicButton
                 type="button"
@@ -348,10 +345,12 @@ export default function VocabFlashcardStage({
                 size="sm"
                 disabled={wordHidden}
                 onClick={() => speakWord(card.word)}
+                className="shrink-0 !px-3"
               >
-                Listen
+                <span className="sr-only">Listen</span>
+                <FontAwesomeIcon icon={faVolumeHigh} className="h-5 w-5" />
               </ComicButton>
-              <ComicButton type="button" variant="primary" size="sm" onClick={revealOrFlip}>
+              <ComicButton type="button" variant="primary" size="sm" onClick={revealOrFlip} className="!px-4">
                 {wordHidden ? 'Show word' : flipped ? 'Show word' : 'Show meaning'}
               </ComicButton>
               <ComicButton
@@ -360,8 +359,10 @@ export default function VocabFlashcardStage({
                 size="sm"
                 disabled={cursor >= cards.length - 1}
                 onClick={() => go(1)}
+                className="shrink-0 !px-3"
               >
-                Next
+                <span className="sr-only">Next</span>
+                <FontAwesomeIcon icon={faArrowRight} className="h-5 w-5" />
               </ComicButton>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3">
