@@ -7,6 +7,7 @@ import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import VocabFlashcardStage from './VocabFlashcardStage';
+import { generateQrDataUrl, getVocabDeckUrl } from '@/lib/vocabulary/qr';
 import {
   MAX_AI_CARDS,
   MAX_VOCAB_CARDS,
@@ -176,6 +177,9 @@ export default function VocabDeckEditor({ deckId }: { deckId: string }) {
   const [generating, setGenerating] = useState(false);
   const [uploadingId, setUploadingId] = useState('');
   const [practicing, setPracticing] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [qrCode, setQrCode] = useState('');
+  const [copied, setCopied] = useState(false);
   const deckRef = useRef<VocabDeck | null>(null);
   const savedSignature = useRef('');
   const ready = useRef(false);
@@ -183,6 +187,27 @@ export default function VocabDeckEditor({ deckId }: { deckId: string }) {
   useEffect(() => {
     deckRef.current = deck;
   }, [deck]);
+
+  useEffect(() => {
+    if (!deckId) {
+      setShareUrl('');
+      setQrCode('');
+      return;
+    }
+    const url = getVocabDeckUrl(deckId, window.location.origin);
+    setShareUrl(url);
+    let cancelled = false;
+    void generateQrDataUrl(url)
+      .then((dataUrl) => {
+        if (!cancelled) setQrCode(dataUrl);
+      })
+      .catch(() => {
+        if (!cancelled) setQrCode('');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [deckId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -360,6 +385,17 @@ export default function VocabDeckEditor({ deckId }: { deckId: string }) {
     if (ok) setPracticing(true);
   }
 
+  async function handleCopyLink() {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
+
   if (loading) {
     return (
       <ComicCard className="comic-shadow-xl">
@@ -453,6 +489,46 @@ export default function VocabDeckEditor({ deckId }: { deckId: string }) {
               ))}
             </select>
           </label>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4 border-4 border-[var(--comic-black)] bg-white p-3">
+          {qrCode ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={qrCode}
+              alt="QR code for this flashcard deck"
+              className="h-32 w-32 shrink-0 object-contain"
+            />
+          ) : (
+            <div className="flex h-32 w-32 shrink-0 items-center justify-center border-4 border-[var(--comic-black)] bg-[var(--comic-light)] text-center text-xs font-bold">
+              Generating QR code…
+            </div>
+          )}
+          <div className="min-w-0 flex-1 space-y-2">
+            <ComicText className="font-black">Student practice link</ComicText>
+            <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+              Students scan the code or open the link to practice this deck.
+            </ComicText>
+            {shareUrl ? (
+              <a
+                href={shareUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="block break-all text-sm font-bold text-[var(--comic-secondary)] underline-offset-2 hover:underline"
+              >
+                {shareUrl}
+              </a>
+            ) : null}
+            <ComicButton
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={!shareUrl}
+              onClick={() => void handleCopyLink()}
+            >
+              {copied ? 'Link copied' : 'Copy link'}
+            </ComicButton>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-4 border-[var(--comic-black)]/20 bg-[var(--comic-light)]/40 p-3">
