@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLock } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
@@ -10,20 +11,41 @@ import ComicTitle from '../ComicTitle';
 
 interface TeacherAuthGateProps {
   children: React.ReactNode;
+  description?: string;
+  refreshOnSuccess?: boolean;
 }
 
-export default function TeacherAuthGate({ children }: TeacherAuthGateProps) {
+const DEFAULT_DESCRIPTION =
+  'Enter your teacher password to manage Speak & Submit and Listen & Answer tools.';
+
+export default function TeacherAuthGate({
+  children,
+  description = DEFAULT_DESCRIPTION,
+  refreshOnSuccess = false,
+}: TeacherAuthGateProps) {
+  const router = useRouter();
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     fetch('/api/speak-and-submit/auth')
       .then((res) => res.json())
-      .then((data) => setAuthenticated(Boolean(data.authenticated)))
-      .catch(() => setAuthenticated(false));
-  }, []);
+      .then((data) => {
+        if (cancelled) return;
+        const ok = Boolean(data.authenticated);
+        setAuthenticated(ok);
+        if (ok && refreshOnSuccess) router.refresh();
+      })
+      .catch(() => {
+        if (!cancelled) setAuthenticated(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshOnSuccess, router]);
 
   async function handleLogin(event: React.FormEvent) {
     event.preventDefault();
@@ -43,6 +65,7 @@ export default function TeacherAuthGate({ children }: TeacherAuthGateProps) {
       }
 
       setAuthenticated(true);
+      if (refreshOnSuccess) router.refresh();
     } catch {
       setError('Unable to sign in. Please try again.');
     } finally {
@@ -68,9 +91,7 @@ export default function TeacherAuthGate({ children }: TeacherAuthGateProps) {
               Teacher Access
             </span>
           </ComicTitle>
-          <ComicText className="text-[var(--comic-dark)] font-bold mb-6">
-            Enter your teacher password to manage Speak &amp; Submit and Listen &amp; Answer tools.
-          </ComicText>
+          <ComicText className="text-[var(--comic-dark)] font-bold mb-6">{description}</ComicText>
           <form onSubmit={handleLogin} className="space-y-4">
             <input
               type="password"
@@ -90,6 +111,14 @@ export default function TeacherAuthGate({ children }: TeacherAuthGateProps) {
           </form>
         </ComicCard>
       </section>
+    );
+  }
+
+  if (refreshOnSuccess) {
+    return (
+      <div className="max-w-xl mx-auto py-24 px-4 text-center">
+        <ComicText className="text-[var(--comic-dark)] font-bold">Opening…</ComicText>
+      </div>
     );
   }
 
