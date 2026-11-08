@@ -760,7 +760,14 @@
     "projectsItem2": "Collect artwork photos",
     "projectsItem3": "Record or present in person",
     "projectsItem4": "Review the whole class in one place",
-    "openProjects": "Open Projects"
+    "openProjects": "Open Projects",
+    "worksheetGeneratorTitle": "Worksheet Generator",
+    "worksheetGeneratorDesc": "Paste a topic or transcript and print a worksheet",
+    "worksheetGeneratorItem1": "Fill-in, multiple choice, and matching",
+    "worksheetGeneratorItem2": "Unjumble, anagrams, and short answers",
+    "worksheetGeneratorItem3": "Teacher, class, student, and 5-digit ID",
+    "worksheetGeneratorItem4": "Same paper template every time",
+    "openWorksheetGenerator": "Open worksheets"
   },
   "aiVoiceCoach": {
     "heroTitle": "🎤 AI Language Tutor",

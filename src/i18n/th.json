@@ -759,7 +759,14 @@
     "projectsItem2": "เก็บรูปงานศิลปะ",
     "projectsItem3": "อัดเสียงหรือนำเสนอในห้อง",
     "projectsItem4": "ตรวจงานทั้งชั้นในที่เดียว",
-    "openProjects": "เปิดโปรเจกต์"
+    "openProjects": "เปิดโปรเจกต์",
+    "worksheetGeneratorTitle": "ตัวสร้างใบงาน",
+    "worksheetGeneratorDesc": "วางหัวข้อหรือบทพูด แล้วพิมพ์ใบงาน",
+    "worksheetGeneratorItem1": "เติมคำ เลือกตอบ และจับคู่",
+    "worksheetGeneratorItem2": "เรียงประโยค สลับตัวอักษร และตอบสั้น",
+    "worksheetGeneratorItem3": "ชื่อครู ชั้น นักเรียน และรหัส 5 หลัก",
+    "worksheetGeneratorItem4": "ใช้แบบฟอร์มกระดาษเดียวกันทุกครั้ง",
+    "openWorksheetGenerator": "เปิดใบงาน"
   },
   "aiVoiceCoach": {
     "heroTitle": "🎤 ครูสอนภาษา AI",

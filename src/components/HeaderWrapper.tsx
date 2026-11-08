@@ -49,7 +49,10 @@ export default function HeaderWrapper() {
         'w-full flex items-center justify-between py-6 px-8 comic-bg-header-stripes comic-border-b-4 border-b-6 border-[var(--comic-black)]',
         isProjectTool ? '' : 'comic-shadow-xl',
         isFormalDoc ? 'pitch-deck-site-header' : '',
-        pathname.startsWith('/about/company-profile') ? 'print:hidden' : '',
+        pathname.startsWith('/about/company-profile') ||
+        pathname.startsWith('/teacher-resources/worksheets')
+          ? 'print:hidden'
+          : '',
       ].join(' ')}
     >
       <Logo />

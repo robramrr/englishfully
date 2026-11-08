@@ -12,6 +12,7 @@ import {
   faClone,
   faDoorOpen,
   faEarListen,
+  faFilePen,
   faFolderOpen,
   faGamepad,
   faHeadphones,
@@ -376,6 +377,33 @@ function FeaturedResourcesSection() {
             >
               <ButtonWithIcon icon={faClone}>
                 {t.teacherResources.openVocabulary}
+              </ButtonWithIcon>
+            </ComicButton>
+          </ComicCard>
+
+          <ComicCard className="flex flex-col">
+            <ComicTitle level={4} className="comic-title-no-shadow mb-4 text-[var(--comic-primary)]">
+              <TitleWithIcon icon={faFilePen}>
+                {t.teacherResources.worksheetGeneratorTitle}
+              </TitleWithIcon>
+            </ComicTitle>
+            <ComicText className="text-[var(--comic-dark)] font-bold mb-4">
+              {t.teacherResources.worksheetGeneratorDesc}
+            </ComicText>
+            <ul className="text-[var(--comic-dark)] space-y-1 mb-6 text-sm flex-grow">
+              <li>• {t.teacherResources.worksheetGeneratorItem1}</li>
+              <li>• {t.teacherResources.worksheetGeneratorItem2}</li>
+              <li>• {t.teacherResources.worksheetGeneratorItem3}</li>
+              <li>• {t.teacherResources.worksheetGeneratorItem4}</li>
+            </ul>
+            <ComicButton
+              href="/teacher-resources/worksheets"
+              variant="primary"
+              size="sm"
+              className="w-full !inline-flex items-center justify-center"
+            >
+              <ButtonWithIcon icon={faFilePen}>
+                {t.teacherResources.openWorksheetGenerator}
               </ButtonWithIcon>
             </ComicButton>
           </ComicCard>
