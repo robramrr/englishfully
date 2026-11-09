@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import {
   formatWorksheetDate,
+  type CrosswordEntry,
   type WorksheetDocument,
   type WorksheetSection,
 } from '@/lib/worksheets/types';
@@ -15,11 +16,7 @@ function Field({ label, children }: { label: string; children?: string }) {
   return (
     <div className="worksheet-field">
       <span className="worksheet-field-label">{label}</span>
-      {children?.trim() ? (
-        <span className="worksheet-field-value">{children}</span>
-      ) : (
-        <span className="worksheet-blank" />
-      )}
+      <span className="worksheet-field-line">{children?.trim() || ''}</span>
     </div>
   );
 }
@@ -163,6 +160,10 @@ function SectionBody({ section }: { section: WorksheetSection }) {
     );
   }
 
+  if (section.type === 'crossword') {
+    return <CrosswordBlock entries={section.entries} />;
+  }
+
   if (section.type === 'true_false') {
     return (
       <ol className="worksheet-list">
@@ -219,7 +220,124 @@ function answerLines(section: WorksheetSection): string[] {
   if (section.type === 'true_false') {
     return section.items.map((item) => (item.answer ? 'True' : 'False'));
   }
+  if (section.type === 'crossword') {
+    return [...section.entries]
+      .sort((a, b) => a.number - b.number || (a.direction === 'across' ? -1 : 1))
+      .map(
+        (entry) =>
+          `${entry.number} ${entry.direction === 'across' ? 'Across' : 'Down'} — ${entry.answer}`
+      );
+  }
   return section.items.map((item) => item.answer);
+}
+
+function crosswordBounds(entries: CrosswordEntry[]): { rows: number; cols: number } {
+  let rows = 0;
+  let cols = 0;
+  for (const entry of entries) {
+    rows = Math.max(rows, entry.row + (entry.direction === 'down' ? entry.answer.length : 1));
+    cols = Math.max(cols, entry.col + (entry.direction === 'across' ? entry.answer.length : 1));
+  }
+  return { rows, cols };
+}
+
+function CrosswordGrid({
+  entries,
+  showAnswers = false,
+}: {
+  entries: CrosswordEntry[];
+  showAnswers?: boolean;
+}) {
+  const { rows, cols } = crosswordBounds(entries);
+  if (rows === 0 || cols === 0) return null;
+
+  const letters = new Map<string, string>();
+  const numbers = new Map<string, number>();
+  for (const entry of entries) {
+    const start = `${entry.row},${entry.col}`;
+    const current = numbers.get(start);
+    if (current === undefined || entry.number < current) numbers.set(start, entry.number);
+    for (let index = 0; index < entry.answer.length; index += 1) {
+      const row = entry.direction === 'down' ? entry.row + index : entry.row;
+      const col = entry.direction === 'across' ? entry.col + index : entry.col;
+      letters.set(`${row},${col}`, entry.answer[index] || '');
+    }
+  }
+
+  return (
+    <div className="worksheet-crossword-wrap">
+      <div
+        className="worksheet-crossword"
+        aria-hidden={showAnswers ? undefined : true}
+        aria-label={showAnswers ? 'Completed crossword' : undefined}
+        style={{ gridTemplateColumns: `repeat(${cols}, 1.45rem)` }}
+      >
+        {Array.from({ length: rows * cols }, (_, index) => {
+          const row = Math.floor(index / cols);
+          const col = index % cols;
+          const key = `${row},${col}`;
+          const letter = letters.get(key);
+          if (!letter) {
+            return <span key={key} className="worksheet-crossword-block" aria-hidden />;
+          }
+          const number = numbers.get(key);
+          return (
+            <span key={key} className="worksheet-crossword-cell">
+              {number ? <span className="worksheet-crossword-num">{number}</span> : null}
+              {showAnswers ? letter : ''}
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function CrosswordClues({ entries }: { entries: CrosswordEntry[] }) {
+  const groups = [
+    { label: 'Across', items: entries.filter((entry) => entry.direction === 'across') },
+    { label: 'Down', items: entries.filter((entry) => entry.direction === 'down') },
+  ].map((group) => ({
+    ...group,
+    items: [...group.items].sort((a, b) => a.number - b.number),
+  }));
+
+  return (
+    <div className="worksheet-crossword-clues">
+      {groups.map((group) => (
+        <div key={group.label}>
+          <h3>{group.label}</h3>
+          {group.items.length === 0 ? (
+            <p className="worksheet-crossword-empty">None</p>
+          ) : (
+            <ul>
+              {group.items.map((entry) => (
+                <li key={`${entry.direction}-${entry.number}`}>
+                  <span>{entry.number}.</span>
+                  {entry.clue}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CrosswordBlock({
+  entries,
+  showAnswers = false,
+}: {
+  entries: CrosswordEntry[];
+  showAnswers?: boolean;
+}) {
+  return (
+    <>
+      <CrosswordGrid entries={entries} showAnswers={showAnswers} />
+      {showAnswers ? null : <CrosswordClues entries={entries} />}
+    </>
+  );
 }
 
 function AnswerKey({ sections }: { sections: WorksheetSection[] }) {
@@ -232,10 +350,15 @@ function AnswerKey({ sections }: { sections: WorksheetSection[] }) {
           <h2>
             {sectionIndex + 1}. {section.title}
           </h2>
+          {section.type === 'crossword' ? (
+            <CrosswordBlock entries={section.entries} showAnswers />
+          ) : null}
           <ol className="worksheet-list worksheet-key-list">
             {answerLines(section).map((line, index) => (
               <li key={`${line}-${index}`}>
-                {section.type === 'matching' ? line : `${index + 1}. ${line}`}
+                {section.type === 'matching' || section.type === 'crossword'
+                  ? line
+                  : `${index + 1}. ${line}`}
               </li>
             ))}
           </ol>
@@ -298,17 +421,13 @@ const SHEET_CSS = `
   font-weight: 700;
   white-space: nowrap;
 }
-.worksheet-field-value {
-  font-weight: 600;
-  border-bottom: 1.5px solid var(--brand-navy);
+.worksheet-field-line {
+  flex: 1 1 0;
   min-width: 0;
-  overflow-wrap: anywhere;
-}
-.worksheet-blank {
-  flex: 1;
+  min-height: 1.15rem;
   border-bottom: 1.5px solid var(--brand-navy);
-  min-width: 4.5rem;
-  height: 1.15rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 .worksheet-id {
   display: inline-flex;
@@ -445,6 +564,79 @@ const SHEET_CSS = `
   font-size: 0.75rem;
   font-weight: 700;
 }
+.worksheet-crossword-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+  margin: 0.35rem 0 0.7rem;
+}
+.worksheet-crossword {
+  display: grid;
+  width: max-content;
+  border: 2px solid var(--brand-navy);
+}
+.worksheet-crossword-cell,
+.worksheet-crossword-block {
+  width: 1.45rem;
+  height: 1.45rem;
+  box-sizing: border-box;
+}
+.worksheet-crossword-cell {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 0.06rem;
+  border: 1px solid var(--brand-navy);
+  background: white;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.worksheet-crossword-block {
+  background: var(--brand-navy);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.worksheet-crossword-num {
+  position: absolute;
+  top: 0;
+  left: 1px;
+  font-size: 0.45rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.worksheet-crossword-clues {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem 1.25rem;
+}
+.worksheet-crossword-clues h3 {
+  margin: 0 0 0.15rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brand-red);
+}
+.worksheet-crossword-clues ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.worksheet-crossword-clues li {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0.2rem 0;
+  font-weight: 500;
+}
+.worksheet-crossword-clues li span {
+  font-weight: 700;
+  min-width: 1.2rem;
+}
+.worksheet-crossword-empty {
+  margin: 0;
+  font-weight: 600;
+}
 .worksheet-answer-key {
   margin-top: 1.5rem;
 }
@@ -455,7 +647,8 @@ const SHEET_CSS = `
 @media (max-width: 640px) {
   .worksheet-meta,
   .worksheet-choices,
-  .worksheet-match {
+  .worksheet-match,
+  .worksheet-crossword-clues {
     grid-template-columns: 1fr;
   }
 }

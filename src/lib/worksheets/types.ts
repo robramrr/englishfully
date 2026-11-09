@@ -53,6 +53,13 @@ export const WORKSHEET_EXERCISES = [
     defaultOn: false,
     defaultCount: 3,
   },
+  {
+    type: 'crossword',
+    label: 'Crossword',
+    hint: 'Fill the grid from the clues',
+    defaultOn: false,
+    defaultCount: 6,
+  },
 ] as const;
 
 export type WorksheetExerciseType = (typeof WORKSHEET_EXERCISES)[number]['type'];
@@ -70,7 +77,7 @@ export interface WorksheetHeader {
   className: string;
   /** Up to 5 digits. Blank boxes are left for the student when this is empty. */
   studentId: string;
-  /** yyyy-mm-dd. Omitted from the sheet when empty. */
+  /** yyyy-mm-dd. A blank due line still prints. */
   dueDate: string;
   level: string;
   /** Short directions printed under the header. */
@@ -106,6 +113,15 @@ export interface TrueFalseItem {
 
 export interface ShortAnswerItem {
   prompt: string;
+  answer: string;
+}
+
+export interface CrosswordEntry {
+  number: number;
+  direction: 'across' | 'down';
+  row: number;
+  col: number;
+  clue: string;
   answer: string;
 }
 
@@ -145,6 +161,10 @@ export type WorksheetSection =
   | (SectionBase & {
       type: 'short_answer';
       items: ShortAnswerItem[];
+    })
+  | (SectionBase & {
+      type: 'crossword';
+      entries: CrosswordEntry[];
     });
 
 /** One printable worksheet. Pass this to WorksheetTemplate to reuse the paper. */

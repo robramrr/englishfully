@@ -1,6 +1,7 @@
 import {
   exerciseLabel,
   isWorksheetExerciseType,
+  type CrosswordEntry,
   type WorksheetExerciseRequest,
   type WorksheetExerciseType,
   type WorksheetSection,
@@ -82,6 +83,9 @@ const TYPE_ALIASES: Record<string, WorksheetExerciseType> = {
   'short-answer': 'short_answer',
   shortanswer: 'short_answer',
   comprehension: 'short_answer',
+  crossword: 'crossword',
+  cross_word: 'crossword',
+  'cross-word': 'crossword',
 };
 
 export function canonicalExerciseType(value: unknown): WorksheetExerciseType | null {
@@ -289,6 +293,276 @@ function parseTrueFalse(raw: Record<string, unknown>, count: number): WorksheetS
   return { type: 'true_false', ...sectionCopy(raw, 'true_false'), items };
 }
 
+interface CrosswordWord {
+  clue: string;
+  answer: string;
+}
+
+interface CrosswordDraft extends CrosswordWord {
+  row: number;
+  col: number;
+  direction: 'across' | 'down';
+}
+
+const CROSSWORD_CANVAS = 32;
+
+function crosswordKey(row: number, col: number): string {
+  return `${row},${col}`;
+}
+
+function crosswordInBounds(row: number, col: number): boolean {
+  return row >= 0 && col >= 0 && row < CROSSWORD_CANVAS && col < CROSSWORD_CANVAS;
+}
+
+/** How many letters cross existing words. Null means the word cannot sit here. */
+function crosswordFit(
+  grid: Map<string, string>,
+  placed: CrosswordDraft[],
+  answer: string,
+  row: number,
+  col: number,
+  direction: 'across' | 'down'
+): number | null {
+  const down = direction === 'down';
+  const dRow = down ? 1 : 0;
+  const dCol = down ? 0 : 1;
+  const beforeRow = row - dRow;
+  const beforeCol = col - dCol;
+  if (crosswordInBounds(beforeRow, beforeCol) && grid.has(crosswordKey(beforeRow, beforeCol))) {
+    return null;
+  }
+  const afterRow = row + dRow * answer.length;
+  const afterCol = col + dCol * answer.length;
+  if (crosswordInBounds(afterRow, afterCol) && grid.has(crosswordKey(afterRow, afterCol))) {
+    return null;
+  }
+
+  const overlapsSameLine = placed.some((entry) => {
+    if (entry.direction !== direction) return false;
+    if (down && entry.col !== col) return false;
+    if (!down && entry.row !== row) return false;
+    const entryStart = down ? entry.row : entry.col;
+    const start = down ? row : col;
+    const entryEnd = entryStart + entry.answer.length;
+    const end = start + answer.length;
+    return start < entryEnd && entryStart < end;
+  });
+  if (overlapsSameLine) return null;
+
+  let intersections = 0;
+  for (let index = 0; index < answer.length; index += 1) {
+    const letterRow = row + dRow * index;
+    const letterCol = col + dCol * index;
+    if (!crosswordInBounds(letterRow, letterCol)) return null;
+    const existing = grid.get(crosswordKey(letterRow, letterCol));
+    if (existing) {
+      if (existing !== answer[index]) return null;
+      intersections += 1;
+    } else {
+      const sideRow = down ? 0 : 1;
+      const sideCol = down ? 1 : 0;
+      const above =
+        crosswordInBounds(letterRow - sideRow, letterCol - sideCol) &&
+        grid.has(crosswordKey(letterRow - sideRow, letterCol - sideCol));
+      const below =
+        crosswordInBounds(letterRow + sideRow, letterCol + sideCol) &&
+        grid.has(crosswordKey(letterRow + sideRow, letterCol + sideCol));
+      if (above || below) return null;
+    }
+  }
+
+  if (placed.length > 0 && intersections === 0) return null;
+  return intersections;
+}
+
+function crosswordArea(
+  placed: CrosswordDraft[],
+  answer: string,
+  row: number,
+  col: number,
+  direction: 'across' | 'down'
+): number {
+  const endRow = row + (direction === 'down' ? answer.length - 1 : 0);
+  const endCol = col + (direction === 'across' ? answer.length - 1 : 0);
+  const rows = placed.flatMap((entry) => [
+    entry.row,
+    entry.row + (entry.direction === 'down' ? entry.answer.length - 1 : 0),
+  ]);
+  const cols = placed.flatMap((entry) => [
+    entry.col,
+    entry.col + (entry.direction === 'across' ? entry.answer.length - 1 : 0),
+  ]);
+  const minRow = Math.min(row, ...rows);
+  const maxRow = Math.max(endRow, ...rows);
+  const minCol = Math.min(col, ...cols);
+  const maxCol = Math.max(endCol, ...cols);
+  return (maxRow - minRow + 1) * (maxCol - minCol + 1);
+}
+
+function commitCrossword(
+  grid: Map<string, string>,
+  placed: CrosswordDraft[],
+  word: CrosswordWord,
+  row: number,
+  col: number,
+  direction: 'across' | 'down'
+) {
+  const down = direction === 'down';
+  for (let index = 0; index < word.answer.length; index += 1) {
+    grid.set(
+      crosswordKey(row + (down ? index : 0), col + (down ? 0 : index)),
+      word.answer[index]
+    );
+  }
+  placed.push({ ...word, row, col, direction });
+}
+
+function placeCrosswordOnce(words: CrosswordWord[]): CrosswordDraft[] {
+  const grid = new Map<string, string>();
+  const placed: CrosswordDraft[] = [];
+  const first = words[0];
+  if (!first) return placed;
+
+  commitCrossword(
+    grid,
+    placed,
+    first,
+    Math.floor(CROSSWORD_CANVAS / 2),
+    Math.floor((CROSSWORD_CANVAS - first.answer.length) / 2),
+    'across'
+  );
+
+  const pending = words.slice(1);
+  let guard = 0;
+  while (pending.length > 0 && guard < pending.length * 4) {
+    guard += 1;
+    let placedOne = false;
+    for (let index = 0; index < pending.length; index += 1) {
+      const word = pending[index];
+      let best: {
+        row: number;
+        col: number;
+        direction: 'across' | 'down';
+        intersections: number;
+        area: number;
+      } | null = null;
+
+      for (const entry of placed) {
+        const direction = entry.direction === 'across' ? 'down' : 'across';
+        for (let entryIndex = 0; entryIndex < entry.answer.length; entryIndex += 1) {
+          for (let wordIndex = 0; wordIndex < word.answer.length; wordIndex += 1) {
+            if (entry.answer[entryIndex] !== word.answer[wordIndex]) continue;
+            const row = entry.direction === 'across' ? entry.row - wordIndex : entry.row + entryIndex;
+            const col = entry.direction === 'across' ? entry.col + entryIndex : entry.col - wordIndex;
+            const intersections = crosswordFit(grid, placed, word.answer, row, col, direction);
+            if (intersections === null) continue;
+            const area = crosswordArea(placed, word.answer, row, col, direction);
+            if (
+              !best ||
+              intersections > best.intersections ||
+              (intersections === best.intersections && area < best.area)
+            ) {
+              best = { row, col, direction, intersections, area };
+            }
+          }
+        }
+      }
+
+      if (!best) continue;
+      commitCrossword(grid, placed, word, best.row, best.col, best.direction);
+      pending.splice(index, 1);
+      placedOne = true;
+      break;
+    }
+    if (!placedOne) break;
+  }
+
+  return placed;
+}
+
+function numberCrossword(placed: CrosswordDraft[]): CrosswordEntry[] {
+  const minRow = Math.min(...placed.map((entry) => entry.row));
+  const minCol = Math.min(...placed.map((entry) => entry.col));
+  const shifted = placed.map((entry) => ({
+    ...entry,
+    row: entry.row - minRow,
+    col: entry.col - minCol,
+  }));
+  const starts = new Map<string, true>();
+  for (const entry of shifted) starts.set(crosswordKey(entry.row, entry.col), true);
+  const numbers = new Map<string, number>();
+  [...starts.keys()]
+    .sort((a, b) => {
+      const [aRow, aCol] = a.split(',').map(Number);
+      const [bRow, bCol] = b.split(',').map(Number);
+      return aRow - bRow || aCol - bCol;
+    })
+    .forEach((key, index) => numbers.set(key, index + 1));
+
+  return shifted
+    .map((entry) => ({
+      number: numbers.get(crosswordKey(entry.row, entry.col)) ?? 0,
+      direction: entry.direction,
+      row: entry.row,
+      col: entry.col,
+      clue: entry.clue,
+      answer: entry.answer,
+    }))
+    .sort((a, b) => a.number - b.number || (a.direction === 'across' ? -1 : 1));
+}
+
+function placeCrossword(words: CrosswordWord[]): CrosswordEntry[] | null {
+  const unique: CrosswordWord[] = [];
+  const seen = new Set<string>();
+  for (const word of words) {
+    if (seen.has(word.answer)) continue;
+    seen.add(word.answer);
+    unique.push(word);
+  }
+  if (unique.length < 2) return null;
+
+  const longestFirst = [...unique].sort(
+    (a, b) => b.answer.length - a.answer.length || a.answer.localeCompare(b.answer)
+  );
+  const attempts = [longestFirst];
+  for (let index = 0; index < 6; index += 1) attempts.push(shuffle(unique));
+
+  let best: CrosswordDraft[] | null = null;
+  for (const order of attempts) {
+    const placed = placeCrosswordOnce(order);
+    if (placed.length < 2) continue;
+    if (!best || placed.length > best.length) best = placed;
+    if (best.length === unique.length) break;
+  }
+  if (!best) return null;
+  return numberCrossword(best);
+}
+
+function parseCrossword(raw: Record<string, unknown>, count: number): WorksheetSection | null {
+  const words = asList(raw.items ?? raw.words ?? raw.clues)
+    .map((item) => {
+      const record = asRecord(item);
+      if (!record) return null;
+      const answer = clean(record.answer ?? record.word, 24);
+      if (!/^[A-Za-z]+$/.test(answer) || answer.length < 3 || answer.length > 12) return null;
+      let clue = clean(record.clue ?? record.prompt ?? record.hint, 140);
+      if (!clue) clue = 'A word from the lesson.';
+      const mentioned = new RegExp(`\\b${escapeRegExp(answer)}\\b`, 'i');
+      if (mentioned.test(clue)) {
+        clue = clue.replace(new RegExp(`\\b${escapeRegExp(answer)}\\b`, 'ig'), 'this word').trim();
+      }
+      if (!clue) clue = 'A word from the lesson.';
+      return { clue, answer: answer.toUpperCase() };
+    })
+    .filter((word): word is CrosswordWord => Boolean(word))
+    .slice(0, count);
+
+  if (words.length < 2) return null;
+  const entries = placeCrossword(words);
+  if (!entries) return null;
+  return { type: 'crossword', ...sectionCopy(raw, 'crossword'), entries };
+}
+
 function parseShortAnswer(raw: Record<string, unknown>, count: number): WorksheetSection | null {
   const items = asList(raw.items)
     .map((item) => {
@@ -317,6 +591,7 @@ const PARSERS: Record<
   anagram: parseAnagram,
   true_false: parseTrueFalse,
   short_answer: parseShortAnswer,
+  crossword: parseCrossword,
 };
 
 export function normalizeWorksheet(

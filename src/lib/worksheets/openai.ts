@@ -66,6 +66,7 @@ Section item shapes:
 - anagram items: {"clue":"a place where students learn","answer":"school"}
 - true_false items: {"statement":"...","answer":true}
 - short_answer items: {"prompt":"...","answer":"a short sample answer"}
+- crossword items: {"clue":"a place where students learn","answer":"school"}
 
 Rules:
 - Use only the requested section types, in the requested order.
@@ -79,6 +80,7 @@ Rules:
 - anagram: answer is one English word of 4 to 12 letters. The clue must not contain the answer.
 - true_false: about half the statements are false. False statements are clearly false at this level.
 - short_answer: one question a student can answer in a few words, plus a sample answer.
+- crossword: each answer is one English word of 4 to 8 letters, with no spaces. The clue must not contain the answer. Choose words that share letters so they can cross, using common letters such as A, E, I, O, R, S, T, L, and N.
 - instructions: one short line telling the student what to do on the whole sheet.
 - No markdown and no extra keys.`,
       },

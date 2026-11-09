@@ -11,7 +11,6 @@ import ComicTitle from '../ComicTitle';
 import WorksheetTemplate from './WorksheetTemplate';
 import {
   emptyWorksheetHeader,
-  todayInputValue,
   VOCAB_LEVELS,
   WORKSHEET_EXERCISES,
   type WorksheetDocument,
@@ -41,10 +40,21 @@ function initialChoices(): Record<WorksheetExerciseType, ExerciseChoice> {
   );
 }
 
-function FieldLabel({ htmlFor, children }: { htmlFor: string; children: string }) {
+function FieldLabel({
+  htmlFor,
+  children,
+  optional = false,
+}: {
+  htmlFor: string;
+  children: string;
+  optional?: boolean;
+}) {
   return (
     <label htmlFor={htmlFor} className="block font-bold text-[var(--comic-dark)] mb-1">
       {children}
+      {optional ? (
+        <span className="font-bold text-[var(--brand-medium-gray)]"> (optional)</span>
+      ) : null}
     </label>
   );
 }
@@ -61,10 +71,6 @@ export default function WorksheetBuilder() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    setHeader((current) => ({
-      ...current,
-      date: current.date || todayInputValue(),
-    }));
     try {
       const saved = JSON.parse(localStorage.getItem(HEADER_STORAGE_KEY) || '{}') as {
         teacherName?: string;
@@ -168,9 +174,20 @@ export default function WorksheetBuilder() {
           </Link>
         </div>
 
+        <style>{`
+          .worksheet-step-flat.comic-card,
+          .worksheet-step-flat.comic-card:hover,
+          .worksheet-step-flat .comic-input,
+          .worksheet-step-flat .comic-input:focus,
+          .worksheet-step-flat .comic-textarea,
+          .worksheet-step-flat .comic-textarea:focus {
+            box-shadow: none;
+            transform: none;
+          }
+        `}</style>
         <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-          <ComicCard className="comic-shadow-xl space-y-4">
-            <ComicTitle level={3} className="text-[var(--comic-primary)]">
+          <ComicCard className="worksheet-step-flat space-y-4">
+            <ComicTitle level={3} className="comic-title-no-shadow text-[var(--comic-primary)]">
               1. What is the worksheet about?
             </ComicTitle>
             <ComicText className="font-bold text-[var(--comic-dark)]">
@@ -208,16 +225,18 @@ export default function WorksheetBuilder() {
             </div>
           </ComicCard>
 
-          <ComicCard className="comic-shadow-xl space-y-4">
-            <ComicTitle level={3} className="text-[var(--comic-secondary)]">
+          <ComicCard className="worksheet-step-flat space-y-4">
+            <ComicTitle level={3} className="comic-title-no-shadow text-[var(--comic-secondary)]">
               2. Header
             </ComicTitle>
             <ComicText className="font-bold text-[var(--comic-dark)]">
-              These lines print on every sheet. Leave the student name and ID empty when each
-              student will write their own.
+              Every header line is optional. Leave any of them blank and the sheet still prints
+              an empty line that can be filled in by hand.
             </ComicText>
             <div>
-              <FieldLabel htmlFor="worksheet-title">Worksheet title</FieldLabel>
+              <FieldLabel htmlFor="worksheet-title" optional>
+                Worksheet title
+              </FieldLabel>
               <input
                 id="worksheet-title"
                 value={header.title}
@@ -229,7 +248,9 @@ export default function WorksheetBuilder() {
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <FieldLabel htmlFor="worksheet-teacher">Teacher</FieldLabel>
+                <FieldLabel htmlFor="worksheet-teacher" optional>
+                  Teacher
+                </FieldLabel>
                 <input
                   id="worksheet-teacher"
                   value={header.teacherName}
@@ -239,7 +260,9 @@ export default function WorksheetBuilder() {
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="worksheet-student">Student</FieldLabel>
+                <FieldLabel htmlFor="worksheet-student" optional>
+                  Student
+                </FieldLabel>
                 <input
                   id="worksheet-student"
                   value={header.studentName}
@@ -249,7 +272,9 @@ export default function WorksheetBuilder() {
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="worksheet-class">Class</FieldLabel>
+                <FieldLabel htmlFor="worksheet-class" optional>
+                  Class
+                </FieldLabel>
                 <input
                   id="worksheet-class"
                   value={header.className}
@@ -259,7 +284,9 @@ export default function WorksheetBuilder() {
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="worksheet-id">ID number</FieldLabel>
+                <FieldLabel htmlFor="worksheet-id" optional>
+                  ID number
+                </FieldLabel>
                 <input
                   id="worksheet-id"
                   value={header.studentId}
@@ -274,7 +301,9 @@ export default function WorksheetBuilder() {
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="worksheet-date">Date</FieldLabel>
+                <FieldLabel htmlFor="worksheet-date" optional>
+                  Date
+                </FieldLabel>
                 <input
                   id="worksheet-date"
                   type="date"
@@ -284,7 +313,9 @@ export default function WorksheetBuilder() {
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="worksheet-due">Due date</FieldLabel>
+                <FieldLabel htmlFor="worksheet-due" optional>
+                  Due date
+                </FieldLabel>
                 <input
                   id="worksheet-due"
                   type="date"
@@ -292,13 +323,12 @@ export default function WorksheetBuilder() {
                   onChange={(event) => updateHeader({ dueDate: event.target.value })}
                   className="comic-input w-full"
                 />
-                <ComicText className="mt-1 text-sm font-bold text-[var(--brand-medium-gray)]">
-                  Optional. A blank due line still prints.
-                </ComicText>
               </div>
             </div>
             <div>
-              <FieldLabel htmlFor="worksheet-directions">Directions</FieldLabel>
+              <FieldLabel htmlFor="worksheet-directions" optional>
+                Directions
+              </FieldLabel>
               <input
                 id="worksheet-directions"
                 value={header.instructions}

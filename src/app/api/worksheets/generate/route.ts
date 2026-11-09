@@ -5,6 +5,7 @@ import { generateWorksheet } from '@/lib/worksheets/openai';
 import {
   isWorksheetExerciseType,
   VOCAB_LEVELS,
+  WORKSHEET_EXERCISES,
   type WorksheetExerciseRequest,
   type WorksheetLevel,
 } from '@/lib/worksheets/types';
@@ -24,7 +25,7 @@ function parseExercises(value: unknown): WorksheetExerciseRequest[] {
     const count = Math.max(3, Math.min(8, Math.round(Number(record.count) || 4)));
     seen.add(type);
     exercises.push({ type, count });
-    if (exercises.length >= 6) break;
+    if (exercises.length >= WORKSHEET_EXERCISES.length) break;
   }
   return exercises;
 }
