@@ -11,6 +11,13 @@ import ComicTitle from '../ComicTitle';
 import WorksheetSectionEditor from './WorksheetSectionEditor';
 import WorksheetTemplate from './WorksheetTemplate';
 import {
+  deleteSavedWorksheet,
+  listSavedWorksheets,
+  loadSavedWorksheet,
+  saveWorksheet,
+  type SavedWorksheetSummary,
+} from '@/lib/worksheets/storage';
+import {
   defaultHeaderVisibility,
   emptyWorksheetHeader,
   normalizeFieldOrder,
@@ -85,8 +92,12 @@ export default function WorksheetBuilder() {
   const [includeAnswerKey, setIncludeAnswerKey] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [library, setLibrary] = useState<SavedWorksheetSummary[]>([]);
+  const [saveNote, setSaveNote] = useState('');
 
   useEffect(() => {
+    setLibrary(listSavedWorksheets());
     try {
       const saved = JSON.parse(localStorage.getItem(HEADER_STORAGE_KEY) || '{}') as {
         teacherName?: string;
@@ -148,6 +159,82 @@ export default function WorksheetBuilder() {
       ...current,
       [type]: { ...current[type], ...patch },
     }));
+    if (patch.on === false) {
+      setSections((current) => current.filter((section) => section.type !== type));
+    }
+  }
+
+  function applySections(next: WorksheetSection[]) {
+    setChoices((choicesNow) => {
+      let changed = false;
+      const copy = { ...choicesNow };
+      for (const exercise of WORKSHEET_EXERCISES) {
+        const had = sections.some((section) => section.type === exercise.type);
+        const has = next.some((section) => section.type === exercise.type);
+        if (had && !has && copy[exercise.type].on) {
+          copy[exercise.type] = { ...copy[exercise.type], on: false };
+          changed = true;
+        }
+      }
+      return changed ? copy : choicesNow;
+    });
+    setSections(next);
+  }
+
+  function refreshLibrary() {
+    setLibrary(listSavedWorksheets());
+  }
+
+  function handleSave() {
+    const saved = saveWorksheet({
+      id: savedId,
+      header: { ...header, level },
+      sections,
+      level,
+      source,
+      includeAnswerKey,
+    });
+    setSavedId(saved.id);
+    refreshLibrary();
+    setSaveNote('Saved on this browser.');
+  }
+
+  function handleOpen(id: string) {
+    const saved = loadSavedWorksheet(id);
+    if (!saved) {
+      refreshLibrary();
+      return;
+    }
+    setSavedId(saved.id);
+    setHeader(saved.header);
+    setLevel(saved.level as WorksheetLevel);
+    setSource(saved.source || '');
+    setSections(saved.sections);
+    setIncludeAnswerKey(Boolean(saved.includeAnswerKey));
+    setChoices((current) => {
+      const next = { ...current };
+      for (const exercise of WORKSHEET_EXERCISES) {
+        next[exercise.type] = {
+          ...next[exercise.type],
+          on: saved.sections.some((section) => section.type === exercise.type),
+        };
+      }
+      return next;
+    });
+    setSaveNote('');
+    setError('');
+    requestAnimationFrame(() => {
+      previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  function handleDeleteSaved(id: string) {
+    deleteSavedWorksheet(id);
+    if (savedId === id) {
+      setSavedId(null);
+      setSaveNote('');
+    }
+    refreshLibrary();
   }
 
   async function handleCreate() {
@@ -173,6 +260,8 @@ export default function WorksheetBuilder() {
         throw new Error(data.error || 'Failed to create the worksheet');
       }
       setSections(Array.isArray(data.sections) ? data.sections : []);
+      setSavedId(null);
+      setSaveNote('');
       setHeader((current) => ({
         ...current,
         title: current.title.trim() || String(data.title || ''),
@@ -547,6 +636,10 @@ export default function WorksheetBuilder() {
           <ComicTitle level={3} className="text-[var(--comic-primary)]">
             3. Exercises
           </ComicTitle>
+          <ComicText className="font-bold text-[var(--comic-dark)]">
+            Each exercise can be one question or more. Untick one after it is created and it
+            comes off the sheet.
+          </ComicText>
           <div className="grid gap-3 md:grid-cols-2">
             {WORKSHEET_EXERCISES.map((exercise) => {
               const choice = choices[exercise.type];
@@ -580,14 +673,14 @@ export default function WorksheetBuilder() {
                     <span className="block text-xs font-bold">Items</span>
                     <input
                       type="number"
-                      min={3}
+                      min={1}
                       max={8}
                       disabled={!choice.on}
                       value={choice.count}
                       aria-label={`${exercise.label} item count`}
                       onChange={(event) =>
                         updateChoice(exercise.type, {
-                          count: Math.max(3, Math.min(8, Number(event.target.value) || 3)),
+                          count: Math.max(1, Math.min(8, Number(event.target.value) || 1)),
                         })
                       }
                       className="comic-input mt-1 w-16 text-center disabled:opacity-40"
@@ -630,6 +723,9 @@ export default function WorksheetBuilder() {
               />
               Include answer key when printing
             </label>
+            <ComicButton type="button" variant="primary" size="sm" onClick={handleSave}>
+              {savedId ? 'Update saved worksheet' : 'Save worksheet'}
+            </ComicButton>
             <ComicButton
               type="button"
               variant="secondary"
@@ -641,9 +737,53 @@ export default function WorksheetBuilder() {
             </ComicButton>
           </div>
         </div>
+        {saveNote ? (
+          <ComicText className="print:hidden font-bold text-[var(--comic-dark)]">{saveNote}</ComicText>
+        ) : null}
+        {library.length > 0 ? (
+          <div className="print:hidden space-y-2">
+            <p className="font-black text-[var(--comic-dark)]">Saved worksheets</p>
+            <ul className="space-y-2">
+              {library.map((item) => (
+                <li
+                  key={item.id}
+                  className="flex flex-wrap items-center justify-between gap-2 border-2 border-[var(--comic-black)] bg-white px-3 py-2"
+                >
+                  <span className="font-bold text-[var(--comic-dark)]">
+                    {item.title}
+                    <span className="ml-2 text-sm font-bold text-[var(--brand-medium-gray)]">
+                      {new Date(item.savedAt).toLocaleString('en-GB', {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </span>
+                  <span className="flex gap-2">
+                    <button
+                      type="button"
+                      className="border-2 border-[var(--comic-black)] bg-white px-2 py-1 text-sm font-black"
+                      onClick={() => handleOpen(item.id)}
+                    >
+                      Open
+                    </button>
+                    <button
+                      type="button"
+                      className="border-2 border-[var(--comic-black)] bg-white px-2 py-1 text-sm font-black"
+                      onClick={() => handleDeleteSaved(item.id)}
+                    >
+                      Delete
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         {sections.length > 0 ? (
           <div className="print:hidden">
-            <WorksheetSectionEditor sections={sections} onChange={setSections} />
+            <WorksheetSectionEditor sections={sections} onChange={applySections} />
           </div>
         ) : null}
         <WorksheetTemplate document={documentSheet} includeAnswerKey={includeAnswerKey} />

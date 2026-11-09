@@ -22,7 +22,7 @@ function parseExercises(value: unknown): WorksheetExerciseRequest[] {
     const record = entry as { type?: unknown; count?: unknown };
     const type = String(record.type ?? '');
     if (!isWorksheetExerciseType(type) || seen.has(type)) continue;
-    const count = Math.max(3, Math.min(8, Math.round(Number(record.count) || 4)));
+    const count = Math.max(1, Math.min(8, Math.round(Number(record.count) || 4)));
     seen.add(type);
     exercises.push({ type, count });
     if (exercises.length >= WORKSHEET_EXERCISES.length) break;

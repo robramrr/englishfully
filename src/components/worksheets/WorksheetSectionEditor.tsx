@@ -120,22 +120,120 @@ function ImageUrlField({
   );
 }
 
+function TinyButton({
+  label,
+  disabled,
+  onClick,
+  children,
+}: {
+  label: string;
+  disabled?: boolean;
+  onClick: () => void;
+  children: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="border-2 border-[var(--comic-black)] bg-white px-2 py-1 text-xs font-black leading-none disabled:opacity-30"
+    >
+      {children}
+    </button>
+  );
+}
+
+function moveAt<T>(items: T[], index: number, direction: -1 | 1): T[] {
+  const nextIndex = index + direction;
+  if (nextIndex < 0 || nextIndex >= items.length) return items;
+  const next = [...items];
+  const current = next[index];
+  next[index] = next[nextIndex];
+  next[nextIndex] = current;
+  return next;
+}
+
+function ItemTools({
+  label,
+  canUp,
+  canDown,
+  onUp,
+  onDown,
+  onRemove,
+  children,
+}: {
+  label: string;
+  canUp: boolean;
+  canDown: boolean;
+  onUp: () => void;
+  onDown: () => void;
+  onRemove: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-2 border-t-2 border-[var(--brand-gray)] pt-3">
+      <div className="flex shrink-0 flex-col gap-1">
+        <TinyButton label={`Move ${label} earlier`} disabled={!canUp} onClick={onUp}>
+          ↑
+        </TinyButton>
+        <TinyButton label={`Move ${label} later`} disabled={!canDown} onClick={onDown}>
+          ↓
+        </TinyButton>
+        <TinyButton label={`Remove ${label}`} onClick={onRemove}>
+          Remove
+        </TinyButton>
+      </div>
+      <div className="min-w-0 flex-1 space-y-2">{children}</div>
+    </div>
+  );
+}
+
 function SectionFrame({
   index,
   section,
   children,
   onChange,
+  onMove,
+  onRemove,
+  canMoveUp,
+  canMoveDown,
 }: {
   index: number;
   section: WorksheetSection;
   children: ReactNode;
   onChange: (next: WorksheetSection) => void;
+  onMove: (direction: -1 | 1) => void;
+  onRemove: () => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
 }) {
   return (
     <section className="space-y-3 border-4 border-[var(--comic-black)] bg-white p-3">
-      <p className="text-sm font-black uppercase tracking-wide text-[var(--comic-primary)]">
-        {index + 1}. {exerciseLabel(section.type)}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-black uppercase tracking-wide text-[var(--comic-primary)]">
+          {index + 1}. {exerciseLabel(section.type)}
+        </p>
+        <div className="flex gap-1">
+          <TinyButton
+            label="Move exercise earlier"
+            disabled={!canMoveUp}
+            onClick={() => onMove(-1)}
+          >
+            ↑
+          </TinyButton>
+          <TinyButton
+            label="Move exercise later"
+            disabled={!canMoveDown}
+            onClick={() => onMove(1)}
+          >
+            ↓
+          </TinyButton>
+          <TinyButton label="Remove exercise" onClick={onRemove}>
+            Remove
+          </TinyButton>
+        </div>
+      </div>
       <div className="grid gap-3 md:grid-cols-2">
         <EditorInput
           label="Section title"
@@ -155,7 +253,7 @@ function SectionFrame({
 
 function syncWordBank(items: { answer: string }[], previous: string[]): string[] {
   const unique = [...new Set(items.map((item) => item.answer.trim()).filter(Boolean))];
-  if (unique.length < 3) return [];
+  if (!unique.length) return [];
   const kept = previous.filter((word) =>
     unique.some((answer) => answer.toLowerCase() === word.toLowerCase())
   );
@@ -199,14 +297,22 @@ export default function WorksheetSectionEditor({
     onChange(replaceSection(sections, index, next));
   }
 
+  function dropSection(index: number) {
+    onChange(sections.filter((_, sectionIndex) => sectionIndex !== index));
+  }
+
+  function moveSection(index: number, direction: -1 | 1) {
+    onChange(moveAt(sections, index, direction));
+  }
+
   return (
     <ComicCard className="space-y-4">
       <ComicTitle level={3} className="comic-title-no-shadow text-[var(--comic-secondary)]">
         Edit the exercises
       </ComicTitle>
       <ComicText className="font-bold text-[var(--comic-dark)]">
-        Everything the AI wrote can be changed here. The sheet below updates as you type. For
-        matching, paste an image link on the prompt, the answer, or both.
+        Change, reorder, or remove any exercise or question. The sheet below updates as you type.
+        For matching, paste an image link on the prompt, the answer, or both.
       </ComicText>
       {crosswordNote ? (
         <ComicText className="font-bold text-[var(--comic-danger)]">{crosswordNote}</ComicText>
@@ -215,9 +321,32 @@ export default function WorksheetSectionEditor({
         {sections.map((section, index) => {
           if (section.type === 'fill_blank') {
             return (
-              <SectionFrame key={`fill-${index}`} index={index} section={section} onChange={(next) => update(index, next)}>
+              <SectionFrame key={`fill-${index}`} index={index} section={section} onChange={(next) => update(index, next)}
+                onMove={(direction) => moveSection(index, direction)}
+                onRemove={() => dropSection(index)}
+                canMoveUp={index > 0}
+                canMoveDown={index < sections.length - 1}>
                 {section.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="grid gap-3 md:grid-cols-[1fr_12rem]">
+                  <ItemTools
+                    key={itemIndex}
+                    label={`question ${itemIndex + 1}`}
+                    canUp={itemIndex > 0}
+                    canDown={itemIndex < section.items.length - 1}
+                    onUp={() => {
+                      const items = moveAt(section.items, itemIndex, -1);
+                      update(index, { ...section, items, wordBank: syncWordBank(items, section.wordBank) });
+                    }}
+                    onDown={() => {
+                      const items = moveAt(section.items, itemIndex, 1);
+                      update(index, { ...section, items, wordBank: syncWordBank(items, section.wordBank) });
+                    }}
+                    onRemove={() => {
+                      const items = section.items.filter((_, entryIndex) => entryIndex !== itemIndex);
+                      if (!items.length) dropSection(index);
+                      else update(index, { ...section, items, wordBank: syncWordBank(items, section.wordBank) });
+                    }}
+                  >
+                  <div className="grid gap-3 md:grid-cols-[1fr_12rem]">
                     <EditorInput
                       label={`${itemIndex + 1}. Sentence`}
                       value={item.prompt}
@@ -243,6 +372,7 @@ export default function WorksheetSectionEditor({
                       }}
                     />
                   </div>
+                  </ItemTools>
                 ))}
               </SectionFrame>
             );
@@ -250,9 +380,26 @@ export default function WorksheetSectionEditor({
 
           if (section.type === 'multiple_choice') {
             return (
-              <SectionFrame key={`mc-${index}`} index={index} section={section} onChange={(next) => update(index, next)}>
+              <SectionFrame key={`mc-${index}`} index={index} section={section} onChange={(next) => update(index, next)}
+                onMove={(direction) => moveSection(index, direction)}
+                onRemove={() => dropSection(index)}
+                canMoveUp={index > 0}
+                canMoveDown={index < sections.length - 1}>
                 {section.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="space-y-2 border-t-2 border-[var(--brand-gray)] pt-3">
+                  <ItemTools
+                    key={itemIndex}
+                    label={`question ${itemIndex + 1}`}
+                    canUp={itemIndex > 0}
+                    canDown={itemIndex < section.items.length - 1}
+                    onUp={() => update(index, { ...section, items: moveAt(section.items, itemIndex, -1) })}
+                    onDown={() => update(index, { ...section, items: moveAt(section.items, itemIndex, 1) })}
+                    onRemove={() => {
+                      const items = section.items.filter((_, entryIndex) => entryIndex !== itemIndex);
+                      if (!items.length) dropSection(index);
+                      else update(index, { ...section, items });
+                    }}
+                  >
+                  <div className="space-y-2">
                     <EditorInput
                       label={`${itemIndex + 1}. Question`}
                       value={item.prompt}
@@ -300,6 +447,7 @@ export default function WorksheetSectionEditor({
                       ))}
                     </div>
                   </div>
+                  </ItemTools>
                 ))}
               </SectionFrame>
             );
@@ -307,12 +455,46 @@ export default function WorksheetSectionEditor({
 
           if (section.type === 'matching') {
             return (
-              <SectionFrame key={`match-${index}`} index={index} section={section} onChange={(next) => update(index, next)}>
+              <SectionFrame key={`match-${index}`} index={index} section={section} onChange={(next) => update(index, next)}
+                onMove={(direction) => moveSection(index, direction)}
+                onRemove={() => dropSection(index)}
+                canMoveUp={index > 0}
+                canMoveDown={index < sections.length - 1}>
                 <div className="grid gap-4 lg:grid-cols-2">
                   <div className="space-y-3">
                     <p className="font-black text-[var(--comic-dark)]">Prompts</p>
                     {section.prompts.map((prompt, promptIndex) => (
-                      <div key={promptIndex} className="space-y-2">
+                      <ItemTools
+                        key={promptIndex}
+                        label={`pair ${promptIndex + 1}`}
+                        canUp={promptIndex > 0}
+                        canDown={promptIndex < section.prompts.length - 1}
+                        onUp={() =>
+                          update(index, {
+                            ...section,
+                            prompts: moveAt(section.prompts, promptIndex, -1),
+                            answers: moveAt(section.answers, promptIndex, -1),
+                          })
+                        }
+                        onDown={() =>
+                          update(index, {
+                            ...section,
+                            prompts: moveAt(section.prompts, promptIndex, 1),
+                            answers: moveAt(section.answers, promptIndex, 1),
+                          })
+                        }
+                        onRemove={() => {
+                          const letter = section.answers[promptIndex];
+                          const prompts = section.prompts.filter((_, entryIndex) => entryIndex !== promptIndex);
+                          const answers = section.answers.filter((_, entryIndex) => entryIndex !== promptIndex);
+                          const bank = section.bank.filter(
+                            (entry) => entry.letter !== letter || answers.includes(entry.letter)
+                          );
+                          if (!prompts.length) dropSection(index);
+                          else update(index, { ...section, prompts, answers, bank });
+                        }}
+                      >
+                      <div className="space-y-2">
                         <EditorInput
                           label={`${promptIndex + 1}.`}
                           value={prompt.text}
@@ -333,6 +515,7 @@ export default function WorksheetSectionEditor({
                           }}
                         />
                       </div>
+                      </ItemTools>
                     ))}
                   </div>
                   <div className="space-y-3">
@@ -368,9 +551,26 @@ export default function WorksheetSectionEditor({
 
           if (section.type === 'unjumble') {
             return (
-              <SectionFrame key={`unjumble-${index}`} index={index} section={section} onChange={(next) => update(index, next)}>
+              <SectionFrame key={`unjumble-${index}`} index={index} section={section} onChange={(next) => update(index, next)}
+                onMove={(direction) => moveSection(index, direction)}
+                onRemove={() => dropSection(index)}
+                canMoveUp={index > 0}
+                canMoveDown={index < sections.length - 1}>
                 {section.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="grid gap-3 md:grid-cols-2">
+                  <ItemTools
+                    key={itemIndex}
+                    label={`sentence ${itemIndex + 1}`}
+                    canUp={itemIndex > 0}
+                    canDown={itemIndex < section.items.length - 1}
+                    onUp={() => update(index, { ...section, items: moveAt(section.items, itemIndex, -1) })}
+                    onDown={() => update(index, { ...section, items: moveAt(section.items, itemIndex, 1) })}
+                    onRemove={() => {
+                      const items = section.items.filter((_, entryIndex) => entryIndex !== itemIndex);
+                      if (!items.length) dropSection(index);
+                      else update(index, { ...section, items });
+                    }}
+                  >
+                  <div className="grid gap-3 md:grid-cols-2">
                     <DraftTextInput
                       label={`${itemIndex + 1}. Scrambled words`}
                       value={item.words.join(' ')}
@@ -394,6 +594,7 @@ export default function WorksheetSectionEditor({
                       }}
                     />
                   </div>
+                  </ItemTools>
                 ))}
               </SectionFrame>
             );
@@ -401,9 +602,26 @@ export default function WorksheetSectionEditor({
 
           if (section.type === 'anagram') {
             return (
-              <SectionFrame key={`anagram-${index}`} index={index} section={section} onChange={(next) => update(index, next)}>
+              <SectionFrame key={`anagram-${index}`} index={index} section={section} onChange={(next) => update(index, next)}
+                onMove={(direction) => moveSection(index, direction)}
+                onRemove={() => dropSection(index)}
+                canMoveUp={index > 0}
+                canMoveDown={index < sections.length - 1}>
                 {section.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="grid gap-3 md:grid-cols-3">
+                  <ItemTools
+                    key={itemIndex}
+                    label={`word ${itemIndex + 1}`}
+                    canUp={itemIndex > 0}
+                    canDown={itemIndex < section.items.length - 1}
+                    onUp={() => update(index, { ...section, items: moveAt(section.items, itemIndex, -1) })}
+                    onDown={() => update(index, { ...section, items: moveAt(section.items, itemIndex, 1) })}
+                    onRemove={() => {
+                      const items = section.items.filter((_, entryIndex) => entryIndex !== itemIndex);
+                      if (!items.length) dropSection(index);
+                      else update(index, { ...section, items });
+                    }}
+                  >
+                  <div className="grid gap-3 md:grid-cols-3">
                     <EditorInput
                       label={`${itemIndex + 1}. Clue`}
                       value={item.clue}
@@ -435,6 +653,7 @@ export default function WorksheetSectionEditor({
                       }}
                     />
                   </div>
+                  </ItemTools>
                 ))}
               </SectionFrame>
             );
@@ -442,9 +661,26 @@ export default function WorksheetSectionEditor({
 
           if (section.type === 'true_false') {
             return (
-              <SectionFrame key={`tf-${index}`} index={index} section={section} onChange={(next) => update(index, next)}>
+              <SectionFrame key={`tf-${index}`} index={index} section={section} onChange={(next) => update(index, next)}
+                onMove={(direction) => moveSection(index, direction)}
+                onRemove={() => dropSection(index)}
+                canMoveUp={index > 0}
+                canMoveDown={index < sections.length - 1}>
                 {section.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="grid gap-3 md:grid-cols-[1fr_9rem]">
+                  <ItemTools
+                    key={itemIndex}
+                    label={`statement ${itemIndex + 1}`}
+                    canUp={itemIndex > 0}
+                    canDown={itemIndex < section.items.length - 1}
+                    onUp={() => update(index, { ...section, items: moveAt(section.items, itemIndex, -1) })}
+                    onDown={() => update(index, { ...section, items: moveAt(section.items, itemIndex, 1) })}
+                    onRemove={() => {
+                      const items = section.items.filter((_, entryIndex) => entryIndex !== itemIndex);
+                      if (!items.length) dropSection(index);
+                      else update(index, { ...section, items });
+                    }}
+                  >
+                  <div className="grid gap-3 md:grid-cols-[1fr_9rem]">
                     <EditorInput
                       label={`${itemIndex + 1}. Statement`}
                       value={item.statement}
@@ -473,6 +709,7 @@ export default function WorksheetSectionEditor({
                       </select>
                     </label>
                   </div>
+                  </ItemTools>
                 ))}
               </SectionFrame>
             );
@@ -480,9 +717,26 @@ export default function WorksheetSectionEditor({
 
           if (section.type === 'short_answer') {
             return (
-              <SectionFrame key={`short-${index}`} index={index} section={section} onChange={(next) => update(index, next)}>
+              <SectionFrame key={`short-${index}`} index={index} section={section} onChange={(next) => update(index, next)}
+                onMove={(direction) => moveSection(index, direction)}
+                onRemove={() => dropSection(index)}
+                canMoveUp={index > 0}
+                canMoveDown={index < sections.length - 1}>
                 {section.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="grid gap-3 md:grid-cols-2">
+                  <ItemTools
+                    key={itemIndex}
+                    label={`question ${itemIndex + 1}`}
+                    canUp={itemIndex > 0}
+                    canDown={itemIndex < section.items.length - 1}
+                    onUp={() => update(index, { ...section, items: moveAt(section.items, itemIndex, -1) })}
+                    onDown={() => update(index, { ...section, items: moveAt(section.items, itemIndex, 1) })}
+                    onRemove={() => {
+                      const items = section.items.filter((_, entryIndex) => entryIndex !== itemIndex);
+                      if (!items.length) dropSection(index);
+                      else update(index, { ...section, items });
+                    }}
+                  >
+                  <div className="grid gap-3 md:grid-cols-2">
                     <EditorInput
                       label={`${itemIndex + 1}. Question`}
                       value={item.prompt}
@@ -504,6 +758,7 @@ export default function WorksheetSectionEditor({
                       }}
                     />
                   </div>
+                  </ItemTools>
                 ))}
               </SectionFrame>
             );
@@ -513,9 +768,43 @@ export default function WorksheetSectionEditor({
             (a, b) => a.number - b.number || (a.direction === 'across' ? -1 : 1)
           );
           return (
-            <SectionFrame key={`cross-${index}`} index={index} section={section} onChange={(next) => update(index, next)}>
-              {ordered.map((entry) => (
-                <div key={`${entry.direction}-${entry.number}-${entry.row}-${entry.col}`} className="grid gap-3 md:grid-cols-[1fr_10rem]">
+            <SectionFrame key={`cross-${index}`} index={index} section={section} onChange={(next) => update(index, next)}
+                onMove={(direction) => moveSection(index, direction)}
+                onRemove={() => dropSection(index)}
+                canMoveUp={index > 0}
+                canMoveDown={index < sections.length - 1}>
+              {ordered.map((entry, entryIndex) => (
+                <ItemTools
+                  key={`${entry.direction}-${entry.number}-${entry.row}-${entry.col}`}
+                  label={`clue ${entry.number}`}
+                  canUp={entryIndex > 0}
+                  canDown={entryIndex < ordered.length - 1}
+                  onUp={() => {
+                    const words = moveAt(ordered, entryIndex, -1).map((current) => ({
+                      clue: current.clue,
+                      answer: current.answer,
+                    }));
+                    const entries = layoutCrossword(words);
+                    if (entries) update(index, { ...section, entries });
+                  }}
+                  onDown={() => {
+                    const words = moveAt(ordered, entryIndex, 1).map((current) => ({
+                      clue: current.clue,
+                      answer: current.answer,
+                    }));
+                    const entries = layoutCrossword(words);
+                    if (entries) update(index, { ...section, entries });
+                  }}
+                  onRemove={() => {
+                    const words = ordered
+                      .filter((_, currentIndex) => currentIndex !== entryIndex)
+                      .map((current) => ({ clue: current.clue, answer: current.answer }));
+                    const entries = layoutCrossword(words);
+                    if (!entries) dropSection(index);
+                    else update(index, { ...section, entries });
+                  }}
+                >
+                <div className="grid gap-3 md:grid-cols-[1fr_10rem]">
                   <EditorInput
                     label={`${entry.number} ${entry.direction === 'across' ? 'Across' : 'Down'}`}
                     value={entry.clue}
@@ -557,6 +846,7 @@ export default function WorksheetSectionEditor({
                     />
                   </label>
                 </div>
+                </ItemTools>
               ))}
             </SectionFrame>
           );
