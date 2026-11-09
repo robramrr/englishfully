@@ -8,14 +8,17 @@ import ComicButton from '../ComicButton';
 import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
+import WorksheetSectionEditor from './WorksheetSectionEditor';
 import WorksheetTemplate from './WorksheetTemplate';
 import {
+  defaultHeaderVisibility,
   emptyWorksheetHeader,
   VOCAB_LEVELS,
   WORKSHEET_EXERCISES,
   type WorksheetDocument,
   type WorksheetExerciseType,
   type WorksheetHeader,
+  type WorksheetHeaderVisibility,
   type WorksheetLevel,
   type WorksheetSection,
 } from '@/lib/worksheets/types';
@@ -40,21 +43,32 @@ function initialChoices(): Record<WorksheetExerciseType, ExerciseChoice> {
   );
 }
 
-function FieldLabel({
-  htmlFor,
-  children,
-  optional = false,
-}: {
-  htmlFor: string;
-  children: string;
-  optional?: boolean;
-}) {
+function FieldLabel({ htmlFor, children }: { htmlFor: string; children: string }) {
   return (
     <label htmlFor={htmlFor} className="block font-bold text-[var(--comic-dark)] mb-1">
       {children}
-      {optional ? (
-        <span className="font-bold text-[var(--brand-medium-gray)]"> (optional)</span>
-      ) : null}
+    </label>
+  );
+}
+
+function ShowToggle({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+}) {
+  return (
+    <label className="inline-flex shrink-0 items-center gap-1.5 text-sm font-bold text-[var(--comic-dark)]">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        aria-label={`Show ${label} on the sheet`}
+      />
+      Show
     </label>
   );
 }
@@ -75,11 +89,15 @@ export default function WorksheetBuilder() {
       const saved = JSON.parse(localStorage.getItem(HEADER_STORAGE_KEY) || '{}') as {
         teacherName?: string;
         className?: string;
+        masthead?: string;
+        show?: Partial<WorksheetHeaderVisibility>;
       };
       setHeader((current) => ({
         ...current,
         teacherName: saved.teacherName || current.teacherName,
         className: saved.className || current.className,
+        masthead: saved.masthead || current.masthead,
+        show: { ...defaultHeaderVisibility(), ...current.show, ...saved.show },
       }));
     } catch {
       /* The sheet still works if the saved header cannot be read. */
@@ -93,12 +111,14 @@ export default function WorksheetBuilder() {
         JSON.stringify({
           teacherName: header.teacherName,
           className: header.className,
+          masthead: header.masthead,
+          show: header.show,
         })
       );
     } catch {
       /* Ignore private-mode storage failures. */
     }
-  }, [header.teacherName, header.className]);
+  }, [header.teacherName, header.className, header.masthead, header.show]);
 
   const selected = useMemo(
     () =>
@@ -163,8 +183,27 @@ export default function WorksheetBuilder() {
     }
   }
 
+  function updateLevel(next: WorksheetLevel) {
+    setLevel(next);
+    setHeader((current) => {
+      const previous = `Englishfully worksheet · ${level}`;
+      const masthead =
+        !current.masthead.trim() || current.masthead === previous
+          ? `Englishfully worksheet · ${next}`
+          : current.masthead;
+      return { ...current, level: next, masthead };
+    });
+  }
+
+  function updateVisibility(key: keyof WorksheetHeaderVisibility, visible: boolean) {
+    setHeader((current) => ({
+      ...current,
+      show: { ...current.show, [key]: visible },
+    }));
+  }
+
   return (
-    <div className="max-w-6xl mx-auto py-10 px-4 space-y-8">
+    <div className="worksheet-builder mx-auto w-full max-w-6xl space-y-8 px-4 py-10">
       <div className="print:hidden space-y-8">
         <div className="flex flex-wrap gap-3">
           <Link href="/teacher-resources">
@@ -213,7 +252,7 @@ export default function WorksheetBuilder() {
               <select
                 id="worksheet-level"
                 value={level}
-                onChange={(event) => setLevel(event.target.value as WorksheetLevel)}
+                onChange={(event) => updateLevel(event.target.value as WorksheetLevel)}
                 className="comic-input w-full"
               >
                 {VOCAB_LEVELS.map((option) => (
@@ -230,13 +269,36 @@ export default function WorksheetBuilder() {
               2. Header
             </ComicTitle>
             <ComicText className="font-bold text-[var(--comic-dark)]">
-              Every header line is optional. Leave any of them blank and the sheet still prints
-              an empty line that can be filled in by hand.
+              Tick Show to print a line. Untick it and that line stays off the sheet. A line you
+              show can still be left blank for someone to fill in by hand.
             </ComicText>
             <div>
-              <FieldLabel htmlFor="worksheet-title" optional>
-                Worksheet title
-              </FieldLabel>
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <FieldLabel htmlFor="worksheet-masthead">Sheet label</FieldLabel>
+                <ShowToggle
+                  label="sheet label"
+                  checked={header.show.masthead}
+                  onChange={(visible) => updateVisibility('masthead', visible)}
+                />
+              </div>
+              <input
+                id="worksheet-masthead"
+                value={header.masthead}
+                onChange={(event) => updateHeader({ masthead: event.target.value })}
+                className="comic-input w-full"
+                placeholder="Englishfully worksheet · A2"
+                maxLength={80}
+              />
+            </div>
+            <div>
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <FieldLabel htmlFor="worksheet-title">Worksheet title</FieldLabel>
+                <ShowToggle
+                  label="title"
+                  checked={header.show.title}
+                  onChange={(visible) => updateVisibility('title', visible)}
+                />
+              </div>
               <input
                 id="worksheet-title"
                 value={header.title}
@@ -248,9 +310,14 @@ export default function WorksheetBuilder() {
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <FieldLabel htmlFor="worksheet-teacher" optional>
-                  Teacher
-                </FieldLabel>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <FieldLabel htmlFor="worksheet-teacher">Teacher</FieldLabel>
+                  <ShowToggle
+                    label="teacher"
+                    checked={header.show.teacherName}
+                    onChange={(visible) => updateVisibility('teacherName', visible)}
+                  />
+                </div>
                 <input
                   id="worksheet-teacher"
                   value={header.teacherName}
@@ -260,9 +327,14 @@ export default function WorksheetBuilder() {
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="worksheet-student" optional>
-                  Student
-                </FieldLabel>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <FieldLabel htmlFor="worksheet-student">Student</FieldLabel>
+                  <ShowToggle
+                    label="student"
+                    checked={header.show.studentName}
+                    onChange={(visible) => updateVisibility('studentName', visible)}
+                  />
+                </div>
                 <input
                   id="worksheet-student"
                   value={header.studentName}
@@ -272,9 +344,14 @@ export default function WorksheetBuilder() {
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="worksheet-class" optional>
-                  Class
-                </FieldLabel>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <FieldLabel htmlFor="worksheet-class">Class</FieldLabel>
+                  <ShowToggle
+                    label="class"
+                    checked={header.show.className}
+                    onChange={(visible) => updateVisibility('className', visible)}
+                  />
+                </div>
                 <input
                   id="worksheet-class"
                   value={header.className}
@@ -284,9 +361,14 @@ export default function WorksheetBuilder() {
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="worksheet-id" optional>
-                  ID number
-                </FieldLabel>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <FieldLabel htmlFor="worksheet-id">ID number</FieldLabel>
+                  <ShowToggle
+                    label="ID number"
+                    checked={header.show.studentId}
+                    onChange={(visible) => updateVisibility('studentId', visible)}
+                  />
+                </div>
                 <input
                   id="worksheet-id"
                   value={header.studentId}
@@ -301,9 +383,36 @@ export default function WorksheetBuilder() {
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="worksheet-date" optional>
-                  Date
-                </FieldLabel>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <FieldLabel htmlFor="worksheet-roll">Roll number</FieldLabel>
+                  <ShowToggle
+                    label="roll number"
+                    checked={header.show.rollNumber}
+                    onChange={(visible) => updateVisibility('rollNumber', visible)}
+                  />
+                </div>
+                <input
+                  id="worksheet-roll"
+                  value={header.rollNumber}
+                  onChange={(event) =>
+                    updateHeader({ rollNumber: event.target.value.replace(/\D/g, '').slice(0, 2) })
+                  }
+                  className="comic-input w-full tracking-[0.3em]"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder="2 digits"
+                  maxLength={2}
+                />
+              </div>
+              <div>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <FieldLabel htmlFor="worksheet-date">Date</FieldLabel>
+                  <ShowToggle
+                    label="date"
+                    checked={header.show.date}
+                    onChange={(visible) => updateVisibility('date', visible)}
+                  />
+                </div>
                 <input
                   id="worksheet-date"
                   type="date"
@@ -313,9 +422,14 @@ export default function WorksheetBuilder() {
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="worksheet-due" optional>
-                  Due date
-                </FieldLabel>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <FieldLabel htmlFor="worksheet-due">Due date</FieldLabel>
+                  <ShowToggle
+                    label="due date"
+                    checked={header.show.dueDate}
+                    onChange={(visible) => updateVisibility('dueDate', visible)}
+                  />
+                </div>
                 <input
                   id="worksheet-due"
                   type="date"
@@ -326,9 +440,14 @@ export default function WorksheetBuilder() {
               </div>
             </div>
             <div>
-              <FieldLabel htmlFor="worksheet-directions" optional>
-                Directions
-              </FieldLabel>
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <FieldLabel htmlFor="worksheet-directions">Directions</FieldLabel>
+                <ShowToggle
+                  label="directions"
+                  checked={header.show.instructions}
+                  onChange={(visible) => updateVisibility('instructions', visible)}
+                />
+              </div>
               <input
                 id="worksheet-directions"
                 value={header.instructions}
@@ -439,6 +558,11 @@ export default function WorksheetBuilder() {
             </ComicButton>
           </div>
         </div>
+        {sections.length > 0 ? (
+          <div className="print:hidden">
+            <WorksheetSectionEditor sections={sections} onChange={setSections} />
+          </div>
+        ) : null}
         <WorksheetTemplate document={documentSheet} includeAnswerKey={includeAnswerKey} />
       </div>
     </div>

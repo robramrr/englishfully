@@ -21,16 +21,40 @@ function Field({ label, children }: { label: string; children?: string }) {
   );
 }
 
-function IdBoxes({ value }: { value: string }) {
-  const digits = value.replace(/\D/g, '').slice(0, 5).split('');
+function DigitBoxes({
+  value,
+  length,
+  label,
+}: {
+  value: string;
+  length: number;
+  label: string;
+}) {
+  const digits = value.replace(/\D/g, '').slice(0, length).split('');
   return (
-    <span className="worksheet-id" aria-label="Student ID, 5 digits">
-      {Array.from({ length: 5 }, (_, index) => (
+    <span className="worksheet-id" aria-label={label}>
+      {Array.from({ length }, (_, index) => (
         <span key={index} className="worksheet-id-box">
           {digits[index] || ''}
         </span>
       ))}
     </span>
+  );
+}
+
+function safeImageUrl(value: string): string {
+  const trimmed = value.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return '';
+}
+
+function MatchContent({ text, imageUrl }: { text: string; imageUrl: string }) {
+  const src = safeImageUrl(imageUrl);
+  return (
+    <div className="worksheet-match-item">
+      {src ? <img src={src} alt={text ? '' : 'Matching picture'} className="worksheet-match-image" /> : null}
+      {text ? <span>{text}</span> : null}
+    </div>
   );
 }
 
@@ -104,8 +128,8 @@ function SectionBody({ section }: { section: WorksheetSection }) {
       <div className="worksheet-match">
         <ol className="worksheet-list">
           {section.prompts.map((prompt, index) => (
-            <ItemNumber key={`${prompt}-${index}`} index={index}>
-              {prompt}
+            <ItemNumber key={`${prompt.text}-${index}`} index={index}>
+              <MatchContent text={prompt.text} imageUrl={prompt.imageUrl} />
             </ItemNumber>
           ))}
         </ol>
@@ -113,7 +137,9 @@ function SectionBody({ section }: { section: WorksheetSection }) {
           {section.bank.map((entry) => (
             <li key={entry.letter} className="worksheet-item">
               <span className="worksheet-number">{entry.letter}.</span>
-              <div className="worksheet-item-body">{entry.text}</div>
+              <div className="worksheet-item-body">
+                <MatchContent text={entry.text} imageUrl={entry.imageUrl} />
+              </div>
             </li>
           ))}
         </ol>
@@ -267,10 +293,10 @@ function CrosswordGrid({
   return (
     <div className="worksheet-crossword-wrap">
       <div
-        className="worksheet-crossword"
+        className={`worksheet-crossword${showAnswers ? ' worksheet-crossword-solved' : ''}`}
         aria-hidden={showAnswers ? undefined : true}
         aria-label={showAnswers ? 'Completed crossword' : undefined}
-        style={{ gridTemplateColumns: `repeat(${cols}, 1.45rem)` }}
+        style={{ gridTemplateColumns: `repeat(${cols}, var(--crossword-cell))` }}
       >
         {Array.from({ length: rows * cols }, (_, index) => {
           const row = Math.floor(index / cols);
@@ -371,17 +397,21 @@ function AnswerKey({ sections }: { sections: WorksheetSection[] }) {
 const SHEET_CSS = `
 @page {
   size: A4;
-  margin: 12mm;
+  margin: 7mm 6mm;
+}
+.worksheet-template {
+  --crossword-cell: 2.15rem;
 }
 .worksheet-sheet {
-  width: min(100%, 48rem);
+  width: 100%;
   margin: 0 auto;
   background: white;
   color: var(--brand-navy);
   border: 4px solid var(--brand-navy);
   box-shadow: 8px 8px 0 var(--brand-navy);
-  padding: 1.25rem 1.35rem 1.5rem;
+  padding: 0.85rem 0.75rem 1.1rem;
   font-family: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.05rem;
 }
 .worksheet-kicker {
   margin: 0;
@@ -406,9 +436,9 @@ const SHEET_CSS = `
 }
 .worksheet-meta {
   display: grid;
-  grid-template-columns: 1.3fr 0.8fr 0.9fr;
-  gap: 0.55rem 0.9rem;
-  margin-bottom: 0.85rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem 1rem;
+  margin-bottom: 1rem;
 }
 .worksheet-field {
   display: flex;
@@ -453,9 +483,7 @@ const SHEET_CSS = `
   color: var(--brand-medium-gray);
 }
 .worksheet-section {
-  break-inside: avoid;
-  page-break-inside: avoid;
-  margin-top: 1rem;
+  margin-top: 1.35rem;
 }
 .worksheet-section h2 {
   margin: 0 0 0.25rem;
@@ -475,11 +503,9 @@ const SHEET_CSS = `
 }
 .worksheet-item {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.45rem;
   align-items: flex-start;
-  break-inside: avoid;
-  page-break-inside: avoid;
-  margin: 0.45rem 0;
+  margin: 0.75rem 0;
 }
 .worksheet-number {
   font-weight: 700;
@@ -489,7 +515,7 @@ const SHEET_CSS = `
   flex: 1;
   min-width: 0;
   font-weight: 500;
-  line-height: 1.45;
+  line-height: 1.5;
 }
 .worksheet-item-body p {
   margin: 0;
@@ -516,7 +542,20 @@ const SHEET_CSS = `
 .worksheet-match {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem 1.25rem;
+  gap: 0.75rem 1.5rem;
+}
+.worksheet-match-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+.worksheet-match-image {
+  display: block;
+  width: auto;
+  max-width: 9.5rem;
+  max-height: 6.5rem;
+  object-fit: contain;
 }
 .worksheet-chips {
   display: flex;
@@ -539,8 +578,8 @@ const SHEET_CSS = `
 .worksheet-write-line {
   display: block;
   border-bottom: 1.5px solid var(--brand-navy);
-  height: 1.35rem;
-  margin-top: 0.15rem;
+  height: 1.75rem;
+  margin-top: 0.2rem;
 }
 .worksheet-tf-row {
   display: flex;
@@ -576,9 +615,12 @@ const SHEET_CSS = `
 }
 .worksheet-crossword-cell,
 .worksheet-crossword-block {
-  width: 1.45rem;
-  height: 1.45rem;
+  width: var(--crossword-cell);
+  height: var(--crossword-cell);
   box-sizing: border-box;
+}
+.worksheet-crossword-solved {
+  --crossword-cell: 1.45rem;
 }
 .worksheet-crossword-cell {
   position: relative;
@@ -588,7 +630,7 @@ const SHEET_CSS = `
   padding-bottom: 0.06rem;
   border: 1px solid var(--brand-navy);
   background: white;
-  font-size: 0.78rem;
+  font-size: 1.05rem;
   font-weight: 700;
   line-height: 1;
 }
@@ -601,7 +643,7 @@ const SHEET_CSS = `
   position: absolute;
   top: 0;
   left: 1px;
-  font-size: 0.45rem;
+  font-size: 0.62rem;
   font-weight: 700;
   line-height: 1;
 }
@@ -657,11 +699,30 @@ const SHEET_CSS = `
   .worksheet-print-root {
     background: white !important;
   }
+  .worksheet-builder {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .worksheet-template {
+    --crossword-cell: 9.5mm;
+  }
+  .worksheet-crossword-solved {
+    --crossword-cell: 6.5mm;
+  }
   .worksheet-sheet {
     box-shadow: none !important;
-    border-width: 2px;
-    width: auto;
-    max-width: none;
+    border: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 12pt;
+  }
+  .worksheet-match-image {
+    max-width: 42mm;
+    max-height: 32mm;
   }
   .worksheet-answer-key {
     break-before: page;
@@ -680,27 +741,49 @@ export default function WorksheetTemplate({
   includeAnswerKey = false,
 }: WorksheetTemplateProps) {
   const { header, sections } = document;
+  const show = header.show;
   const due = formatWorksheetDate(header.dueDate);
+  const meta = [
+    show.teacherName ? <Field key="teacher" label="Teacher">{header.teacherName}</Field> : null,
+    show.className ? <Field key="class" label="Class">{header.className}</Field> : null,
+    show.date ? <Field key="date" label="Date">{formatWorksheetDate(header.date)}</Field> : null,
+    show.studentName ? <Field key="student" label="Student">{header.studentName}</Field> : null,
+    show.studentId ? (
+      <div key="id" className="worksheet-field">
+        <span className="worksheet-field-label">ID no.</span>
+        <DigitBoxes value={header.studentId} length={5} label="Student ID, 5 digits" />
+      </div>
+    ) : null,
+    show.rollNumber ? (
+      <div key="roll" className="worksheet-field">
+        <span className="worksheet-field-label">Roll no.</span>
+        <DigitBoxes value={header.rollNumber} length={2} label="Roll number, 2 digits" />
+      </div>
+    ) : null,
+    show.dueDate ? <Field key="due" label="Due">{due}</Field> : null,
+  ].filter(Boolean);
+  const metaColumns = Math.min(Math.max(meta.length, 1), 3);
 
   return (
     <div className="worksheet-template">
       <style>{SHEET_CSS}</style>
       <article className="worksheet-sheet">
-        <p className="worksheet-kicker">Englishfully worksheet{header.level ? ` · ${header.level}` : ''}</p>
-        <h1 className="worksheet-title">{header.title.trim() || 'Worksheet'}</h1>
-        <div className="worksheet-rule" />
-        <div className="worksheet-meta">
-          <Field label="Teacher">{header.teacherName}</Field>
-          <Field label="Class">{header.className}</Field>
-          <Field label="Date">{formatWorksheetDate(header.date)}</Field>
-          <Field label="Student">{header.studentName}</Field>
-          <div className="worksheet-field">
-            <span className="worksheet-field-label">ID no.</span>
-            <IdBoxes value={header.studentId} />
+        {show.masthead && header.masthead.trim() ? (
+          <p className="worksheet-kicker">{header.masthead.trim()}</p>
+        ) : null}
+        {show.title ? (
+          <h1 className="worksheet-title">{header.title.trim() || 'Worksheet'}</h1>
+        ) : null}
+        {show.title ? <div className="worksheet-rule" /> : null}
+        {meta.length > 0 ? (
+          <div
+            className="worksheet-meta"
+            style={{ gridTemplateColumns: `repeat(${metaColumns}, minmax(0, 1fr))` }}
+          >
+            {meta}
           </div>
-          <Field label="Due">{due}</Field>
-        </div>
-        {header.instructions.trim() ? (
+        ) : null}
+        {show.instructions && header.instructions.trim() ? (
           <p className="worksheet-note">{header.instructions}</p>
         ) : null}
         {sections.length === 0 ? (

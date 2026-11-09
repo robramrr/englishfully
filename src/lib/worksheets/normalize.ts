@@ -202,6 +202,7 @@ function parseMatching(raw: Record<string, unknown>, count: number): WorksheetSe
   const bank = shuffleDifferent(uniquePairs.map((pair) => pair.right)).map((text, index) => ({
     letter: LETTERS[index] || String(index + 1),
     text,
+    imageUrl: '',
   }));
   const answers = uniquePairs.map((pair) => {
     const match = bank.find((entry) => entry.text === pair.right);
@@ -210,7 +211,7 @@ function parseMatching(raw: Record<string, unknown>, count: number): WorksheetSe
   return {
     type: 'matching',
     ...sectionCopy(raw, 'matching'),
-    prompts: uniquePairs.map((pair) => pair.left),
+    prompts: uniquePairs.map((pair) => ({ text: pair.left, imageUrl: '' })),
     bank,
     answers,
   };
@@ -536,6 +537,19 @@ function placeCrossword(words: CrosswordWord[]): CrosswordEntry[] | null {
   }
   if (!best) return null;
   return numberCrossword(best);
+}
+
+/** Rebuild a crossword after the teacher edits clues or answers. */
+export function layoutCrossword(
+  words: { clue: string; answer: string }[]
+): CrosswordEntry[] | null {
+  const cleaned = words
+    .map((word) => ({
+      clue: clean(word.clue, 140) || 'A word from the lesson.',
+      answer: clean(word.answer, 24).toUpperCase().replace(/[^A-Z]/g, ''),
+    }))
+    .filter((word) => word.answer.length >= 3 && word.answer.length <= 12);
+  return placeCrossword(cleaned);
 }
 
 function parseCrossword(raw: Record<string, unknown>, count: number): WorksheetSection | null {

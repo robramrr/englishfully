@@ -68,7 +68,23 @@ export const WORKSHEET_EXERCISE_TYPES: WorksheetExerciseType[] = WORKSHEET_EXERC
   (exercise) => exercise.type
 );
 
+/** Which header lines are printed. Unticked lines stay off the sheet. */
+export interface WorksheetHeaderVisibility {
+  masthead: boolean;
+  title: boolean;
+  teacherName: boolean;
+  className: boolean;
+  date: boolean;
+  studentName: boolean;
+  studentId: boolean;
+  rollNumber: boolean;
+  dueDate: boolean;
+  instructions: boolean;
+}
+
 export interface WorksheetHeader {
+  /** The small line above the title, such as "Englishfully worksheet · A2". */
+  masthead: string;
   title: string;
   teacherName: string;
   studentName: string;
@@ -77,11 +93,29 @@ export interface WorksheetHeader {
   className: string;
   /** Up to 5 digits. Blank boxes are left for the student when this is empty. */
   studentId: string;
-  /** yyyy-mm-dd. A blank due line still prints. */
+  /** Up to 2 digits. */
+  rollNumber: string;
+  /** yyyy-mm-dd. A blank due line still prints when this field is shown. */
   dueDate: string;
   level: string;
   /** Short directions printed under the header. */
   instructions: string;
+  show: WorksheetHeaderVisibility;
+}
+
+export function defaultHeaderVisibility(): WorksheetHeaderVisibility {
+  return {
+    masthead: true,
+    title: true,
+    teacherName: true,
+    className: true,
+    date: true,
+    studentName: true,
+    studentId: true,
+    rollNumber: true,
+    dueDate: true,
+    instructions: true,
+  };
 }
 
 export interface FillBlankItem {
@@ -116,6 +150,17 @@ export interface ShortAnswerItem {
   answer: string;
 }
 
+export interface MatchingPrompt {
+  text: string;
+  imageUrl: string;
+}
+
+export interface MatchingBankEntry {
+  letter: string;
+  text: string;
+  imageUrl: string;
+}
+
 export interface CrosswordEntry {
   number: number;
   direction: 'across' | 'down';
@@ -142,8 +187,8 @@ export type WorksheetSection =
     })
   | (SectionBase & {
       type: 'matching';
-      prompts: string[];
-      bank: { letter: string; text: string }[];
+      prompts: MatchingPrompt[];
+      bank: MatchingBankEntry[];
       answers: string[];
     })
   | (SectionBase & {
@@ -180,15 +225,18 @@ export interface WorksheetExerciseRequest {
 
 export function emptyWorksheetHeader(level: WorksheetLevel = 'A2'): WorksheetHeader {
   return {
+    masthead: `Englishfully worksheet · ${level}`,
     title: '',
     teacherName: '',
     studentName: '',
     date: '',
     className: '',
     studentId: '',
+    rollNumber: '',
     dueDate: '',
     level,
     instructions: '',
+    show: defaultHeaderVisibility(),
   };
 }
 
