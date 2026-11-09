@@ -1,8 +1,11 @@
 import type { ReactNode } from 'react';
 import {
   formatWorksheetDate,
+  normalizeFieldOrder,
   type CrosswordEntry,
+  type HeaderLineField,
   type WorksheetDocument,
+  type WorksheetHeader,
   type WorksheetSection,
 } from '@/lib/worksheets/types';
 
@@ -12,9 +15,17 @@ interface WorksheetTemplateProps {
   includeAnswerKey?: boolean;
 }
 
-function Field({ label, children }: { label: string; children?: string }) {
+function Field({
+  label,
+  children,
+  size,
+}: {
+  label: string;
+  children?: string;
+  size: 'name' | 'date' | 'class';
+}) {
   return (
-    <div className="worksheet-field">
+    <div className={`worksheet-field worksheet-field--${size}`}>
       <span className="worksheet-field-label">{label}</span>
       <span className="worksheet-field-line">{children?.trim() || ''}</span>
     </div>
@@ -159,7 +170,7 @@ function SectionBody({ section }: { section: WorksheetSection }) {
                 </span>
               ))}
             </p>
-            <span className="worksheet-write-line" />
+            <span className="worksheet-write-line worksheet-write-line-jumble" />
           </ItemNumber>
         ))}
       </ol>
@@ -397,7 +408,7 @@ function AnswerKey({ sections }: { sections: WorksheetSection[] }) {
 const SHEET_CSS = `
 @page {
   size: A4;
-  margin: 7mm 6mm;
+  margin: 15mm 14mm;
 }
 .worksheet-template {
   --crossword-cell: 2.15rem;
@@ -435,16 +446,19 @@ const SHEET_CSS = `
   background: var(--brand-red);
 }
 .worksheet-meta {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.7rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  column-gap: 1.15rem;
+  row-gap: 0.55rem;
   margin-bottom: 1rem;
 }
 .worksheet-field {
   display: flex;
   align-items: flex-end;
-  gap: 0.4rem;
+  gap: 0.35rem;
   min-width: 0;
+  max-width: 100%;
   font-size: 0.95rem;
 }
 .worksheet-field-label {
@@ -452,12 +466,35 @@ const SHEET_CSS = `
   white-space: nowrap;
 }
 .worksheet-field-line {
-  flex: 1 1 0;
-  min-width: 0;
+  display: block;
   min-height: 1.15rem;
   border-bottom: 1.5px solid var(--brand-navy);
   font-weight: 600;
   overflow-wrap: anywhere;
+}
+.worksheet-field--name {
+  flex: 1 1 11rem;
+}
+.worksheet-field--name .worksheet-field-line {
+  flex: 1 1 auto;
+  min-width: 7rem;
+}
+.worksheet-field--date {
+  flex: 0 0 auto;
+}
+.worksheet-field--date .worksheet-field-line {
+  width: max-content;
+  min-width: 6.4rem;
+}
+.worksheet-field--class {
+  flex: 0 0 auto;
+}
+.worksheet-field--class .worksheet-field-line {
+  width: max-content;
+  min-width: 3.6rem;
+}
+.worksheet-field--boxes {
+  flex: 0 0 auto;
 }
 .worksheet-id {
   display: inline-flex;
@@ -581,6 +618,10 @@ const SHEET_CSS = `
   height: 1.75rem;
   margin-top: 0.2rem;
 }
+.worksheet-write-line-jumble {
+  height: 2.2rem;
+  margin-top: 0.4rem;
+}
 .worksheet-tf-row {
   display: flex;
   justify-content: space-between;
@@ -687,7 +728,6 @@ const SHEET_CSS = `
   font-weight: 600;
 }
 @media (max-width: 640px) {
-  .worksheet-meta,
   .worksheet-choices,
   .worksheet-match,
   .worksheet-crossword-clues {
@@ -735,6 +775,59 @@ const SHEET_CSS = `
 }
 `;
 
+function headerLine(header: WorksheetHeader, key: HeaderLineField) {
+  if (!header.show[key]) return null;
+  if (key === 'teacherName') {
+    return (
+      <Field key={key} label="Teacher" size="name">
+        {header.teacherName}
+      </Field>
+    );
+  }
+  if (key === 'studentName') {
+    return (
+      <Field key={key} label="Student" size="name">
+        {header.studentName}
+      </Field>
+    );
+  }
+  if (key === 'className') {
+    return (
+      <Field key={key} label="Class" size="class">
+        {header.className}
+      </Field>
+    );
+  }
+  if (key === 'date') {
+    return (
+      <Field key={key} label="Date" size="date">
+        {formatWorksheetDate(header.date)}
+      </Field>
+    );
+  }
+  if (key === 'dueDate') {
+    return (
+      <Field key={key} label="Due" size="date">
+        {formatWorksheetDate(header.dueDate)}
+      </Field>
+    );
+  }
+  if (key === 'studentId') {
+    return (
+      <div key={key} className="worksheet-field worksheet-field--boxes">
+        <span className="worksheet-field-label">ID no.</span>
+        <DigitBoxes value={header.studentId} length={5} label="Student ID, 5 digits" />
+      </div>
+    );
+  }
+  return (
+    <div key={key} className="worksheet-field worksheet-field--boxes">
+      <span className="worksheet-field-label">Roll no.</span>
+      <DigitBoxes value={header.rollNumber} length={2} label="Roll number, 2 digits" />
+    </div>
+  );
+}
+
 /** The shared paper layout. Any WorksheetDocument can be printed with this. */
 export default function WorksheetTemplate({
   document,
@@ -742,27 +835,9 @@ export default function WorksheetTemplate({
 }: WorksheetTemplateProps) {
   const { header, sections } = document;
   const show = header.show;
-  const due = formatWorksheetDate(header.dueDate);
-  const meta = [
-    show.teacherName ? <Field key="teacher" label="Teacher">{header.teacherName}</Field> : null,
-    show.className ? <Field key="class" label="Class">{header.className}</Field> : null,
-    show.date ? <Field key="date" label="Date">{formatWorksheetDate(header.date)}</Field> : null,
-    show.studentName ? <Field key="student" label="Student">{header.studentName}</Field> : null,
-    show.studentId ? (
-      <div key="id" className="worksheet-field">
-        <span className="worksheet-field-label">ID no.</span>
-        <DigitBoxes value={header.studentId} length={5} label="Student ID, 5 digits" />
-      </div>
-    ) : null,
-    show.rollNumber ? (
-      <div key="roll" className="worksheet-field">
-        <span className="worksheet-field-label">Roll no.</span>
-        <DigitBoxes value={header.rollNumber} length={2} label="Roll number, 2 digits" />
-      </div>
-    ) : null,
-    show.dueDate ? <Field key="due" label="Due">{due}</Field> : null,
-  ].filter(Boolean);
-  const metaColumns = Math.min(Math.max(meta.length, 1), 3);
+  const meta = normalizeFieldOrder(header.fieldOrder)
+    .map((key) => headerLine(header, key))
+    .filter(Boolean);
 
   return (
     <div className="worksheet-template">
@@ -775,14 +850,7 @@ export default function WorksheetTemplate({
           <h1 className="worksheet-title">{header.title.trim() || 'Worksheet'}</h1>
         ) : null}
         {show.title ? <div className="worksheet-rule" /> : null}
-        {meta.length > 0 ? (
-          <div
-            className="worksheet-meta"
-            style={{ gridTemplateColumns: `repeat(${metaColumns}, minmax(0, 1fr))` }}
-          >
-            {meta}
-          </div>
-        ) : null}
+        {meta.length > 0 ? <div className="worksheet-meta">{meta}</div> : null}
         {show.instructions && header.instructions.trim() ? (
           <p className="worksheet-note">{header.instructions}</p>
         ) : null}

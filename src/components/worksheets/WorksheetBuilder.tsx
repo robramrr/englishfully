@@ -13,10 +13,12 @@ import WorksheetTemplate from './WorksheetTemplate';
 import {
   defaultHeaderVisibility,
   emptyWorksheetHeader,
+  normalizeFieldOrder,
   VOCAB_LEVELS,
   WORKSHEET_EXERCISES,
   type WorksheetDocument,
   type WorksheetExerciseType,
+  type HeaderLineField,
   type WorksheetHeader,
   type WorksheetHeaderVisibility,
   type WorksheetLevel,
@@ -91,6 +93,7 @@ export default function WorksheetBuilder() {
         className?: string;
         masthead?: string;
         show?: Partial<WorksheetHeaderVisibility>;
+        fieldOrder?: unknown;
       };
       setHeader((current) => ({
         ...current,
@@ -98,6 +101,7 @@ export default function WorksheetBuilder() {
         className: saved.className || current.className,
         masthead: saved.masthead || current.masthead,
         show: { ...defaultHeaderVisibility(), ...current.show, ...saved.show },
+        fieldOrder: normalizeFieldOrder(saved.fieldOrder ?? current.fieldOrder),
       }));
     } catch {
       /* The sheet still works if the saved header cannot be read. */
@@ -113,12 +117,13 @@ export default function WorksheetBuilder() {
           className: header.className,
           masthead: header.masthead,
           show: header.show,
+          fieldOrder: header.fieldOrder,
         })
       );
     } catch {
       /* Ignore private-mode storage failures. */
     }
-  }, [header.teacherName, header.className, header.masthead, header.show]);
+  }, [header.teacherName, header.className, header.masthead, header.show, header.fieldOrder]);
 
   const selected = useMemo(
     () =>
@@ -202,6 +207,188 @@ export default function WorksheetBuilder() {
     }));
   }
 
+  function moveField(key: HeaderLineField, direction: -1 | 1) {
+    setHeader((current) => {
+      const order = normalizeFieldOrder(current.fieldOrder);
+      const index = order.indexOf(key);
+      const next = index + direction;
+      if (index < 0 || next < 0 || next >= order.length) return current;
+      const swapped = [...order];
+      const neighbor = swapped[next];
+      swapped[next] = swapped[index];
+      swapped[index] = neighbor;
+      return { ...current, fieldOrder: swapped };
+    });
+  }
+
+  function lineLabel(key: HeaderLineField): string {
+    if (key === 'teacherName') return 'teacher';
+    if (key === 'studentName') return 'student';
+    if (key === 'className') return 'class';
+    if (key === 'studentId') return 'ID number';
+    if (key === 'rollNumber') return 'roll number';
+    if (key === 'date') return 'date';
+    return 'due date';
+  }
+
+  function lineControl(key: HeaderLineField) {
+    if (key === 'teacherName') {
+      return (
+        <>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <FieldLabel htmlFor="worksheet-teacher">Teacher</FieldLabel>
+            <ShowToggle
+              label="teacher"
+              checked={header.show.teacherName}
+              onChange={(visible) => updateVisibility('teacherName', visible)}
+            />
+          </div>
+          <input
+            id="worksheet-teacher"
+            value={header.teacherName}
+            onChange={(event) => updateHeader({ teacherName: event.target.value })}
+            className="comic-input w-full"
+            autoComplete="name"
+          />
+        </>
+      );
+    }
+    if (key === 'studentName') {
+      return (
+        <>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <FieldLabel htmlFor="worksheet-student">Student</FieldLabel>
+            <ShowToggle
+              label="student"
+              checked={header.show.studentName}
+              onChange={(visible) => updateVisibility('studentName', visible)}
+            />
+          </div>
+          <input
+            id="worksheet-student"
+            value={header.studentName}
+            onChange={(event) => updateHeader({ studentName: event.target.value })}
+            className="comic-input w-full"
+            placeholder="Blank line on the sheet"
+          />
+        </>
+      );
+    }
+    if (key === 'className') {
+      return (
+        <>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <FieldLabel htmlFor="worksheet-class">Class</FieldLabel>
+            <ShowToggle
+              label="class"
+              checked={header.show.className}
+              onChange={(visible) => updateVisibility('className', visible)}
+            />
+          </div>
+          <input
+            id="worksheet-class"
+            value={header.className}
+            onChange={(event) => updateHeader({ className: event.target.value })}
+            className="comic-input w-full"
+            placeholder="8A"
+          />
+        </>
+      );
+    }
+    if (key === 'studentId') {
+      return (
+        <>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <FieldLabel htmlFor="worksheet-id">ID number</FieldLabel>
+            <ShowToggle
+              label="ID number"
+              checked={header.show.studentId}
+              onChange={(visible) => updateVisibility('studentId', visible)}
+            />
+          </div>
+          <input
+            id="worksheet-id"
+            value={header.studentId}
+            onChange={(event) =>
+              updateHeader({ studentId: event.target.value.replace(/\D/g, '').slice(0, 5) })
+            }
+            className="comic-input w-full tracking-[0.3em]"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="5 digits"
+            maxLength={5}
+          />
+        </>
+      );
+    }
+    if (key === 'rollNumber') {
+      return (
+        <>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <FieldLabel htmlFor="worksheet-roll">Roll number</FieldLabel>
+            <ShowToggle
+              label="roll number"
+              checked={header.show.rollNumber}
+              onChange={(visible) => updateVisibility('rollNumber', visible)}
+            />
+          </div>
+          <input
+            id="worksheet-roll"
+            value={header.rollNumber}
+            onChange={(event) =>
+              updateHeader({ rollNumber: event.target.value.replace(/\D/g, '').slice(0, 2) })
+            }
+            className="comic-input w-full tracking-[0.3em]"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="2 digits"
+            maxLength={2}
+          />
+        </>
+      );
+    }
+    if (key === 'date') {
+      return (
+        <>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <FieldLabel htmlFor="worksheet-date">Date</FieldLabel>
+            <ShowToggle
+              label="date"
+              checked={header.show.date}
+              onChange={(visible) => updateVisibility('date', visible)}
+            />
+          </div>
+          <input
+            id="worksheet-date"
+            type="date"
+            value={header.date}
+            onChange={(event) => updateHeader({ date: event.target.value })}
+            className="comic-input w-full"
+          />
+        </>
+      );
+    }
+    return (
+      <>
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <FieldLabel htmlFor="worksheet-due">Due date</FieldLabel>
+          <ShowToggle
+            label="due date"
+            checked={header.show.dueDate}
+            onChange={(visible) => updateVisibility('dueDate', visible)}
+          />
+        </div>
+        <input
+          id="worksheet-due"
+          type="date"
+          value={header.dueDate}
+          onChange={(event) => updateHeader({ dueDate: event.target.value })}
+          className="comic-input w-full"
+        />
+      </>
+    );
+  }
+
   return (
     <div className="worksheet-builder mx-auto w-full max-w-6xl space-y-8 px-4 py-10">
       <div className="print:hidden space-y-8">
@@ -269,8 +456,8 @@ export default function WorksheetBuilder() {
               2. Header
             </ComicTitle>
             <ComicText className="font-bold text-[var(--comic-dark)]">
-              Tick Show to print a line. Untick it and that line stays off the sheet. A line you
-              show can still be left blank for someone to fill in by hand.
+              Tick Show to print a line. Use the arrows to change the order on the sheet. A date
+              stays short, and a name uses the space that is left.
             </ComicText>
             <div>
               <div className="mb-1 flex items-center justify-between gap-2">
@@ -308,136 +495,32 @@ export default function WorksheetBuilder() {
                 maxLength={80}
               />
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <FieldLabel htmlFor="worksheet-teacher">Teacher</FieldLabel>
-                  <ShowToggle
-                    label="teacher"
-                    checked={header.show.teacherName}
-                    onChange={(visible) => updateVisibility('teacherName', visible)}
-                  />
+            <div className="space-y-3">
+              {normalizeFieldOrder(header.fieldOrder).map((key, index, order) => (
+                <div key={key} className="flex items-start gap-2">
+                  <div className="flex flex-col gap-1 pt-7">
+                    <button
+                      type="button"
+                      className="h-7 w-7 border-2 border-[var(--comic-black)] bg-white font-black leading-none disabled:opacity-30"
+                      aria-label={`Move ${lineLabel(key)} earlier`}
+                      disabled={index === 0}
+                      onClick={() => moveField(key, -1)}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      className="h-7 w-7 border-2 border-[var(--comic-black)] bg-white font-black leading-none disabled:opacity-30"
+                      aria-label={`Move ${lineLabel(key)} later`}
+                      disabled={index === order.length - 1}
+                      onClick={() => moveField(key, 1)}
+                    >
+                      ↓
+                    </button>
+                  </div>
+                  <div className="min-w-0 flex-1">{lineControl(key)}</div>
                 </div>
-                <input
-                  id="worksheet-teacher"
-                  value={header.teacherName}
-                  onChange={(event) => updateHeader({ teacherName: event.target.value })}
-                  className="comic-input w-full"
-                  autoComplete="name"
-                />
-              </div>
-              <div>
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <FieldLabel htmlFor="worksheet-student">Student</FieldLabel>
-                  <ShowToggle
-                    label="student"
-                    checked={header.show.studentName}
-                    onChange={(visible) => updateVisibility('studentName', visible)}
-                  />
-                </div>
-                <input
-                  id="worksheet-student"
-                  value={header.studentName}
-                  onChange={(event) => updateHeader({ studentName: event.target.value })}
-                  className="comic-input w-full"
-                  placeholder="Blank line on the sheet"
-                />
-              </div>
-              <div>
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <FieldLabel htmlFor="worksheet-class">Class</FieldLabel>
-                  <ShowToggle
-                    label="class"
-                    checked={header.show.className}
-                    onChange={(visible) => updateVisibility('className', visible)}
-                  />
-                </div>
-                <input
-                  id="worksheet-class"
-                  value={header.className}
-                  onChange={(event) => updateHeader({ className: event.target.value })}
-                  className="comic-input w-full"
-                  placeholder="8A"
-                />
-              </div>
-              <div>
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <FieldLabel htmlFor="worksheet-id">ID number</FieldLabel>
-                  <ShowToggle
-                    label="ID number"
-                    checked={header.show.studentId}
-                    onChange={(visible) => updateVisibility('studentId', visible)}
-                  />
-                </div>
-                <input
-                  id="worksheet-id"
-                  value={header.studentId}
-                  onChange={(event) =>
-                    updateHeader({ studentId: event.target.value.replace(/\D/g, '').slice(0, 5) })
-                  }
-                  className="comic-input w-full tracking-[0.3em]"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  placeholder="5 digits"
-                  maxLength={5}
-                />
-              </div>
-              <div>
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <FieldLabel htmlFor="worksheet-roll">Roll number</FieldLabel>
-                  <ShowToggle
-                    label="roll number"
-                    checked={header.show.rollNumber}
-                    onChange={(visible) => updateVisibility('rollNumber', visible)}
-                  />
-                </div>
-                <input
-                  id="worksheet-roll"
-                  value={header.rollNumber}
-                  onChange={(event) =>
-                    updateHeader({ rollNumber: event.target.value.replace(/\D/g, '').slice(0, 2) })
-                  }
-                  className="comic-input w-full tracking-[0.3em]"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  placeholder="2 digits"
-                  maxLength={2}
-                />
-              </div>
-              <div>
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <FieldLabel htmlFor="worksheet-date">Date</FieldLabel>
-                  <ShowToggle
-                    label="date"
-                    checked={header.show.date}
-                    onChange={(visible) => updateVisibility('date', visible)}
-                  />
-                </div>
-                <input
-                  id="worksheet-date"
-                  type="date"
-                  value={header.date}
-                  onChange={(event) => updateHeader({ date: event.target.value })}
-                  className="comic-input w-full"
-                />
-              </div>
-              <div>
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <FieldLabel htmlFor="worksheet-due">Due date</FieldLabel>
-                  <ShowToggle
-                    label="due date"
-                    checked={header.show.dueDate}
-                    onChange={(visible) => updateVisibility('dueDate', visible)}
-                  />
-                </div>
-                <input
-                  id="worksheet-due"
-                  type="date"
-                  value={header.dueDate}
-                  onChange={(event) => updateHeader({ dueDate: event.target.value })}
-                  className="comic-input w-full"
-                />
-              </div>
+              ))}
             </div>
             <div>
               <div className="mb-1 flex items-center justify-between gap-2">

@@ -101,6 +101,8 @@ export interface WorksheetHeader {
   /** Short directions printed under the header. */
   instructions: string;
   show: WorksheetHeaderVisibility;
+  /** Left-to-right order of the header lines on the sheet. */
+  fieldOrder: HeaderLineField[];
 }
 
 export function defaultHeaderVisibility(): WorksheetHeaderVisibility {
@@ -116,6 +118,41 @@ export function defaultHeaderVisibility(): WorksheetHeaderVisibility {
     dueDate: true,
     instructions: true,
   };
+}
+
+/** Lines that sit in the header row and can be reordered. */
+export const HEADER_LINE_FIELDS = [
+  'teacherName',
+  'className',
+  'date',
+  'studentName',
+  'studentId',
+  'rollNumber',
+  'dueDate',
+] as const;
+
+export type HeaderLineField = (typeof HEADER_LINE_FIELDS)[number];
+
+export function defaultFieldOrder(): HeaderLineField[] {
+  return [...HEADER_LINE_FIELDS];
+}
+
+export function normalizeFieldOrder(value: unknown): HeaderLineField[] {
+  const allowed = new Set<string>(HEADER_LINE_FIELDS);
+  const seen = new Set<string>();
+  const order: HeaderLineField[] = [];
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      if (typeof item === 'string' && allowed.has(item) && !seen.has(item)) {
+        seen.add(item);
+        order.push(item as HeaderLineField);
+      }
+    }
+  }
+  for (const field of HEADER_LINE_FIELDS) {
+    if (!seen.has(field)) order.push(field);
+  }
+  return order;
 }
 
 export interface FillBlankItem {
@@ -237,6 +274,7 @@ export function emptyWorksheetHeader(level: WorksheetLevel = 'A2'): WorksheetHea
     level,
     instructions: '',
     show: defaultHeaderVisibility(),
+    fieldOrder: defaultFieldOrder(),
   };
 }
 
