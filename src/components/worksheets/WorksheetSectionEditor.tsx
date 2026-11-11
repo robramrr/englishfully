@@ -154,12 +154,28 @@ function moveAt<T>(items: T[], index: number, direction: -1 | 1): T[] {
   return next;
 }
 
+function insertAfter<T>(items: T[], index: number, item: T): T[] {
+  const next = [...items];
+  next.splice(index + 1, 0, item);
+  return next;
+}
+
+function nextMatchLetter(used: string[]): string {
+  const taken = new Set(used.map((letter) => letter.toUpperCase()));
+  for (let code = 65; code <= 90; code += 1) {
+    const letter = String.fromCharCode(code);
+    if (!taken.has(letter)) return letter;
+  }
+  return `A${used.length + 1}`;
+}
+
 function ItemTools({
   label,
   canUp,
   canDown,
   onUp,
   onDown,
+  onAdd,
   onRemove,
   children,
 }: {
@@ -168,6 +184,7 @@ function ItemTools({
   canDown: boolean;
   onUp: () => void;
   onDown: () => void;
+  onAdd: () => void;
   onRemove: () => void;
   children: ReactNode;
 }) {
@@ -179,6 +196,9 @@ function ItemTools({
         </TinyButton>
         <TinyButton label={`Move ${label} later`} disabled={!canDown} onClick={onDown}>
           ↓
+        </TinyButton>
+        <TinyButton label={`Add ${label} after this one`} onClick={onAdd}>
+          Add
         </TinyButton>
         <TinyButton label={`Remove ${label}`} onClick={onRemove}>
           Remove
@@ -311,7 +331,7 @@ export default function WorksheetSectionEditor({
         Edit the exercises
       </ComicTitle>
       <ComicText className="font-bold text-[var(--comic-dark)]">
-        Change, reorder, or remove any exercise or question. The sheet below updates as you type.
+        Change, reorder, add, or remove any exercise or question. The sheet below updates as you type.
         For matching, paste an image link on the prompt, the answer, or both.
       </ComicText>
       {crosswordNote ? (
@@ -338,6 +358,10 @@ export default function WorksheetSectionEditor({
                     }}
                     onDown={() => {
                       const items = moveAt(section.items, itemIndex, 1);
+                      update(index, { ...section, items, wordBank: syncWordBank(items, section.wordBank) });
+                    }}
+                    onAdd={() => {
+                      const items = insertAfter(section.items, itemIndex, { prompt: '', answer: '' });
                       update(index, { ...section, items, wordBank: syncWordBank(items, section.wordBank) });
                     }}
                     onRemove={() => {
@@ -393,6 +417,15 @@ export default function WorksheetSectionEditor({
                     canDown={itemIndex < section.items.length - 1}
                     onUp={() => update(index, { ...section, items: moveAt(section.items, itemIndex, -1) })}
                     onDown={() => update(index, { ...section, items: moveAt(section.items, itemIndex, 1) })}
+                    onAdd={() => {
+                      const choiceCount = Math.max(item.choices.length, 2);
+                      const items = insertAfter(section.items, itemIndex, {
+                        prompt: '',
+                        choices: Array.from({ length: choiceCount }, () => ''),
+                        answer: '',
+                      });
+                      update(index, { ...section, items });
+                    }}
                     onRemove={() => {
                       const items = section.items.filter((_, entryIndex) => entryIndex !== itemIndex);
                       if (!items.length) dropSection(index);
@@ -417,7 +450,7 @@ export default function WorksheetSectionEditor({
                             <input
                               type="radio"
                               name={`mc-${index}-${itemIndex}`}
-                              checked={item.answer === choice}
+                              checked={choice.trim() !== '' && item.answer === choice}
                               onChange={() => {
                                 const items = section.items.map((entry, entryIndex) =>
                                   entryIndex === itemIndex ? { ...entry, answer: choice } : entry
@@ -483,6 +516,18 @@ export default function WorksheetSectionEditor({
                             answers: moveAt(section.answers, promptIndex, 1),
                           })
                         }
+                        onAdd={() => {
+                          const letter = nextMatchLetter([
+                            ...section.bank.map((entry) => entry.letter),
+                            ...section.answers,
+                          ]);
+                          update(index, {
+                            ...section,
+                            prompts: insertAfter(section.prompts, promptIndex, { text: '', imageUrl: '' }),
+                            answers: insertAfter(section.answers, promptIndex, letter),
+                            bank: [...section.bank, { letter, text: '', imageUrl: '' }],
+                          });
+                        }}
                         onRemove={() => {
                           const letter = section.answers[promptIndex];
                           const prompts = section.prompts.filter((_, entryIndex) => entryIndex !== promptIndex);
@@ -564,6 +609,12 @@ export default function WorksheetSectionEditor({
                     canDown={itemIndex < section.items.length - 1}
                     onUp={() => update(index, { ...section, items: moveAt(section.items, itemIndex, -1) })}
                     onDown={() => update(index, { ...section, items: moveAt(section.items, itemIndex, 1) })}
+                    onAdd={() =>
+                      update(index, {
+                        ...section,
+                        items: insertAfter(section.items, itemIndex, { words: [''], answer: '' }),
+                      })
+                    }
                     onRemove={() => {
                       const items = section.items.filter((_, entryIndex) => entryIndex !== itemIndex);
                       if (!items.length) dropSection(index);
@@ -615,6 +666,12 @@ export default function WorksheetSectionEditor({
                     canDown={itemIndex < section.items.length - 1}
                     onUp={() => update(index, { ...section, items: moveAt(section.items, itemIndex, -1) })}
                     onDown={() => update(index, { ...section, items: moveAt(section.items, itemIndex, 1) })}
+                    onAdd={() =>
+                      update(index, {
+                        ...section,
+                        items: insertAfter(section.items, itemIndex, { clue: '', scrambled: '', answer: '' }),
+                      })
+                    }
                     onRemove={() => {
                       const items = section.items.filter((_, entryIndex) => entryIndex !== itemIndex);
                       if (!items.length) dropSection(index);
@@ -674,6 +731,12 @@ export default function WorksheetSectionEditor({
                     canDown={itemIndex < section.items.length - 1}
                     onUp={() => update(index, { ...section, items: moveAt(section.items, itemIndex, -1) })}
                     onDown={() => update(index, { ...section, items: moveAt(section.items, itemIndex, 1) })}
+                    onAdd={() =>
+                      update(index, {
+                        ...section,
+                        items: insertAfter(section.items, itemIndex, { statement: '', answer: true }),
+                      })
+                    }
                     onRemove={() => {
                       const items = section.items.filter((_, entryIndex) => entryIndex !== itemIndex);
                       if (!items.length) dropSection(index);
@@ -730,6 +793,12 @@ export default function WorksheetSectionEditor({
                     canDown={itemIndex < section.items.length - 1}
                     onUp={() => update(index, { ...section, items: moveAt(section.items, itemIndex, -1) })}
                     onDown={() => update(index, { ...section, items: moveAt(section.items, itemIndex, 1) })}
+                    onAdd={() =>
+                      update(index, {
+                        ...section,
+                        items: insertAfter(section.items, itemIndex, { prompt: '', answer: '' }),
+                      })
+                    }
                     onRemove={() => {
                       const items = section.items.filter((_, entryIndex) => entryIndex !== itemIndex);
                       if (!items.length) dropSection(index);
@@ -794,6 +863,28 @@ export default function WorksheetSectionEditor({
                     }));
                     const entries = layoutCrossword(words);
                     if (entries) update(index, { ...section, entries });
+                  }}
+                  onAdd={() => {
+                    const used = new Set(ordered.map((current) => current.answer.toUpperCase()));
+                    const starter =
+                      ['WORD', 'NOTE', 'ITEM', 'CLUE', 'LINE', 'PAGE', 'TEST', 'QUIZ'].find(
+                        (word) => !used.has(word)
+                      ) || 'ADDED';
+                    const words = insertAfter(
+                      ordered.map((current) => ({ clue: current.clue, answer: current.answer })),
+                      entryIndex,
+                      { clue: '', answer: starter }
+                    );
+                    const entries = layoutCrossword(words);
+                    const placed = entries?.some((current) => current.answer === starter);
+                    if (!entries || !placed) {
+                      setCrosswordNote(
+                        'A new crossword word has to be 3 to 12 letters and share a letter with the others.'
+                      );
+                      return;
+                    }
+                    setCrosswordNote('');
+                    update(index, { ...section, entries });
                   }}
                   onRemove={() => {
                     const words = ordered
