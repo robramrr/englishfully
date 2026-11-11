@@ -115,30 +115,24 @@ function MeaningCopy({
     <div className="flex max-w-full flex-col gap-3 md:gap-4">
       <div>
         <p
-          className="font-bungee leading-none break-words text-[var(--comic-secondary)]"
-          style={{
-            fontSize: heroWord ? 'clamp(2.6rem, 5vw, 5.75rem)' : 'clamp(1.6rem, 2.8vw, 2.75rem)',
-          }}
+          className={[
+            'comic-title break-words text-[var(--comic-secondary)]',
+            heroWord ? 'text-4xl leading-tight md:text-6xl' : 'text-2xl leading-tight md:text-4xl',
+          ].join(' ')}
         >
           {word}
         </p>
         {card.partOfSpeech.trim() ? (
-          <p className="mt-2 text-base font-bold uppercase tracking-wide text-[var(--comic-primary)] md:text-xl">
+          <p className="comic-text-bold mt-2 text-sm uppercase tracking-wide text-[var(--comic-primary)]">
             {card.partOfSpeech}
           </p>
         ) : null}
       </div>
-      <p
-        className="font-bold leading-snug text-[var(--comic-dark)]"
-        style={{ fontSize: 'clamp(1.45rem, 2.6vw, 2.6rem)' }}
-      >
+      <p className="comic-text-bold text-2xl leading-snug text-[var(--comic-dark)] md:text-4xl">
         {card.meaning || 'Add a meaning for this card.'}
       </p>
       {card.example.trim() ? (
-        <p
-          className="font-bold leading-relaxed text-[var(--comic-dark)]"
-          style={{ fontSize: 'clamp(1.1rem, 1.8vw, 1.7rem)' }}
-        >
+        <p className="comic-text-bold text-lg leading-relaxed text-[var(--comic-dark)] md:text-2xl">
           {highlightWord(card.example, card.word)}
         </p>
       ) : null}
@@ -185,14 +179,11 @@ function FlashcardFace({
           ) : hasImage ? (
             <CardSplit imageUrl={card.imageUrl}>
               <div className="max-w-full">
-                <div
-                  className="font-bungee leading-none break-words text-[var(--comic-secondary)]"
-                  style={{ fontSize: 'clamp(2.75rem, 5.5vw, 6.5rem)' }}
-                >
+                <div className="comic-title break-words text-4xl leading-tight text-[var(--comic-secondary)] md:text-6xl">
                   {word}
                 </div>
                 {card.partOfSpeech.trim() ? (
-                  <div className="mt-2 text-lg font-bold uppercase tracking-wide text-[var(--comic-primary)] md:text-2xl">
+                  <div className="comic-text-bold mt-2 text-sm uppercase tracking-wide text-[var(--comic-primary)]">
                     {card.partOfSpeech}
                   </div>
                 ) : null}
@@ -201,14 +192,11 @@ function FlashcardFace({
           ) : (
             <div className="flex h-full items-center justify-center px-6 text-center">
               <div className="max-w-full">
-                <div
-                  className="font-bungee leading-none break-words text-[var(--comic-secondary)]"
-                  style={{ fontSize: 'clamp(3.5rem, 12vw, 9.5rem)' }}
-                >
+                <div className="comic-title break-words text-4xl leading-tight text-[var(--comic-secondary)] md:text-6xl">
                   {word}
                 </div>
                 {card.partOfSpeech.trim() ? (
-                  <div className="mt-3 text-lg font-bold uppercase tracking-wide text-[var(--comic-primary)] md:text-2xl">
+                  <div className="comic-text-bold mt-3 text-sm uppercase tracking-wide text-[var(--comic-primary)]">
                     {card.partOfSpeech}
                   </div>
                 ) : null}
@@ -431,12 +419,12 @@ export default function VocabFlashcardStage({
       ].join(' ')}
     >
       <header className="flex shrink-0 flex-wrap items-center gap-2 border-b-4 border-[var(--comic-black)] bg-white px-3 py-2 md:gap-3 md:px-5">
-        <h1 className="min-w-0 flex-1 truncate font-bungee text-lg text-[var(--comic-secondary)] md:text-2xl">
+        <h1 className="comic-title min-w-0 flex-1 truncate text-xl text-[var(--comic-secondary)] md:text-3xl">
           {title}
         </h1>
         {card ? (
-          <p className="shrink-0 text-sm font-black md:text-lg">
-            <span className="mr-2 hidden font-bungee text-xs uppercase tracking-wide text-[var(--comic-primary)] sm:inline">
+          <p className="comic-text-bold shrink-0 text-sm md:text-base">
+            <span className="mr-2 hidden uppercase tracking-wide text-[var(--comic-primary)] sm:inline">
               {faceLabel}
             </span>
             {cursor + 1} / {cards.length}
@@ -551,7 +539,7 @@ export default function VocabFlashcardStage({
               <FontAwesomeIcon icon={faArrowRight} className="h-5 w-5 sm:ml-2" />
             </ComicButton>
           </div>
-          <p className="text-center text-xs font-bold text-[var(--comic-dark)] md:text-sm">
+          <p className="comic-text-bold text-center text-xs text-[var(--comic-dark)] md:text-sm">
             Click the card or press space to flip. Arrow keys move between cards.
           </p>
         </footer>
