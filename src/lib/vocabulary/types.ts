@@ -22,7 +22,7 @@ export interface VocabDeck {
   level: VocabLevel;
   /**
    * When true, a pictured card starts as the picture only.
-   * The first click or space reveals the word and part of speech.
+   * Flip reveals the word, meaning, and example together.
    */
   pictureFirst: boolean;
   cards: VocabCard[];

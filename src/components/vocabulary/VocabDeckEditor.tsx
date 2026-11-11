@@ -427,8 +427,8 @@ export default function VocabDeckEditor({ deckId }: { deckId: string }) {
             </ComicTitle>
             <ComicText className="font-bold text-[var(--comic-dark)]">
               {deck.pictureFirst
-                ? 'Pictured cards start with the picture only. Click or press space to reveal the word, then again for the meaning.'
-                : 'Front of the card: word and picture. Back: simple meaning and one example.'}
+                ? 'Pictured cards open on the picture alone. Flip reveals the word and meaning.'
+                : 'Front of the card: word and picture. Flip to the meaning and example.'}
             </ComicText>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -535,7 +535,7 @@ export default function VocabDeckEditor({ deckId }: { deckId: string }) {
           <div className="min-w-0 max-w-xl">
             <ComicText className="font-black">Picture first</ComicText>
             <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-              Show the picture alone. The first click or space reveals the word and its type. The next one shows the meaning.
+              Open on the picture alone, big enough for the class. Flip reveals the word and meaning.
             </ComicText>
           </div>
           <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
