@@ -46,9 +46,46 @@
   --comic-border-xl: 8px solid var(--comic-black);
   
   /* Font Variables */
-  --font-fredoka: 'Fredoka', cursive;
-  --font-bungee: 'Bungee', cursive;
-  --font-comic-neue: 'Comic Neue', cursive;
+  --font-fredoka: 'Fredoka', ui-sans-serif, system-ui, sans-serif;
+  --font-bungee: 'Bungee', ui-sans-serif, system-ui, sans-serif;
+  --font-comic-neue: 'Comic Neue', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Real family names. Production next/font class hashes can miss these, and the old cursive fallback is what the live site was painting. */
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('/fonts/fredoka-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Bungee';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/bungee-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Comic Neue';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('/fonts/comic-neue-300.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Comic Neue';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/comic-neue-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Comic Neue';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/comic-neue-700.woff2') format('woff2');
 }
 
 @theme inline {
