@@ -676,7 +676,7 @@ const SHEET_CSS = `
   line-height: 1;
 }
 .worksheet-crossword-block {
-  background: var(--brand-navy);
+  background: #d4d4d1;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }

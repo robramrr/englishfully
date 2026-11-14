@@ -397,7 +397,28 @@ function crosswordArea(
   const maxRow = Math.max(endRow, ...rows);
   const minCol = Math.min(col, ...cols);
   const maxCol = Math.max(endCol, ...cols);
-  return (maxRow - minRow + 1) * (maxCol - minCol + 1);
+  return crosswordShapeCost(maxRow - minRow + 1, maxCol - minCol + 1);
+}
+
+/** Lower is better. A tall grid wastes the page, so extra height costs more than extra width. */
+function crosswordShapeCost(rows: number, cols: number): number {
+  const tall = Math.max(0, rows - cols);
+  return rows * cols + tall * 48;
+}
+
+function crosswordScore(placed: CrosswordDraft[]): number {
+  const rows = placed.flatMap((entry) => [
+    entry.row,
+    entry.row + (entry.direction === 'down' ? entry.answer.length - 1 : 0),
+  ]);
+  const cols = placed.flatMap((entry) => [
+    entry.col,
+    entry.col + (entry.direction === 'across' ? entry.answer.length - 1 : 0),
+  ]);
+  return crosswordShapeCost(
+    Math.max(...rows) - Math.min(...rows) + 1,
+    Math.max(...cols) - Math.min(...cols) + 1
+  );
 }
 
 function commitCrossword(
@@ -526,14 +547,19 @@ function placeCrossword(words: CrosswordWord[]): CrosswordEntry[] | null {
     (a, b) => b.answer.length - a.answer.length || a.answer.localeCompare(b.answer)
   );
   const attempts = [longestFirst];
-  for (let index = 0; index < 6; index += 1) attempts.push(shuffle(unique));
+  for (let index = 0; index < 12; index += 1) attempts.push(shuffle(unique));
 
   let best: CrosswordDraft[] | null = null;
   for (const order of attempts) {
     const placed = placeCrosswordOnce(order);
     if (placed.length < 2) continue;
-    if (!best || placed.length > best.length) best = placed;
-    if (best.length === unique.length) break;
+    if (
+      !best ||
+      placed.length > best.length ||
+      (placed.length === best.length && crosswordScore(placed) < crosswordScore(best))
+    ) {
+      best = placed;
+    }
   }
   if (!best) return null;
   return numberCrossword(best);
