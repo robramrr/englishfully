@@ -66,6 +66,7 @@ Section item shapes:
 - anagram items: {"clue":"a place where students learn","answer":"school"}
 - true_false items: {"statement":"...","answer":true}
 - short_answer items: {"prompt":"...","answer":"a short sample answer"}
+- question_sentence items: {"question":"Where was the inventor born?","underline":[0],"sentence":"He was born in ______.","answer":"He was born in Hungary."}
 - crossword items: {"clue":"a place where students learn","answer":"school"}
 
 Rules:
@@ -80,6 +81,7 @@ Rules:
 - anagram: answer is one English word of 4 to 12 letters. The clue must not contain the answer.
 - true_false: about half the statements are false. False statements are clearly false at this level.
 - short_answer: one question a student can answer in a few words, plus a sample answer.
+- question_sentence: a comprehension question, then one answer sentence. underline is the 0-based word index of the question word (Who, What, When, Where, Why, How). For "How many", underline both words, such as [0, 1]. sentence is what the student sees and uses ______ once for the missing fact. answer is that same sentence with the blank filled in. One item in the section may be a model with no blank: sentence and answer are the same full sentence.
 - crossword: each answer is one English word of 4 to 8 letters, with no spaces. The clue must not contain the answer. Choose words that share letters so they can cross, using common letters such as A, E, I, O, R, S, T, L, and N.
 - instructions: one short line telling the student what to do on the whole sheet.
 - No markdown and no extra keys.`,

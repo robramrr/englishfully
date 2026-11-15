@@ -17,6 +17,7 @@ import {
   saveWorksheet,
   type SavedWorksheetSummary,
 } from '@/lib/worksheets/storage';
+import { emptyQuestionSentenceItem } from '@/lib/worksheets/questionSentence';
 import {
   defaultHeaderVisibility,
   emptyWorksheetHeader,
@@ -222,6 +223,40 @@ export default function WorksheetBuilder() {
       return next;
     });
     setSaveNote('');
+    setError('');
+    requestAnimationFrame(() => {
+      previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  function addQuestionSentence() {
+    const count = Math.max(1, Math.min(8, choices.question_sentence.count || 5));
+    setChoices((current) => ({
+      ...current,
+      question_sentence: { ...current.question_sentence, on: true },
+    }));
+    setSections((current) => {
+      const index = current.findIndex((section) => section.type === 'question_sentence');
+      if (index >= 0) {
+        const section = current[index];
+        if (section.type !== 'question_sentence') return current;
+        const next = [...current];
+        next[index] = {
+          ...section,
+          items: [...section.items, emptyQuestionSentenceItem()],
+        };
+        return next;
+      }
+      return [
+        ...current,
+        {
+          type: 'question_sentence',
+          title: 'Answer in a sentence',
+          instructions: 'Answer each question in a full sentence.',
+          items: Array.from({ length: count }, () => emptyQuestionSentenceItem()),
+        },
+      ];
+    });
     setError('');
     requestAnimationFrame(() => {
       previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -648,34 +683,45 @@ export default function WorksheetBuilder() {
                   key={exercise.type}
                   className="flex items-center justify-between gap-3 border-4 border-[var(--comic-black)] bg-white p-3"
                 >
-                  <button
-                    type="button"
-                    aria-pressed={choice.on}
-                    onClick={() => updateChoice(exercise.type, { on: !choice.on })}
-                    className="min-w-0 text-left"
-                  >
-                    <span className="block font-black text-[var(--comic-dark)]">
-                      <span
-                        className={`mr-2 inline-flex h-5 w-5 items-center justify-center border-2 border-[var(--comic-black)] align-middle ${
-                          choice.on ? 'bg-[var(--comic-primary)] text-white' : 'bg-white'
-                        }`}
-                        aria-hidden
-                      >
-                        {choice.on ? '✓' : ''}
+                  <div className="min-w-0 flex-1">
+                    <button
+                      type="button"
+                      aria-pressed={choice.on}
+                      onClick={() => updateChoice(exercise.type, { on: !choice.on })}
+                      className="text-left"
+                    >
+                      <span className="block font-black text-[var(--comic-dark)]">
+                        <span
+                          className={`mr-2 inline-flex h-5 w-5 items-center justify-center border-2 border-[var(--comic-black)] align-middle ${
+                            choice.on ? 'bg-[var(--comic-primary)] text-white' : 'bg-white'
+                          }`}
+                          aria-hidden
+                        >
+                          {choice.on ? '✓' : ''}
+                        </span>
+                        {exercise.label}
                       </span>
-                      {exercise.label}
-                    </span>
-                    <span className="mt-1 block text-sm font-bold text-[var(--brand-medium-gray)]">
-                      {exercise.hint}
-                    </span>
-                  </button>
+                      <span className="mt-1 block text-sm font-bold text-[var(--brand-medium-gray)]">
+                        {exercise.hint}
+                      </span>
+                    </button>
+                    {exercise.type === 'question_sentence' ? (
+                      <button
+                        type="button"
+                        className="mt-2 border-2 border-[var(--comic-black)] bg-[var(--comic-accent)] px-2 py-1 text-sm font-black text-white"
+                        onClick={addQuestionSentence}
+                      >
+                        Add to sheet
+                      </button>
+                    ) : null}
+                  </div>
                   <label className="shrink-0 text-center">
                     <span className="block text-xs font-bold">Items</span>
                     <input
                       type="number"
                       min={1}
                       max={8}
-                      disabled={!choice.on}
+                      disabled={exercise.type === 'question_sentence' ? false : !choice.on}
                       value={choice.count}
                       aria-label={`${exercise.label} item count`}
                       onChange={(event) =>

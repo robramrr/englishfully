@@ -1,7 +1,9 @@
+import { mergeBlankAnswer, underlineQuestionWords, wordTokens } from './questionSentence';
 import {
   exerciseLabel,
   isWorksheetExerciseType,
   type CrosswordEntry,
+  type QuestionSentenceItem,
   type WorksheetExerciseRequest,
   type WorksheetExerciseType,
   type WorksheetSection,
@@ -86,6 +88,10 @@ const TYPE_ALIASES: Record<string, WorksheetExerciseType> = {
   crossword: 'crossword',
   cross_word: 'crossword',
   'cross-word': 'crossword',
+  question_sentence: 'question_sentence',
+  question_and_sentence: 'question_sentence',
+  answer_sentence: 'question_sentence',
+  comprehension_sentence: 'question_sentence',
 };
 
 export function canonicalExerciseType(value: unknown): WorksheetExerciseType | null {
@@ -603,6 +609,46 @@ function parseCrossword(raw: Record<string, unknown>, count: number): WorksheetS
   return { type: 'crossword', ...sectionCopy(raw, 'crossword'), entries };
 }
 
+function parseUnderline(value: unknown, question: string): number[] {
+  const count = wordTokens(question).length;
+  if (!Array.isArray(value)) return underlineQuestionWords(question);
+  if (value.length === 0) return [];
+  const numeric = value.every((entry) => typeof entry === 'number' || /^\d+$/.test(String(entry).trim()));
+  if (numeric) {
+    return [...new Set(value.map((entry) => Number(entry)).filter((index) => Number.isInteger(index) && index >= 0 && index < count))];
+  }
+  const wanted = new Set(value.map((entry) => String(entry).replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '').toLowerCase()).filter(Boolean));
+  const matched = wordTokens(question)
+    .map((word, index) => (wanted.has(word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '').toLowerCase()) ? index : -1))
+    .filter((index) => index >= 0);
+  return matched.length > 0 ? matched : underlineQuestionWords(question);
+}
+
+function parseQuestionSentence(raw: Record<string, unknown>, count: number): WorksheetSection | null {
+  const items = asList(raw.items)
+    .map((item) => {
+      const record = asRecord(item);
+      if (!record) return null;
+      const question = clean(record.question ?? record.prompt, 240);
+      const student = clean(record.sentence ?? record.response ?? record.answerSentence, 300);
+      const answer = clean(record.answer ?? record.completed ?? record.full, 300);
+      if (!question || (!student && !answer)) return null;
+      const merged = mergeBlankAnswer(student || answer, answer || student);
+      const itemOut: QuestionSentenceItem = {
+        question,
+        underline: parseUnderline(record.underline ?? record.underlined, question),
+        sentence: merged.sentence,
+        blanks: merged.blanks,
+      };
+      return itemOut;
+    })
+    .filter((item): item is QuestionSentenceItem => Boolean(item))
+    .slice(0, count);
+
+  if (items.length === 0) return null;
+  return { type: 'question_sentence', ...sectionCopy(raw, 'question_sentence'), items };
+}
+
 function parseShortAnswer(raw: Record<string, unknown>, count: number): WorksheetSection | null {
   const items = asList(raw.items)
     .map((item) => {
@@ -631,6 +677,7 @@ const PARSERS: Record<
   anagram: parseAnagram,
   true_false: parseTrueFalse,
   short_answer: parseShortAnswer,
+  question_sentence: parseQuestionSentence,
   crossword: parseCrossword,
 };
 

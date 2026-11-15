@@ -5,7 +5,23 @@ import ComicCard from '../ComicCard';
 import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import { layoutCrossword } from '@/lib/worksheets/normalize';
-import { exerciseLabel, type WorksheetSection } from '@/lib/worksheets/types';
+import {
+  emptyQuestionSentenceItem,
+  indexesFromRanges,
+  questionPieces,
+  rangesFromIndexes,
+  remapIndexes,
+  remapRanges,
+  sentencePieces,
+  underlineQuestionWords,
+  wordIndexesTouching,
+  wordTokens,
+} from '@/lib/worksheets/questionSentence';
+import {
+  exerciseLabel,
+  type QuestionSentenceItem,
+  type WorksheetSection,
+} from '@/lib/worksheets/types';
 
 interface WorksheetSectionEditorProps {
   sections: WorksheetSection[];
@@ -281,6 +297,217 @@ function syncWordBank(items: { answer: string }[], previous: string[]): string[]
     (answer) => !kept.some((word) => word.toLowerCase() === answer.toLowerCase())
   );
   return [...kept, ...added];
+}
+
+function WordChip({
+  word,
+  pressed,
+  label,
+  onClick,
+}: {
+  word: string;
+  pressed: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      aria-label={label}
+      onClick={onClick}
+      className={`border-2 border-[var(--comic-black)] px-2 py-0.5 text-sm font-bold ${
+        pressed ? 'bg-[var(--comic-warning)] underline decoration-2' : 'bg-white'
+      }`}
+    >
+      {word}
+    </button>
+  );
+}
+
+function QuestionSentenceFields({
+  item,
+  number,
+  onChange,
+}: {
+  item: QuestionSentenceItem;
+  number: number;
+  onChange: (next: QuestionSentenceItem) => void;
+}) {
+  const sentenceRef = useRef<HTMLInputElement>(null);
+  const [note, setNote] = useState('');
+  const questionWords = wordTokens(item.question);
+  const sentenceWords = wordTokens(item.sentence);
+  const blankIndexes = new Set(indexesFromRanges(item.blanks));
+
+  function toggleUnderline(index: number) {
+    const underline = item.underline.includes(index)
+      ? item.underline.filter((entry) => entry !== index)
+      : [...item.underline, index].sort((a, b) => a - b);
+    onChange({ ...item, underline });
+  }
+
+  function toggleBlank(index: number) {
+    const current = indexesFromRanges(item.blanks);
+    const next = current.includes(index)
+      ? current.filter((entry) => entry !== index)
+      : [...current, index];
+    onChange({ ...item, blanks: rangesFromIndexes(next) });
+  }
+
+  function blankSelection() {
+    const field = sentenceRef.current;
+    if (!field) return;
+    const indexes = wordIndexesTouching(
+      item.sentence,
+      field.selectionStart ?? 0,
+      field.selectionEnd ?? 0
+    );
+    if (indexes.length === 0) {
+      setNote('Select the words in the sentence, then make them a blank.');
+      return;
+    }
+    setNote('');
+    onChange({
+      ...item,
+      blanks: rangesFromIndexes([...indexesFromRanges(item.blanks), ...indexes]),
+    });
+  }
+
+  return (
+    <div className="space-y-3">
+      <EditorInput
+        label={`${number}. Question`}
+        value={item.question}
+        onChange={(question) =>
+          onChange({
+            ...item,
+            question,
+            underline: remapIndexes(item.question, question, item.underline),
+          })
+        }
+        placeholder="Where was the inventor born?"
+      />
+      <div>
+        <div className="mb-1 flex flex-wrap items-center gap-2">
+          <span className="text-sm font-bold text-[var(--comic-dark)]">
+            Click a word to underline it.
+          </span>
+          <button
+            type="button"
+            className="border-2 border-[var(--comic-black)] bg-white px-2 py-1 text-xs font-black"
+            onClick={() =>
+              onChange({ ...item, underline: underlineQuestionWords(item.question) })
+            }
+          >
+            Underline question word
+          </button>
+        </div>
+        {questionWords.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {questionWords.map((word, index) => (
+              <WordChip
+                key={`${word}-${index}`}
+                word={word}
+                pressed={item.underline.includes(index)}
+                label={
+                  item.underline.includes(index)
+                    ? `Remove underline from ${word}`
+                    : `Underline ${word}`
+                }
+                onClick={() => toggleUnderline(index)}
+              />
+            ))}
+          </div>
+        ) : null}
+      </div>
+      <label className="block">
+        <span className="mb-1 flex flex-wrap items-center justify-between gap-2 text-sm font-bold text-[var(--comic-dark)]">
+          Answer sentence
+          <button
+            type="button"
+            className="border-2 border-[var(--comic-black)] bg-white px-2 py-1 text-xs font-black"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={blankSelection}
+          >
+            Make a blank
+          </button>
+        </span>
+        <input
+          ref={sentenceRef}
+          value={item.sentence}
+          placeholder="He was born in Hungary."
+          onChange={(event) => {
+            const sentence = event.target.value;
+            onChange({
+              ...item,
+              sentence,
+              blanks: remapRanges(item.sentence, sentence, item.blanks),
+            });
+          }}
+          className="comic-input w-full"
+        />
+      </label>
+      <div>
+        <p className="mb-1 text-sm font-bold text-[var(--comic-dark)]">
+          Click a word to leave a blank. Click each word of a phrase to make one long blank.
+        </p>
+        {sentenceWords.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {sentenceWords.map((word, index) => (
+              <WordChip
+                key={`${word}-${index}`}
+                word={word}
+                pressed={blankIndexes.has(index)}
+                label={
+                  blankIndexes.has(index)
+                    ? `Show ${word} again`
+                    : `Turn ${word} into a blank`
+                }
+                onClick={() => toggleBlank(index)}
+              />
+            ))}
+          </div>
+        ) : null}
+        {note ? <p className="mt-1 text-sm font-bold text-[var(--comic-danger)]">{note}</p> : null}
+      </div>
+      {item.question.trim() || item.sentence.trim() ? (
+        <div className="border-2 border-dashed border-[var(--comic-black)] bg-[var(--comic-light)] px-3 py-2">
+          <p className="text-xs font-black uppercase tracking-wide text-[var(--comic-primary)]">
+            On the worksheet
+          </p>
+          <p className="mt-1 font-bold">
+            {questionPieces(item.question, item.underline).map((piece, index) =>
+              piece.underline ? (
+                <span key={index} className="underline decoration-2 underline-offset-2">
+                  {piece.text}
+                </span>
+              ) : (
+                <span key={index}>{piece.text}</span>
+              )
+            )}
+          </p>
+          {item.sentence.trim() ? (
+            <p className="mt-1 font-bold">
+              {sentencePieces(item.sentence, item.blanks).map((piece, index) =>
+                piece.type === 'blank' ? (
+                  <span
+                    key={index}
+                    className="mx-1 inline-block border-b-2 border-[var(--comic-black)]"
+                    style={{ minWidth: `${Math.min(18, Math.max(6.5, (piece.words || 1) * 3))}rem` }}
+                  >
+                    {'\u00a0'}
+                  </span>
+                ) : (
+                  <span key={index}>{piece.text}</span>
+                )
+              )}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function CrosswordAnswerInput({
@@ -827,6 +1054,58 @@ export default function WorksheetSectionEditor({
                       }}
                     />
                   </div>
+                  </ItemTools>
+                ))}
+              </SectionFrame>
+            );
+          }
+
+          if (section.type === 'question_sentence') {
+            return (
+              <SectionFrame
+                key={`question-sentence-${index}`}
+                index={index}
+                section={section}
+                onChange={(next) => update(index, next)}
+                onMove={(direction) => moveSection(index, direction)}
+                onRemove={() => dropSection(index)}
+                canMoveUp={index > 0}
+                canMoveDown={index < sections.length - 1}
+              >
+                {section.items.map((item, itemIndex) => (
+                  <ItemTools
+                    key={itemIndex}
+                    label={`question ${itemIndex + 1}`}
+                    canUp={itemIndex > 0}
+                    canDown={itemIndex < section.items.length - 1}
+                    onUp={() =>
+                      update(index, { ...section, items: moveAt(section.items, itemIndex, -1) })
+                    }
+                    onDown={() =>
+                      update(index, { ...section, items: moveAt(section.items, itemIndex, 1) })
+                    }
+                    onAdd={() =>
+                      update(index, {
+                        ...section,
+                        items: insertAfter(section.items, itemIndex, emptyQuestionSentenceItem()),
+                      })
+                    }
+                    onRemove={() => {
+                      const items = section.items.filter((_, entryIndex) => entryIndex !== itemIndex);
+                      if (!items.length) dropSection(index);
+                      else update(index, { ...section, items });
+                    }}
+                  >
+                    <QuestionSentenceFields
+                      item={item}
+                      number={itemIndex + 1}
+                      onChange={(next) => {
+                        const items = section.items.map((entry, entryIndex) =>
+                          entryIndex === itemIndex ? next : entry
+                        );
+                        update(index, { ...section, items });
+                      }}
+                    />
                   </ItemTools>
                 ))}
               </SectionFrame>

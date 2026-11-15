@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { questionPieces, sentencePieces } from '@/lib/worksheets/questionSentence';
 import {
   formatWorksheetDate,
   normalizeFieldOrder,
@@ -80,6 +81,46 @@ function ItemNumber({ index, children }: { index: number; children: ReactNode })
 
 function choiceLetter(index: number): string {
   return String.fromCharCode(65 + index);
+}
+
+function MarkedQuestion({ question, underline }: { question: string; underline: number[] }) {
+  return (
+    <p>
+      {questionPieces(question, underline).map((piece, index) =>
+        piece.underline ? (
+          <span key={index} className="worksheet-underline">
+            {piece.text}
+          </span>
+        ) : (
+          <span key={index}>{piece.text}</span>
+        )
+      )}
+    </p>
+  );
+}
+
+function blankWidth(words: number): string {
+  return `${Math.min(18, Math.max(6.5, words * 3))}rem`;
+}
+
+function BlankSentence({ sentence, blanks }: { sentence: string; blanks: [number, number][] }) {
+  return (
+    <p className="worksheet-response">
+      {sentencePieces(sentence, blanks).map((piece, index) =>
+        piece.type === 'blank' ? (
+          <span
+            key={index}
+            className="worksheet-gap"
+            style={{ minWidth: blankWidth(piece.words || 1) }}
+          >
+            <span className="sr-only">blank</span>
+          </span>
+        ) : (
+          <span key={index}>{piece.text}</span>
+        )
+      )}
+    </p>
+  );
 }
 
 function SectionBlock({ section, index }: { section: WorksheetSection; index: number }) {
@@ -219,6 +260,21 @@ function SectionBody({ section }: { section: WorksheetSection }) {
     );
   }
 
+  if (section.type === 'question_sentence') {
+    return (
+      <ol className="worksheet-list">
+        {section.items.map((item, index) => (
+          <ItemNumber key={`${item.question}-${index}`} index={index}>
+            <MarkedQuestion question={item.question} underline={item.underline} />
+            {item.sentence.trim() ? (
+              <BlankSentence sentence={item.sentence} blanks={item.blanks} />
+            ) : null}
+          </ItemNumber>
+        ))}
+      </ol>
+    );
+  }
+
   return (
     <ol className="worksheet-list">
       {section.items.map((item, index) => (
@@ -256,6 +312,9 @@ function answerLines(section: WorksheetSection): string[] {
   }
   if (section.type === 'true_false') {
     return section.items.map((item) => (item.answer ? 'True' : 'False'));
+  }
+  if (section.type === 'question_sentence') {
+    return section.items.map((item) => item.sentence.trim());
   }
   if (section.type === 'crossword') {
     return [...section.entries]
@@ -617,6 +676,22 @@ const SHEET_CSS = `
   border-bottom: 1.5px solid var(--brand-navy);
   height: 1.75rem;
   margin-top: 0.2rem;
+}
+.worksheet-response {
+  margin-top: 0.15rem !important;
+}
+.worksheet-underline {
+  text-decoration: underline;
+  text-underline-offset: 0.14em;
+  text-decoration-thickness: 1.25px;
+}
+.worksheet-gap {
+  display: inline-block;
+  min-width: 7rem;
+  height: 1em;
+  margin: 0 0.2rem;
+  border-bottom: 1.5px solid currentColor;
+  vertical-align: text-bottom;
 }
 .worksheet-write-line-jumble {
   height: 2.2rem;

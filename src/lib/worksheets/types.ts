@@ -54,6 +54,13 @@ export const WORKSHEET_EXERCISES = [
     defaultCount: 3,
   },
   {
+    type: 'question_sentence',
+    label: 'Question and sentence',
+    hint: 'Underline a word in the question, then leave a blank in the answer',
+    defaultOn: false,
+    defaultCount: 5,
+  },
+  {
     type: 'crossword',
     label: 'Crossword',
     hint: 'Fill the grid from the clues',
@@ -187,6 +194,16 @@ export interface ShortAnswerItem {
   answer: string;
 }
 
+export interface QuestionSentenceItem {
+  question: string;
+  /** Word indexes to underline, such as Who, What, When, Where, Why, or How. */
+  underline: number[];
+  /** The full answer sentence. Words in `blanks` print as a writing line. */
+  sentence: string;
+  /** Inclusive word-index ranges. Each run prints as one blank. */
+  blanks: [number, number][];
+}
+
 export interface MatchingPrompt {
   text: string;
   imageUrl: string;
@@ -243,6 +260,10 @@ export type WorksheetSection =
   | (SectionBase & {
       type: 'short_answer';
       items: ShortAnswerItem[];
+    })
+  | (SectionBase & {
+      type: 'question_sentence';
+      items: QuestionSentenceItem[];
     })
   | (SectionBase & {
       type: 'crossword';
