@@ -9,6 +9,8 @@ import {
   faArrowsRotate,
   faCompress,
   faExpand,
+  faListOl,
+  faShuffle,
   faVolumeHigh,
 } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
@@ -33,9 +35,9 @@ function currentFullscreenElement(): Element | null {
   return document.fullscreenElement || doc.webkitFullscreenElement || null;
 }
 
-function presentationOverlayRoot(): HTMLElement {
+function presentationOverlayRoot(self: HTMLElement | null): HTMLElement {
   const fullscreen = currentFullscreenElement();
-  if (fullscreen instanceof HTMLElement) return fullscreen;
+  if (fullscreen instanceof HTMLElement && fullscreen !== self) return fullscreen;
   return document.body;
 }
 
@@ -251,7 +253,7 @@ export default function VocabFlashcardStage({
 
   useEffect(() => {
     if (!overlay) return;
-    const update = () => setOverlayRoot(presentationOverlayRoot());
+    const update = () => setOverlayRoot(presentationOverlayRoot(rootRef.current));
     update();
     document.addEventListener('fullscreenchange', update);
     document.addEventListener('webkitfullscreenchange', update as EventListener);
@@ -384,7 +386,12 @@ export default function VocabFlashcardStage({
         overlay ? 'fixed inset-0 z-[120]' : 'fixed inset-0 z-[40]',
       ].join(' ')}
     >
-      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b-4 border-[var(--comic-black)] bg-white px-3 py-2 md:gap-3 md:px-5">
+      <header
+        className={[
+          'flex shrink-0 flex-wrap items-center gap-2 border-b-4 border-[var(--comic-black)] bg-white px-3 py-2 md:gap-3 md:px-5',
+          fullscreenOwner === 'self' ? 'hidden' : '',
+        ].join(' ')}
+      >
         <h1 className="min-w-0 flex-1 truncate font-bungee text-xl text-[var(--comic-secondary)] md:text-3xl">
           {title}
         </h1>
@@ -402,6 +409,7 @@ export default function VocabFlashcardStage({
             type="button"
             variant="accent"
             size="sm"
+            className="!px-3 sm:!px-4"
             onClick={() => {
               setOrder(shuffled ? cards.map((_, index) => index) : shuffleIndexes(cards.length));
               setShuffled((value) => !value);
@@ -409,16 +417,29 @@ export default function VocabFlashcardStage({
               setFlipped(false);
             }}
           >
-            {shuffled ? 'In order' : 'Shuffle'}
+            <FontAwesomeIcon icon={shuffled ? faListOl : faShuffle} className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">{shuffled ? 'In order' : 'Shuffle'}</span>
+            <span className="sr-only sm:hidden">{shuffled ? 'In order' : 'Shuffle'}</span>
           </ComicButton>
         ) : null}
         {fullscreenOwner !== 'other' ? (
-          <ComicButton type="button" variant="success" size="sm" onClick={() => void toggleFullscreen()}>
+          <ComicButton
+            type="button"
+            variant="success"
+            size="sm"
+            className="!px-3 sm:!px-4"
+            onClick={() => void toggleFullscreen()}
+          >
             <FontAwesomeIcon
               icon={fullscreenOwner === 'self' ? faCompress : faExpand}
-              className="mr-2 h-4 w-4"
+              className="h-4 w-4 sm:mr-2"
             />
-            {fullscreenOwner === 'self' ? 'Exit full screen' : 'Full screen'}
+            <span className="hidden sm:inline">
+              {fullscreenOwner === 'self' ? 'Exit full screen' : 'Full screen'}
+            </span>
+            <span className="sr-only sm:hidden">
+              {fullscreenOwner === 'self' ? 'Exit full screen' : 'Full screen'}
+            </span>
           </ComicButton>
         ) : null}
         {onClose ? (
@@ -429,6 +450,20 @@ export default function VocabFlashcardStage({
       </header>
 
       <div className="relative min-h-0 flex-1">
+        {fullscreenOwner === 'self' ? (
+          <div className="absolute right-3 top-3 z-10">
+            <ComicButton
+              type="button"
+              variant="success"
+              size="sm"
+              className="!px-3"
+              onClick={() => void toggleFullscreen()}
+            >
+              <FontAwesomeIcon icon={faCompress} className="h-4 w-4" />
+              <span className="sr-only">Exit full screen</span>
+            </ComicButton>
+          </div>
+        ) : null}
         {loading ? (
           <div className="flex h-full items-center justify-center px-6">
             <ComicText className="font-bold">Loading cards…</ComicText>
@@ -482,9 +517,10 @@ export default function VocabFlashcardStage({
               <span className="hidden sm:inline">Listen</span>
               <span className="sr-only sm:hidden">Listen</span>
             </ComicButton>
-            <ComicButton type="button" variant="primary" size="lg" onClick={flip} className="min-w-[7.5rem] !px-6">
-              <FontAwesomeIcon icon={faArrowsRotate} className="mr-2 h-5 w-5" />
-              Flip
+            <ComicButton type="button" variant="primary" size="md" onClick={flip} className="!px-3 sm:min-w-[7.5rem] sm:!px-6">
+              <FontAwesomeIcon icon={faArrowsRotate} className="h-5 w-5 sm:mr-2" />
+              <span className="hidden sm:inline">Flip</span>
+              <span className="sr-only sm:hidden">Flip</span>
             </ComicButton>
             <ComicButton
               type="button"
@@ -499,9 +535,6 @@ export default function VocabFlashcardStage({
               <FontAwesomeIcon icon={faArrowRight} className="h-5 w-5 sm:ml-2" />
             </ComicButton>
           </div>
-          <p className="text-center text-xs font-bold text-[var(--comic-dark)] md:text-sm">
-            Click the card or press space to flip. Arrow keys move between cards.
-          </p>
         </footer>
       ) : null}
     </div>
