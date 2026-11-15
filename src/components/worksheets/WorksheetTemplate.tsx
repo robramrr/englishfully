@@ -639,7 +639,7 @@ const SHEET_CSS = `
 }
 .worksheet-id-placeholder {
   font-weight: 400;
-  color: #d3d8e0;
+  color: #e1e1e1;
 }
 .worksheet-note {
   margin: 0 0 0.9rem;
