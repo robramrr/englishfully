@@ -141,11 +141,39 @@ function sectionHeading(section: WorksheetSection): string {
   return section.title.trim() || exerciseLabel(section.type);
 }
 
-function SectionBlock({ section, index }: { section: WorksheetSection; index: number }) {
+function printsOnPaper(section: WorksheetSection): boolean {
+  return section.includeInPrint !== false;
+}
+
+function printableNumber(sections: WorksheetSection[], index: number): number {
+  return sections.slice(0, index + 1).filter(printsOnPaper).length;
+}
+
+function ExerciseNumber({ index, printIndex }: { index: number; printIndex: number }) {
   return (
-    <section className="worksheet-section">
+    <>
+      <span className="worksheet-screen-number">{index + 1}. </span>
+      <span className="worksheet-print-number">{printIndex}. </span>
+    </>
+  );
+}
+
+function SectionBlock({
+  section,
+  index,
+  printIndex,
+}: {
+  section: WorksheetSection;
+  index: number;
+  printIndex: number;
+}) {
+  const prints = printsOnPaper(section);
+  return (
+    <section className={prints ? 'worksheet-section' : 'worksheet-section worksheet-no-print'}>
+      {prints ? null : <p className="worksheet-screen-note">Not included when printing</p>}
       <h2>
-        {index + 1}. {sectionHeading(section)}
+        <ExerciseNumber index={index} printIndex={printIndex} />
+        {sectionHeading(section)}
       </h2>
       {section.instructions ? <p className="worksheet-directions">{section.instructions}</p> : null}
       <SectionBody section={section} />
@@ -465,9 +493,18 @@ function AnswerKey({ sections }: { sections: WorksheetSection[] }) {
       <p className="worksheet-kicker">Teacher copy</p>
       <h1 className="worksheet-title">Answer key</h1>
       {sections.map((section, sectionIndex) => (
-        <section key={`${section.type}-${sectionIndex}`} className="worksheet-section">
+        <section
+          key={`${section.type}-${sectionIndex}`}
+          className={
+            printsOnPaper(section) ? 'worksheet-section' : 'worksheet-section worksheet-no-print'
+          }
+        >
           <h2>
-            {sectionIndex + 1}. {sectionHeading(section)}
+            <ExerciseNumber
+              index={sectionIndex}
+              printIndex={printableNumber(sections, sectionIndex)}
+            />
+            {sectionHeading(section)}
           </h2>
           {section.type === 'crossword' ? (
             <CrosswordBlock entries={section.entries} showAnswers />
@@ -493,7 +530,7 @@ const SHEET_CSS = `
   margin: 15mm 14mm;
 }
 .worksheet-template {
-  --crossword-cell: 2.15rem;
+  --crossword-cell: 2.55rem;
 }
 .worksheet-sheet {
   width: 100%;
@@ -602,7 +639,7 @@ const SHEET_CSS = `
 }
 .worksheet-id-placeholder {
   font-weight: 400;
-  color: #a8b0bc;
+  color: #d3d8e0;
 }
 .worksheet-note {
   margin: 0 0 0.9rem;
@@ -615,6 +652,17 @@ const SHEET_CSS = `
 }
 .worksheet-section {
   margin-top: 1.35rem;
+}
+.worksheet-print-number {
+  display: none;
+}
+.worksheet-screen-note {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8b93a1;
 }
 .worksheet-section h2 {
   margin: 0 0 0.25rem;
@@ -888,6 +936,14 @@ const SHEET_CSS = `
   }
 }
 @media print {
+  .worksheet-screen-number,
+  .worksheet-screen-note,
+  .worksheet-no-print {
+    display: none !important;
+  }
+  .worksheet-print-number {
+    display: inline !important;
+  }
   body:has(.worksheet-print-root),
   .worksheet-print-root {
     background: white !important;
@@ -899,7 +955,7 @@ const SHEET_CSS = `
     padding: 0 !important;
   }
   .worksheet-template {
-    --crossword-cell: 9.5mm;
+    --crossword-cell: 11.5mm;
   }
   .worksheet-crossword-solved {
     --crossword-cell: 6.5mm;
@@ -1021,7 +1077,12 @@ export default function WorksheetTemplate({
           </p>
         ) : (
           sections.map((section, index) => (
-            <SectionBlock key={`${section.type}-${index}`} section={section} index={index} />
+            <SectionBlock
+              key={`${section.type}-${index}`}
+              section={section}
+              index={index}
+              printIndex={printableNumber(sections, index)}
+            />
           ))
         )}
       </article>

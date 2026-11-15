@@ -229,6 +229,8 @@ export interface CrosswordEntry {
 interface SectionBase {
   title: string;
   instructions: string;
+  /** When false, the exercise stays on screen and is left out of the print. */
+  includeInPrint?: boolean;
 }
 
 export type WorksheetSection =

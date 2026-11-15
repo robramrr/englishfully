@@ -259,7 +259,15 @@ function SectionFrame({
             className="comic-input min-w-0 flex-1"
           />
         </label>
-        <div className="flex gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--comic-dark)]">
+            <input
+              type="checkbox"
+              checked={section.includeInPrint !== false}
+              onChange={(event) => onChange({ ...section, includeInPrint: event.target.checked })}
+            />
+            Print
+          </label>
           <TinyButton
             label="Move exercise earlier"
             disabled={!canMoveUp}
