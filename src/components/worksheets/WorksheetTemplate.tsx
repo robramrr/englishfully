@@ -178,14 +178,14 @@ function SectionBody({ section }: { section: WorksheetSection }) {
   if (section.type === 'matching') {
     return (
       <div className="worksheet-match">
-        <ol className="worksheet-list">
+        <ol className="worksheet-list worksheet-match-row">
           {section.prompts.map((prompt, index) => (
             <ItemNumber key={`${prompt.text}-${index}`} index={index}>
               <MatchContent text={prompt.text} imageUrl={prompt.imageUrl} />
             </ItemNumber>
           ))}
         </ol>
-        <ol className="worksheet-list worksheet-letter-list">
+        <ol className="worksheet-list worksheet-match-row worksheet-letter-list">
           {section.bank.map((entry) => (
             <li key={entry.letter} className="worksheet-item">
               <span className="worksheet-number">{entry.letter}.</span>
@@ -636,9 +636,24 @@ const SHEET_CSS = `
   color: var(--brand-red);
 }
 .worksheet-match {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.worksheet-match-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.65rem 0.85rem;
+}
+.worksheet-match-row .worksheet-item {
+  flex: 1 1 7rem;
+  max-width: 8.4rem;
+  margin: 0;
+}
+.worksheet-letter-list.worksheet-match-row .worksheet-item {
+  flex: 0 1 auto;
+  max-width: 16rem;
 }
 .worksheet-match-item {
   display: flex;
@@ -649,9 +664,10 @@ const SHEET_CSS = `
 .worksheet-match-image {
   display: block;
   width: auto;
-  max-width: 9.5rem;
-  max-height: 6.5rem;
+  max-width: 100%;
+  height: 5.4rem;
   object-fit: contain;
+  object-position: left center;
 }
 .worksheet-chips {
   display: flex;
@@ -804,7 +820,6 @@ const SHEET_CSS = `
 }
 @media (max-width: 640px) {
   .worksheet-choices,
-  .worksheet-match,
   .worksheet-crossword-clues {
     grid-template-columns: 1fr;
   }
@@ -836,8 +851,10 @@ const SHEET_CSS = `
     font-size: 12pt;
   }
   .worksheet-match-image {
-    max-width: 42mm;
-    max-height: 32mm;
+    width: auto;
+    max-width: 100%;
+    height: 28mm;
+    max-height: 28mm;
   }
   .worksheet-answer-key {
     break-before: page;
