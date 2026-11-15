@@ -247,9 +247,18 @@ function SectionFrame({
   return (
     <section className="space-y-3 border-4 border-[var(--comic-black)] bg-white p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-black uppercase tracking-wide text-[var(--comic-primary)]">
-          {index + 1}. {exerciseLabel(section.type)}
-        </p>
+        <label className="flex min-w-0 flex-1 items-center gap-2">
+          <span className="shrink-0 text-sm font-black uppercase tracking-wide text-[var(--comic-primary)]">
+            {index + 1}.
+          </span>
+          <input
+            value={section.title}
+            onChange={(event) => onChange({ ...section, title: event.target.value })}
+            placeholder={exerciseLabel(section.type)}
+            aria-label="Exercise name"
+            className="comic-input min-w-0 flex-1"
+          />
+        </label>
         <div className="flex gap-1">
           <TinyButton
             label="Move exercise earlier"
@@ -270,18 +279,12 @@ function SectionFrame({
           </TinyButton>
         </div>
       </div>
-      <div className="grid gap-3 md:grid-cols-2">
-        <EditorInput
-          label="Section title"
-          value={section.title}
-          onChange={(title) => onChange({ ...section, title })}
-        />
-        <EditorInput
-          label="Directions"
-          value={section.instructions}
-          onChange={(instructions) => onChange({ ...section, instructions })}
-        />
-      </div>
+      <EditorInput
+        label="Directions"
+        value={section.instructions}
+        onChange={(instructions) => onChange({ ...section, instructions })}
+        placeholder="Optional"
+      />
       {children}
     </section>
   );

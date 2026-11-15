@@ -300,7 +300,6 @@ export default function WorksheetBuilder() {
       setHeader((current) => ({
         ...current,
         title: current.title.trim() || String(data.title || ''),
-        instructions: current.instructions.trim() || String(data.instructions || ''),
       }));
       requestAnimationFrame(() => {
         previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -467,6 +466,21 @@ export default function WorksheetBuilder() {
             autoComplete="off"
             placeholder="2 digits"
             maxLength={2}
+          />
+          <label className="mt-2 block text-sm font-bold text-[var(--comic-dark)]" htmlFor="worksheet-roll-placeholder">
+            Placeholder
+          </label>
+          <input
+            id="worksheet-roll-placeholder"
+            value={header.rollPlaceholder || ''}
+            onChange={(event) =>
+              updateHeader({ rollPlaceholder: [...event.target.value].slice(0, 2).join('') })
+            }
+            className="comic-input mt-1 w-full tracking-[0.3em]"
+            autoComplete="off"
+            placeholder="Shown faintly in the boxes"
+            maxLength={2}
+            aria-label="Roll number placeholder"
           />
         </>
       );
@@ -660,7 +674,7 @@ export default function WorksheetBuilder() {
                 value={header.instructions}
                 onChange={(event) => updateHeader({ instructions: event.target.value })}
                 className="comic-input w-full"
-                placeholder="Leave blank and AI will write one line"
+                placeholder="Optional. Leave blank to leave this line off the sheet."
                 maxLength={180}
               />
             </div>

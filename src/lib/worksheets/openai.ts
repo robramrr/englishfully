@@ -83,7 +83,7 @@ Rules:
 - short_answer: one question a student can answer in a few words, plus a sample answer.
 - question_sentence: a comprehension question, then one answer sentence. underline is the 0-based word index of the question word (Who, What, When, Where, Why, How). For "How many", underline both words, such as [0, 1]. sentence is what the student sees and uses ______ once for the missing fact. answer is that same sentence with the blank filled in. One item in the section may be a model with no blank: sentence and answer are the same full sentence.
 - crossword: each answer is one English word of 4 to 8 letters, with no spaces. The clue must not contain the answer. Choose words that share letters so they can cross, using common letters such as A, E, I, O, R, S, T, L, and N.
-- instructions: one short line telling the student what to do on the whole sheet.
+- instructions: always an empty string. Do not add a line such as "Complete the exercises below."
 - No markdown and no extra keys.`,
       },
       {

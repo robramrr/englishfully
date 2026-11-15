@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { questionPieces, sentencePieces } from '@/lib/worksheets/questionSentence';
 import {
+  exerciseLabel,
   formatWorksheetDate,
   normalizeFieldOrder,
   type CrosswordEntry,
@@ -37,19 +38,32 @@ function DigitBoxes({
   value,
   length,
   label,
+  placeholder = '',
+  large = false,
 }: {
   value: string;
   length: number;
   label: string;
+  placeholder?: string;
+  large?: boolean;
 }) {
   const digits = value.replace(/\D/g, '').slice(0, length).split('');
+  const hints = [...placeholder].slice(0, length);
   return (
-    <span className="worksheet-id" aria-label={label}>
-      {Array.from({ length }, (_, index) => (
-        <span key={index} className="worksheet-id-box">
-          {digits[index] || ''}
-        </span>
-      ))}
+    <span className={large ? 'worksheet-id worksheet-id--roll' : 'worksheet-id'} aria-label={label}>
+      {Array.from({ length }, (_, index) => {
+        const digit = digits[index] || '';
+        const hint = digit ? '' : hints[index] || '';
+        return (
+          <span
+            key={index}
+            className={large ? 'worksheet-id-box worksheet-id-box--roll' : 'worksheet-id-box'}
+          >
+            {digit ||
+              (hint ? <span className="worksheet-id-placeholder">{hint}</span> : '')}
+          </span>
+        );
+      })}
     </span>
   );
 }
@@ -123,11 +137,15 @@ function BlankSentence({ sentence, blanks }: { sentence: string; blanks: [number
   );
 }
 
+function sectionHeading(section: WorksheetSection): string {
+  return section.title.trim() || exerciseLabel(section.type);
+}
+
 function SectionBlock({ section, index }: { section: WorksheetSection; index: number }) {
   return (
     <section className="worksheet-section">
       <h2>
-        {index + 1}. {section.title}
+        {index + 1}. {sectionHeading(section)}
       </h2>
       {section.instructions ? <p className="worksheet-directions">{section.instructions}</p> : null}
       <SectionBody section={section} />
@@ -449,7 +467,7 @@ function AnswerKey({ sections }: { sections: WorksheetSection[] }) {
       {sections.map((section, sectionIndex) => (
         <section key={`${section.type}-${sectionIndex}`} className="worksheet-section">
           <h2>
-            {sectionIndex + 1}. {section.title}
+            {sectionIndex + 1}. {sectionHeading(section)}
           </h2>
           {section.type === 'crossword' ? (
             <CrosswordBlock entries={section.entries} showAnswers />
@@ -574,6 +592,18 @@ const SHEET_CSS = `
   font-weight: 700;
   font-size: 0.95rem;
 }
+.worksheet-id--roll {
+  gap: 0.3rem;
+}
+.worksheet-id-box--roll {
+  width: 1.95rem;
+  height: 2.1rem;
+  font-size: 1.2rem;
+}
+.worksheet-id-placeholder {
+  font-weight: 400;
+  color: #a8b0bc;
+}
 .worksheet-note {
   margin: 0 0 0.9rem;
   font-weight: 600;
@@ -674,14 +704,19 @@ const SHEET_CSS = `
 }
 .worksheet-match-defs {
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.45rem 1.15rem;
 }
 .worksheet-match-def {
-  display: grid;
-  grid-template-columns: 1.6rem minmax(0, 1fr);
-  column-gap: 0.35rem;
-  align-items: start;
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  max-width: 100%;
+}
+.worksheet-match-def .worksheet-number {
+  min-width: 0;
 }
 .worksheet-match-item {
   display: flex;
@@ -943,7 +978,13 @@ function headerLine(header: WorksheetHeader, key: HeaderLineField) {
   return (
     <div key={key} className="worksheet-field worksheet-field--boxes">
       <span className="worksheet-field-label">Roll no.</span>
-      <DigitBoxes value={header.rollNumber} length={2} label="Roll number, 2 digits" />
+      <DigitBoxes
+        value={header.rollNumber}
+        length={2}
+        label="Roll number, 2 digits"
+        placeholder={header.rollPlaceholder || ''}
+        large
+      />
     </div>
   );
 }

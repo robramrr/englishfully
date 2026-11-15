@@ -102,6 +102,8 @@ export interface WorksheetHeader {
   studentId: string;
   /** Up to 2 digits. */
   rollNumber: string;
+  /** Up to 2 characters shown faintly in empty roll boxes. */
+  rollPlaceholder: string;
   /** yyyy-mm-dd. A blank due line still prints when this field is shown. */
   dueDate: string;
   level: string;
@@ -291,6 +293,7 @@ export function emptyWorksheetHeader(level: WorksheetLevel = 'A2'): WorksheetHea
     className: '',
     studentId: '',
     rollNumber: '',
+    rollPlaceholder: '',
     dueDate: '',
     level,
     instructions: '',
