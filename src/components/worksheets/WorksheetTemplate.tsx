@@ -60,7 +60,16 @@ function DigitBoxes({
             className={large ? 'worksheet-id-box worksheet-id-box--roll' : 'worksheet-id-box'}
           >
             {digit ||
-              (hint ? <span className="worksheet-id-placeholder">{hint}</span> : '')}
+              (hint ? (
+                <span
+                  className="worksheet-id-placeholder"
+                  style={{ color: '#e1e1e1', fontWeight: 300, opacity: 0.55 }}
+                >
+                  {hint}
+                </span>
+              ) : (
+                ''
+              ))}
           </span>
         );
       })}
@@ -637,9 +646,18 @@ const SHEET_CSS = `
   height: 2.1rem;
   font-size: 1.2rem;
 }
-.worksheet-id-placeholder {
-  font-weight: 400;
-  color: #e1e1e1;
+.worksheet-id-box--roll .worksheet-id-placeholder {
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-weight: 300 !important;
+  font-size: 1rem !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  color: #e1e1e1 !important;
+  opacity: 0.55 !important;
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 .worksheet-note {
   margin: 0 0 0.9rem;
