@@ -76,7 +76,7 @@ Rules:
 - Do not repeat the same answer across a section.
 - fill_blank: the answer is one word or a short phrase and it is missing from the prompt. Use ______ for the gap.
 - multiple_choice: exactly 4 plausible choices. Only one is correct.
-- matching: left is the prompt, right is the match. Rights in one section must all be different.
+- matching: left is the prompt, right is the match. Rights in one section must all be different. Instructions must tell the student to write the letter in the box. Do not tell them to draw lines.
 - unjumble: answer is one correct sentence of 4 to 10 words. Do not include a scrambled word list.
 - anagram: answer is one English word of 4 to 12 letters. The clue must not contain the answer.
 - true_false: about half the statements are false. False statements are clearly false at this level.

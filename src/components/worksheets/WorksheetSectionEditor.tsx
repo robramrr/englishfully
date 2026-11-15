@@ -488,7 +488,7 @@ function QuestionSentenceFields({
             )}
           </p>
           {item.sentence.trim() ? (
-            <p className="mt-1 font-bold">
+            <p className="mt-2 font-bold">
               {sentencePieces(item.sentence, item.blanks).map((piece, index) =>
                 piece.type === 'blank' ? (
                   <span

@@ -178,20 +178,25 @@ function SectionBody({ section }: { section: WorksheetSection }) {
   if (section.type === 'matching') {
     return (
       <div className="worksheet-match">
+        {section.instructions.trim() ? null : (
+          <p className="worksheet-directions">Write the letter in each box.</p>
+        )}
         <ol className="worksheet-list worksheet-match-row">
           {section.prompts.map((prompt, index) => (
-            <ItemNumber key={`${prompt.text}-${index}`} index={index}>
+            <li key={`${prompt.text}-${index}`} className="worksheet-item worksheet-match-card">
+              <div className="worksheet-match-head">
+                <span className="worksheet-number">{index + 1}.</span>
+                <span className="worksheet-match-box" aria-label={`Write the letter for ${index + 1}`} />
+              </div>
               <MatchContent text={prompt.text} imageUrl={prompt.imageUrl} />
-            </ItemNumber>
+            </li>
           ))}
         </ol>
-        <ol className="worksheet-list worksheet-match-row worksheet-letter-list">
+        <ol className="worksheet-list worksheet-match-defs">
           {section.bank.map((entry) => (
-            <li key={entry.letter} className="worksheet-item">
+            <li key={entry.letter} className="worksheet-match-def">
               <span className="worksheet-number">{entry.letter}.</span>
-              <div className="worksheet-item-body">
-                <MatchContent text={entry.text} imageUrl={entry.imageUrl} />
-              </div>
+              <MatchContent text={entry.text} imageUrl={entry.imageUrl} />
             </li>
           ))}
         </ol>
@@ -651,9 +656,32 @@ const SHEET_CSS = `
   max-width: 8.4rem;
   margin: 0;
 }
-.worksheet-letter-list.worksheet-match-row .worksheet-item {
-  flex: 0 1 auto;
-  max-width: 16rem;
+.worksheet-match-card {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.3rem;
+}
+.worksheet-match-head {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.worksheet-match-box {
+  width: 1.55rem;
+  height: 1.55rem;
+  border: 2px solid var(--brand-navy);
+  flex: 0 0 auto;
+}
+.worksheet-match-defs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.worksheet-match-def {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr);
+  column-gap: 0.35rem;
+  align-items: start;
 }
 .worksheet-match-item {
   display: flex;
@@ -694,7 +722,7 @@ const SHEET_CSS = `
   margin-top: 0.2rem;
 }
 .worksheet-response {
-  margin-top: 0.15rem !important;
+  margin-top: 0.55rem !important;
 }
 .worksheet-underline {
   text-decoration: underline;
