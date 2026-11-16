@@ -219,6 +219,7 @@ export default function AnagramStage({
   const [attempt, setAttempt] = useState(0);
   const [round, setRound] = useState<Round | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
+  const [dragSize, setDragSize] = useState(120);
   const [reveal, setReveal] = useState<RevealStep>(0);
   const [remaining, setRemaining] = useState(0);
   const [results, setResults] = useState<Record<string, WordResult>>({});
@@ -452,6 +453,7 @@ export default function AnagramStage({
     if (event.button !== 0 || tile.placed || !round || round.solved || round.timedOut) return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
+    setDragSize(event.currentTarget.getBoundingClientRect().width);
     setDragBoth({
       tileId: tile.id,
       letter: tile.letter,
@@ -610,11 +612,22 @@ export default function AnagramStage({
         }
         .anagram-mark-x {
           animation: anagram-mark-x 0.42s cubic-bezier(.2,1.6,.3,1) both;
-          -webkit-text-stroke: 5px #111;
+          -webkit-text-stroke: 0.06em #111;
           paint-order: stroke fill;
         }
         .anagram-mark-check { animation: anagram-mark-check 0.38s cubic-bezier(.2,1.5,.3,1) both; }
         .anagram-slot-shake { animation: anagram-slot-shake 0.42s linear; }
+        .anagram-board { container-type: size; }
+        .anagram-letter-box {
+          --anagram-tile: min(
+            calc((100cqw - (var(--anagram-letters) - 1) * 1.4cqw) / var(--anagram-letters)),
+            44cqh
+          );
+          width: var(--anagram-tile);
+          height: var(--anagram-tile);
+          font-size: calc(var(--anagram-tile) * 0.52);
+          border-width: max(4px, calc(var(--anagram-tile) * 0.045));
+        }
       `}</style>
       <header
         className={[
@@ -707,9 +720,9 @@ export default function AnagramStage({
         ) : null}
 
         {!loading && !error && word && round && !finished ? (
-          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-auto px-4 py-6">
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <p className="font-black">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-[2vw] py-[1.5vh]">
+            <div className="flex shrink-0 flex-wrap items-center justify-center gap-3">
+              <p className="font-black md:text-xl">
                 Word {cursor + 1} of {words.length}
               </p>
               {activity?.timerEnabled ? (
@@ -748,59 +761,60 @@ export default function AnagramStage({
               <p className="font-bungee text-2xl text-[var(--comic-danger)]">Time&apos;s up</p>
             ) : null}
 
-            <div className="flex max-w-full flex-wrap items-center justify-center gap-2 md:gap-3">
-              {round.slots.map((slot, index) => (
-                <div
-                  key={`${round.wordId}-slot-${index}`}
-                  data-slot={index}
-                  className={[
-                    'relative flex h-14 w-12 items-center justify-center border-4 border-[var(--comic-black)] font-bungee text-2xl uppercase md:h-16 md:w-14 md:text-3xl',
-                    slot.mark === 'check' ? 'bg-[var(--comic-success)] text-white' : '',
-                    slot.mark === 'wrong' ? 'anagram-slot-shake bg-[var(--comic-danger)] text-white' : '',
-                    slot.mark === 'revealed' ? 'bg-[var(--comic-yellow)] text-[var(--comic-dark)]' : '',
-                    slot.mark === 'empty' ? 'bg-white text-[var(--comic-dark)]' : '',
-                  ].join(' ')}
-                >
-                  {slot.letter}
-                  {slot.mark === 'wrong' ? (
-                    <span className="anagram-mark-x pointer-events-none absolute inset-[-35%] flex items-center justify-center text-7xl font-black leading-none text-white drop-shadow-[3px_3px_0_#111] md:text-8xl">
-                      ✕
-                    </span>
-                  ) : null}
-                  {slot.mark === 'check' ? (
-                    <span className="anagram-mark-check pointer-events-none absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full border-4 border-[var(--comic-black)] bg-white text-lg text-[var(--comic-success)]">
-                      ✓
-                    </span>
-                  ) : null}
-                </div>
-              ))}
-            </div>
+            <div
+              className="anagram-board flex min-h-0 w-full flex-1 flex-col items-center justify-evenly"
+              style={{ ['--anagram-letters' as string]: String(Math.max(round.slots.length, 1)) }}
+            >
+              <div className="flex max-w-full flex-wrap items-center justify-center gap-[1.2vw]">
+                {round.slots.map((slot, index) => (
+                  <div
+                    key={`${round.wordId}-slot-${index}`}
+                    data-slot={index}
+                    className={[
+                      'anagram-letter-box relative flex items-center justify-center border-[var(--comic-black)] font-bungee uppercase leading-none',
+                      slot.mark === 'check' ? 'bg-[var(--comic-success)] text-white' : '',
+                      slot.mark === 'wrong' ? 'anagram-slot-shake bg-[var(--comic-danger)] text-white' : '',
+                      slot.mark === 'revealed' ? 'bg-[var(--comic-yellow)] text-[var(--comic-dark)]' : '',
+                      slot.mark === 'empty' ? 'bg-white text-[var(--comic-dark)]' : '',
+                    ].join(' ')}
+                  >
+                    {slot.letter}
+                    {slot.mark === 'wrong' ? (
+                      <span className="anagram-mark-x pointer-events-none absolute inset-[-30%] flex items-center justify-center font-black leading-none text-white drop-shadow-[0.08em_0.08em_0_#111] text-[1.35em]">
+                        ✕
+                      </span>
+                    ) : null}
+                    {slot.mark === 'check' ? (
+                      <span className="anagram-mark-check pointer-events-none absolute -right-[8%] -top-[8%] flex aspect-square w-[36%] items-center justify-center rounded-full border-[0.12em] border-[var(--comic-black)] bg-white text-[0.42em] text-[var(--comic-success)]">
+                        ✓
+                      </span>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
 
-            <div className="flex max-w-full flex-wrap items-center justify-center gap-2 md:gap-3">
-              {round.tiles.map((tile) => (
-                <button
-                  key={tile.id}
-                  type="button"
-                  disabled={tile.placed || roundSettled}
-                  onPointerDown={(event) => onTilePointerDown(event, tile)}
-                  onPointerMove={onTilePointerMove}
-                  onPointerUp={onTilePointerUp}
-                  onPointerCancel={() => setDragBoth(null)}
-                  className={[
-                    'flex h-14 w-14 items-center justify-center border-4 border-[var(--comic-black)] bg-[var(--comic-secondary)] font-bungee text-2xl uppercase text-white shadow-[4px_4px_0_#111] touch-none select-none md:h-16 md:w-16 md:text-3xl',
-                    tile.placed ? 'hidden' : 'cursor-grab active:cursor-grabbing',
-                    drag?.tileId === tile.id ? 'opacity-40' : '',
-                  ].join(' ')}
-                  aria-label={`Letter ${tile.letter}`}
-                >
-                  {tile.letter}
-                </button>
-              ))}
+              <div className="flex max-w-full flex-wrap items-center justify-center gap-[1.2vw]">
+                {round.tiles.map((tile) => (
+                  <button
+                    key={tile.id}
+                    type="button"
+                    disabled={tile.placed || roundSettled}
+                    onPointerDown={(event) => onTilePointerDown(event, tile)}
+                    onPointerMove={onTilePointerMove}
+                    onPointerUp={onTilePointerUp}
+                    onPointerCancel={() => setDragBoth(null)}
+                    className={[
+                      'anagram-letter-box flex items-center justify-center border-[var(--comic-black)] bg-[var(--comic-secondary)] font-bungee uppercase leading-none text-white shadow-[0.08em_0.08em_0_#111] touch-none select-none',
+                      tile.placed ? 'hidden' : 'cursor-grab active:cursor-grabbing',
+                      drag?.tileId === tile.id ? 'opacity-40' : '',
+                    ].join(' ')}
+                    aria-label={`Letter ${tile.letter}`}
+                  >
+                    {tile.letter}
+                  </button>
+                ))}
+              </div>
             </div>
-
-            <p className="max-w-lg text-center text-sm font-bold">
-              Tap a letter to drop it in the first open box, or drag it onto a box.
-            </p>
           </div>
         ) : null}
       </div>
@@ -855,8 +869,15 @@ export default function AnagramStage({
       {drag ? (
         <div
           id="anagram-drag-ghost"
-          className="pointer-events-none fixed z-[200] flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-4 border-[var(--comic-black)] bg-[var(--comic-primary)] font-bungee text-3xl uppercase text-white shadow-[6px_6px_0_#111]"
-          style={{ left: drag.x, top: drag.y }}
+          className="pointer-events-none fixed z-[200] flex -translate-x-1/2 -translate-y-1/2 items-center justify-center border-[var(--comic-black)] bg-[var(--comic-primary)] font-bungee uppercase leading-none text-white shadow-[0.08em_0.08em_0_#111]"
+          style={{
+            left: drag.x,
+            top: drag.y,
+            width: dragSize,
+            height: dragSize,
+            fontSize: dragSize * 0.52,
+            borderWidth: Math.max(4, dragSize * 0.045),
+          }}
         >
           {drag.letter}
         </div>
