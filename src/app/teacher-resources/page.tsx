@@ -14,6 +14,7 @@ import {
   faEarListen,
   faFilePen,
   faFolderOpen,
+  faFont,
   faGamepad,
   faHeadphones,
   faLock,
@@ -315,16 +316,28 @@ function FeaturedResourcesSection() {
               <li>• {t.teacherResources.gamesPackItem3}</li>
               <li>• {t.teacherResources.gamesPackItem4}</li>
             </ul>
-            <ComicButton
-              href="/teacher-resources/escape-room"
-              variant="danger"
-              size="sm"
-              className="w-full !inline-flex items-center justify-center"
-            >
-              <ButtonWithIcon icon={faDoorOpen}>
-                {t.teacherResources.openEscapeRoom}
-              </ButtonWithIcon>
-            </ComicButton>
+            <div className="flex flex-col gap-2">
+              <ComicButton
+                href="/teacher-resources/escape-room"
+                variant="danger"
+                size="sm"
+                className="w-full !inline-flex items-center justify-center"
+              >
+                <ButtonWithIcon icon={faDoorOpen}>
+                  {t.teacherResources.openEscapeRoom}
+                </ButtonWithIcon>
+              </ComicButton>
+              <ComicButton
+                href="/teacher-resources/anagram"
+                variant="success"
+                size="sm"
+                className="w-full !inline-flex items-center justify-center"
+              >
+                <ButtonWithIcon icon={faFont}>
+                  {t.teacherResources.openAnagram}
+                </ButtonWithIcon>
+              </ComicButton>
+            </div>
           </ComicCard>
 
           <ComicCard className="flex flex-col">
