@@ -617,11 +617,10 @@ export default function AnagramStage({
         }
         .anagram-mark-check { animation: anagram-mark-check 0.38s cubic-bezier(.2,1.5,.3,1) both; }
         .anagram-slot-shake { animation: anagram-slot-shake 0.42s linear; }
-        .anagram-board { container-type: size; }
         .anagram-letter-box {
           --anagram-tile: min(
-            calc((100cqw - (var(--anagram-letters) - 1) * 1.4cqw) / var(--anagram-letters)),
-            44cqh
+            calc((68vw - (var(--anagram-letters) - 1) * 0.7rem) / var(--anagram-letters)),
+            13vmin
           );
           width: var(--anagram-tile);
           height: var(--anagram-tile);
@@ -720,9 +719,9 @@ export default function AnagramStage({
         ) : null}
 
         {!loading && !error && word && round && !finished ? (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-[2vw] py-[1.5vh]">
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-[2.5vh] overflow-auto px-[3vw] py-[2vh]">
             <div className="flex shrink-0 flex-wrap items-center justify-center gap-3">
-              <p className="font-black md:text-xl">
+              <p className="font-black md:text-2xl">
                 Word {cursor + 1} of {words.length}
               </p>
               {activity?.timerEnabled ? (
@@ -739,16 +738,16 @@ export default function AnagramStage({
             </div>
 
             {reveal > 0 ? (
-              <div className="w-full max-w-xl space-y-3 border-4 border-[var(--comic-black)] bg-white p-4 text-center">
+              <div className="flex w-full max-w-5xl shrink-0 flex-col items-center gap-4 border-4 border-[var(--comic-black)] bg-white px-6 py-5 text-center">
                 {reveal >= 1 && hasClue(word) ? (
-                  <p className="text-xl font-black md:text-2xl">{word.clue}</p>
+                  <p className="font-black leading-snug text-[clamp(1.75rem,3.4vmin,3.25rem)]">{word.clue}</p>
                 ) : null}
                 {reveal === 2 && hasImage(word) ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={httpUrl(word.imageUrl)}
                     alt=""
-                    className="mx-auto max-h-48 w-full object-contain"
+                    className="max-h-[32vh] w-auto max-w-full object-contain"
                   />
                 ) : null}
               </div>
@@ -762,7 +761,7 @@ export default function AnagramStage({
             ) : null}
 
             <div
-              className="anagram-board flex min-h-0 w-full flex-1 flex-col items-center justify-evenly"
+              className="anagram-board flex w-full shrink-0 flex-col items-center justify-center gap-[2.5vh]"
               style={{ ['--anagram-letters' as string]: String(Math.max(round.slots.length, 1)) }}
             >
               <div className="flex max-w-full flex-wrap items-center justify-center gap-[1.2vw]">
