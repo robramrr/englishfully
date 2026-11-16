@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
+  faArrowLeft,
   faArrowRight,
   faCompress,
   faExpand,
@@ -511,6 +512,21 @@ export default function AnagramStage({
     if (item.audioMode === 'tts') speakWord(puzzleWord(item.word));
   }
 
+  const goPrevious = useCallback(() => {
+    setFinished(false);
+    setCursor((current) => Math.max(0, current - 1));
+  }, []);
+
+  const goNext = useCallback(() => {
+    setCursor((current) => {
+      if (current >= words.length - 1) {
+        setFinished(true);
+        return current;
+      }
+      return current + 1;
+    });
+  }, [words.length]);
+
   function formatClock(total: number) {
     const safe = Math.max(0, total);
     const minutes = Math.floor(safe / 60);
@@ -527,14 +543,6 @@ export default function AnagramStage({
       return next;
     });
     setAttempt((value) => value + 1);
-  }
-
-  function goNext() {
-    if (cursor >= words.length - 1) {
-      setFinished(true);
-      return;
-    }
-    setCursor((value) => value + 1);
   }
 
   function playAgain() {
@@ -568,11 +576,29 @@ export default function AnagramStage({
         if (fullscreenOwner === 'other') return;
         event.preventDefault();
         void toggleFullscreen();
+        return;
+      }
+      if (event.key === 'ArrowRight') {
+        if (finished) return;
+        event.preventDefault();
+        event.stopPropagation();
+        goNext();
+        return;
+      }
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        event.stopPropagation();
+        if (finished) {
+          setFinished(false);
+          setCursor(Math.max(0, words.length - 1));
+          return;
+        }
+        goPrevious();
       }
     }
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [fullscreenOwner, onClose, toggleFullscreen]);
+  }, [finished, fullscreenOwner, goNext, goPrevious, onClose, toggleFullscreen, words.length]);
 
   const title = activity?.title?.trim() || activity?.topic?.trim() || 'Anagram';
   const solvedCount = Object.values(results).filter((result) => result === 'solved').length;
@@ -820,6 +846,18 @@ export default function AnagramStage({
 
       {word && round && !finished ? (
         <footer className="flex shrink-0 flex-wrap items-center justify-center gap-2 border-t-4 border-[var(--comic-black)] bg-white px-3 py-2 md:px-5 md:py-3">
+          <ComicButton
+            type="button"
+            variant="secondary"
+            size="md"
+            disabled={cursor <= 0}
+            onClick={goPrevious}
+            className="!px-3 sm:!px-5"
+          >
+            <FontAwesomeIcon icon={faArrowLeft} className="h-5 w-5 sm:mr-2" />
+            <span className="hidden sm:inline">Previous</span>
+            <span className="sr-only sm:hidden">Previous</span>
+          </ComicButton>
           {canListen ? (
             <ComicButton type="button" variant="accent" size="md" onClick={() => playWordAudio(word)}>
               <FontAwesomeIcon icon={faVolumeHigh} className="h-5 w-5 sm:mr-2" />
@@ -855,13 +893,11 @@ export default function AnagramStage({
               <span className="sr-only sm:hidden">Restart word</span>
             </ComicButton>
           ) : null}
-          {roundSettled ? (
-            <ComicButton type="button" variant="primary" size="md" onClick={goNext}>
-              <span className="hidden sm:inline">{cursor >= words.length - 1 ? 'Finish' : 'Next'}</span>
-              <span className="sr-only sm:hidden">{cursor >= words.length - 1 ? 'Finish' : 'Next'}</span>
-              <FontAwesomeIcon icon={faArrowRight} className="h-5 w-5 sm:ml-2" />
-            </ComicButton>
-          ) : null}
+          <ComicButton type="button" variant="primary" size="md" onClick={goNext} className="!px-3 sm:!px-5">
+            <span className="hidden sm:inline">{cursor >= words.length - 1 ? 'Finish' : 'Next'}</span>
+            <span className="sr-only sm:hidden">{cursor >= words.length - 1 ? 'Finish' : 'Next'}</span>
+            <FontAwesomeIcon icon={faArrowRight} className="h-5 w-5 sm:ml-2" />
+          </ComicButton>
         </footer>
       ) : null}
 
