@@ -7,6 +7,7 @@ import type {
 } from './types';
 import { splitSlideLinks } from './linkify';
 import { QUIZ_CHOICE_LETTERS, blankSentencePlain, formatPieDuration, getContentSlideImages } from './types';
+import { formatTimestamp } from '@/lib/listen-and-learn/types';
 
 const NAVY = '001a48';
 const RED = 'EA1225';
@@ -345,6 +346,77 @@ export async function buildPresentationPptxBuffer(
           fontFace: 'Arial',
         });
       }
+    } else if (slide.layout === 'listen_question') {
+      let y = 0.45;
+      if (slide.showTitle !== false && slide.title.trim()) {
+        page.addText(slide.title.trim(), {
+          x: 0.6,
+          y,
+          w: 12.1,
+          h: 0.6,
+          fontSize: 28,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+        });
+        y = 1.2;
+      }
+      (slide.listenQuestions || []).forEach((question, index) => {
+        const prompt = question.prompt.trim() || `Question ${index + 1}`;
+        page.addText(`${index + 1}. ${prompt}`, {
+          x: 0.6,
+          y,
+          w: 12.1,
+          h: 0.34,
+          fontSize: 16,
+          bold: true,
+          color: NAVY,
+          fontFace: 'Arial',
+        });
+        y += 0.34;
+        const detail =
+          question.kind === 'answer'
+            ? `Answer: ${question.answer.trim() || '(not set)'}`
+            : question.choices
+                .map((choice, choiceIndex) => {
+                  const text = choice.text.trim();
+                  if (!text) return '';
+                  const letter = QUIZ_CHOICE_LETTERS[choiceIndex] || '';
+                  const mark = choiceIndex === question.correctIndex ? ' ✓' : '';
+                  return `${letter}. ${text}${mark}`;
+                })
+                .filter(Boolean)
+                .join('    ');
+        if (detail) {
+          page.addText(detail, {
+            x: 0.9,
+            y,
+            w: 11.8,
+            h: 0.3,
+            fontSize: 13,
+            bold: true,
+            color: NAVY,
+            fontFace: 'Arial',
+          });
+          y += 0.3;
+        }
+        if (question.clipEnabled) {
+          page.addText(
+            `Clip ${formatTimestamp(question.startSeconds)}–${formatTimestamp(question.endSeconds)}`,
+            {
+              x: 0.9,
+              y,
+              w: 11.8,
+              h: 0.26,
+              fontSize: 12,
+              color: NAVY,
+              fontFace: 'Arial',
+            }
+          );
+          y += 0.28;
+        }
+        y += 0.12;
+      });
     } else if (slide.layout === 'fill_blank') {
       let y = 0.45;
       if (slide.showTitle !== false) {
@@ -703,7 +775,7 @@ export async function buildPresentationPptxBuffer(
       }
     }
 
-    if (slide.quizEnabled) {
+    if (slide.quizEnabled && slide.layout !== 'listen_question') {
       const lines = (slide.quizChoices || [])
         .map((choice, choiceIndex) => {
           const text = choice.text.trim();

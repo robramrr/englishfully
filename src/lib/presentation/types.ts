@@ -4,6 +4,7 @@ export type PresentationSlideLayout =
   | 'bullets'
   | 'image'
   | 'audio_image'
+  | 'listen_question'
   | 'describe_image'
   | 'match_text_image'
   | 'fill_blank'
@@ -82,6 +83,68 @@ export function normalizeQuizCorrectIndex(value: unknown, count: number): number
   const index = Number(value);
   if (!Number.isInteger(index) || index < 0 || index >= count) return 0;
   return index;
+}
+
+/** Listening questions: choices on screen, or one hidden answer. */
+export type PresentationListenQuestionKind = 'choices' | 'answer';
+
+export interface PresentationListenQuestion {
+  id: string;
+  prompt: string;
+  kind: PresentationListenQuestionKind;
+  choices: PresentationQuizChoice[];
+  /** Index of the correct choice when kind is "choices". */
+  correctIndex: number;
+  /** Shown only after reveal when kind is "answer". */
+  answer: string;
+  /** When true, this question can play one clip from the slide audio. */
+  clipEnabled: boolean;
+  startSeconds: number;
+  endSeconds: number;
+  clipText: string;
+}
+
+export const MAX_LISTEN_QUESTIONS = 12;
+
+export function createListenQuestionId(): string {
+  return `lq_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function createEmptyListenQuestion(
+  patch: Partial<PresentationListenQuestion> = {}
+): PresentationListenQuestion {
+  const kind: PresentationListenQuestionKind = patch.kind === 'answer' ? 'answer' : 'choices';
+  const choices =
+    Array.isArray(patch.choices) && patch.choices.length > 0
+      ? normalizeQuizChoices(patch.choices)
+      : [
+          createEmptyQuizChoice(),
+          createEmptyQuizChoice(),
+          createEmptyQuizChoice(),
+          createEmptyQuizChoice(),
+        ];
+  const startSeconds = normalizeSeconds(patch.startSeconds, 0);
+  const rawEnd = normalizeSeconds(patch.endSeconds, startSeconds + 5);
+  return {
+    id: patch.id || createListenQuestionId(),
+    prompt: String(patch.prompt ?? ''),
+    kind,
+    choices,
+    correctIndex: normalizeQuizCorrectIndex(patch.correctIndex, choices.length),
+    answer: String(patch.answer ?? ''),
+    clipEnabled: Boolean(patch.clipEnabled),
+    startSeconds,
+    endSeconds: Math.max(startSeconds + 0.05, rawEnd),
+    clipText: String(patch.clipText ?? ''),
+  };
+}
+
+export function normalizeListenQuestions(value: unknown): PresentationListenQuestion[] {
+  if (!Array.isArray(value) || value.length === 0) return [createEmptyListenQuestion()];
+  return value.slice(0, MAX_LISTEN_QUESTIONS).map((item) => {
+    if (!item || typeof item !== 'object') return createEmptyListenQuestion();
+    return createEmptyListenQuestion(item as Partial<PresentationListenQuestion>);
+  });
 }
 
 /** Pie timer: one labeled wedge with its own duration. */
@@ -616,6 +679,11 @@ export interface PresentationSlide {
    * When false, choices are visible immediately.
    */
   quizRevealOnClick: boolean;
+  /**
+   * Listening questions: several prompts on one slide, sharing one audio URL.
+   * Each question is choices or a single answer, and may play one clip.
+   */
+  listenQuestions: PresentationListenQuestion[];
   /** Pie timer: ordered slices. Each slice has a label and a duration. */
   pieSlices: PresentationPieSlice[];
   /**
@@ -945,6 +1013,7 @@ export function createEmptySlide(
     quizFontSize: 'sm',
     quizColor: 'navy',
     quizRevealOnClick: false,
+    listenQuestions: [createEmptyListenQuestion()],
     pieSlices: defaultPieSlices(),
     timerEnabled: false,
     timerSeconds: 60,
@@ -1048,6 +1117,7 @@ export function normalizeSlide(
         : 'sm',
     quizColor: normalizeFontColor(slide.quizColor),
     quizRevealOnClick: Boolean(slide.quizRevealOnClick),
+    listenQuestions: normalizeListenQuestions(slide.listenQuestions),
     pieSlices: normalizePieSlices(slide.pieSlices),
     timerEnabled: Boolean(
       slide.timerEnabled ?? slide.describeTimerEnabled ?? false

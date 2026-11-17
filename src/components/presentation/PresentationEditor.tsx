@@ -12,6 +12,7 @@ import SlideTextStyleControls from './SlideTextStyleControls';
 import PresentationAudioClipEditor from './PresentationAudioClipEditor';
 import VocabDeckLinkSelect from './VocabDeckLinkSelect';
 import { FillBlankEditor } from './PresentationFillBlank';
+import { ListenQuestionEditor } from './PresentationListenQuestions';
 import { PieTimerEditor } from './PresentationPieTimer';
 import { QuizEditor } from './PresentationQuiz';
 import { structurePastedContent, cleanSlideText } from '@/lib/presentation/parsePaste';
@@ -23,6 +24,8 @@ import {
 import {
   createEmptyAudioTrack,
   createEmptyDeck,
+  createEmptyListenQuestion,
+  createEmptyQuizChoice,
   createEmptyDescribeWord,
   createEmptyMatchPair,
   contentImagesToSlidePatch,
@@ -49,6 +52,7 @@ const LAYOUT_OPTIONS: { value: PresentationSlideLayout; label: string }[] = [
   { value: 'bullets', label: 'Bullets' },
   { value: 'image', label: 'Image focus' },
   { value: 'audio_image', label: 'Audio + image' },
+  { value: 'listen_question', label: 'Listening questions' },
   { value: 'describe_image', label: 'Describe + image' },
   { value: 'match_text_image', label: 'Match text → image' },
   { value: 'fill_blank', label: 'Fill in the blank' },
@@ -77,6 +81,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
     createEmptyDeck()
   );
   const [selectedId, setSelectedId] = useState('');
+  const [listenFocusId, setListenFocusId] = useState('');
   const [pasteText, setPasteText] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -223,6 +228,15 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
       ),
       matchPairs: (source.matchPairs || []).map((pair) =>
         createEmptyMatchPair({ word: pair.word, imageUrl: pair.imageUrl })
+      ),
+      listenQuestions: (source.listenQuestions || []).map((question) =>
+        createEmptyListenQuestion({
+          ...question,
+          id: undefined,
+          choices: question.choices.map((choice) =>
+            createEmptyQuizChoice({ text: choice.text })
+          ),
+        })
       ),
     };
     const next = [...deck.slides];
@@ -689,7 +703,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                       setDeck((prev) => updateSlide(prev, selected.id, patch))
                     }
                   />
-                ) : (
+                ) : selected.layout === 'listen_question' ? null : (
                 <div className="block space-y-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <ComicText className="text-sm font-bold">
@@ -1252,6 +1266,16 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                   </div>
                 ) : null}
 
+                {selected.layout === 'listen_question' ? (
+                  <ListenQuestionEditor
+                    slide={selected}
+                    onChange={(patch) =>
+                      setDeck((prev) => updateSlide(prev, selected.id, patch))
+                    }
+                    onActiveQuestionId={setListenFocusId}
+                  />
+                ) : null}
+
                 {selected.layout === 'audio_image' ? (
                   <div className="space-y-4">
                     <PresentationAudioClipEditor
@@ -1593,12 +1617,14 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                   </div>
                 ) : null}
 
+                {selected.layout === 'listen_question' ? null : (
                 <QuizEditor
                   slide={selected}
                   onChange={(patch) =>
                     setDeck((prev) => updateSlide(prev, selected.id, patch))
                   }
                 />
+                )}
 
                 {selected.layout === 'pie_timer' ? null : (
                 <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
@@ -1758,6 +1784,9 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                   deck={deck}
                   slideNumber={selectedIndex + 1}
                   totalSlides={deck.slides.length}
+                  listenFocusId={
+                    selected.layout === 'listen_question' ? listenFocusId : ''
+                  }
                   showImageSlot
                   liveEditable={
                     selected.layout === 'content' && selected.grammarHighlighterEnabled

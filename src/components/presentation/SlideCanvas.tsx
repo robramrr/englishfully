@@ -11,6 +11,7 @@ import {
 } from '@/lib/presentation/types';
 import { GrammarLiveTextBox } from './GrammarHighlight';
 import PresentationAudioMatch from './PresentationAudioMatch';
+import { PresentationListenQuestions } from './PresentationListenQuestions';
 import PresentationDescribeImage from './PresentationDescribeImage';
 import PresentationMatchTextImage from './PresentationMatchTextImage';
 import { PresentationFillBlank } from './PresentationFillBlank';
@@ -36,6 +37,8 @@ interface SlideCanvasProps {
   onGrammarTextChange?: (grammarText: string) => void;
   /** Bump to remount/reset the on-slide timer. */
   timerResetKey?: number;
+  /** Editor only: listening slide follows the question being edited. */
+  listenFocusId?: string;
   onTimerStateChange?: (state: SlideTimerState) => void;
 }
 
@@ -547,6 +550,7 @@ export default function SlideCanvas({
   onGrammarTextChange,
   timerResetKey = 0,
   onTimerStateChange,
+  listenFocusId = '',
 }: SlideCanvasProps) {
   const title = slide.title || (slide.layout === 'title' ? deck.title : 'Untitled slide');
   const body =
@@ -946,6 +950,29 @@ export default function SlideCanvas({
           </div>
         ) : null}
 
+        {slide.layout === 'listen_question' ? (
+          <div className="flex min-h-0 flex-1 flex-col gap-3">
+            {showTitle && slide.title.trim() ? (
+              <h2
+                className={[
+                  'shrink-0 font-bungee text-[var(--comic-secondary)] leading-tight border-b-4 border-[var(--comic-black)] pb-2',
+                  compact ? 'text-base' : present ? 'text-2xl md:text-4xl' : 'text-xl md:text-3xl',
+                ].join(' ')}
+              >
+                <SlideRichText text={slide.title} />
+              </h2>
+            ) : null}
+            <div className="min-h-0 flex-1">
+              <PresentationListenQuestions
+                slide={slide}
+                present={present}
+                compact={compact}
+                focusQuestionId={listenFocusId}
+              />
+            </div>
+          </div>
+        ) : null}
+
         {slide.layout === 'audio_image' ? (
           <div className="flex flex-1 min-h-0 flex-col gap-3">
             {showTitle ? (
@@ -1037,7 +1064,7 @@ export default function SlideCanvas({
         ) : null}
         </div>
 
-        {slide.layout === 'content' ? null : (
+        {slide.layout === 'content' || slide.layout === 'listen_question' ? null : (
           <PresentationQuiz slide={slide} compact={compact} present={present} />
         )}
 

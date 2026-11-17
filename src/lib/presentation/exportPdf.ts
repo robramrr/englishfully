@@ -5,6 +5,7 @@ import type {
 } from './types';
 import { linkifyHtml } from './linkify';
 import { QUIZ_CHOICE_LETTERS, blankSentencePlain, formatPieDuration, getContentSlideImages } from './types';
+import { formatTimestamp } from '@/lib/listen-and-learn/types';
 
 function safeFilename(value: string): string {
   return (value || 'presentation').replace(/[^\w.-]+/g, '_').slice(0, 80);
@@ -55,7 +56,9 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
         pdfFontSize(slide.quizFontSize, 18) +
         'px;';
       const quizHtml =
-        slide.quizEnabled && (slide.quizPrompt.trim() || quizLines)
+        slide.layout !== 'listen_question' &&
+        slide.quizEnabled &&
+        (slide.quizPrompt.trim() || quizLines)
           ? `<div style="${quizStyle}">${
               slide.quizPrompt.trim()
                 ? `<div style="margin-bottom:8px;">${linkifyHtml(slide.quizPrompt.trim())}</div>`
@@ -76,7 +79,10 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                      )}px">${linkifyHtml(body)}</p>` : ''}`
                 : `${showTitle ? `<h2>${linkifyHtml(title)}</h2>` : ''}
                    ${
-                     showBody && body && slide.layout !== 'pie_timer'
+                     showBody &&
+                     body &&
+                     slide.layout !== 'pie_timer' &&
+                     slide.layout !== 'listen_question'
                        ? `<p class="body" style="color:${pdfColor(slide.bodyColor)};font-size:${pdfFontSize(
                            slide.bodyFontSize,
                            18
@@ -209,6 +215,43 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                        : ''
                    }
                    ${
+                     slide.layout === 'listen_question'
+                       ? `<div style="margin-top:12px;">${(slide.listenQuestions || [])
+                           .map((question, questionIndex) => {
+                             const prompt = question.prompt.trim() || `Question ${questionIndex + 1}`;
+                             const detail =
+                               question.kind === 'answer'
+                                 ? `Answer: ${question.answer.trim() || '(not set)'}`
+                                 : question.choices
+                                     .map((choice, choiceIndex) => {
+                                       const text = choice.text.trim();
+                                       if (!text) return '';
+                                       const letter = QUIZ_CHOICE_LETTERS[choiceIndex] || '';
+                                       const mark =
+                                         choiceIndex === question.correctIndex ? ' ✓' : '';
+                                       return `${letter}. ${text}${mark}`;
+                                     })
+                                     .filter(Boolean)
+                                     .join('    ');
+                             const clip = question.clipEnabled
+                               ? `Clip ${formatTimestamp(question.startSeconds)}–${formatTimestamp(question.endSeconds)}`
+                               : '';
+                             return `<p class="body" style="margin:0 0 10px;"><strong>${escapeHtml(
+                               `${questionIndex + 1}. ${prompt}`
+                             )}</strong>${
+                               detail
+                                 ? `<br/><span style="font-weight:700;">${escapeHtml(detail)}</span>`
+                                 : ''
+                             }${
+                               clip
+                                 ? `<br/><span style="font-weight:700;">${escapeHtml(clip)}</span>`
+                                 : ''
+                             }</p>`;
+                           })
+                           .join('')}</div>`
+                       : ''
+                   }
+                   ${
                      slide.layout === 'describe_image'
                        ? `<p class="body"><strong>Describe + image</strong> — find ${
                            slide.describeWordsNeeded || 10
@@ -268,6 +311,7 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                    }
                    ${
                      slide.layout !== 'audio_image' &&
+                     slide.layout !== 'listen_question' &&
                      slide.layout !== 'describe_image' &&
                      slide.layout !== 'match_text_image' &&
                      slide.grammarHighlighterEnabled &&
@@ -281,6 +325,7 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                      (() => {
                        if (
                          slide.layout === 'audio_image' ||
+                         slide.layout === 'listen_question' ||
                          slide.layout === 'describe_image' ||
                          slide.layout === 'match_text_image' ||
                          slide.layout === 'pie_timer'
