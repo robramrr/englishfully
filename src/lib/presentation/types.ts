@@ -101,7 +101,10 @@ export interface PresentationListenQuestion {
   clipEnabled: boolean;
   startSeconds: number;
   endSeconds: number;
+  /** Words spoken in the clip. Shown only when captions are turned on. */
   clipText: string;
+  /** When true, the slide offers a Captions button for this clip. */
+  captionsEnabled: boolean;
 }
 
 export const MAX_LISTEN_QUESTIONS = 12;
@@ -136,6 +139,7 @@ export function createEmptyListenQuestion(
     startSeconds,
     endSeconds: Math.max(startSeconds + 0.05, rawEnd),
     clipText: String(patch.clipText ?? ''),
+    captionsEnabled: Boolean(patch.captionsEnabled),
   };
 }
 
@@ -496,6 +500,8 @@ export interface PresentationAudioTrack {
   startSeconds: number;
   endSeconds: number;
   clipText: string;
+  /** When true, the slide offers a Captions button for this clip. */
+  captionsEnabled: boolean;
   correctChoice: PresentationChoiceLetter;
 }
 
@@ -509,6 +515,7 @@ export function createEmptyAudioTrack(
     startSeconds,
     endSeconds: Math.max(startSeconds + 0.05, rawEnd),
     clipText: String(patch.clipText ?? ''),
+    captionsEnabled: Boolean(patch.captionsEnabled),
     correctChoice: normalizeChoiceLetter(patch.correctChoice),
   };
 }

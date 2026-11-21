@@ -148,6 +148,7 @@ function buildPayload(
     randomizeQuestions: boolean;
     randomizeAnswers: boolean;
     vocabularyAudioEnabled: boolean;
+    captionsEnabled: boolean;
     status: 'draft' | 'published';
     makeupEnabled: boolean;
     makeupListenAssignmentIds: string[];
@@ -177,6 +178,7 @@ function buildPayload(
     randomize_questions: values.randomizeQuestions,
     randomize_answers: values.randomizeAnswers,
     vocabulary_audio_enabled: values.vocabularyAudioEnabled,
+    captions_enabled: values.captionsEnabled,
     status: values.status,
     makeup_enabled: values.makeupEnabled,
     makeup_listen_assignment_ids: values.makeupListenAssignmentIds,
@@ -263,6 +265,9 @@ export default function AssignmentEditor({
   const [vocabularyAudioEnabled, setVocabularyAudioEnabled] = useState(
     initialAssignment.vocabulary_audio_enabled !== false
   );
+  const [captionsEnabled, setCaptionsEnabled] = useState(
+    initialAssignment.captions_enabled === true
+  );
   const [status, setStatus] = useState<'draft' | 'published'>(initialAssignment.status);
   const [makeupEnabled, setMakeupEnabled] = useState(
     Boolean(initialAssignment.makeup_enabled)
@@ -332,6 +337,7 @@ export default function AssignmentEditor({
     randomizeQuestions,
     randomizeAnswers,
     vocabularyAudioEnabled,
+    captionsEnabled,
     status,
     makeupEnabled,
     makeupListenAssignmentIds,
@@ -359,6 +365,7 @@ export default function AssignmentEditor({
       randomizeQuestions,
       randomizeAnswers,
       vocabularyAudioEnabled,
+      captionsEnabled,
       status,
       makeupEnabled,
       makeupListenAssignmentIds,
@@ -384,6 +391,7 @@ export default function AssignmentEditor({
       randomizeQuestions,
       randomizeAnswers,
       vocabularyAudioEnabled,
+      captionsEnabled,
       status,
       makeupEnabled,
       makeupListenAssignmentIds,
@@ -1049,6 +1057,14 @@ export default function AssignmentEditor({
                 onChange={(event) => setVocabularyAudioEnabled(event.target.checked)}
               />
               Vocabulary play audio (also in Vocabulary section)
+            </label>
+            <label className="flex items-center gap-2 font-bold text-[var(--comic-dark)]">
+              <input
+                type="checkbox"
+                checked={captionsEnabled}
+                onChange={(event) => setCaptionsEnabled(event.target.checked)}
+              />
+              Captions on question clips
             </label>
             <label className="flex items-center gap-2 font-bold text-[var(--comic-dark)]">
               <input

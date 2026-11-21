@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faLock } from '@fortawesome/free-solid-svg-icons';
 import ComicButton from '../ComicButton';
@@ -33,6 +33,7 @@ export default function StudentEscapePlayer({
   room,
   mode = 'live',
 }: StudentEscapePlayerProps) {
+  const [captionsOn, setCaptionsOn] = useState(false);
   const [step, setStep] = useState<Step>('home');
   const [challengeIndex, setChallengeIndex] = useState(0);
   const [progress, setProgress] = useState<EscapeProgressRecord | null>(null);
@@ -49,6 +50,10 @@ export default function StudentEscapePlayer({
   const [escapedMessage, setEscapedMessage] = useState('');
 
   const challenge: EscapeRoomChallenge | null = room.challenges[challengeIndex] || null;
+
+  useEffect(() => {
+    setCaptionsOn(false);
+  }, [challenge?.id]);
   const pairs = useMemo(
     () => (challenge ? parseVocabPairs(challenge.content) : []),
     [challenge]
@@ -371,7 +376,29 @@ export default function StudentEscapePlayer({
             />
           ) : null}
 
-          {audio ? <audio controls className="w-full" src={audio} /> : null}
+          {audio ? (
+            <div className="space-y-2">
+              <audio controls className="w-full" src={audio} />
+              {Boolean(challenge.content.captions_enabled) &&
+              String(challenge.content.transcript ?? '').trim() ? (
+                <>
+                  <ComicButton
+                    type="button"
+                    variant={captionsOn ? 'warning' : 'accent'}
+                    size="sm"
+                    onClick={() => setCaptionsOn((current) => !current)}
+                  >
+                    {captionsOn ? 'Hide captions' : 'Captions'}
+                  </ComicButton>
+                  {captionsOn ? (
+                    <p className="border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)]/50 px-3 py-2 font-bold leading-snug whitespace-pre-wrap">
+                      {String(challenge.content.transcript ?? '').trim()}
+                    </p>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
+          ) : null}
 
           {embed ? (
             <div className="aspect-video w-full overflow-hidden rounded-lg border-2 border-[var(--comic-dark)]">

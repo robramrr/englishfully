@@ -58,9 +58,11 @@ export function PresentationListenQuestions({
       : [createEmptyListenQuestion()];
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [captionsOn, setCaptionsOn] = useState(false);
   const safeIndex = Math.min(Math.max(index, 0), Math.max(questions.length - 1, 0));
   const question = questions[safeIndex] || questions[0];
   const hasClip = Boolean(question.clipEnabled && slide.audioUrl.trim());
+  const captionText = question.captionsEnabled ? question.clipText.trim() : '';
   const start = Math.max(0, Number(question.startSeconds) || 0);
   const end = Math.max(start + 0.05, Number(question.endSeconds) || start + 5);
   const mode = sizeMode(compact, present);
@@ -79,6 +81,7 @@ export function PresentationListenQuestions({
   useEffect(() => {
     setIndex(0);
     setRevealed(false);
+    setCaptionsOn(false);
   }, [slide.id]);
 
   const questionIds = questions.map((item) => item.id).join('|');
@@ -91,15 +94,18 @@ export function PresentationListenQuestions({
     if (next < 0) return;
     setIndex(next);
     setRevealed(false);
+    setCaptionsOn(false);
   }, [focusQuestionId, questionIds]);
 
   useEffect(() => {
     setRevealed(false);
+    setCaptionsOn(false);
   }, [question.id]);
 
   function goTo(nextIndex: number) {
     stop();
     setRevealed(false);
+    setCaptionsOn(false);
     setIndex(nextIndex);
   }
 
@@ -233,6 +239,16 @@ export function PresentationListenQuestions({
               Stop
             </ComicButton>
           ) : null}
+          {captionText ? (
+            <ComicButton
+              type="button"
+              variant={captionsOn ? 'warning' : 'accent'}
+              size="sm"
+              onClick={() => setCaptionsOn((current) => !current)}
+            >
+              {captionsOn ? 'Hide captions' : 'Captions'}
+            </ComicButton>
+          ) : null}
           <ComicButton
             type="button"
             variant={revealed ? 'warning' : 'success'}
@@ -247,6 +263,14 @@ export function PresentationListenQuestions({
             </ComicText>
           ) : null}
         </div>
+        {captionsOn && captionText ? (
+          <p
+            className="border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)]/50 px-3 py-2 text-left font-bold leading-snug"
+            style={{ fontSize: `${Math.max(14, fontSize * 0.85)}px`, color }}
+          >
+            <SlideRichText text={captionText} />
+          </p>
+        ) : null}
         {hasClip ? (
           <div
             role="slider"
@@ -386,8 +410,9 @@ export function ListenQuestionEditor({
         <ComicText className="font-black">Listening questions</ComicText>
         <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
           One audio file for every question on this slide. Each question is either choices or a
-          single answer, and it can play one clip. The slide follows the question you are
-          editing. While presenting, ask it, play the clip if you want, then reveal the answer.
+          single answer, and it can play one clip. Turn on captions when students should be able
+          to read that clip. While presenting, ask it, play the clip if you want, open captions,
+          then reveal the answer.
         </ComicText>
       </div>
 
@@ -622,7 +647,31 @@ export function ListenQuestionEditor({
                 />
               </label>
             </div>
-            {active.clipText ? (
+            <label className="flex cursor-pointer items-start gap-2 font-bold">
+              <input
+                type="checkbox"
+                className="mt-1 h-5 w-5 accent-[var(--comic-primary)]"
+                checked={active.captionsEnabled}
+                onChange={(event) => updateActive({ captionsEnabled: event.target.checked })}
+              />
+              <span>
+                <span className="block">Captions</span>
+                <span className="block text-sm font-bold text-[var(--comic-dark)]">
+                  Adds a Captions button next to Play. The words stay hidden until someone presses it.
+                </span>
+              </span>
+            </label>
+            {active.captionsEnabled ? (
+              <label className="block space-y-1">
+                <ComicText className="text-sm font-bold">Caption</ComicText>
+                <textarea
+                  className="comic-textarea w-full min-h-[72px]"
+                  value={active.clipText}
+                  onChange={(event) => updateActive({ clipText: event.target.value })}
+                  placeholder="The words students read when they open captions"
+                />
+              </label>
+            ) : active.clipText ? (
               <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
                 Selected clip: {active.clipText}
               </ComicText>

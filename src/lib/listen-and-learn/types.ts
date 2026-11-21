@@ -147,6 +147,8 @@ export interface LearnAssignment {
   randomize_answers: boolean;
   /** When false, vocabulary cards hide play-audio clips. */
   vocabulary_audio_enabled: boolean;
+  /** When true, each question clip has a Captions button. Off by default. */
+  captions_enabled: boolean;
   status: 'draft' | 'published';
   /** When true, passing this Learn credits a separate makeup gradebook row. */
   makeup_enabled: boolean;
@@ -226,6 +228,7 @@ export interface SaveLearnAssignmentPayload {
   randomize_questions: boolean;
   randomize_answers: boolean;
   vocabulary_audio_enabled?: boolean;
+  captions_enabled?: boolean;
   status: 'draft' | 'published';
   makeup_enabled?: boolean;
   /** Prefer this when tying to one or more Listen & Answer assessments. */
@@ -295,6 +298,7 @@ export interface PublicLearnAssignment {
   randomize_questions: boolean;
   randomize_answers: boolean;
   vocabulary_audio_enabled: boolean;
+  captions_enabled: boolean;
   /** Same student entry settings as Speak & Submit (nickname/class/ID). */
   entry_config: SpeakEntryConfig;
   vocabulary: Array<{
@@ -316,6 +320,8 @@ export interface PublicLearnAssignment {
     has_audio: boolean;
     start_seconds: number;
     end_seconds: number;
+    /** Words in the clip. Empty unless the teacher turned captions on. */
+    caption: string;
   }>;
 }
 

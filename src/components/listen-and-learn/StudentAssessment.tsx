@@ -439,7 +439,10 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
           />
         ) : null}
         <ComicText className="text-[var(--comic-dark)] font-bold">
-          Listen to each short audio clip, then choose the best answer. Transcripts are not shown.
+          Listen to each short audio clip, then choose the best answer.
+          {assignment.captions_enabled
+            ? ' Captions stay hidden until you press Captions.'
+            : ' Transcripts are not shown.'}
         </ComicText>
       </ComicCard>
 
@@ -512,6 +515,7 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
                 endSeconds={question.end_seconds}
                 maxReplays={assignment.max_replays === 0 ? null : assignment.max_replays}
                 label="Play Audio"
+                caption={question.caption}
               />
             ) : null}
             {question.question_image_url?.trim() ? (

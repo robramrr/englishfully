@@ -215,7 +215,31 @@ export default function PresentationAudioClipEditor({
           </label>
         </div>
 
-        {activeTrack.clipText ? (
+        <label className="flex cursor-pointer items-start gap-2 font-bold">
+          <input
+            type="checkbox"
+            className="mt-1 h-5 w-5 accent-[var(--comic-primary)]"
+            checked={activeTrack.captionsEnabled}
+            onChange={(event) => updateActiveTrack({ captionsEnabled: event.target.checked })}
+          />
+          <span>
+            <span className="block">Captions</span>
+            <span className="block text-sm font-bold text-[var(--comic-dark)]">
+              Adds a Captions button next to Play. The words stay hidden until someone presses it.
+            </span>
+          </span>
+        </label>
+        {activeTrack.captionsEnabled ? (
+          <label className="block space-y-1">
+            <ComicText className="text-sm font-bold">Caption</ComicText>
+            <textarea
+              className="comic-textarea w-full min-h-[72px]"
+              value={activeTrack.clipText}
+              onChange={(event) => updateActiveTrack({ clipText: event.target.value })}
+              placeholder="The words students read when they open captions"
+            />
+          </label>
+        ) : activeTrack.clipText ? (
           <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
             Selected clip: {activeTrack.clipText}
           </ComicText>

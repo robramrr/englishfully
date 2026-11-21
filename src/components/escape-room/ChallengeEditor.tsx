@@ -287,6 +287,22 @@ export default function ChallengeEditor({
               }
             />
           </label>
+          <label className="flex cursor-pointer items-start gap-2 font-bold">
+            <input
+              type="checkbox"
+              className="mt-1 h-5 w-5"
+              checked={Boolean(challenge.content.captions_enabled)}
+              onChange={(event) =>
+                onChange(updateContent(challenge, { captions_enabled: event.target.checked }))
+              }
+            />
+            <span>
+              <span className="block">Captions</span>
+              <span className="block text-sm font-bold text-[var(--comic-dark)]">
+                Students get a Captions button next to the audio. The transcript stays hidden until they press it.
+              </span>
+            </span>
+          </label>
         </div>
       )}
 

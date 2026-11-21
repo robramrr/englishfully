@@ -185,6 +185,10 @@ export async function ensureLearnSchema(): Promise<void> {
         ALTER TABLE learn_assignments
         ADD COLUMN IF NOT EXISTS vocabulary_audio_enabled BOOLEAN NOT NULL DEFAULT TRUE
       `;
+      await sql`
+        ALTER TABLE learn_assignments
+        ADD COLUMN IF NOT EXISTS captions_enabled BOOLEAN NOT NULL DEFAULT FALSE
+      `;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_segments_assignment ON learn_segments(assignment_id, sort_order)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_questions_assignment ON learn_questions(assignment_id, sort_order)`;
       await sql`CREATE INDEX IF NOT EXISTS idx_learn_vocabulary_assignment ON learn_vocabulary(assignment_id, sort_order)`;
@@ -284,6 +288,7 @@ function rowToAssignment(row: Record<string, unknown>): LearnAssignment {
     randomize_answers: parseDbBoolean(row.randomize_answers),
     vocabulary_audio_enabled:
       row.vocabulary_audio_enabled == null ? true : parseDbBoolean(row.vocabulary_audio_enabled),
+    captions_enabled: parseDbBoolean(row.captions_enabled),
     status: row.status === 'published' ? 'published' : 'draft',
     makeup_enabled: parseDbBoolean(row.makeup_enabled),
     makeup_listen_assignment_ids: parseMakeupListenAssignmentIds(row.makeup_listen_assignment_id),
@@ -793,6 +798,7 @@ export async function saveLearnAssignment(
       randomize_questions = ${Boolean(payload.randomize_questions)},
       randomize_answers = ${Boolean(payload.randomize_answers)},
       vocabulary_audio_enabled = ${payload.vocabulary_audio_enabled !== false},
+      captions_enabled = ${Boolean(payload.captions_enabled)},
       status = ${payload.status === 'published' ? 'published' : 'draft'},
       makeup_enabled = ${Boolean(payload.makeup_enabled)},
       makeup_listen_assignment_id = ${
@@ -896,6 +902,7 @@ export async function getPublicLearnAssignment(
     randomize_questions: assignment.randomize_questions,
     randomize_answers: assignment.randomize_answers,
     vocabulary_audio_enabled: assignment.vocabulary_audio_enabled !== false,
+    captions_enabled: assignment.captions_enabled === true,
     entry_config: entryConfig,
     vocabulary: assignment.vocabulary
       .filter((item) => item.keep_word !== false && item.word.trim())
@@ -954,6 +961,10 @@ export async function getPublicLearnAssignment(
         has_audio: Boolean(segment),
         start_seconds: segment?.start_seconds ?? 0,
         end_seconds: segment?.end_seconds ?? 0,
+        caption:
+          assignment.captions_enabled === true
+            ? String(segment?.sentence_text ?? '').trim()
+            : '',
       };
     }),
   };

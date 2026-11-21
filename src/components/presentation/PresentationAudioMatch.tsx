@@ -78,12 +78,14 @@ export default function PresentationAudioMatch({
   const tracks = getPresentationAudioTracks(slide);
   const [trackIndex, setTrackIndex] = useState(0);
   const [selected, setSelected] = useState<PresentationChoiceLetter | null>(null);
+  const [captionsOn, setCaptionsOn] = useState(false);
 
   const safeIndex = Math.min(Math.max(trackIndex, 0), Math.max(tracks.length - 1, 0));
   const track = tracks[safeIndex] || tracks[0];
   const start = Math.max(0, Number(track?.startSeconds) || 0);
   const end = Math.max(start + 0.05, Number(track?.endSeconds) || start + 5);
   const correctChoice = track?.correctChoice || 'A';
+  const captionText = track?.captionsEnabled ? track.clipText.trim() : '';
   const images = PRESENTATION_CHOICE_LETTERS.map((letter, index) => ({
     letter,
     url: String(slide.choiceImages[index] ?? '').trim(),
@@ -101,6 +103,7 @@ export default function PresentationAudioMatch({
 
   useEffect(() => {
     setSelected(null);
+    setCaptionsOn(false);
   }, [slide.id, safeIndex, start, end, slide.audioUrl]);
 
   function handleSeek(event: MouseEvent<HTMLDivElement>) {
@@ -149,6 +152,16 @@ export default function PresentationAudioMatch({
             {playing ? (
               <ComicButton type="button" variant="accent" size="sm" onClick={stop}>
                 Stop
+              </ComicButton>
+            ) : null}
+            {captionText ? (
+              <ComicButton
+                type="button"
+                variant={captionsOn ? 'warning' : 'accent'}
+                size="sm"
+                onClick={() => setCaptionsOn((current) => !current)}
+              >
+                {captionsOn ? 'Hide captions' : 'Captions'}
               </ComicButton>
             ) : null}
             {!slide.audioUrl.trim() ? (
@@ -200,6 +213,11 @@ export default function PresentationAudioMatch({
         </div>
         {error ? (
           <ComicText className="mt-1 text-sm font-bold text-[var(--comic-danger)]">{error}</ComicText>
+        ) : null}
+        {captionsOn && captionText ? (
+          <p className="mt-2 border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)]/50 px-3 py-2 text-left font-bold leading-snug">
+            {captionText}
+          </p>
         ) : null}
       </div>
 
