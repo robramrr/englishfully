@@ -384,7 +384,7 @@ function SlideImage({
     <img
       src={url}
       alt={alt || 'Slide image'}
-      className={`border-4 border-[var(--comic-black)] comic-shadow-md bg-white object-cover ${
+      className={`absolute inset-0 h-full w-full border-4 border-[var(--comic-black)] comic-shadow-md bg-white object-cover ${
         alignTop ? 'object-top' : 'object-center'
       } ${className}`}
       style={alignTop ? { objectPosition: 'center top' } : undefined}
@@ -447,6 +447,34 @@ function SlideTable({
         </tbody>
       </table>
     </div>
+  );
+}
+
+function AnagramLaunchButton({
+  present,
+  onClick,
+}: {
+  present: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={[
+        'flex min-h-[12rem] w-full flex-1 flex-col items-center justify-center gap-3 border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)] px-6 py-8 font-bungee uppercase leading-none text-[var(--comic-secondary)] comic-shadow-md',
+        present ? 'text-4xl md:text-6xl' : 'text-3xl md:text-5xl',
+      ].join(' ')}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onClick();
+      }}
+    >
+      <span>Anagram</span>
+      <span className={present ? 'text-xl font-bold normal-case md:text-2xl' : 'text-lg font-bold normal-case'}>
+        Play
+      </span>
+    </button>
   );
 }
 
@@ -705,6 +733,12 @@ export default function SlideCanvas({
                     liveEditable={liveEditable}
                     onGrammarTextChange={onGrammarTextChange}
                   />
+                  {!compact && selectedAnagramId ? (
+                    <AnagramLaunchButton
+                      present={present}
+                      onClick={() => openAnagram(selectedAnagramId)}
+                    />
+                  ) : null}
                   <PresentationQuiz slide={slide} compact={compact} present={present} />
                 </div>
                 <div
@@ -749,7 +783,12 @@ export default function SlideCanvas({
                   showRightColumn ? 'flex-1 grid-cols-2' : 'grid-cols-1',
                 ].join(' ')}
               >
-                <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-auto">
+                <div
+                  className={[
+                    'flex h-full min-h-0 min-w-0 flex-col gap-3',
+                    selectedAnagramId && !compact ? 'overflow-hidden' : 'overflow-auto',
+                  ].join(' ')}
+                >
                   <ContentBody
                     slide={slide}
                     body={body}
@@ -758,6 +797,12 @@ export default function SlideCanvas({
                     liveEditable={liveEditable}
                     onGrammarTextChange={onGrammarTextChange}
                   />
+                  {!compact && selectedAnagramId ? (
+                    <AnagramLaunchButton
+                      present={present}
+                      onClick={() => openAnagram(selectedAnagramId)}
+                    />
+                  ) : null}
                   <PresentationQuiz slide={slide} compact={compact} present={present} />
                 </div>
                 {showRightColumn ? (
@@ -786,7 +831,7 @@ export default function SlideCanvas({
                     compact={compact}
                     present={present}
                     alignTop
-                    className={compact ? 'max-h-40 min-w-0' : 'h-full max-h-full min-w-0'}
+                    className={compact ? 'max-h-40 min-h-0 min-w-0' : 'h-full max-h-full min-h-0 min-w-0'}
                   />
                 ) : null}
               </div>
@@ -857,6 +902,9 @@ export default function SlideCanvas({
               >
                 <SlideRichText text={title} />
               </h2>
+            ) : null}
+            {!compact && selectedAnagramId ? (
+              <AnagramLaunchButton present={present} onClick={() => openAnagram(selectedAnagramId)} />
             ) : null}
             <ul className="flex-1 space-y-2 overflow-auto font-bold">
               {(slide.bullets.length > 0 ? slide.bullets : ['Add bullet points…']).map(
@@ -1079,25 +1127,6 @@ export default function SlideCanvas({
         {slide.layout === 'content' || slide.layout === 'listen_question' ? null : (
           <PresentationQuiz slide={slide} compact={compact} present={present} />
         )}
-
-        {!compact && selectedAnagramId ? (
-          <div className="shrink-0">
-            <button
-              type="button"
-              className={[
-                'border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)] font-bungee uppercase leading-none text-[var(--comic-secondary)]',
-                present ? 'px-4 py-2 text-base md:px-5 md:text-xl' : 'px-3 py-1.5 text-xs',
-              ].join(' ')}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                openAnagram(selectedAnagramId);
-              }}
-            >
-              Play anagram
-            </button>
-          </div>
-        ) : null}
 
         <div
           className={[

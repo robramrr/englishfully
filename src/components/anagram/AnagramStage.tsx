@@ -9,6 +9,8 @@ import {
   faCompress,
   faExpand,
   faLightbulb,
+  faPause,
+  faPlay,
   faRotateRight,
   faVolumeHigh,
 } from '@fortawesome/free-solid-svg-icons';
@@ -223,6 +225,9 @@ export default function AnagramStage({
   const [dragSize, setDragSize] = useState(120);
   const [reveal, setReveal] = useState<RevealStep>(0);
   const [remaining, setRemaining] = useState(0);
+  const [playGate, setPlayGate] = useState<'ready' | 'running' | 'paused'>('ready');
+  const leftoverMs = useRef(0);
+  const gateGen = useRef(0);
   const [results, setResults] = useState<Record<string, WordResult>>({});
   const [finished, setFinished] = useState(false);
   const [overlayRoot, setOverlayRoot] = useState<HTMLElement | null>(null);
@@ -233,6 +238,17 @@ export default function AnagramStage({
     [activity]
   );
   const word = words[cursor] ?? null;
+  const roundKey = `${word?.id ?? ''}:${attempt}`;
+  const [gateKey, setGateKey] = useState(roundKey);
+  if (gateKey !== roundKey) {
+    const seconds = activity?.secondsPerWord ?? 30;
+    gateGen.current += 1;
+    leftoverMs.current = seconds * 1000;
+    setGateKey(roundKey);
+    setPlayGate('ready');
+    setRemaining(seconds);
+  }
+  const playing = playGate === 'running';
 
   const commitRound = useCallback((next: Round | null) => {
     roundRef.current = next;
@@ -278,14 +294,21 @@ export default function AnagramStage({
     commitRound(buildRound(word));
   }, [word, attempt, commitRound]);
 
+  const togglePlay = useCallback(() => {
+    setPlayGate((current) => (current === 'running' ? 'paused' : 'running'));
+  }, []);
+
   useEffect(() => {
+    if (playGate !== 'running') return;
     if (!activity?.timerEnabled || !word || !round) return;
     if (round.wordId !== word.id || round.solved || round.timedOut) return;
-    const total = activity.secondsPerWord;
-    setRemaining(total);
+    const gen = gateGen.current;
+    const total = leftoverMs.current;
     const started = Date.now();
     const id = window.setInterval(() => {
-      const leftMs = total * 1000 - (Date.now() - started);
+      if (gateGen.current !== gen) return;
+      const leftMs = total - (Date.now() - started);
+      leftoverMs.current = Math.max(0, leftMs);
       setRemaining(Math.max(0, Math.ceil(leftMs / 1000)));
       if (leftMs <= 0) {
         window.clearInterval(id);
@@ -310,8 +333,8 @@ export default function AnagramStage({
     }, 200);
     return () => window.clearInterval(id);
   }, [
+    playGate,
     activity?.timerEnabled,
-    activity?.secondsPerWord,
     word,
     round?.wordId,
     round?.solved,
@@ -572,7 +595,13 @@ export default function AnagramStage({
         onClose();
         return;
       }
-      if (onClose && (event.key === ' ' || event.key === 'PageDown' || event.key === 'PageUp')) {
+      if (event.key === ' ') {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!finished) togglePlay();
+        return;
+      }
+      if (onClose && (event.key === 'PageDown' || event.key === 'PageUp')) {
         event.preventDefault();
         event.stopPropagation();
         return;
@@ -607,7 +636,7 @@ export default function AnagramStage({
     }
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [finished, fullscreenOwner, goNext, goPrevious, onClose, toggleFullscreen, words.length]);
+  }, [finished, fullscreenOwner, goNext, goPrevious, onClose, toggleFullscreen, togglePlay, words.length]);
 
   const title = activity?.title?.trim() || activity?.topic?.trim() || 'Anagram';
   const solvedCount = Object.values(results).filter((result) => result === 'solved').length;
@@ -763,12 +792,23 @@ export default function AnagramStage({
                 <p
                   className={[
                     'border-4 border-[var(--comic-black)] bg-white px-3 py-1 font-bungee text-2xl',
-                    remaining <= 5 ? 'text-[var(--comic-danger)]' : 'text-[var(--comic-secondary)]',
+                    remaining <= 5 && playing ? 'text-[var(--comic-danger)]' : 'text-[var(--comic-secondary)]',
                   ].join(' ')}
                   aria-live="polite"
                 >
                   {formatClock(remaining)}
                 </p>
+              ) : null}
+              {!roundSettled ? (
+                <ComicButton
+                  type="button"
+                  variant={playing ? 'warning' : 'success'}
+                  size="md"
+                  onClick={togglePlay}
+                >
+                  <FontAwesomeIcon icon={playing ? faPause : faPlay} className="h-5 w-5 sm:mr-2" />
+                  <span>{playing ? 'Pause' : playGate === 'paused' ? 'Resume' : 'Start'}</span>
+                </ComicButton>
               ) : null}
             </div>
 
@@ -832,14 +872,14 @@ export default function AnagramStage({
                   <button
                     key={tile.id}
                     type="button"
-                    disabled={tile.placed || roundSettled}
+                    disabled={tile.placed || roundSettled || !playing}
                     onPointerDown={(event) => onTilePointerDown(event, tile)}
                     onPointerMove={onTilePointerMove}
                     onPointerUp={onTilePointerUp}
                     onPointerCancel={() => setDragBoth(null)}
                     className={[
                       'anagram-letter-box flex items-center justify-center border-[var(--comic-black)] bg-[var(--comic-secondary)] font-bungee uppercase leading-none text-white shadow-[0.08em_0.08em_0_#111] touch-none select-none',
-                      tile.placed ? 'hidden' : 'cursor-grab active:cursor-grabbing',
+                      tile.placed ? 'hidden' : playing ? 'cursor-grab active:cursor-grabbing' : 'cursor-default opacity-40',
                       drag?.tileId === tile.id ? 'opacity-40' : '',
                     ].join(' ')}
                     aria-label={`Letter ${tile.letter}`}
@@ -867,6 +907,22 @@ export default function AnagramStage({
             <span className="hidden sm:inline">Previous</span>
             <span className="sr-only sm:hidden">Previous</span>
           </ComicButton>
+          {!roundSettled ? (
+            <ComicButton
+              type="button"
+              variant={playing ? 'warning' : 'success'}
+              size="md"
+              onClick={togglePlay}
+            >
+              <FontAwesomeIcon icon={playing ? faPause : faPlay} className="h-5 w-5 sm:mr-2" />
+              <span className="hidden sm:inline">
+                {playing ? 'Pause' : playGate === 'paused' ? 'Resume' : 'Start'}
+              </span>
+              <span className="sr-only sm:hidden">
+                {playing ? 'Pause' : playGate === 'paused' ? 'Resume' : 'Start'}
+              </span>
+            </ComicButton>
+          ) : null}
           {canListen ? (
             <ComicButton type="button" variant="accent" size="md" onClick={() => playWordAudio(word)}>
               <FontAwesomeIcon icon={faVolumeHigh} className="h-5 w-5 sm:mr-2" />

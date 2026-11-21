@@ -69,7 +69,7 @@ export default function AnagramActivityLinkSelect({
       </label>
       <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
         {value
-          ? 'One Play anagram button is added on this slide. Choose No anagram to remove it. Text on the slide stays as you wrote it.'
+          ? 'A Play button fills the text side of this slide. Choose No anagram to remove it.'
           : 'Nothing is added until you choose an activity here.'}{' '}
         <Link href="/teacher-resources/anagram" className="text-[var(--comic-secondary)] underline">
           {activities.length ? 'Manage activities' : 'Create an activity'}
