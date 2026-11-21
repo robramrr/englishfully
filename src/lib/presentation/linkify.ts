@@ -70,39 +70,6 @@ export function splitSlideLinks(input: string): SlideTextPart[] {
   return parts;
 }
 
-const ANAGRAM_PATH = /^\/anagram\/([^/]+)\/?$/;
-
-/** Play-page id from an anagram URL. Teacher editor links are ignored. */
-export function anagramActivityIdFromHref(href: string): string | null {
-  try {
-    const url = new URL(href, 'https://englishfully.local');
-    const match = url.pathname.match(ANAGRAM_PATH);
-    if (!match) return null;
-    const id = decodeURIComponent(match[1]).trim();
-    return id || null;
-  } catch {
-    return null;
-  }
-}
-
-export function anagramActivityIdsInText(input: string): string[] {
-  const ids: string[] = [];
-  for (const part of splitSlideLinks(input)) {
-    if (part.type !== 'link') continue;
-    const id = anagramActivityIdFromHref(part.href);
-    if (id && !ids.includes(id)) ids.push(id);
-  }
-  return ids;
-}
-
-/** True when the visible text is the address itself, not a written label. */
-export function anagramLinkLabelIsRaw(href: string, label: string): boolean {
-  const visible = label.trim();
-  if (!visible) return true;
-  if (visible === href.trim()) return true;
-  return anagramActivityIdFromHref(visible) !== null;
-}
-
 /** Escaped HTML with real anchor tags for slide export. */
 export function linkifyHtml(input: string): string {
   return splitSlideLinks(input)

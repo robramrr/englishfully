@@ -69,8 +69,8 @@ export default function AnagramActivityLinkSelect({
       </label>
       <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
         {value
-          ? 'This slide gets a Play anagram button. It opens on top of the presentation, the same way vocabulary does.'
-          : 'Pick an activity when this slide should launch an anagram. A pasted anagram link on the slide does the same thing.'}{' '}
+          ? 'One Play anagram button is added on this slide. Choose No anagram to remove it. Text on the slide stays as you wrote it.'
+          : 'Nothing is added until you choose an activity here.'}{' '}
         <Link href="/teacher-resources/anagram" className="text-[var(--comic-secondary)] underline">
           {activities.length ? 'Manage activities' : 'Create an activity'}
         </Link>

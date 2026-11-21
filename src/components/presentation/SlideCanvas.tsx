@@ -17,11 +17,10 @@ import PresentationMatchTextImage from './PresentationMatchTextImage';
 import { PresentationFillBlank } from './PresentationFillBlank';
 import { PresentationPieTimer } from './PresentationPieTimer';
 import { PresentationQuiz } from './PresentationQuiz';
-import { SlideAnagramProvider, SlideRichText } from './SlideRichText';
+import { SlideRichText } from './SlideRichText';
 import PresentationSlideTimer, { type SlideTimerState } from './PresentationSlideTimer';
 import VocabFlashcardStage from '../vocabulary/VocabFlashcardStage';
 import AnagramStage from '../anagram/AnagramStage';
-import { anagramActivityIdsInText } from '@/lib/presentation/linkify';
 
 interface SlideCanvasProps {
   slide: PresentationSlide;
@@ -42,38 +41,6 @@ interface SlideCanvasProps {
   /** Editor only: listening slide follows the question being edited. */
   listenFocusId?: string;
   onTimerStateChange?: (state: SlideTimerState) => void;
-}
-
-function linkedAnagramActivityId(slide: PresentationSlide): string {
-  const explicit = slide.anagramActivityId.trim();
-  if (explicit) return explicit;
-  const chunks = [
-    slide.title,
-    slide.body,
-    slide.grammarText,
-    slide.quizPrompt,
-    slide.imageAlt,
-    slide.imageSubtitle,
-    slide.imageAlt2,
-    slide.imageSubtitle2,
-    slide.imageAlt3,
-    slide.imageSubtitle3,
-    slide.imageAlt4,
-    slide.imageSubtitle4,
-    ...slide.bullets,
-    ...slide.quizChoices.map((choice) => choice.text),
-    ...slide.listenQuestions.flatMap((question) => [
-      question.prompt,
-      question.answer,
-      question.clipText,
-      ...question.choices.map((choice) => choice.text),
-    ]),
-  ];
-  for (const chunk of chunks) {
-    const id = anagramActivityIdsInText(chunk)[0];
-    if (id) return id;
-  }
-  return '';
 }
 
 function sizeMode(
@@ -615,7 +582,7 @@ export default function SlideCanvas({
   const [focusedImageIndex, setFocusedImageIndex] = useState<number | null>(null);
   const [openVocabDeckId, setOpenVocabDeckId] = useState<string | null>(null);
   const [openAnagramId, setOpenAnagramId] = useState<string | null>(null);
-  const linkedAnagramId = linkedAnagramActivityId(slide);
+  const selectedAnagramId = slide.anagramActivityId.trim();
 
   function openAnagram(activityId: string) {
     const next = activityId.trim();
@@ -640,7 +607,6 @@ export default function SlideCanvas({
   }
 
   return (
-    <SlideAnagramProvider onOpen={openAnagram}>
     <article
       className={[
         'presentation-slide relative overflow-hidden',
@@ -1114,32 +1080,33 @@ export default function SlideCanvas({
           <PresentationQuiz slide={slide} compact={compact} present={present} />
         )}
 
-        <div
-          className={[
-            'relative z-[2] mt-2 grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-t-2 border-[var(--comic-black)]/30 pt-2 font-bold text-[var(--comic-dark)]/70',
-            compact ? 'text-[10px]' : present ? 'text-base md:text-lg' : 'text-sm',
-          ].join(' ')}
-        >
-          <span className="min-w-0 truncate">{deck.title || 'Presentation'}</span>
-          {!compact && linkedAnagramId ? (
+        {!compact && selectedAnagramId ? (
+          <div className="shrink-0">
             <button
               type="button"
               className={[
-                'justify-self-center border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)] font-bungee uppercase leading-none text-[var(--comic-secondary)]',
+                'border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)] font-bungee uppercase leading-none text-[var(--comic-secondary)]',
                 present ? 'px-4 py-2 text-base md:px-5 md:text-xl' : 'px-3 py-1.5 text-xs',
               ].join(' ')}
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                openAnagram(linkedAnagramId);
+                openAnagram(selectedAnagramId);
               }}
             >
               Play anagram
             </button>
-          ) : (
-            <span />
-          )}
-          <span className="justify-self-end">
+          </div>
+        ) : null}
+
+        <div
+          className={[
+            'relative z-[2] mt-2 flex shrink-0 items-center justify-between border-t-2 border-[var(--comic-black)]/30 pt-2 font-bold text-[var(--comic-dark)]/70',
+            compact ? 'text-[10px]' : present ? 'text-base md:text-lg' : 'text-sm',
+          ].join(' ')}
+        >
+          <span className="min-w-0 truncate">{deck.title || 'Presentation'}</span>
+          <span className="shrink-0">
             {slideNumber} / {totalSlides}
           </span>
         </div>
@@ -1159,6 +1126,5 @@ export default function SlideCanvas({
         />
       ) : null}
     </article>
-    </SlideAnagramProvider>
   );
 }
