@@ -299,7 +299,7 @@ export default function ChallengeEditor({
             <span>
               <span className="block">Captions</span>
               <span className="block text-sm font-bold text-[var(--comic-dark)]">
-                Students get a Captions button next to the audio. The transcript stays hidden until they press it.
+                Students get a Captions button next to the audio. While it plays, the words follow the sound. They stay hidden until someone presses it.
               </span>
             </span>
           </label>

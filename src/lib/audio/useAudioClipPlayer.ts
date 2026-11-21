@@ -27,6 +27,7 @@ export function useAudioClipPlayer({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(() => Math.max(0, Number(startSeconds) || 0));
   const [error, setError] = useState('');
 
   const clipStart = Math.max(0, Number(startSeconds) || 0);
@@ -39,6 +40,13 @@ export function useAudioClipPlayer({
   const durationRef = useRef(clipDuration);
   const deadlineRef = useRef(0);
   const playingRef = useRef(false);
+  const timeRef = useRef(clipStart);
+
+  const publishTime = useCallback((next: number) => {
+    if (Math.abs(timeRef.current - next) < 0.04) return;
+    timeRef.current = next;
+    setCurrentTime(next);
+  }, []);
 
   useEffect(() => {
     startRef.current = clipStart;
@@ -51,11 +59,12 @@ export function useAudioClipPlayer({
     playingRef.current = false;
     setPlaying(false);
     setProgress(opts?.progress ?? 0);
+    publishTime(startRef.current);
     deadlineRef.current = 0;
     if (!audio) return;
     audio.pause();
     void seekAudioTo(audio, startRef.current);
-  }, []);
+  }, [publishTime]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -72,6 +81,7 @@ export function useAudioClipPlayer({
     playingRef.current = false;
     setPlaying(false);
     setProgress(0);
+    publishTime(clipStart);
     setError('');
     deadlineRef.current = 0;
     if (!audio) return;
@@ -81,7 +91,7 @@ export function useAudioClipPlayer({
       void seekAudioTo(audio, clipStart);
     }, 0);
     return () => window.clearTimeout(id);
-  }, [src, clipStart, clipEnd]);
+  }, [src, clipStart, clipEnd, publishTime]);
 
   // rAF clamp + wall-clock hard stop while playing.
   useEffect(() => {
@@ -121,12 +131,13 @@ export function useAudioClipPlayer({
           ? mediaProgress
           : wallProgress;
       setProgress(Math.min(1, Math.max(0, next)));
+      publishTime(Number.isFinite(t) ? t : start);
       raf = window.requestAnimationFrame(tick);
     };
 
     raf = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(raf);
-  }, [playing]);
+  }, [playing, publishTime]);
 
   const play = useCallback(async () => {
     const audio = audioRef.current;
@@ -166,11 +177,12 @@ export function useAudioClipPlayer({
       const next = clipStart + clamped * clipDuration;
       void seekAudioTo(audio, next);
       setProgress(clamped);
+      publishTime(next);
       if (playingRef.current) {
         deadlineRef.current = performance.now() + (1 - clamped) * clipDuration * 1000;
       }
     },
-    [audioUrl, clipStart, clipDuration]
+    [audioUrl, clipStart, clipDuration, publishTime]
   );
 
   return {
@@ -178,6 +190,7 @@ export function useAudioClipPlayer({
     src,
     playing,
     progress,
+    currentTime,
     error,
     clipStart,
     clipEnd,

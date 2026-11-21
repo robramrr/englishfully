@@ -104,6 +104,7 @@ export default function PresentationAudioClipEditor({
       startSeconds: Number(segment.start_seconds) || 0,
       endSeconds: Number(segment.end_seconds) || 5,
       clipText: String(segment.sentence_text || ''),
+      captionWords: segment.words || [],
     });
   }
 
@@ -225,7 +226,7 @@ export default function PresentationAudioClipEditor({
           <span>
             <span className="block">Captions</span>
             <span className="block text-sm font-bold text-[var(--comic-dark)]">
-              Adds a Captions button next to Play. The words stay hidden until someone presses it.
+              Adds a Captions button next to Play. While the clip plays, the words follow the audio. They stay hidden until someone presses it.
             </span>
           </span>
         </label>

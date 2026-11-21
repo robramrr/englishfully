@@ -1,3 +1,6 @@
+import type { CaptionWord } from '@/lib/audio/syncedCaptions';
+import { normalizeCaptionWords } from '@/lib/audio/syncedCaptions';
+
 export type PresentationSlideLayout =
   | 'title'
   | 'content'
@@ -103,6 +106,8 @@ export interface PresentationListenQuestion {
   endSeconds: number;
   /** Words spoken in the clip. Shown only when captions are turned on. */
   clipText: string;
+  /** Spoken words with times in the source audio. Empty when the caption was typed. */
+  captionWords: CaptionWord[];
   /** When true, the slide offers a Captions button for this clip. */
   captionsEnabled: boolean;
 }
@@ -139,6 +144,7 @@ export function createEmptyListenQuestion(
     startSeconds,
     endSeconds: Math.max(startSeconds + 0.05, rawEnd),
     clipText: String(patch.clipText ?? ''),
+    captionWords: normalizeCaptionWords(patch.captionWords),
     captionsEnabled: Boolean(patch.captionsEnabled),
   };
 }
@@ -500,6 +506,8 @@ export interface PresentationAudioTrack {
   startSeconds: number;
   endSeconds: number;
   clipText: string;
+  /** Spoken words with times in the source audio. Empty when the caption was typed. */
+  captionWords: CaptionWord[];
   /** When true, the slide offers a Captions button for this clip. */
   captionsEnabled: boolean;
   correctChoice: PresentationChoiceLetter;
@@ -515,6 +523,7 @@ export function createEmptyAudioTrack(
     startSeconds,
     endSeconds: Math.max(startSeconds + 0.05, rawEnd),
     clipText: String(patch.clipText ?? ''),
+    captionWords: normalizeCaptionWords(patch.captionWords),
     captionsEnabled: Boolean(patch.captionsEnabled),
     correctChoice: normalizeChoiceLetter(patch.correctChoice),
   };

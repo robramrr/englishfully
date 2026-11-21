@@ -13,6 +13,7 @@ import type {
   EscapeRoomWithChallenges,
 } from '@/lib/escape-room/types';
 import { ESCAPE_CHALLENGE_TYPE_LABELS } from '@/lib/escape-room/types';
+import SyncedCaptions from '../audio/SyncedCaptions';
 import {
   checkChallengeAnswer,
   getPrimaryMedia,
@@ -34,6 +35,8 @@ export default function StudentEscapePlayer({
   mode = 'live',
 }: StudentEscapePlayerProps) {
   const [captionsOn, setCaptionsOn] = useState(false);
+  const [audioTime, setAudioTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
   const [step, setStep] = useState<Step>('home');
   const [challengeIndex, setChallengeIndex] = useState(0);
   const [progress, setProgress] = useState<EscapeProgressRecord | null>(null);
@@ -53,6 +56,8 @@ export default function StudentEscapePlayer({
 
   useEffect(() => {
     setCaptionsOn(false);
+    setAudioTime(0);
+    setAudioDuration(0);
   }, [challenge?.id]);
   const pairs = useMemo(
     () => (challenge ? parseVocabPairs(challenge.content) : []),
@@ -378,7 +383,16 @@ export default function StudentEscapePlayer({
 
           {audio ? (
             <div className="space-y-2">
-              <audio controls className="w-full" src={audio} />
+              <audio
+                controls
+                className="w-full"
+                src={audio}
+                onLoadedMetadata={(event) => {
+                  const duration = event.currentTarget.duration;
+                  setAudioDuration(Number.isFinite(duration) ? duration : 0);
+                }}
+                onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)}
+              />
               {Boolean(challenge.content.captions_enabled) &&
               String(challenge.content.transcript ?? '').trim() ? (
                 <>
@@ -391,9 +405,12 @@ export default function StudentEscapePlayer({
                     {captionsOn ? 'Hide captions' : 'Captions'}
                   </ComicButton>
                   {captionsOn ? (
-                    <p className="border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)]/50 px-3 py-2 font-bold leading-snug whitespace-pre-wrap">
-                      {String(challenge.content.transcript ?? '').trim()}
-                    </p>
+                    <SyncedCaptions
+                      text={String(challenge.content.transcript ?? '').trim()}
+                      start={0}
+                      end={audioDuration > 0.3 ? audioDuration : 1}
+                      currentTime={audioTime}
+                    />
                   ) : null}
                 </>
               ) : null}

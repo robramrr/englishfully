@@ -9,6 +9,7 @@ import {
   PRESENTATION_CHOICE_LETTERS,
 } from '@/lib/presentation/types';
 import { useAudioClipPlayer } from '@/lib/audio/useAudioClipPlayer';
+import SyncedCaptions from '../audio/SyncedCaptions';
 
 /** Brand has no green token — use a clear quiz green for correct feedback. */
 const QUIZ_CORRECT = '#15803d';
@@ -91,7 +92,7 @@ export default function PresentationAudioMatch({
     url: String(slide.choiceImages[index] ?? '').trim(),
   })).filter((item) => item.url);
 
-  const { audioRef, src, playing, progress, error, play, stop, seekRatio } = useAudioClipPlayer({
+  const { audioRef, src, playing, progress, currentTime, error, play, stop, seekRatio } = useAudioClipPlayer({
     audioUrl: slide.audioUrl,
     startSeconds: start,
     endSeconds: end,
@@ -215,9 +216,16 @@ export default function PresentationAudioMatch({
           <ComicText className="mt-1 text-sm font-bold text-[var(--comic-danger)]">{error}</ComicText>
         ) : null}
         {captionsOn && captionText ? (
-          <p className="mt-2 border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)]/50 px-3 py-2 text-left font-bold leading-snug">
-            {captionText}
-          </p>
+          <div className="mt-2">
+            <SyncedCaptions
+              text={captionText}
+              start={start}
+              end={end}
+              currentTime={currentTime}
+              words={track?.captionWords}
+              present={present}
+            />
+          </div>
         ) : null}
       </div>
 

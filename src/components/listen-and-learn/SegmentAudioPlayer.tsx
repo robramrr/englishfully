@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
 import { useAudioClipPlayer } from '@/lib/audio/useAudioClipPlayer';
+import SyncedCaptions from '../audio/SyncedCaptions';
 
 interface SegmentAudioPlayerProps {
   audioUrl: string;
@@ -25,7 +26,7 @@ export default function SegmentAudioPlayer({
   compact = false,
   caption = '',
 }: SegmentAudioPlayerProps) {
-  const { audioRef, src, playing, error, play, stop } = useAudioClipPlayer({
+  const { audioRef, src, playing, currentTime, error, play, stop } = useAudioClipPlayer({
     audioUrl,
     startSeconds,
     endSeconds,
@@ -82,9 +83,12 @@ export default function SegmentAudioPlayer({
         ) : null}
       </div>
       {captionsOn && captionText ? (
-        <p className="border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)]/50 px-3 py-2 font-bold leading-snug text-[var(--comic-dark)]">
-          {captionText}
-        </p>
+        <SyncedCaptions
+          text={captionText}
+          start={startSeconds}
+          end={endSeconds}
+          currentTime={currentTime}
+        />
       ) : null}
       {error ? (
         <ComicText className="text-[var(--comic-danger)] text-sm font-bold">{error}</ComicText>

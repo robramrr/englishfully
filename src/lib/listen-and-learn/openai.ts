@@ -14,6 +14,7 @@ import {
 } from './types';
 import { buildSegmentQuestionPrompt, buildVocabularyPrompt } from './prompts';
 import { uploadVocabularyImageToR2 } from '@/lib/speak-and-submit/r2';
+import { attachWordsToSegments } from '@/lib/audio/syncedCaptions';
 
 interface WhisperWordStamp {
   word: string;
@@ -139,7 +140,10 @@ export async function transcribeAudioWithSegments(
     segments.push(...distributeSentenceTimestamps(sentences, 0, Math.max(8, sentences.length * 3)));
   }
 
-  return { transcript, segments: mergeShortSegments(segments) };
+  return {
+    transcript,
+    segments: attachWordsToSegments(mergeShortSegments(segments), words),
+  };
 }
 
 export function buildSegmentsFromManualTranscript(
@@ -165,8 +169,9 @@ export async function alignTranscriptToAudio(
     const words = await getWhisperWordTimestamps(audioUrl);
     if (words.length > 0) {
       const lastWordEnd = words[words.length - 1]?.end ?? Math.max(8, sentences.length * 3);
-      return mergeShortSegments(
-        alignSentencesToWordTimestamps(sentences, words, 0, lastWordEnd)
+      return attachWordsToSegments(
+        mergeShortSegments(alignSentencesToWordTimestamps(sentences, words, 0, lastWordEnd)),
+        words
       );
     }
   } catch (error) {

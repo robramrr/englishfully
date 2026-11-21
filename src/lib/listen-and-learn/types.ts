@@ -274,6 +274,8 @@ export interface TranscriptSegmentDraft {
   sentence_text: string;
   start_seconds: number;
   end_seconds: number;
+  /** Spoken words inside this clip, when the transcriber timed them. */
+  words?: Array<{ text: string; start: number; end: number }>;
 }
 
 export interface GeneratedLearnQuestion {

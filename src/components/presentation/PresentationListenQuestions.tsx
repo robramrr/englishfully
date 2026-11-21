@@ -10,6 +10,7 @@ import {
   parseTimestamp,
   type TranscriptSegmentDraft,
 } from '@/lib/listen-and-learn/types';
+import SyncedCaptions from '../audio/SyncedCaptions';
 import { SlideRichText } from './SlideRichText';
 import SlideTextStyleControls from './SlideTextStyleControls';
 import {
@@ -72,7 +73,7 @@ export function PresentationListenQuestions({
     .map((choice, choiceIndex) => ({ ...choice, choiceIndex }))
     .filter((choice) => choice.text.trim());
 
-  const { audioRef, src, playing, progress, error, play, stop, seekRatio } = useAudioClipPlayer({
+  const { audioRef, src, playing, progress, currentTime, error, play, stop, seekRatio } = useAudioClipPlayer({
     audioUrl: hasClip ? slide.audioUrl : '',
     startSeconds: start,
     endSeconds: end,
@@ -264,12 +265,14 @@ export function PresentationListenQuestions({
           ) : null}
         </div>
         {captionsOn && captionText ? (
-          <p
-            className="border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)]/50 px-3 py-2 text-left font-bold leading-snug"
-            style={{ fontSize: `${Math.max(14, fontSize * 0.85)}px`, color }}
-          >
-            <SlideRichText text={captionText} />
-          </p>
+          <SyncedCaptions
+            text={captionText}
+            start={start}
+            end={end}
+            currentTime={currentTime}
+            words={question.captionWords}
+            present={present}
+          />
         ) : null}
         {hasClip ? (
           <div
@@ -399,6 +402,7 @@ export function ListenQuestionEditor({
       startSeconds: Number(segment.start_seconds) || 0,
       endSeconds: Number(segment.end_seconds) || 5,
       clipText: String(segment.sentence_text || ''),
+      captionWords: segment.words || [],
     });
   }
 
@@ -657,7 +661,7 @@ export function ListenQuestionEditor({
               <span>
                 <span className="block">Captions</span>
                 <span className="block text-sm font-bold text-[var(--comic-dark)]">
-                  Adds a Captions button next to Play. The words stay hidden until someone presses it.
+                  Adds a Captions button next to Play. While the clip plays, the words follow the audio. They stay hidden until someone presses it.
                 </span>
               </span>
             </label>
