@@ -606,6 +606,8 @@ export interface PresentationSlide {
   vocabDeckId2: string;
   vocabDeckId3: string;
   vocabDeckId4: string;
+  /** Anagram activity played on top of this slide. */
+  anagramActivityId: string;
   /** Font size for definition / explanation. */
   bodyFontSize: PresentationFontSize;
   /** Theme color for definition / explanation. */
@@ -978,6 +980,7 @@ export function createEmptySlide(
     vocabDeckId2: '',
     vocabDeckId3: '',
     vocabDeckId4: '',
+    anagramActivityId: '',
     bodyFontSize: 'md',
     bodyColor: 'navy',
     bulletsFontSize: 'md',
@@ -1070,6 +1073,7 @@ export function normalizeSlide(
     vocabDeckId2: String(slide.vocabDeckId2 ?? '').trim(),
     vocabDeckId3: String(slide.vocabDeckId3 ?? '').trim(),
     vocabDeckId4: String(slide.vocabDeckId4 ?? '').trim(),
+    anagramActivityId: String(slide.anagramActivityId ?? '').trim(),
     bodyFontSize: normalizeFontSize(slide.bodyFontSize),
     bodyColor: normalizeFontColor(slide.bodyColor),
     bulletsFontSize: normalizeFontSize(slide.bulletsFontSize),

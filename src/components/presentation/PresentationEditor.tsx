@@ -11,6 +11,7 @@ import PresentationShareBar from './PresentationShareBar';
 import SlideTextStyleControls from './SlideTextStyleControls';
 import PresentationAudioClipEditor from './PresentationAudioClipEditor';
 import VocabDeckLinkSelect from './VocabDeckLinkSelect';
+import AnagramActivityLinkSelect from './AnagramActivityLinkSelect';
 import { FillBlankEditor } from './PresentationFillBlank';
 import { ListenQuestionEditor } from './PresentationListenQuestions';
 import { PieTimerEditor } from './PresentationPieTimer';
@@ -1616,6 +1617,15 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                     </div>
                   </div>
                 ) : null}
+
+                <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
+                  <AnagramActivityLinkSelect
+                    value={selected.anagramActivityId}
+                    onChange={(anagramActivityId) =>
+                      setDeck((prev) => updateSlide(prev, selected.id, { anagramActivityId }))
+                    }
+                  />
+                </div>
 
                 {selected.layout === 'listen_question' ? null : (
                 <QuizEditor

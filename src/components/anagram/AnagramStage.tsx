@@ -572,16 +572,25 @@ export default function AnagramStage({
         onClose();
         return;
       }
+      if (onClose && (event.key === ' ' || event.key === 'PageDown' || event.key === 'PageUp')) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       if (event.key === 'f' || event.key === 'F') {
+        if (onClose) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
         if (fullscreenOwner === 'other') return;
         event.preventDefault();
         void toggleFullscreen();
         return;
       }
       if (event.key === 'ArrowRight') {
-        if (finished) return;
         event.preventDefault();
         event.stopPropagation();
+        if (finished) return;
         goNext();
         return;
       }
