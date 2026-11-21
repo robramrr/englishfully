@@ -484,7 +484,10 @@ function AnagramLaunchButton({
   return (
     <button
       type="button"
-      className="flex w-fit max-w-full flex-col items-center justify-center gap-1 self-start border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)] px-6 py-4 text-center leading-tight text-[var(--comic-secondary)] comic-shadow-md"
+      className={[
+        'flex w-full shrink-0 flex-col items-center justify-center gap-1 border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)] px-6 text-center leading-tight text-[var(--comic-secondary)] comic-shadow-md',
+        present ? 'min-h-[9rem] py-5' : 'min-h-[7.5rem] py-4',
+      ].join(' ')}
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -492,13 +495,13 @@ function AnagramLaunchButton({
       }}
     >
       <span className={present ? 'font-bungee text-3xl uppercase md:text-4xl' : 'font-bungee text-2xl uppercase md:text-3xl'}>
-        Play
+        Play Anagram
       </span>
       <span
         className={
           present
-            ? 'max-w-[14rem] font-bold normal-case text-[var(--comic-dark)] text-lg leading-snug md:text-xl'
-            : 'max-w-[12rem] font-bold normal-case text-[var(--comic-dark)] text-base leading-snug'
+            ? 'max-w-full font-bold normal-case text-[var(--comic-dark)] text-lg leading-snug md:text-xl'
+            : 'max-w-full font-bold normal-case text-[var(--comic-dark)] text-base leading-snug'
         }
       >
         {title || 'Anagram'}
