@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import ComicButton from '../ComicButton';
 import {
   activeCaptionIndex,
   captionLineAround,
@@ -28,7 +29,7 @@ export default function SyncedCaptions({
     [text, start, end, words]
   );
   const active = activeCaptionIndex(captionWords, currentTime);
-  const line = captionLineAround(captionWords, active).filter((word) => word.start <= currentTime + 0.02);
+  const line = captionLineAround(captionWords, active);
   if (line.length === 0) return null;
 
   return (
@@ -40,14 +41,15 @@ export default function SyncedCaptions({
       aria-live="polite"
     >
       {line.map((word, lineIndex) => {
-        const spoken = lineIndex === line.length - 1;
+        const wordIndex = Math.floor(active / 5) * 5 + lineIndex;
+        const spoken = wordIndex === active;
         return (
           <span
             key={`${word.start}-${word.text}-${lineIndex}`}
             className={
               spoken
                 ? 'rounded-md bg-[var(--comic-yellow)] px-1.5 py-0.5 text-[var(--comic-black)]'
-                : ''
+                : 'opacity-55'
             }
           >
             {word.text}
@@ -66,14 +68,13 @@ export function CaptionSwitch({
   onChange: (next: boolean) => void;
 }) {
   return (
-    <label className="inline-flex cursor-pointer items-center gap-2 border-4 border-[var(--comic-black)] bg-white px-3 py-1.5 font-black text-[var(--comic-dark)]">
-      <input
-        type="checkbox"
-        className="h-5 w-5 accent-[var(--comic-primary)]"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-      />
-      Captions
-    </label>
+    <ComicButton
+      type="button"
+      variant={checked ? 'warning' : 'accent'}
+      size="sm"
+      onClick={() => onChange(!checked)}
+    >
+      {checked ? 'Hide captions' : 'Captions'}
+    </ComicButton>
   );
 }
