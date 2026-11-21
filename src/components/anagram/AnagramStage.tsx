@@ -226,6 +226,7 @@ export default function AnagramStage({
   const [reveal, setReveal] = useState<RevealStep>(0);
   const [remaining, setRemaining] = useState(0);
   const [playGate, setPlayGate] = useState<'ready' | 'running' | 'paused'>('ready');
+  const startedRef = useRef(false);
   const leftoverMs = useRef(0);
   const gateGen = useRef(0);
   const [results, setResults] = useState<Record<string, WordResult>>({});
@@ -245,7 +246,7 @@ export default function AnagramStage({
     gateGen.current += 1;
     leftoverMs.current = seconds * 1000;
     setGateKey(roundKey);
-    setPlayGate('ready');
+    setPlayGate(startedRef.current ? 'running' : 'ready');
     setRemaining(seconds);
   }
   const playing = playGate === 'running';
@@ -277,6 +278,8 @@ export default function AnagramStage({
   }, [activityId]);
 
   useEffect(() => {
+    startedRef.current = false;
+    setPlayGate('ready');
     setCursor(0);
     setAttempt(0);
     setResults({});
@@ -295,7 +298,11 @@ export default function AnagramStage({
   }, [word, attempt, commitRound]);
 
   const togglePlay = useCallback(() => {
-    setPlayGate((current) => (current === 'running' ? 'paused' : 'running'));
+    setPlayGate((current) => {
+      if (current === 'running') return 'paused';
+      startedRef.current = true;
+      return 'running';
+    });
   }, []);
 
   useEffect(() => {
@@ -569,6 +576,8 @@ export default function AnagramStage({
   }
 
   function playAgain() {
+    startedRef.current = false;
+    setPlayGate('ready');
     setFinished(false);
     setResults({});
     setCursor(0);

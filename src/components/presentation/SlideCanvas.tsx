@@ -451,28 +451,57 @@ function SlideTable({
 }
 
 function AnagramLaunchButton({
+  activityId,
   present,
   onClick,
 }: {
+  activityId: string;
   present: boolean;
   onClick: () => void;
 }) {
+  const [title, setTitle] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setTitle('');
+    void fetch(`/api/anagram/activities/${activityId}`, { cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json();
+      })
+      .then((data) => {
+        if (cancelled || !data?.activity) return;
+        const activity = data.activity as { title?: string; topic?: string };
+        const name = activity.title?.trim() || activity.topic?.trim() || 'Anagram';
+        setTitle(name);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [activityId]);
+
   return (
     <button
       type="button"
-      className={[
-        'flex min-h-[12rem] w-full flex-1 flex-col items-center justify-center gap-3 border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)] px-6 py-8 font-bungee uppercase leading-none text-[var(--comic-secondary)] comic-shadow-md',
-        present ? 'text-4xl md:text-6xl' : 'text-3xl md:text-5xl',
-      ].join(' ')}
+      className="flex w-fit max-w-full flex-col items-center justify-center gap-1 self-start border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)] px-6 py-4 text-center leading-tight text-[var(--comic-secondary)] comic-shadow-md"
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();
         onClick();
       }}
     >
-      <span>Anagram</span>
-      <span className={present ? 'text-xl font-bold normal-case md:text-2xl' : 'text-lg font-bold normal-case'}>
+      <span className={present ? 'font-bungee text-3xl uppercase md:text-4xl' : 'font-bungee text-2xl uppercase md:text-3xl'}>
         Play
+      </span>
+      <span
+        className={
+          present
+            ? 'max-w-[14rem] font-bold normal-case text-[var(--comic-dark)] text-lg leading-snug md:text-xl'
+            : 'max-w-[12rem] font-bold normal-case text-[var(--comic-dark)] text-base leading-snug'
+        }
+      >
+        {title || 'Anagram'}
       </span>
     </button>
   );
@@ -735,6 +764,7 @@ export default function SlideCanvas({
                   />
                   {!compact && selectedAnagramId ? (
                     <AnagramLaunchButton
+                      activityId={selectedAnagramId}
                       present={present}
                       onClick={() => openAnagram(selectedAnagramId)}
                     />
@@ -783,12 +813,7 @@ export default function SlideCanvas({
                   showRightColumn ? 'flex-1 grid-cols-2' : 'grid-cols-1',
                 ].join(' ')}
               >
-                <div
-                  className={[
-                    'flex h-full min-h-0 min-w-0 flex-col gap-3',
-                    selectedAnagramId && !compact ? 'overflow-hidden' : 'overflow-auto',
-                  ].join(' ')}
-                >
+                  <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 overflow-auto">
                   <ContentBody
                     slide={slide}
                     body={body}
@@ -799,6 +824,7 @@ export default function SlideCanvas({
                   />
                   {!compact && selectedAnagramId ? (
                     <AnagramLaunchButton
+                      activityId={selectedAnagramId}
                       present={present}
                       onClick={() => openAnagram(selectedAnagramId)}
                     />
@@ -904,7 +930,11 @@ export default function SlideCanvas({
               </h2>
             ) : null}
             {!compact && selectedAnagramId ? (
-              <AnagramLaunchButton present={present} onClick={() => openAnagram(selectedAnagramId)} />
+              <AnagramLaunchButton
+                activityId={selectedAnagramId}
+                present={present}
+                onClick={() => openAnagram(selectedAnagramId)}
+              />
             ) : null}
             <ul className="flex-1 space-y-2 overflow-auto font-bold">
               {(slide.bullets.length > 0 ? slide.bullets : ['Add bullet points…']).map(
