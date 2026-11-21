@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
 import { useAudioClipPlayer } from '@/lib/audio/useAudioClipPlayer';
-import SyncedCaptions from '../audio/SyncedCaptions';
+import SyncedCaptions, { CaptionSwitch } from '../audio/SyncedCaptions';
 
 interface SegmentAudioPlayerProps {
   audioUrl: string;
@@ -13,7 +13,7 @@ interface SegmentAudioPlayerProps {
   maxReplays?: number | null;
   label?: string;
   compact?: boolean;
-  /** When set, students can open these words with a Captions button. */
+  /** When set, a Captions switch follows these words while the clip plays. */
   caption?: string;
 }
 
@@ -32,12 +32,8 @@ export default function SegmentAudioPlayer({
     endSeconds,
   });
   const [playCount, setPlayCount] = useState(0);
-  const [captionsOn, setCaptionsOn] = useState(false);
+  const [captionsOn, setCaptionsOn] = useState(true);
   const captionText = caption.trim();
-
-  useEffect(() => {
-    setCaptionsOn(false);
-  }, [captionText, startSeconds, endSeconds]);
 
   const unlimited = maxReplays === null || maxReplays < 0;
   const remaining = unlimited ? null : Math.max(0, maxReplays - playCount);
@@ -67,14 +63,7 @@ export default function SegmentAudioPlayer({
           </ComicButton>
         ) : null}
         {captionText ? (
-          <ComicButton
-            type="button"
-            variant={captionsOn ? 'warning' : 'accent'}
-            size="sm"
-            onClick={() => setCaptionsOn((current) => !current)}
-          >
-            {captionsOn ? 'Hide captions' : 'Captions'}
-          </ComicButton>
+          <CaptionSwitch checked={captionsOn} onChange={setCaptionsOn} />
         ) : null}
         {!unlimited ? (
           <ComicText className="text-[var(--comic-dark)] text-sm font-bold">
@@ -82,7 +71,7 @@ export default function SegmentAudioPlayer({
           </ComicText>
         ) : null}
       </div>
-      {captionsOn && captionText ? (
+      {captionsOn && playing && captionText ? (
         <SyncedCaptions
           text={captionText}
           start={startSeconds}

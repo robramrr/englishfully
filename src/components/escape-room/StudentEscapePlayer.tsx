@@ -13,7 +13,7 @@ import type {
   EscapeRoomWithChallenges,
 } from '@/lib/escape-room/types';
 import { ESCAPE_CHALLENGE_TYPE_LABELS } from '@/lib/escape-room/types';
-import SyncedCaptions from '../audio/SyncedCaptions';
+import SyncedCaptions, { CaptionSwitch } from '../audio/SyncedCaptions';
 import {
   checkChallengeAnswer,
   getPrimaryMedia,
@@ -34,7 +34,8 @@ export default function StudentEscapePlayer({
   room,
   mode = 'live',
 }: StudentEscapePlayerProps) {
-  const [captionsOn, setCaptionsOn] = useState(false);
+  const [captionsOn, setCaptionsOn] = useState(true);
+  const [audioPlaying, setAudioPlaying] = useState(false);
   const [audioTime, setAudioTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [step, setStep] = useState<Step>('home');
@@ -55,7 +56,8 @@ export default function StudentEscapePlayer({
   const challenge: EscapeRoomChallenge | null = room.challenges[challengeIndex] || null;
 
   useEffect(() => {
-    setCaptionsOn(false);
+    setCaptionsOn(true);
+    setAudioPlaying(false);
     setAudioTime(0);
     setAudioDuration(0);
   }, [challenge?.id]);
@@ -392,19 +394,15 @@ export default function StudentEscapePlayer({
                   setAudioDuration(Number.isFinite(duration) ? duration : 0);
                 }}
                 onTimeUpdate={(event) => setAudioTime(event.currentTarget.currentTime)}
+                onPlay={() => setAudioPlaying(true)}
+                onPause={() => setAudioPlaying(false)}
+                onEnded={() => setAudioPlaying(false)}
               />
               {Boolean(challenge.content.captions_enabled) &&
               String(challenge.content.transcript ?? '').trim() ? (
                 <>
-                  <ComicButton
-                    type="button"
-                    variant={captionsOn ? 'warning' : 'accent'}
-                    size="sm"
-                    onClick={() => setCaptionsOn((current) => !current)}
-                  >
-                    {captionsOn ? 'Hide captions' : 'Captions'}
-                  </ComicButton>
-                  {captionsOn ? (
+                  <CaptionSwitch checked={captionsOn} onChange={setCaptionsOn} />
+                  {captionsOn && audioPlaying ? (
                     <SyncedCaptions
                       text={String(challenge.content.transcript ?? '').trim()}
                       start={0}

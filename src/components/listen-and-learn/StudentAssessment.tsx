@@ -441,7 +441,7 @@ export default function StudentAssessment({ assignmentId }: StudentAssessmentPro
         <ComicText className="text-[var(--comic-dark)] font-bold">
           Listen to each short audio clip, then choose the best answer.
           {assignment.captions_enabled
-            ? ' Captions stay hidden until you press Captions.'
+            ? ' Switch Captions on, then press Play. The words follow the audio.'
             : ' Transcripts are not shown.'}
         </ComicText>
       </ComicCard>

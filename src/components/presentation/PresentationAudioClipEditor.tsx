@@ -226,7 +226,7 @@ export default function PresentationAudioClipEditor({
           <span>
             <span className="block">Captions</span>
             <span className="block text-sm font-bold text-[var(--comic-dark)]">
-              Adds a Captions button next to Play. While the clip plays, the words follow the audio. They stay hidden until someone presses it.
+              Switch Captions on, then press Play. The words follow the audio and stay hidden until the clip is playing.
             </span>
           </span>
         </label>

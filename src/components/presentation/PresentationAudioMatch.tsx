@@ -9,7 +9,7 @@ import {
   PRESENTATION_CHOICE_LETTERS,
 } from '@/lib/presentation/types';
 import { useAudioClipPlayer } from '@/lib/audio/useAudioClipPlayer';
-import SyncedCaptions from '../audio/SyncedCaptions';
+import SyncedCaptions, { CaptionSwitch } from '../audio/SyncedCaptions';
 
 /** Brand has no green token — use a clear quiz green for correct feedback. */
 const QUIZ_CORRECT = '#15803d';
@@ -79,7 +79,7 @@ export default function PresentationAudioMatch({
   const tracks = getPresentationAudioTracks(slide);
   const [trackIndex, setTrackIndex] = useState(0);
   const [selected, setSelected] = useState<PresentationChoiceLetter | null>(null);
-  const [captionsOn, setCaptionsOn] = useState(false);
+  const [captionsOn, setCaptionsOn] = useState(true);
 
   const safeIndex = Math.min(Math.max(trackIndex, 0), Math.max(tracks.length - 1, 0));
   const track = tracks[safeIndex] || tracks[0];
@@ -104,7 +104,6 @@ export default function PresentationAudioMatch({
 
   useEffect(() => {
     setSelected(null);
-    setCaptionsOn(false);
   }, [slide.id, safeIndex, start, end, slide.audioUrl]);
 
   function handleSeek(event: MouseEvent<HTMLDivElement>) {
@@ -156,14 +155,7 @@ export default function PresentationAudioMatch({
               </ComicButton>
             ) : null}
             {captionText ? (
-              <ComicButton
-                type="button"
-                variant={captionsOn ? 'warning' : 'accent'}
-                size="sm"
-                onClick={() => setCaptionsOn((current) => !current)}
-              >
-                {captionsOn ? 'Hide captions' : 'Captions'}
-              </ComicButton>
+              <CaptionSwitch checked={captionsOn} onChange={setCaptionsOn} />
             ) : null}
             {!slide.audioUrl.trim() ? (
               <ComicText className="text-sm font-bold text-[var(--comic-dark)]/60">
@@ -215,7 +207,7 @@ export default function PresentationAudioMatch({
         {error ? (
           <ComicText className="mt-1 text-sm font-bold text-[var(--comic-danger)]">{error}</ComicText>
         ) : null}
-        {captionsOn && captionText ? (
+        {captionsOn && playing && captionText ? (
           <div className="mt-2">
             <SyncedCaptions
               text={captionText}

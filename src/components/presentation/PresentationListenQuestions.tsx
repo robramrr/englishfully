@@ -10,7 +10,7 @@ import {
   parseTimestamp,
   type TranscriptSegmentDraft,
 } from '@/lib/listen-and-learn/types';
-import SyncedCaptions from '../audio/SyncedCaptions';
+import SyncedCaptions, { CaptionSwitch } from '../audio/SyncedCaptions';
 import { SlideRichText } from './SlideRichText';
 import SlideTextStyleControls from './SlideTextStyleControls';
 import {
@@ -59,7 +59,7 @@ export function PresentationListenQuestions({
       : [createEmptyListenQuestion()];
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
-  const [captionsOn, setCaptionsOn] = useState(false);
+  const [captionsOn, setCaptionsOn] = useState(true);
   const safeIndex = Math.min(Math.max(index, 0), Math.max(questions.length - 1, 0));
   const question = questions[safeIndex] || questions[0];
   const hasClip = Boolean(question.clipEnabled && slide.audioUrl.trim());
@@ -82,7 +82,7 @@ export function PresentationListenQuestions({
   useEffect(() => {
     setIndex(0);
     setRevealed(false);
-    setCaptionsOn(false);
+    setCaptionsOn(true);
   }, [slide.id]);
 
   const questionIds = questions.map((item) => item.id).join('|');
@@ -95,18 +95,15 @@ export function PresentationListenQuestions({
     if (next < 0) return;
     setIndex(next);
     setRevealed(false);
-    setCaptionsOn(false);
   }, [focusQuestionId, questionIds]);
 
   useEffect(() => {
     setRevealed(false);
-    setCaptionsOn(false);
   }, [question.id]);
 
   function goTo(nextIndex: number) {
     stop();
     setRevealed(false);
-    setCaptionsOn(false);
     setIndex(nextIndex);
   }
 
@@ -241,14 +238,7 @@ export function PresentationListenQuestions({
             </ComicButton>
           ) : null}
           {captionText ? (
-            <ComicButton
-              type="button"
-              variant={captionsOn ? 'warning' : 'accent'}
-              size="sm"
-              onClick={() => setCaptionsOn((current) => !current)}
-            >
-              {captionsOn ? 'Hide captions' : 'Captions'}
-            </ComicButton>
+            <CaptionSwitch checked={captionsOn} onChange={setCaptionsOn} />
           ) : null}
           <ComicButton
             type="button"
@@ -264,7 +254,7 @@ export function PresentationListenQuestions({
             </ComicText>
           ) : null}
         </div>
-        {captionsOn && captionText ? (
+        {captionsOn && playing && captionText ? (
           <SyncedCaptions
             text={captionText}
             start={start}
@@ -661,7 +651,7 @@ export function ListenQuestionEditor({
               <span>
                 <span className="block">Captions</span>
                 <span className="block text-sm font-bold text-[var(--comic-dark)]">
-                  Adds a Captions button next to Play. While the clip plays, the words follow the audio. They stay hidden until someone presses it.
+                  Switch Captions on, then press Play. The words follow the audio and stay hidden until the clip is playing.
                 </span>
               </span>
             </label>
