@@ -808,17 +808,6 @@ export default function AnagramStage({
                   {formatClock(remaining)}
                 </p>
               ) : null}
-              {!roundSettled ? (
-                <ComicButton
-                  type="button"
-                  variant={playing ? 'warning' : 'success'}
-                  size="md"
-                  onClick={togglePlay}
-                >
-                  <FontAwesomeIcon icon={playing ? faPause : faPlay} className="h-5 w-5 sm:mr-2" />
-                  <span>{playing ? 'Pause' : playGate === 'paused' ? 'Resume' : 'Start'}</span>
-                </ComicButton>
-              ) : null}
             </div>
 
             {reveal > 0 ? (
@@ -923,13 +912,8 @@ export default function AnagramStage({
               size="md"
               onClick={togglePlay}
             >
-              <FontAwesomeIcon icon={playing ? faPause : faPlay} className="h-5 w-5 sm:mr-2" />
-              <span className="hidden sm:inline">
-                {playing ? 'Pause' : playGate === 'paused' ? 'Resume' : 'Start'}
-              </span>
-              <span className="sr-only sm:hidden">
-                {playing ? 'Pause' : playGate === 'paused' ? 'Resume' : 'Start'}
-              </span>
+              <FontAwesomeIcon icon={playing ? faPause : faPlay} className="mr-2 h-5 w-5" />
+              <span>{playing ? 'Pause' : playGate === 'paused' ? 'Resume' : 'Start'}</span>
             </ComicButton>
           ) : null}
           {canListen ? (
