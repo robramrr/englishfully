@@ -17,6 +17,7 @@ import PresentationMatchTextImage from './PresentationMatchTextImage';
 import { PresentationFillBlank } from './PresentationFillBlank';
 import { PresentationPieTimer } from './PresentationPieTimer';
 import { PresentationQuiz } from './PresentationQuiz';
+import VocabBingoCaller from '../vocab-bingo/VocabBingoCaller';
 import { SlideRichText } from './SlideRichText';
 import PresentationSlideTimer, { type SlideTimerState } from './PresentationSlideTimer';
 import VocabFlashcardStage from '../vocabulary/VocabFlashcardStage';
@@ -510,6 +511,65 @@ function AnagramLaunchButton({
   );
 }
 
+function BingoLaunchButton({
+  activityId,
+  present,
+  onClick,
+}: {
+  activityId: string;
+  present: boolean;
+  onClick: () => void;
+}) {
+  const [title, setTitle] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setTitle('');
+    void fetch(`/api/vocab-bingo/activities/${activityId}`, { cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json();
+      })
+      .then((data) => {
+        if (cancelled || !data?.activity) return;
+        const activity = data.activity as { title?: string; topic?: string };
+        setTitle(activity.title?.trim() || activity.topic?.trim() || 'Vocabulary Bingo');
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [activityId]);
+
+  return (
+    <button
+      type="button"
+      className={[
+        'flex w-full shrink-0 flex-col items-center justify-center gap-1 border-4 border-[var(--comic-black)] bg-[var(--comic-yellow)] px-6 text-center leading-tight text-[var(--comic-secondary)] comic-shadow-md',
+        present ? 'min-h-[9rem] py-5' : 'min-h-[7.5rem] py-4',
+      ].join(' ')}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onClick();
+      }}
+    >
+      <span className={present ? 'font-bungee text-3xl uppercase md:text-4xl' : 'font-bungee text-2xl uppercase md:text-3xl'}>
+        Play Bingo
+      </span>
+      <span
+        className={
+          present
+            ? 'max-w-full font-bold normal-case text-[var(--comic-dark)] text-lg leading-snug md:text-xl'
+            : 'max-w-full font-bold normal-case text-[var(--comic-dark)] text-base leading-snug'
+        }
+      >
+        {title || 'Vocabulary Bingo'}
+      </span>
+    </button>
+  );
+}
+
 function ContentBody({
   slide,
   body,
@@ -520,6 +580,8 @@ function ContentBody({
   onGrammarTextChange,
   selectedAnagramId = '',
   onOpenAnagram,
+  selectedBingoId = '',
+  onOpenBingo,
 }: {
   slide: PresentationSlide;
   body: string;
@@ -530,6 +592,8 @@ function ContentBody({
   onGrammarTextChange?: (grammarText: string) => void;
   selectedAnagramId?: string;
   onOpenAnagram?: (activityId: string) => void;
+  selectedBingoId?: string;
+  onOpenBingo?: (activityId: string) => void;
 }) {
   const grammarOn =
     slide.layout === 'content' && slide.grammarHighlighterEnabled;
@@ -547,6 +611,7 @@ function ContentBody({
   const showGrammarHere = grammarOn && onThisSide(slide.grammarPlacement);
   const showQuizHere = onThisSide(slide.quizPlacement);
   const showAnagramHere = column === 'left' && !compact && Boolean(selectedAnagramId);
+  const showBingoHere = column === 'left' && !compact && Boolean(selectedBingoId);
 
   if (
     !showDefinition &&
@@ -554,7 +619,8 @@ function ContentBody({
     !showBulletsHere &&
     !showGrammarHere &&
     !showQuizHere &&
-    !showAnagramHere
+    !showAnagramHere &&
+    !showBingoHere
   ) {
     return null;
   }
@@ -634,6 +700,14 @@ function ContentBody({
         />
       ) : null}
 
+      {showBingoHere ? (
+        <BingoLaunchButton
+          activityId={selectedBingoId}
+          present={present}
+          onClick={() => onOpenBingo?.(selectedBingoId)}
+        />
+      ) : null}
+
       {showQuizHere ? (
         <PresentationQuiz slide={slide} compact={compact} present={present} />
       ) : null}
@@ -692,20 +766,33 @@ export default function SlideCanvas({
   const [focusedImageIndex, setFocusedImageIndex] = useState<number | null>(null);
   const [openVocabDeckId, setOpenVocabDeckId] = useState<string | null>(null);
   const [openAnagramId, setOpenAnagramId] = useState<string | null>(null);
+  const [openBingoId, setOpenBingoId] = useState<string | null>(null);
   const selectedAnagramId = slide.anagramActivityId.trim();
+  const selectedBingoId = slide.bingoActivityId.trim();
 
   function openAnagram(activityId: string) {
     const next = activityId.trim();
     if (!next) return;
     setFocusedImageIndex(null);
     setOpenVocabDeckId(null);
+    setOpenBingoId(null);
     setOpenAnagramId(next);
+  }
+
+  function openBingo(activityId: string) {
+    const next = activityId.trim();
+    if (!next) return;
+    setFocusedImageIndex(null);
+    setOpenVocabDeckId(null);
+    setOpenAnagramId(null);
+    setOpenBingoId(next);
   }
 
   useEffect(() => {
     setFocusedImageIndex(null);
     setOpenVocabDeckId(null);
     setOpenAnagramId(null);
+    setOpenBingoId(null);
   }, [slide.id]);
 
   useEffect(() => {
@@ -823,6 +910,8 @@ export default function SlideCanvas({
                     onGrammarTextChange={onGrammarTextChange}
                     selectedAnagramId={selectedAnagramId}
                     onOpenAnagram={openAnagram}
+                    selectedBingoId={selectedBingoId}
+                    onOpenBingo={openBingo}
                   />
                   {contentOnRight ? (
                     <ContentBody
@@ -889,6 +978,8 @@ export default function SlideCanvas({
                     onGrammarTextChange={onGrammarTextChange}
                     selectedAnagramId={selectedAnagramId}
                     onOpenAnagram={openAnagram}
+                    selectedBingoId={selectedBingoId}
+                    onOpenBingo={openBingo}
                   />
                 </div>
                 {showRightColumn || contentOnRight ? (
@@ -1013,6 +1104,13 @@ export default function SlideCanvas({
                 activityId={selectedAnagramId}
                 present={present}
                 onClick={() => openAnagram(selectedAnagramId)}
+              />
+            ) : null}
+            {!compact && selectedBingoId ? (
+              <BingoLaunchButton
+                activityId={selectedBingoId}
+                present={present}
+                onClick={() => openBingo(selectedBingoId)}
               />
             ) : null}
             <ul className="flex-1 space-y-2 overflow-auto font-bold">
@@ -1261,6 +1359,13 @@ export default function SlideCanvas({
           activityId={openAnagramId}
           overlay
           onClose={() => setOpenAnagramId(null)}
+        />
+      ) : null}
+      {openBingoId ? (
+        <VocabBingoCaller
+          activityId={openBingoId}
+          overlay
+          onClose={() => setOpenBingoId(null)}
         />
       ) : null}
     </article>

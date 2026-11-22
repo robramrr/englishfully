@@ -16,6 +16,7 @@ import {
   faFolderOpen,
   faFont,
   faGamepad,
+  faTableCells,
   faHeadphones,
   faLock,
   faMicrophone,
@@ -315,6 +316,7 @@ function FeaturedResourcesSection() {
               <li>• {t.teacherResources.gamesPackItem2}</li>
               <li>• {t.teacherResources.gamesPackItem3}</li>
               <li>• {t.teacherResources.gamesPackItem4}</li>
+              <li>• {t.teacherResources.gamesPackItem5}</li>
             </ul>
             <div className="flex flex-col gap-2">
               <ComicButton
@@ -335,6 +337,16 @@ function FeaturedResourcesSection() {
               >
                 <ButtonWithIcon icon={faFont}>
                   {t.teacherResources.openAnagram}
+                </ButtonWithIcon>
+              </ComicButton>
+              <ComicButton
+                href="/teacher-resources/vocab-bingo"
+                variant="primary"
+                size="sm"
+                className="w-full !inline-flex items-center justify-center"
+              >
+                <ButtonWithIcon icon={faTableCells}>
+                  {t.teacherResources.openVocabBingo}
                 </ButtonWithIcon>
               </ComicButton>
             </div>

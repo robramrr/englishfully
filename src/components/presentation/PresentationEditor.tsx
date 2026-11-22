@@ -13,6 +13,7 @@ import SlideSidePlacement from './SlideSidePlacement';
 import PresentationAudioClipEditor from './PresentationAudioClipEditor';
 import VocabDeckLinkSelect from './VocabDeckLinkSelect';
 import AnagramActivityLinkSelect from './AnagramActivityLinkSelect';
+import VocabBingoLinkSelect from './VocabBingoLinkSelect';
 import { FillBlankEditor } from './PresentationFillBlank';
 import { ListenQuestionEditor } from './PresentationListenQuestions';
 import { PieTimerEditor } from './PresentationPieTimer';
@@ -1646,6 +1647,15 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                     value={selected.anagramActivityId}
                     onChange={(anagramActivityId) =>
                       setDeck((prev) => updateSlide(prev, selected.id, { anagramActivityId }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
+                  <VocabBingoLinkSelect
+                    value={selected.bingoActivityId}
+                    onChange={(bingoActivityId) =>
+                      setDeck((prev) => updateSlide(prev, selected.id, { bingoActivityId }))
                     }
                   />
                 </div>

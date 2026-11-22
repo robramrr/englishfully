@@ -626,6 +626,8 @@ export interface PresentationSlide {
   vocabDeckId4: string;
   /** Anagram activity played on top of this slide. */
   anagramActivityId: string;
+  /** Vocabulary Bingo teacher sheet opened on top of this slide. */
+  bingoActivityId: string;
   /** Font size for definition / explanation. */
   bodyFontSize: PresentationFontSize;
   /** Theme color for definition / explanation. */
@@ -1012,6 +1014,7 @@ export function createEmptySlide(
     vocabDeckId3: '',
     vocabDeckId4: '',
     anagramActivityId: '',
+    bingoActivityId: '',
     bodyFontSize: 'md',
     bodyColor: 'navy',
     bulletsFontSize: 'md',
@@ -1113,6 +1116,7 @@ export function normalizeSlide(
     vocabDeckId3: String(slide.vocabDeckId3 ?? '').trim(),
     vocabDeckId4: String(slide.vocabDeckId4 ?? '').trim(),
     anagramActivityId: String(slide.anagramActivityId ?? '').trim(),
+    bingoActivityId: String(slide.bingoActivityId ?? '').trim(),
     bodyFontSize: normalizeFontSize(slide.bodyFontSize),
     bodyColor: normalizeFontColor(slide.bodyColor),
     bulletsFontSize: normalizeFontSize(slide.bulletsFontSize),
