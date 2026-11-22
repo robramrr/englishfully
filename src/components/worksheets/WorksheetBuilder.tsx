@@ -10,6 +10,8 @@ import ComicText from '../ComicText';
 import ComicTitle from '../ComicTitle';
 import WorksheetSectionEditor from './WorksheetSectionEditor';
 import WorksheetTemplate from './WorksheetTemplate';
+import { RoleplaySettingsPanel } from './RoleplayControls';
+import { emptyRoleplaySettings } from '@/lib/worksheets/roleplay';
 import {
   deleteSavedWorksheet,
   listSavedWorksheets,
@@ -21,9 +23,12 @@ import { emptyQuestionSentenceItem } from '@/lib/worksheets/questionSentence';
 import {
   defaultHeaderVisibility,
   emptyWorksheetHeader,
+  exerciseCountMax,
+  exerciseCountMin,
   normalizeFieldOrder,
   VOCAB_LEVELS,
   WORKSHEET_EXERCISES,
+  type RoleplaySettings,
   type WorksheetDocument,
   type WorksheetExerciseType,
   type HeaderLineField,
@@ -91,6 +96,7 @@ export default function WorksheetBuilder() {
   const [header, setHeader] = useState<WorksheetHeader>(() => emptyWorksheetHeader('A2'));
   const [sections, setSections] = useState<WorksheetSection[]>([]);
   const [includeAnswerKey, setIncludeAnswerKey] = useState(false);
+  const [roleplay, setRoleplay] = useState<RoleplaySettings>(() => emptyRoleplaySettings('A2'));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -212,6 +218,17 @@ export default function WorksheetBuilder() {
     setSource(saved.source || '');
     setSections(saved.sections);
     setIncludeAnswerKey(Boolean(saved.includeAnswerKey));
+    const savedRoleplay = saved.sections.find((section) => section.type === 'guided_roleplay');
+    if (savedRoleplay && savedRoleplay.type === 'guided_roleplay') {
+      setRoleplay({
+        level: savedRoleplay.level,
+        objective: savedRoleplay.objective,
+        vocabulary: savedRoleplay.vocabulary,
+        grammar: savedRoleplay.grammar,
+        difficulty: savedRoleplay.difficulty,
+        wordUse: savedRoleplay.wordUse,
+      });
+    }
     setChoices((current) => {
       const next = { ...current };
       for (const exercise of WORKSHEET_EXERCISES) {
@@ -274,7 +291,8 @@ export default function WorksheetBuilder() {
 
   async function handleCreate() {
     setError('');
-    if (source.trim().length < 3) {
+    const roleplayOn = selected.some((exercise) => exercise.type === 'guided_roleplay');
+    if (source.trim().length < 3 && !(roleplayOn && roleplay.vocabulary.trim().length >= 3)) {
       setError('Paste a topic or a transcript first.');
       return;
     }
@@ -288,7 +306,7 @@ export default function WorksheetBuilder() {
       const response = await fetch('/api/worksheets/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source, level, exercises: selected }),
+        body: JSON.stringify({ source, level, exercises: selected, roleplay }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -312,6 +330,7 @@ export default function WorksheetBuilder() {
   }
 
   function updateLevel(next: WorksheetLevel) {
+    setRoleplay((current) => (current.level === level ? { ...current, level: next === 'C1' ? 'C1' : next } : current));
     setLevel(next);
     setHeader((current) => {
       const previous = `Englishfully worksheet · ${level}`;
@@ -730,17 +749,25 @@ export default function WorksheetBuilder() {
                     ) : null}
                   </div>
                   <label className="shrink-0 text-center">
-                    <span className="block text-xs font-bold">Items</span>
+                    <span className="block text-xs font-bold">
+                      {exercise.type === 'guided_roleplay' ? 'Exchanges' : 'Items'}
+                    </span>
                     <input
                       type="number"
-                      min={1}
-                      max={8}
+                      min={exerciseCountMin(exercise.type)}
+                      max={exerciseCountMax(exercise.type)}
                       disabled={exercise.type === 'question_sentence' ? false : !choice.on}
                       value={choice.count}
-                      aria-label={`${exercise.label} item count`}
+                      aria-label={`${exercise.label} ${exercise.type === 'guided_roleplay' ? 'exchanges' : 'item count'}`}
                       onChange={(event) =>
                         updateChoice(exercise.type, {
-                          count: Math.max(1, Math.min(8, Number(event.target.value) || 1)),
+                          count: Math.max(
+                            exerciseCountMin(exercise.type),
+                            Math.min(
+                              exerciseCountMax(exercise.type),
+                              Number(event.target.value) || exerciseCountMin(exercise.type)
+                            )
+                          ),
                         })
                       }
                       className="comic-input mt-1 w-16 text-center disabled:opacity-40"
@@ -750,6 +777,19 @@ export default function WorksheetBuilder() {
               );
             })}
           </div>
+          {choices.guided_roleplay.on ? (
+            <RoleplaySettingsPanel
+              settings={roleplay}
+              onChange={(next) => {
+                setRoleplay(next);
+                setSections((current) =>
+                  current.map((section) =>
+                    section.type === 'guided_roleplay' ? { ...section, ...next } : section
+                  )
+                );
+              }}
+            />
+          ) : null}
           {error ? (
             <ComicText className="font-bold text-[var(--comic-danger)]">{error}</ComicText>
           ) : null}

@@ -1,4 +1,5 @@
 import { mergeBlankAnswer, underlineQuestionWords, wordTokens } from './questionSentence';
+import { normalizeGuidedRoleplay } from './roleplay';
 import {
   exerciseLabel,
   isWorksheetExerciseType,
@@ -92,6 +93,10 @@ const TYPE_ALIASES: Record<string, WorksheetExerciseType> = {
   question_and_sentence: 'question_sentence',
   answer_sentence: 'question_sentence',
   comprehension_sentence: 'question_sentence',
+  guided_roleplay: 'guided_roleplay',
+  roleplay: 'guided_roleplay',
+  ai_roleplay: 'guided_roleplay',
+  guided_conversation: 'guided_roleplay',
 };
 
 export function canonicalExerciseType(value: unknown): WorksheetExerciseType | null {
@@ -666,6 +671,12 @@ function parseShortAnswer(raw: Record<string, unknown>, count: number): Workshee
   return { type: 'short_answer', ...sectionCopy(raw, 'short_answer'), items };
 }
 
+function parseGuidedRoleplay(raw: Record<string, unknown>, count: number): WorksheetSection | null {
+  const section = normalizeGuidedRoleplay(raw, { exchanges: count }, { shuffleBanks: false });
+  if (section.lines.length === 0) return null;
+  return section;
+}
+
 const PARSERS: Record<
   WorksheetExerciseType,
   (raw: Record<string, unknown>, count: number) => WorksheetSection | null
@@ -679,6 +690,7 @@ const PARSERS: Record<
   short_answer: parseShortAnswer,
   question_sentence: parseQuestionSentence,
   crossword: parseCrossword,
+  guided_roleplay: parseGuidedRoleplay,
 };
 
 export function normalizeWorksheet(

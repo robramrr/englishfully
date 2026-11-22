@@ -17,6 +17,7 @@ import {
   wordIndexesTouching,
   wordTokens,
 } from '@/lib/worksheets/questionSentence';
+import { RoleplaySectionEditor } from './RoleplayControls';
 import {
   exerciseLabel,
   type QuestionSentenceItem,
@@ -577,6 +578,25 @@ export default function WorksheetSectionEditor({
       ) : null}
       <div className="space-y-4">
         {sections.map((section, index) => {
+          if (section.type === 'guided_roleplay') {
+            return (
+              <SectionFrame
+                key={`roleplay-${index}`}
+                index={index}
+                section={section}
+                onChange={(next) => update(index, next)}
+                onMove={(direction) => moveSection(index, direction)}
+                onRemove={() => dropSection(index)}
+                canMoveUp={index > 0}
+                canMoveDown={index < sections.length - 1}
+              >
+                <RoleplaySectionEditor
+                  section={section}
+                  onChange={(next) => update(index, next)}
+                />
+              </SectionFrame>
+            );
+          }
           if (section.type === 'fill_blank') {
             return (
               <SectionFrame key={`fill-${index}`} index={index} section={section} onChange={(next) => update(index, next)}

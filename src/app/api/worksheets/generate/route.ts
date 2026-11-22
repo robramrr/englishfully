@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isTeacherAuthenticated } from '@/lib/speak-and-submit/auth';
 import { jsonError } from '@/lib/speak-and-submit/api';
 import { generateWorksheet } from '@/lib/worksheets/openai';
+import { emptyRoleplaySettings, roleplayDifficulty, roleplayLevel, roleplayWordUse } from '@/lib/worksheets/roleplay';
 import {
+  exerciseCountMax,
+  exerciseCountMin,
   isWorksheetExerciseType,
   VOCAB_LEVELS,
   WORKSHEET_EXERCISES,
@@ -22,7 +25,11 @@ function parseExercises(value: unknown): WorksheetExerciseRequest[] {
     const record = entry as { type?: unknown; count?: unknown };
     const type = String(record.type ?? '');
     if (!isWorksheetExerciseType(type) || seen.has(type)) continue;
-    const count = Math.max(1, Math.min(8, Math.round(Number(record.count) || 4)));
+    const fallback = type === 'guided_roleplay' ? 8 : 4;
+    const count = Math.max(
+      exerciseCountMin(type),
+      Math.min(exerciseCountMax(type), Math.round(Number(record.count) || fallback))
+    );
     seen.add(type);
     exercises.push({ type, count });
     if (exercises.length >= WORKSHEET_EXERCISES.length) break;
@@ -41,10 +48,20 @@ export async function POST(request: NextRequest) {
     const safeLevel = (VOCAB_LEVELS as readonly string[]).includes(level)
       ? (level as WorksheetLevel)
       : 'A2';
+    const roleplay = body.roleplay && typeof body.roleplay === 'object' ? body.roleplay : {};
     const worksheet = await generateWorksheet({
       source: String(body.source ?? ''),
       level: safeLevel,
       exercises: parseExercises(body.exercises),
+      roleplay: {
+        ...emptyRoleplaySettings(safeLevel === 'C1' ? 'C1' : safeLevel),
+        level: roleplayLevel(roleplay.level, safeLevel === 'C1' ? 'C1' : safeLevel),
+        objective: String(roleplay.objective ?? '').slice(0, 280),
+        vocabulary: String(roleplay.vocabulary ?? '').slice(0, 800),
+        grammar: String(roleplay.grammar ?? '').slice(0, 200),
+        difficulty: roleplayDifficulty(roleplay.difficulty),
+        wordUse: roleplayWordUse(roleplay.wordUse),
+      },
     });
     return NextResponse.json(worksheet);
   } catch (error) {

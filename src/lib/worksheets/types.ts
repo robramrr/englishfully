@@ -67,6 +67,13 @@ export const WORKSHEET_EXERCISES = [
     defaultOn: false,
     defaultCount: 6,
   },
+  {
+    type: 'guided_roleplay',
+    label: 'AI Guided Roleplay',
+    hint: 'A partner dialogue with blanks and word banks',
+    defaultOn: false,
+    defaultCount: 8,
+  },
 ] as const;
 
 export type WorksheetExerciseType = (typeof WORKSHEET_EXERCISES)[number]['type'];
@@ -226,6 +233,33 @@ export interface CrosswordEntry {
   answer: string;
 }
 
+export const ROLEPLAY_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
+export type RoleplayLevel = (typeof ROLEPLAY_LEVELS)[number];
+export type RoleplayDifficulty = 'easy' | 'standard' | 'challenging';
+export type RoleplayWordUse = 'once' | 'repeat';
+
+export interface RoleplayBank {
+  label: string;
+  words: string[];
+}
+
+/** One spoken line. `______` marks a blank. `answers[i]` lists acceptable words for that blank. */
+export interface RoleplayLine {
+  speaker: 1 | 2;
+  text: string;
+  answers: string[][];
+  note: string;
+}
+
+export interface RoleplaySettings {
+  level: RoleplayLevel;
+  objective: string;
+  vocabulary: string;
+  grammar: string;
+  difficulty: RoleplayDifficulty;
+  wordUse: RoleplayWordUse;
+}
+
 interface SectionBase {
   title: string;
   instructions: string;
@@ -272,6 +306,18 @@ export type WorksheetSection =
   | (SectionBase & {
       type: 'crossword';
       entries: CrosswordEntry[];
+    })
+  | (SectionBase & {
+      type: 'guided_roleplay';
+      topic: string;
+      objective: string;
+      vocabulary: string;
+      grammar: string;
+      level: RoleplayLevel;
+      difficulty: RoleplayDifficulty;
+      wordUse: RoleplayWordUse;
+      banks: RoleplayBank[];
+      lines: RoleplayLine[];
     });
 
 /** One printable worksheet. Pass this to WorksheetTemplate to reuse the paper. */
@@ -302,6 +348,14 @@ export function emptyWorksheetHeader(level: WorksheetLevel = 'A2'): WorksheetHea
     show: defaultHeaderVisibility(),
     fieldOrder: defaultFieldOrder(),
   };
+}
+
+export function exerciseCountMax(type: WorksheetExerciseType): number {
+  return type === 'guided_roleplay' ? 10 : 8;
+}
+
+export function exerciseCountMin(type: WorksheetExerciseType): number {
+  return type === 'guided_roleplay' ? 4 : 1;
 }
 
 export function isWorksheetExerciseType(value: string): value is WorksheetExerciseType {

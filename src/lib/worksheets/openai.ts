@@ -1,8 +1,10 @@
 import OpenAI from 'openai';
 import { VOCAB_LEVELS, type VocabLevel } from '@/lib/vocabulary/types';
+import { generateGuidedRoleplay } from './roleplayOpenai';
 import { normalizeWorksheet } from './normalize';
 import {
   exerciseLabel,
+  type RoleplaySettings,
   type WorksheetExerciseRequest,
   type WorksheetSection,
 } from './types';
@@ -28,6 +30,59 @@ function extractJsonObject(text: string): unknown {
 }
 
 export async function generateWorksheet(params: {
+  source: string;
+  level: VocabLevel;
+  exercises: WorksheetExerciseRequest[];
+  roleplay?: RoleplaySettings;
+}): Promise<{ title: string; instructions: string; sections: WorksheetSection[] }> {
+  const level = VOCAB_LEVELS.includes(params.level) ? params.level : 'A2';
+  const source = params.source.trim().slice(0, 8000);
+  const roleplayRequest = params.exercises.find((exercise) => exercise.type === 'guided_roleplay');
+  const rest = params.exercises.filter((exercise) => exercise.type !== 'guided_roleplay');
+  if (source.length < 3 && !params.roleplay?.vocabulary.trim()) {
+    throw new Error('Paste a topic or a transcript first.');
+  }
+  if (params.exercises.length === 0) {
+    throw new Error('Choose at least one exercise.');
+  }
+
+  const [standard, roleplay] = await Promise.all([
+    rest.length
+      ? generateStandardSections({ source, level, exercises: rest })
+      : Promise.resolve(null),
+    roleplayRequest
+      ? generateGuidedRoleplay({
+          topic: source,
+          exchanges: roleplayRequest.count,
+          settings: {
+            level: params.roleplay?.level || (level === 'C1' ? 'C1' : level),
+            objective: params.roleplay?.objective || '',
+            vocabulary: params.roleplay?.vocabulary || '',
+            grammar: params.roleplay?.grammar || '',
+            difficulty: params.roleplay?.difficulty || 'standard',
+            wordUse: params.roleplay?.wordUse || 'once',
+          },
+        })
+      : Promise.resolve(null),
+  ]);
+
+  const byType = new Map<WorksheetSection['type'], WorksheetSection>();
+  for (const section of standard?.sections || []) byType.set(section.type, section);
+  if (roleplay) byType.set('guided_roleplay', roleplay);
+  const sections = params.exercises
+    .map((exercise) => byType.get(exercise.type))
+    .filter((section): section is WorksheetSection => Boolean(section));
+  if (sections.length === 0) {
+    throw new Error('The worksheet came back empty. Try again with a clearer topic or transcript.');
+  }
+  return {
+    title: standard?.title || roleplay?.title || '',
+    instructions: '',
+    sections,
+  };
+}
+
+async function generateStandardSections(params: {
   source: string;
   level: VocabLevel;
   exercises: WorksheetExerciseRequest[];

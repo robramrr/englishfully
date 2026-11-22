@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { questionPieces, sentencePieces } from '@/lib/worksheets/questionSentence';
+import { blankParts, roleplayAnswerLine } from '@/lib/worksheets/roleplay';
 import {
   exerciseLabel,
   formatWorksheetDate,
@@ -298,6 +299,40 @@ function SectionBody({ section }: { section: WorksheetSection }) {
     );
   }
 
+  if (section.type === 'guided_roleplay') {
+    return (
+      <>
+        {section.objective ? (
+          <p className="worksheet-directions">
+            <strong>Learning objective: </strong>
+            {section.objective}
+          </p>
+        ) : null}
+        {section.banks.map((bank, bankIndex) => (
+          <p key={`${bank.label}-${bankIndex}`} className="worksheet-bank-line">
+            <span>{bank.label}</span>
+            {bank.words.join(' | ')}
+          </p>
+        ))}
+        <div>
+          {section.lines.map((line, index) => (
+            <div key={`${line.speaker}-${index}`} className="worksheet-roleplay-line">
+              <strong>Speaker {line.speaker}</strong>
+              <p>
+                {blankParts(line.text).map((part, partIndex, parts) => (
+                  <span key={`${partIndex}-${part.slice(0, 12)}`}>
+                    {part}
+                    {partIndex < parts.length - 1 ? <span className="worksheet-roleplay-blank" /> : null}
+                  </span>
+                ))}
+              </p>
+            </div>
+          ))}
+        </div>
+      </>
+    );
+  }
+
   if (section.type === 'crossword') {
     return <CrosswordBlock entries={section.entries} />;
   }
@@ -375,6 +410,9 @@ function answerLines(section: WorksheetSection): string[] {
   }
   if (section.type === 'question_sentence') {
     return section.items.map((item) => item.sentence.trim());
+  }
+  if (section.type === 'guided_roleplay') {
+    return section.lines.map((line) => roleplayAnswerLine(line));
   }
   if (section.type === 'crossword') {
     return [...section.entries]
@@ -521,7 +559,9 @@ function AnswerKey({ sections }: { sections: WorksheetSection[] }) {
           <ol className="worksheet-list worksheet-key-list">
             {answerLines(section).map((line, index) => (
               <li key={`${line}-${index}`}>
-                {section.type === 'matching' || section.type === 'crossword'
+                {section.type === 'matching' ||
+                section.type === 'crossword' ||
+                section.type === 'guided_roleplay'
                   ? line
                   : `${index + 1}. ${line}`}
               </li>
@@ -735,6 +775,21 @@ const SHEET_CSS = `
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--brand-red);
+}
+.worksheet-roleplay-line {
+  display: grid;
+  grid-template-columns: 6.4rem 1fr;
+  gap: 0.45rem;
+  align-items: baseline;
+  margin: 0.7rem 0;
+  line-height: 1.8;
+}
+.worksheet-roleplay-blank {
+  display: inline-block;
+  min-width: 7.5rem;
+  border-bottom: 2px solid var(--brand-navy);
+  transform: translateY(0.15rem);
+  margin: 0 0.2rem;
 }
 .worksheet-match {
   display: flex;
