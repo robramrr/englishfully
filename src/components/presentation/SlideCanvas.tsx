@@ -600,20 +600,30 @@ function ContentBody({
       ) : null}
 
       {showGrammarHere ? (
-        <GrammarLiveTextBox
-          key={slide.id}
-          value={slide.grammarText}
-          grammarTarget={slide.grammarTarget}
-          editable={liveEditable && Boolean(onGrammarTextChange)}
-          onChange={onGrammarTextChange}
-          className="font-bold leading-relaxed"
-          style={{ fontSize: `${bodyPx}px`, lineHeight: 1.35 }}
-          placeholder={
-            slide.grammarCustomPlaceholderEnabled && slide.grammarPlaceholder.trim()
-              ? slide.grammarPlaceholder
-              : 'Example...'
-          }
-        />
+        <div className="flex min-w-0 flex-col gap-2">
+          {slide.grammarTitleEnabled && slide.grammarTitle.trim() ? (
+            <p
+              className="font-bungee leading-tight text-[var(--comic-secondary)]"
+              style={{ fontSize: `${Math.max(bodyPx, 18)}px` }}
+            >
+              {slide.grammarTitle.trim()}
+            </p>
+          ) : null}
+          <GrammarLiveTextBox
+            key={slide.id}
+            value={slide.grammarText}
+            grammarTarget={slide.grammarTarget}
+            editable={liveEditable && Boolean(onGrammarTextChange)}
+            onChange={onGrammarTextChange}
+            className="font-bold leading-relaxed"
+            style={{ fontSize: `${bodyPx}px`, lineHeight: 1.35 }}
+            placeholder={
+              slide.grammarCustomPlaceholderEnabled && slide.grammarPlaceholder.trim()
+                ? slide.grammarPlaceholder
+                : 'Example...'
+            }
+          />
+        </div>
       ) : null}
 
       {showAnagramHere ? (

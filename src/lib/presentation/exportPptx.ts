@@ -643,23 +643,42 @@ export async function buildPresentationPptxBuffer(
         else y += Math.min(multiImages || showTable ? 1.2 : 2.8, bullets.length * 0.45 + 0.4);
       }
 
-      if (slide.grammarHighlighterEnabled && slide.grammarText.trim()) {
+      const grammarTitle =
+        slide.grammarTitleEnabled && slide.grammarTitle.trim()
+          ? slide.grammarTitle.trim()
+          : '';
+      if (slide.grammarHighlighterEnabled && (slide.grammarText.trim() || grammarTitle)) {
         const grammarOnRight = slide.layout === 'content' && slide.grammarPlacement === 'right';
         const grammarY = grammarOnRight
           ? rightY
           : Math.min(y, multiImages || showTable ? 3.2 : 5.2);
         const grammarW = grammarOnRight ? 5.6 : textWidth;
+        const grammarX = grammarOnRight ? 7.1 : 0.6;
+        let grammarCursor = grammarY;
+        if (grammarTitle) {
+          page.addText(grammarTitle, {
+            x: grammarX,
+            y: grammarCursor,
+            w: grammarW,
+            h: 0.36,
+            fontSize: 16,
+            bold: true,
+            color: NAVY,
+            fontFace: 'Arial',
+          });
+          grammarCursor += 0.4;
+        }
         page.addShape(pptx.ShapeType.roundRect, {
-          x: grammarOnRight ? 7.1 : 0.6,
-          y: grammarY,
+          x: grammarX,
+          y: grammarCursor,
           w: grammarW,
           h: 1.0,
           fill: { color: GRAY },
           line: { color: NAVY, width: 1.5 },
         });
         page.addText(slide.grammarText, {
-          x: (grammarOnRight ? 7.1 : 0.6) + 0.15,
-          y: grammarY + 0.12,
+          x: grammarX + 0.15,
+          y: grammarCursor + 0.12,
           w: grammarW - 0.3,
           h: 0.75,
           fontSize: 16,
@@ -668,8 +687,9 @@ export async function buildPresentationPptxBuffer(
           fontFace: 'Arial',
           valign: 'top',
         });
-        if (grammarOnRight) rightY = grammarY + 1.15;
-        else y = grammarY + 1.15;
+        const grammarAdvance = grammarCursor + 1.15 - grammarY;
+        if (grammarOnRight) rightY = grammarY + grammarAdvance;
+        else y = grammarY + grammarAdvance;
       }
 
       if (multiImages) {

@@ -315,10 +315,13 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                      slide.layout !== 'describe_image' &&
                      slide.layout !== 'match_text_image' &&
                      slide.grammarHighlighterEnabled &&
-                     slide.grammarText.trim()
-                       ? `<div class="grammar"><strong>Practice:</strong> ${escapeHtml(
-                           slide.grammarText
-                         )}</div>`
+                     (slide.grammarText.trim() ||
+                       (slide.grammarTitleEnabled && slide.grammarTitle.trim()))
+                       ? `<div class="grammar">${
+                           slide.grammarTitleEnabled && slide.grammarTitle.trim()
+                             ? `<strong>${escapeHtml(slide.grammarTitle.trim())}</strong><br/>`
+                             : ''
+                         }${escapeHtml(slide.grammarText)}</div>`
                        : ''
                    }
                    ${

@@ -648,6 +648,10 @@ export interface PresentationSlide {
   tablePlacement: 'left' | 'right';
   /** Text + image only: show a separate practice box with yellow grammar highlights. */
   grammarHighlighterEnabled: boolean;
+  /** When true, grammarTitle is shown above the practice box. */
+  grammarTitleEnabled: boolean;
+  /** Optional heading above the practice box, e.g. "Example sentences". */
+  grammarTitle: string;
   /** e.g. "Possessive Adjectives" */
   grammarTarget: string;
   /** Practice text for the grammar highlighter box (not the definition). */
@@ -1020,6 +1024,8 @@ export function createEmptySlide(
     tableColor: 'navy',
     tablePlacement: 'left',
     grammarHighlighterEnabled: false,
+    grammarTitleEnabled: false,
+    grammarTitle: '',
     grammarTarget: '',
     grammarText: '',
     grammarCustomPlaceholderEnabled: false,
@@ -1121,6 +1127,8 @@ export function normalizeSlide(
     tableColor: normalizeFontColor(slide.tableColor),
     tablePlacement: slide.tablePlacement === 'right' ? 'right' : 'left',
     grammarHighlighterEnabled: Boolean(slide.grammarHighlighterEnabled),
+    grammarTitleEnabled: Boolean(slide.grammarTitleEnabled),
+    grammarTitle: String(slide.grammarTitle ?? ''),
     grammarTarget: String(slide.grammarTarget ?? ''),
     grammarText: String(slide.grammarText ?? ''),
     grammarCustomPlaceholderEnabled: Boolean(slide.grammarCustomPlaceholderEnabled),

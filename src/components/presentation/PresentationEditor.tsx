@@ -1750,6 +1750,49 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                             )
                           }
                         />
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <ComicText className="text-sm font-bold">Title</ComicText>
+                            <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
+                              Optional heading above the practice box, such as Example sentences.
+                            </ComicText>
+                          </div>
+                          <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
+                            <span className="text-sm">
+                              {selected.grammarTitleEnabled ? 'On' : 'Off'}
+                            </span>
+                            <input
+                              type="checkbox"
+                              className="h-5 w-9 accent-[var(--comic-primary)]"
+                              checked={Boolean(selected.grammarTitleEnabled)}
+                              onChange={(event) =>
+                                setDeck((prev) =>
+                                  updateSlide(prev, selected.id, {
+                                    grammarTitleEnabled: event.target.checked,
+                                  })
+                                )
+                              }
+                            />
+                          </label>
+                        </div>
+                        {selected.grammarTitleEnabled ? (
+                          <label className="block space-y-1">
+                            <ComicText className="text-sm font-bold">Title text</ComicText>
+                            <input
+                              className="comic-input w-full"
+                              value={selected.grammarTitle}
+                              onChange={(event) =>
+                                setDeck((prev) =>
+                                  updateSlide(prev, selected.id, {
+                                    grammarTitle: event.target.value,
+                                  })
+                                )
+                              }
+                              onKeyDown={(event) => event.stopPropagation()}
+                              placeholder="Example sentences"
+                            />
+                          </label>
+                        ) : null}
                         <label className="block space-y-1">
                           <ComicText className="text-sm font-bold">Target grammar</ComicText>
                           <input
