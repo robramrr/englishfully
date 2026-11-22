@@ -536,19 +536,22 @@ export async function buildPresentationPptxBuffer(
       }
 
       const bodyOnRight = slide.layout === 'content' && slide.bodyPlacement === 'right';
+      let rightY = showTitle ? 1.35 : 0.45;
       if (showBody && slide.body.trim()) {
+        const boxH = bodyOnRight ? 1.6 : multiImages || showTable ? 1.4 : 2.2;
         page.addText(pptxText(slide.body, pptxFontColor(slide.bodyColor)), {
           x: bodyOnRight ? 7.1 : 0.6,
-          y: bodyOnRight ? (showTitle ? 1.35 : 0.45) : y,
+          y: bodyOnRight ? rightY : y,
           w: bodyOnRight ? 5.6 : textWidth,
-          h: bodyOnRight ? 4.6 : multiImages || showTable ? 1.4 : 2.2,
+          h: boxH,
           fontSize: pptxFontSize(slide.bodyFontSize, 18),
           bold: true,
           color: pptxFontColor(slide.bodyColor),
           fontFace: 'Arial',
           valign: 'top',
         });
-        if (!bodyOnRight) y += multiImages || showTable ? 1.5 : 2.3;
+        if (bodyOnRight) rightY += boxH + 0.1;
+        else y += multiImages || showTable ? 1.5 : 2.3;
       }
 
       if (showTable) {
@@ -579,12 +582,15 @@ export async function buildPresentationPptxBuffer(
             }))
           ),
         ];
-        const tableWidth = Math.min(textWidth, 2.2 * headers.length);
+        const tableOnRight = slide.layout === 'content' && slide.tablePlacement === 'right';
+        const tableWidth = Math.min(tableOnRight ? 5.6 : textWidth, 2.2 * headers.length);
+        const tableY = tableOnRight ? rightY : Math.min(y, 4.0);
+        const placedWidth = tableWidth;
         page.addTable(tableRows, {
-          x: 0.6,
-          y: Math.min(y, 4.0),
-          w: tableWidth,
-          colW: headers.map(() => tableWidth / headers.length),
+          x: tableOnRight ? 7.1 : 0.6,
+          y: tableY,
+          w: placedWidth,
+          colW: headers.map(() => placedWidth / headers.length),
           border: [
             { pt: 1.5, color: NAVY },
             { pt: 1.5, color: NAVY },
@@ -597,11 +603,15 @@ export async function buildPresentationPptxBuffer(
           color: pptxFontColor(slide.tableColor),
           valign: 'middle',
         });
-        y = Math.min(y, 4.0) + 0.45 * (1 + rows.length) + 0.3;
+        const tableAdvance = 0.45 * (1 + rows.length) + 0.3;
+        if (tableOnRight) rightY = tableY + tableAdvance;
+        else y = Math.min(y, 4.0) + tableAdvance;
       }
 
       const bullets = slide.bullets;
+      const bulletsOnRight = slide.layout === 'content' && slide.bulletsPlacement === 'right';
       if (bullets.some((item) => item.trim())) {
+        const bulletH = Math.min(multiImages || showTable ? 1.2 : 2.8, bullets.length * 0.45 + 0.3);
         page.addText(
           bullets.flatMap((item): PptxGenJS.TextProps[] => {
             if (!item.trim()) return [{ text: ' ', options: { bullet: false } }];
@@ -618,10 +628,10 @@ export async function buildPresentationPptxBuffer(
             }));
           }),
           {
-            x: 0.6,
-            y,
-            w: textWidth,
-            h: Math.min(multiImages || showTable ? 1.2 : 2.8, bullets.length * 0.45 + 0.3),
+            x: bulletsOnRight ? 7.1 : 0.6,
+            y: bulletsOnRight ? rightY : y,
+            w: bulletsOnRight ? 5.6 : textWidth,
+            h: bulletH,
             fontSize: pptxFontSize(slide.bulletsFontSize, 18),
             bold: true,
             color: pptxFontColor(slide.bulletsColor),
@@ -629,22 +639,28 @@ export async function buildPresentationPptxBuffer(
             valign: 'top',
           }
         );
-        y += Math.min(multiImages || showTable ? 1.2 : 2.8, bullets.length * 0.45 + 0.4);
+        if (bulletsOnRight) rightY += bulletH + 0.1;
+        else y += Math.min(multiImages || showTable ? 1.2 : 2.8, bullets.length * 0.45 + 0.4);
       }
 
       if (slide.grammarHighlighterEnabled && slide.grammarText.trim()) {
+        const grammarOnRight = slide.layout === 'content' && slide.grammarPlacement === 'right';
+        const grammarY = grammarOnRight
+          ? rightY
+          : Math.min(y, multiImages || showTable ? 3.2 : 5.2);
+        const grammarW = grammarOnRight ? 5.6 : textWidth;
         page.addShape(pptx.ShapeType.roundRect, {
-          x: 0.6,
-          y: Math.min(y, multiImages || showTable ? 3.2 : 5.2),
-          w: textWidth,
+          x: grammarOnRight ? 7.1 : 0.6,
+          y: grammarY,
+          w: grammarW,
           h: 1.0,
           fill: { color: GRAY },
           line: { color: NAVY, width: 1.5 },
         });
         page.addText(slide.grammarText, {
-          x: 0.75,
-          y: Math.min(y, multiImages || showTable ? 3.2 : 5.2) + 0.12,
-          w: textWidth - 0.3,
+          x: (grammarOnRight ? 7.1 : 0.6) + 0.15,
+          y: grammarY + 0.12,
+          w: grammarW - 0.3,
           h: 0.75,
           fontSize: 16,
           bold: true,
@@ -652,7 +668,8 @@ export async function buildPresentationPptxBuffer(
           fontFace: 'Arial',
           valign: 'top',
         });
-        y = Math.min(y, multiImages || showTable ? 3.2 : 5.2) + 1.15;
+        if (grammarOnRight) rightY = grammarY + 1.15;
+        else y = grammarY + 1.15;
       }
 
       if (multiImages) {
@@ -793,9 +810,9 @@ export async function buildPresentationPptxBuffer(
             pptxFontColor(slide.quizColor)
           ),
           {
-            x: 0.6,
+            x: slide.layout === 'content' && slide.quizPlacement === 'right' ? 7.1 : 0.6,
             y: 5.85,
-            w: 12.1,
+            w: slide.layout === 'content' && slide.quizPlacement === 'right' ? 5.6 : 12.1,
             h: 1.1,
             fontSize: pptxFontSize(slide.quizFontSize, 16),
             bold: true,

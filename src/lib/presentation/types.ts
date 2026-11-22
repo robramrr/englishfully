@@ -634,7 +634,9 @@ export interface PresentationSlide {
   bulletsFontSize: PresentationFontSize;
   /** Theme color for bullets. */
   bulletsColor: PresentationFontColor;
-  /** Text + image: optional table in the right column (heading row on top). */
+  /** Text + image: which column the bullets sit in. */
+  bulletsPlacement: 'left' | 'right';
+  /** Text + image: optional table under the definition when both are on the left. */
   tableEnabled: boolean;
   /** Heading / top row cells. */
   tableHeaders: string[];
@@ -642,6 +644,8 @@ export interface PresentationSlide {
   tableRows: string[][];
   tableFontSize: PresentationFontSize;
   tableColor: PresentationFontColor;
+  /** Text + image: which column the table sits in. */
+  tablePlacement: 'left' | 'right';
   /** Text + image only: show a separate practice box with yellow grammar highlights. */
   grammarHighlighterEnabled: boolean;
   /** e.g. "Possessive Adjectives" */
@@ -652,6 +656,8 @@ export interface PresentationSlide {
   grammarCustomPlaceholderEnabled: boolean;
   /** Multi-line custom placeholder (e.g. sentence frames). */
   grammarPlaceholder: string;
+  /** Text + image: which column the grammar practice box sits in. */
+  grammarPlacement: 'left' | 'right';
   /** Audio + image: full audio URL (same pattern as Listen & Learn). */
   audioUrl: string;
   /**
@@ -694,6 +700,8 @@ export interface PresentationSlide {
   quizFontSize: PresentationFontSize;
   /** Theme color for the multiple-choice prompt and choices. */
   quizColor: PresentationFontColor;
+  /** Text + image: which column the multiple choice sits in. */
+  quizPlacement: 'left' | 'right';
   /**
    * When true, the question shows first. Clicking it reveals A, B, C…
    * When false, choices are visible immediately.
@@ -1004,16 +1012,19 @@ export function createEmptySlide(
     bodyColor: 'navy',
     bulletsFontSize: 'md',
     bulletsColor: 'navy',
+    bulletsPlacement: 'left',
     tableEnabled: false,
     tableHeaders: createEmptyTableHeaders(),
     tableRows: createEmptyTableRows(),
     tableFontSize: 'md',
     tableColor: 'navy',
+    tablePlacement: 'left',
     grammarHighlighterEnabled: false,
     grammarTarget: '',
     grammarText: '',
     grammarCustomPlaceholderEnabled: false,
     grammarPlaceholder: '',
+    grammarPlacement: 'left',
     audioUrl: '',
     audioTracks: [createEmptyAudioTrack()],
     audioStartSeconds: 0,
@@ -1034,6 +1045,7 @@ export function createEmptySlide(
     quizCorrectIndex: 0,
     quizFontSize: 'sm',
     quizColor: 'navy',
+    quizPlacement: 'left',
     quizRevealOnClick: false,
     listenQuestions: [createEmptyListenQuestion()],
     pieSlices: defaultPieSlices(),
@@ -1066,6 +1078,7 @@ export function normalizeSlide(
     body: String(slide.body ?? ''),
     showBody: slide.showBody !== false,
     bodyPlacement: slide.bodyPlacement === 'right' ? 'right' : 'left',
+    bulletsPlacement: slide.bulletsPlacement === 'right' ? 'right' : 'left',
     bullets: Array.isArray(slide.bullets)
       ? normalizeBulletsKeepGaps(slide.bullets)
       : [],
@@ -1106,11 +1119,13 @@ export function normalizeSlide(
     ),
     tableFontSize: normalizeFontSize(slide.tableFontSize),
     tableColor: normalizeFontColor(slide.tableColor),
+    tablePlacement: slide.tablePlacement === 'right' ? 'right' : 'left',
     grammarHighlighterEnabled: Boolean(slide.grammarHighlighterEnabled),
     grammarTarget: String(slide.grammarTarget ?? ''),
     grammarText: String(slide.grammarText ?? ''),
     grammarCustomPlaceholderEnabled: Boolean(slide.grammarCustomPlaceholderEnabled),
     grammarPlaceholder: String(slide.grammarPlaceholder ?? ''),
+    grammarPlacement: slide.grammarPlacement === 'right' ? 'right' : 'left',
     audioUrl: String(slide.audioUrl ?? ''),
     audioTracks: tracks,
     audioStartSeconds: first.startSeconds,
@@ -1140,6 +1155,7 @@ export function normalizeSlide(
         ? slide.quizFontSize
         : 'sm',
     quizColor: normalizeFontColor(slide.quizColor),
+    quizPlacement: slide.quizPlacement === 'right' ? 'right' : 'left',
     quizRevealOnClick: Boolean(slide.quizRevealOnClick),
     listenQuestions: normalizeListenQuestions(slide.listenQuestions),
     pieSlices: normalizePieSlices(slide.pieSlices),

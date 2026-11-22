@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
 import SlideTextStyleControls from './SlideTextStyleControls';
+import SlideSidePlacement from './SlideSidePlacement';
 import { SlideRichText } from './SlideRichText';
 import {
   QUIZ_CHOICE_LETTERS,
@@ -162,6 +163,12 @@ export function QuizEditor({
 
       {slide.quizEnabled ? (
         <>
+          {slide.layout === 'content' ? (
+            <SlideSidePlacement
+              value={slide.quizPlacement}
+              onChange={(quizPlacement) => onChange({ quizPlacement })}
+            />
+          ) : null}
           <label className="block space-y-1">
             <ComicText className="text-sm font-bold">Question (optional)</ComicText>
             <input

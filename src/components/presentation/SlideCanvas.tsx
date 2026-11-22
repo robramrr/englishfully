@@ -510,42 +510,26 @@ function AnagramLaunchButton({
   );
 }
 
-function DefinitionBlock({
-  slide,
-  body,
-  compact,
-  present,
-}: {
-  slide: PresentationSlide;
-  body: string;
-  compact: boolean;
-  present: boolean;
-}) {
-  if (slide.showBody === false || !body.trim()) return null;
-  const mode = sizeMode(compact, present);
-  return (
-    <p className="font-bold whitespace-pre-wrap" style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}>
-      <SlideRichText text={body} />
-    </p>
-  );
-}
-
 function ContentBody({
   slide,
   body,
+  column,
   compact,
   present,
   liveEditable,
   onGrammarTextChange,
-  includeDefinition = true,
+  selectedAnagramId = '',
+  onOpenAnagram,
 }: {
   slide: PresentationSlide;
   body: string;
+  column: 'left' | 'right';
   compact: boolean;
   present: boolean;
   liveEditable: boolean;
   onGrammarTextChange?: (grammarText: string) => void;
-  includeDefinition?: boolean;
+  selectedAnagramId?: string;
+  onOpenAnagram?: (activityId: string) => void;
 }) {
   const grammarOn =
     slide.layout === 'content' && slide.grammarHighlighterEnabled;
@@ -555,29 +539,39 @@ function ContentBody({
   const bodyText = body.trim();
   const hasBullets = slide.bullets.filter((item) => item.trim()).length > 0;
   const showTable = Boolean(slide.tableEnabled);
+  const onThisSide = (placement: 'left' | 'right' | undefined) =>
+    (placement === 'right' ? 'right' : 'left') === column;
+  const showDefinition = onThisSide(slide.bodyPlacement) && showBody && Boolean(bodyText);
+  const showTableHere = showTable && onThisSide(slide.tablePlacement);
+  const showBulletsHere = hasBullets && onThisSide(slide.bulletsPlacement);
+  const showGrammarHere = grammarOn && onThisSide(slide.grammarPlacement);
+  const showQuizHere = onThisSide(slide.quizPlacement);
+  const showAnagramHere = column === 'left' && !compact && Boolean(selectedAnagramId);
 
   if (
-    (!includeDefinition || !showBody || !bodyText) &&
-    !hasBullets &&
-    !grammarOn &&
-    !showTable
+    !showDefinition &&
+    !showTableHere &&
+    !showBulletsHere &&
+    !showGrammarHere &&
+    !showQuizHere &&
+    !showAnagramHere
   ) {
     return null;
   }
 
   return (
-    <div className="space-y-3">
-      {includeDefinition && showBody && bodyText ? (
+    <div className="flex min-h-0 min-w-0 flex-col gap-3">
+      {showDefinition ? (
         <p className="font-bold whitespace-pre-wrap" style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}>
           <SlideRichText text={body} />
         </p>
       ) : null}
 
-      {showTable ? (
+      {showTableHere ? (
         <SlideTable slide={slide} compact={compact} present={present} />
       ) : null}
 
-      {hasBullets ? (
+      {showBulletsHere ? (
         <ul className="space-y-2 font-bold">
           {slide.bullets.map((item, index) =>
             item.trim() ? (
@@ -605,7 +599,7 @@ function ContentBody({
         </ul>
       ) : null}
 
-      {grammarOn ? (
+      {showGrammarHere ? (
         <GrammarLiveTextBox
           key={slide.id}
           value={slide.grammarText}
@@ -620,6 +614,18 @@ function ContentBody({
               : 'Example...'
           }
         />
+      ) : null}
+
+      {showAnagramHere ? (
+        <AnagramLaunchButton
+          activityId={selectedAnagramId}
+          present={present}
+          onClick={() => onOpenAnagram?.(selectedAnagramId)}
+        />
+      ) : null}
+
+      {showQuizHere ? (
+        <PresentationQuiz slide={slide} compact={compact} present={present} />
       ) : null}
     </div>
   );
@@ -658,8 +664,13 @@ export default function SlideCanvas({
     (contentImages.length === 1 ||
       (showImageSlot && contentImages.length === 0));
   const showRightColumn = showContentImageColumn;
-  const bodyOnRight =
-    slide.layout === 'content' && slide.bodyPlacement === 'right' && showBody && Boolean(body.trim());
+  const contentOnRight =
+    slide.layout === 'content' &&
+    ((showBody && Boolean(body.trim()) && slide.bodyPlacement === 'right') ||
+      (Boolean(slide.tableEnabled) && slide.tablePlacement === 'right') ||
+      (slide.bullets.some((item) => item.trim()) && slide.bulletsPlacement === 'right') ||
+      (Boolean(slide.grammarHighlighterEnabled) && slide.grammarPlacement === 'right') ||
+      (Boolean(slide.quizEnabled) && slide.quizPlacement === 'right'));
   const mode = sizeMode(compact, present);
   const timerOn = Boolean(slide.timerEnabled);
   const [timerState, setTimerState] = useState<SlideTimerState>({
@@ -787,32 +798,32 @@ export default function SlideCanvas({
               <>
                 <div
                   className={
-                    bodyOnRight
+                    contentOnRight
                       ? 'grid min-h-0 grid-cols-2 items-start gap-4'
                       : 'flex min-h-0 flex-col gap-3 overflow-auto'
                   }
                 >
-                  <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-auto">
+                  <ContentBody
+                    slide={slide}
+                    body={body}
+                    column="left"
+                    compact={compact}
+                    present={present}
+                    liveEditable={liveEditable}
+                    onGrammarTextChange={onGrammarTextChange}
+                    selectedAnagramId={selectedAnagramId}
+                    onOpenAnagram={openAnagram}
+                  />
+                  {contentOnRight ? (
                     <ContentBody
                       slide={slide}
                       body={body}
+                      column="right"
                       compact={compact}
                       present={present}
                       liveEditable={liveEditable}
                       onGrammarTextChange={onGrammarTextChange}
-                      includeDefinition={!bodyOnRight}
                     />
-                    {!compact && selectedAnagramId ? (
-                      <AnagramLaunchButton
-                        activityId={selectedAnagramId}
-                        present={present}
-                        onClick={() => openAnagram(selectedAnagramId)}
-                      />
-                    ) : null}
-                    <PresentationQuiz slide={slide} compact={compact} present={present} />
-                  </div>
-                  {bodyOnRight ? (
-                    <DefinitionBlock slide={slide} body={body} compact={compact} present={present} />
                   ) : null}
                 </div>
                 <div
@@ -854,33 +865,33 @@ export default function SlideCanvas({
               <div
                 className={[
                   'grid min-h-0 items-stretch gap-4',
-                  showRightColumn || bodyOnRight ? 'flex-1 grid-cols-2' : 'grid-cols-1',
+                  showRightColumn || contentOnRight ? 'flex-1 grid-cols-2' : 'grid-cols-1',
                 ].join(' ')}
               >
-                  <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 overflow-auto">
+                <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 overflow-auto">
                   <ContentBody
                     slide={slide}
                     body={body}
+                    column="left"
                     compact={compact}
                     present={present}
                     liveEditable={liveEditable}
                     onGrammarTextChange={onGrammarTextChange}
-                    includeDefinition={!bodyOnRight}
+                    selectedAnagramId={selectedAnagramId}
+                    onOpenAnagram={openAnagram}
                   />
-                  {!compact && selectedAnagramId ? (
-                    <AnagramLaunchButton
-                      activityId={selectedAnagramId}
-                      present={present}
-                      onClick={() => openAnagram(selectedAnagramId)}
-                    />
-                  ) : null}
-                  <PresentationQuiz slide={slide} compact={compact} present={present} />
                 </div>
-                {showRightColumn || bodyOnRight ? (
+                {showRightColumn || contentOnRight ? (
                   <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 overflow-auto">
-                    {bodyOnRight ? (
-                      <DefinitionBlock slide={slide} body={body} compact={compact} present={present} />
-                    ) : null}
+                    <ContentBody
+                      slide={slide}
+                      body={body}
+                      column="right"
+                      compact={compact}
+                      present={present}
+                      liveEditable={liveEditable}
+                      onGrammarTextChange={onGrammarTextChange}
+                    />
                     {showRightColumn ? (
                   <ContentSlideFigure
                     key={`${slide.id}-side`}
@@ -910,7 +921,7 @@ export default function SlideCanvas({
                     className={
                       compact
                         ? 'max-h-40 min-h-0 min-w-0'
-                        : bodyOnRight
+                        : contentOnRight
                           ? 'min-h-0 min-w-0 flex-1'
                           : 'h-full max-h-full min-h-0 min-w-0'
                     }

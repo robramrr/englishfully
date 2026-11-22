@@ -9,6 +9,7 @@ import SlideCanvas from './SlideCanvas';
 import PresentationPreview from './PresentationPreview';
 import PresentationShareBar from './PresentationShareBar';
 import SlideTextStyleControls from './SlideTextStyleControls';
+import SlideSidePlacement from './SlideSidePlacement';
 import PresentationAudioClipEditor from './PresentationAudioClipEditor';
 import VocabDeckLinkSelect from './VocabDeckLinkSelect';
 import AnagramActivityLinkSelect from './AnagramActivityLinkSelect';
@@ -763,34 +764,12 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                     }
                   />
                   {selected.layout === 'content' ? (
-                    <div className="flex flex-wrap items-center gap-2 pt-1">
-                      <ComicText className="text-sm font-bold">Placement</ComicText>
-                      {(['left', 'right'] as const).map((side) => {
-                        const active = (selected.bodyPlacement === 'right' ? 'right' : 'left') === side;
-                        return (
-                          <button
-                            key={side}
-                            type="button"
-                            className="border-4 border-[var(--comic-black)] px-3 py-1 text-sm font-black"
-                            style={
-                              active
-                                ? { backgroundColor: 'var(--comic-secondary)', color: '#ffffff' }
-                                : { backgroundColor: '#ffffff', color: 'var(--comic-dark)' }
-                            }
-                            onClick={() =>
-                              setDeck((prev) =>
-                                updateSlide(prev, selected.id, { bodyPlacement: side })
-                              )
-                            }
-                          >
-                            {side === 'left' ? 'Left' : 'Right'}
-                          </button>
-                        );
-                      })}
-                      <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
-                        Right keeps this text in the other column so the left side stays higher.
-                      </ComicText>
-                    </div>
+                    <SlideSidePlacement
+                      value={selected.bodyPlacement}
+                      onChange={(bodyPlacement) =>
+                        setDeck((prev) => updateSlide(prev, selected.id, { bodyPlacement }))
+                      }
+                    />
                   ) : null}
                   <SlideTextStyleControls
                     fontSize={selected.bodyFontSize}
@@ -848,6 +827,14 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                         setDeck((prev) => updateSlide(prev, selected.id, { bulletsColor }))
                       }
                     />
+                    {selected.layout === 'content' ? (
+                      <SlideSidePlacement
+                        value={selected.bulletsPlacement}
+                        onChange={(bulletsPlacement) =>
+                          setDeck((prev) => updateSlide(prev, selected.id, { bulletsPlacement }))
+                        }
+                      />
+                    ) : null}
                   </div>
                 )}
 
@@ -1118,7 +1105,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                       <div>
                         <ComicText className="font-black">Table</ComicText>
                         <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                          Optional table on the left, directly under the definition.
+                          Optional table. Place it on the left or the right.
                         </ComicText>
                       </div>
                       <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
@@ -1290,6 +1277,12 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                             setDeck((prev) =>
                               updateSlide(prev, selected.id, { tableColor })
                             )
+                          }
+                        />
+                        <SlideSidePlacement
+                          value={selected.tablePlacement}
+                          onChange={(tablePlacement) =>
+                            setDeck((prev) => updateSlide(prev, selected.id, { tablePlacement }))
                           }
                         />
                       </div>
@@ -1724,8 +1717,8 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                       <div>
                         <ComicText className="font-black">Grammar highlighter</ComicText>
                         <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                          Keeps your definition above. Adds one separate practice text box on
-                          the slide — type or paste examples; after a full stop, target grammar
+                          Adds one separate practice text box. Place it on the left or the
+                          right. Type or paste examples; after a full stop, target grammar
                           highlights yellow in that box only.
                         </ComicText>
                       </div>
@@ -1749,6 +1742,14 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                     </div>
                     {selected.grammarHighlighterEnabled ? (
                       <div className="space-y-3">
+                        <SlideSidePlacement
+                          value={selected.grammarPlacement}
+                          onChange={(grammarPlacement) =>
+                            setDeck((prev) =>
+                              updateSlide(prev, selected.id, { grammarPlacement })
+                            )
+                          }
+                        />
                         <label className="block space-y-1">
                           <ComicText className="text-sm font-bold">Target grammar</ComicText>
                           <input
