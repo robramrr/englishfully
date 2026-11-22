@@ -535,19 +535,20 @@ export async function buildPresentationPptxBuffer(
         y = 1.35;
       }
 
+      const bodyOnRight = slide.layout === 'content' && slide.bodyPlacement === 'right';
       if (showBody && slide.body.trim()) {
         page.addText(pptxText(slide.body, pptxFontColor(slide.bodyColor)), {
-          x: 0.6,
-          y,
-          w: textWidth,
-          h: multiImages || showTable ? 1.4 : 2.2,
+          x: bodyOnRight ? 7.1 : 0.6,
+          y: bodyOnRight ? (showTitle ? 1.35 : 0.45) : y,
+          w: bodyOnRight ? 5.6 : textWidth,
+          h: bodyOnRight ? 4.6 : multiImages || showTable ? 1.4 : 2.2,
           fontSize: pptxFontSize(slide.bodyFontSize, 18),
           bold: true,
           color: pptxFontColor(slide.bodyColor),
           fontFace: 'Arial',
           valign: 'top',
         });
-        y += multiImages || showTable ? 1.5 : 2.3;
+        if (!bodyOnRight) y += multiImages || showTable ? 1.5 : 2.3;
       }
 
       if (showTable) {

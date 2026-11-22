@@ -510,6 +510,26 @@ function AnagramLaunchButton({
   );
 }
 
+function DefinitionBlock({
+  slide,
+  body,
+  compact,
+  present,
+}: {
+  slide: PresentationSlide;
+  body: string;
+  compact: boolean;
+  present: boolean;
+}) {
+  if (slide.showBody === false || !body.trim()) return null;
+  const mode = sizeMode(compact, present);
+  return (
+    <p className="font-bold whitespace-pre-wrap" style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}>
+      <SlideRichText text={body} />
+    </p>
+  );
+}
+
 function ContentBody({
   slide,
   body,
@@ -517,6 +537,7 @@ function ContentBody({
   present,
   liveEditable,
   onGrammarTextChange,
+  includeDefinition = true,
 }: {
   slide: PresentationSlide;
   body: string;
@@ -524,6 +545,7 @@ function ContentBody({
   present: boolean;
   liveEditable: boolean;
   onGrammarTextChange?: (grammarText: string) => void;
+  includeDefinition?: boolean;
 }) {
   const grammarOn =
     slide.layout === 'content' && slide.grammarHighlighterEnabled;
@@ -534,13 +556,18 @@ function ContentBody({
   const hasBullets = slide.bullets.filter((item) => item.trim()).length > 0;
   const showTable = Boolean(slide.tableEnabled);
 
-  if ((!showBody || !bodyText) && !hasBullets && !grammarOn && !showTable) {
+  if (
+    (!includeDefinition || !showBody || !bodyText) &&
+    !hasBullets &&
+    !grammarOn &&
+    !showTable
+  ) {
     return null;
   }
 
   return (
     <div className="space-y-3">
-      {showBody && bodyText ? (
+      {includeDefinition && showBody && bodyText ? (
         <p className="font-bold whitespace-pre-wrap" style={textStyle(slide.bodyFontSize, slide.bodyColor, mode)}>
           <SlideRichText text={body} />
         </p>
@@ -631,6 +658,8 @@ export default function SlideCanvas({
     (contentImages.length === 1 ||
       (showImageSlot && contentImages.length === 0));
   const showRightColumn = showContentImageColumn;
+  const bodyOnRight =
+    slide.layout === 'content' && slide.bodyPlacement === 'right' && showBody && Boolean(body.trim());
   const mode = sizeMode(compact, present);
   const timerOn = Boolean(slide.timerEnabled);
   const [timerState, setTimerState] = useState<SlideTimerState>({
@@ -756,23 +785,35 @@ export default function SlideCanvas({
             ) : null}
             {multiContentImages ? (
               <>
-                <div className="flex min-h-0 flex-col gap-3 overflow-auto">
-                  <ContentBody
-                    slide={slide}
-                    body={body}
-                    compact={compact}
-                    present={present}
-                    liveEditable={liveEditable}
-                    onGrammarTextChange={onGrammarTextChange}
-                  />
-                  {!compact && selectedAnagramId ? (
-                    <AnagramLaunchButton
-                      activityId={selectedAnagramId}
+                <div
+                  className={
+                    bodyOnRight
+                      ? 'grid min-h-0 grid-cols-2 items-start gap-4'
+                      : 'flex min-h-0 flex-col gap-3 overflow-auto'
+                  }
+                >
+                  <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-auto">
+                    <ContentBody
+                      slide={slide}
+                      body={body}
+                      compact={compact}
                       present={present}
-                      onClick={() => openAnagram(selectedAnagramId)}
+                      liveEditable={liveEditable}
+                      onGrammarTextChange={onGrammarTextChange}
+                      includeDefinition={!bodyOnRight}
                     />
+                    {!compact && selectedAnagramId ? (
+                      <AnagramLaunchButton
+                        activityId={selectedAnagramId}
+                        present={present}
+                        onClick={() => openAnagram(selectedAnagramId)}
+                      />
+                    ) : null}
+                    <PresentationQuiz slide={slide} compact={compact} present={present} />
+                  </div>
+                  {bodyOnRight ? (
+                    <DefinitionBlock slide={slide} body={body} compact={compact} present={present} />
                   ) : null}
-                  <PresentationQuiz slide={slide} compact={compact} present={present} />
                 </div>
                 <div
                   className={[
@@ -813,7 +854,7 @@ export default function SlideCanvas({
               <div
                 className={[
                   'grid min-h-0 items-stretch gap-4',
-                  showRightColumn ? 'flex-1 grid-cols-2' : 'grid-cols-1',
+                  showRightColumn || bodyOnRight ? 'flex-1 grid-cols-2' : 'grid-cols-1',
                 ].join(' ')}
               >
                   <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 overflow-auto">
@@ -824,6 +865,7 @@ export default function SlideCanvas({
                     present={present}
                     liveEditable={liveEditable}
                     onGrammarTextChange={onGrammarTextChange}
+                    includeDefinition={!bodyOnRight}
                   />
                   {!compact && selectedAnagramId ? (
                     <AnagramLaunchButton
@@ -834,7 +876,12 @@ export default function SlideCanvas({
                   ) : null}
                   <PresentationQuiz slide={slide} compact={compact} present={present} />
                 </div>
-                {showRightColumn ? (
+                {showRightColumn || bodyOnRight ? (
+                  <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 overflow-auto">
+                    {bodyOnRight ? (
+                      <DefinitionBlock slide={slide} body={body} compact={compact} present={present} />
+                    ) : null}
+                    {showRightColumn ? (
                   <ContentSlideFigure
                     key={`${slide.id}-side`}
                     onOpen={
@@ -860,8 +907,16 @@ export default function SlideCanvas({
                     compact={compact}
                     present={present}
                     alignTop
-                    className={compact ? 'max-h-40 min-h-0 min-w-0' : 'h-full max-h-full min-h-0 min-w-0'}
+                    className={
+                      compact
+                        ? 'max-h-40 min-h-0 min-w-0'
+                        : bodyOnRight
+                          ? 'min-h-0 min-w-0 flex-1'
+                          : 'h-full max-h-full min-h-0 min-w-0'
+                    }
                   />
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
             )}

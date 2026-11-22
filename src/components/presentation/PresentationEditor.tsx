@@ -762,6 +762,36 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                           : 'Main text for this slide'
                     }
                   />
+                  {selected.layout === 'content' ? (
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <ComicText className="text-sm font-bold">Placement</ComicText>
+                      {(['left', 'right'] as const).map((side) => {
+                        const active = (selected.bodyPlacement === 'right' ? 'right' : 'left') === side;
+                        return (
+                          <button
+                            key={side}
+                            type="button"
+                            className="border-4 border-[var(--comic-black)] px-3 py-1 text-sm font-black"
+                            style={
+                              active
+                                ? { backgroundColor: 'var(--comic-secondary)', color: '#ffffff' }
+                                : { backgroundColor: '#ffffff', color: 'var(--comic-dark)' }
+                            }
+                            onClick={() =>
+                              setDeck((prev) =>
+                                updateSlide(prev, selected.id, { bodyPlacement: side })
+                              )
+                            }
+                          >
+                            {side === 'left' ? 'Left' : 'Right'}
+                          </button>
+                        );
+                      })}
+                      <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
+                        Right keeps this text in the other column so the left side stays higher.
+                      </ComicText>
+                    </div>
+                  ) : null}
                   <SlideTextStyleControls
                     fontSize={selected.bodyFontSize}
                     color={selected.bodyColor}

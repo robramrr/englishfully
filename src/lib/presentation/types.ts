@@ -589,6 +589,8 @@ export interface PresentationSlide {
   body: string;
   /** When false, definition/body text is hidden on the slide. */
   showBody: boolean;
+  /** Text + image: which column the definition sits in. */
+  bodyPlacement: 'left' | 'right';
   bullets: string[];
   imageUrl: string;
   /** Visible image title. Also used as the image alt text. */
@@ -971,6 +973,7 @@ export function createEmptySlide(
     showTitle: true,
     body: '',
     showBody: true,
+    bodyPlacement: 'left',
     bullets: [],
     imageUrl: '',
     imageAlt: '',
@@ -1062,6 +1065,7 @@ export function normalizeSlide(
     showTitle: slide.showTitle !== false,
     body: String(slide.body ?? ''),
     showBody: slide.showBody !== false,
+    bodyPlacement: slide.bodyPlacement === 'right' ? 'right' : 'left',
     bullets: Array.isArray(slide.bullets)
       ? normalizeBulletsKeepGaps(slide.bullets)
       : [],
