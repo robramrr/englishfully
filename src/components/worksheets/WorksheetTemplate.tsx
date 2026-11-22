@@ -308,12 +308,16 @@ function SectionBody({ section }: { section: WorksheetSection }) {
             {section.objective}
           </p>
         ) : null}
-        {section.banks.map((bank, bankIndex) => (
-          <p key={`${bank.label}-${bankIndex}`} className="worksheet-bank-line">
-            <span>{bank.label}</span>
-            {bank.words.join(' | ')}
-          </p>
-        ))}
+        {section.banks.length > 0 ? (
+          <div className="worksheet-roleplay-banks">
+            {section.banks.map((bank, bankIndex) => (
+              <p key={`${bank.label}-${bankIndex}`} className="worksheet-bank-line">
+                <span>{bank.label}</span>
+                {bank.words.join(' | ')}
+              </p>
+            ))}
+          </div>
+        ) : null}
         <div>
           {section.lines.map((line, index) => (
             <div key={`${line.speaker}-${index}`} className="worksheet-roleplay-line">
@@ -775,6 +779,19 @@ const SHEET_CSS = `
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--brand-red);
+}
+.worksheet-roleplay-banks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.45rem 0.6rem;
+  margin: 0 0 0.55rem;
+}
+.worksheet-roleplay-banks .worksheet-bank-line {
+  width: max-content;
+  max-width: 100%;
+  flex: 0 1 auto;
+  margin: 0;
 }
 .worksheet-roleplay-line {
   display: grid;
