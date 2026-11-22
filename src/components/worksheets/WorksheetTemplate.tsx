@@ -185,7 +185,9 @@ function SectionBlock({
         <ExerciseNumber index={index} printIndex={printIndex} />
         {sectionHeading(section)}
       </h2>
-      {section.instructions ? <p className="worksheet-directions">{section.instructions}</p> : null}
+      {section.instructions.trim() ? (
+        <p className="worksheet-directions">{section.instructions.trim()}</p>
+      ) : null}
       <SectionBody section={section} />
     </section>
   );
@@ -234,9 +236,6 @@ function SectionBody({ section }: { section: WorksheetSection }) {
   if (section.type === 'matching') {
     return (
       <div className="worksheet-match">
-        {section.instructions.trim() ? null : (
-          <p className="worksheet-directions">Write the letter in each box.</p>
-        )}
         <ol className="worksheet-list worksheet-match-row">
           {section.prompts.map((prompt, index) => (
             <li key={`${prompt.text}-${index}`} className="worksheet-item worksheet-match-card">

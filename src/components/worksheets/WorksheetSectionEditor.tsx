@@ -292,7 +292,7 @@ function SectionFrame({
         label="Directions"
         value={section.instructions}
         onChange={(instructions) => onChange({ ...section, instructions })}
-        placeholder="Optional"
+        placeholder={section.type === 'matching' ? 'Write the letter in each box.' : 'Optional'}
       />
       {children}
     </section>

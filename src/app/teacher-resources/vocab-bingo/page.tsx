@@ -131,6 +131,11 @@ function VocabBingoHomeContent() {
         <ComicButton type="button" variant="primary" size="md" disabled={creating} onClick={() => void handleCreate()}>
           {creating ? 'Creating…' : '+ New bingo'}
         </ComicButton>
+        <Link href="/teacher-resources/vocab-bingo/definition-challenge">
+          <ComicButton variant="secondary" size="md">
+            Definition Challenge
+          </ComicButton>
+        </Link>
         {message ? <ComicText className="font-bold text-[var(--comic-success)]">{message}</ComicText> : null}
         {error ? <ComicText className="font-bold text-[var(--comic-danger)]">{error}</ComicText> : null}
       </ComicCard>
