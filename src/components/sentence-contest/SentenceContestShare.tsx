@@ -7,9 +7,11 @@ import { generateQrDataUrl, getSentenceContestUrl } from '@/lib/sentence-contest
 export default function SentenceContestShare({
   activityId,
   qrClassName = 'h-16 w-16',
+  showLink = false,
 }: {
   activityId: string;
   qrClassName?: string;
+  showLink?: boolean;
 }) {
   const [shareUrl, setShareUrl] = useState('');
   const [qrCode, setQrCode] = useState('');
@@ -48,34 +50,36 @@ export default function SentenceContestShare({
   }
 
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-2">
-      {qrCode ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={qrCode}
-          alt=""
-          className={`${qrClassName} shrink-0 object-contain`}
-        />
-      ) : null}
-      {shareUrl ? (
+    <div className="flex shrink-0 flex-col items-end gap-2">
+      <div className="flex items-center gap-2">
+        <ComicButton
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={!shareUrl}
+          onClick={() => void copyLink()}
+        >
+          {copied ? 'Link copied' : 'Copy link'}
+        </ComicButton>
+        {qrCode ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={qrCode}
+            alt=""
+            className={`${qrClassName} shrink-0 object-contain`}
+          />
+        ) : null}
+      </div>
+      {showLink && shareUrl ? (
         <a
           href={shareUrl}
           target="_blank"
           rel="noreferrer"
-          className="max-w-xs break-all text-sm font-bold text-[var(--comic-secondary)] underline-offset-2 hover:underline"
+          className="max-w-xs break-all text-right text-sm font-bold text-[var(--comic-secondary)] underline-offset-2 hover:underline"
         >
           {shareUrl}
         </a>
       ) : null}
-      <ComicButton
-        type="button"
-        variant="secondary"
-        size="sm"
-        disabled={!shareUrl}
-        onClick={() => void copyLink()}
-      >
-        {copied ? 'Link copied' : 'Copy link'}
-      </ComicButton>
     </div>
   );
 }

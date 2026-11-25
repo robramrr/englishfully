@@ -96,13 +96,14 @@ export default function SentenceContestEditor({ activityId }: { activityId: stri
           <ComicTitle level={3} className="text-[var(--comic-secondary)]">
             Sentence contest
           </ComicTitle>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <ComicButton type="button" variant="secondary" size="sm" disabled={saving} onClick={() => void save()}>
               {saving ? 'Saving…' : 'Save'}
             </ComicButton>
             <ComicButton type="button" variant="primary" size="sm" onClick={() => setPlaying(true)}>
               Play
             </ComicButton>
+            <SentenceContestShare activityId={activity.id} showLink />
           </div>
         </div>
         <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
@@ -115,7 +116,6 @@ export default function SentenceContestEditor({ activityId }: { activityId: stri
         {error ? (
           <ComicText className="font-bold text-[var(--comic-danger)]">{error}</ComicText>
         ) : null}
-        <SentenceContestShare activityId={activity.id} />
         <label className="block space-y-1">
           <ComicText className="text-sm font-bold">Title</ComicText>
           <input

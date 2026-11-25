@@ -155,7 +155,7 @@ function SentenceContestHomeContent() {
             {items.map((item) => (
               <div
                 key={item.id}
-                className="flex flex-wrap items-center justify-between gap-3 border-4 border-[var(--comic-black)] bg-white p-4"
+                className="flex items-center justify-between gap-3 border-4 border-[var(--comic-black)] bg-white p-4"
               >
                 <div className="min-w-0 space-y-1">
                   <ComicText className="font-black truncate">
@@ -166,8 +166,7 @@ function SentenceContestHomeContent() {
                     {new Date(item.updated_at).toLocaleString()}
                   </ComicText>
                 </div>
-                <SentenceContestShare activityId={item.id} />
-                <div className="flex flex-wrap gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   <Link href={`/teacher-resources/sentence-contest/${item.id}`}>
                     <ComicButton variant="secondary" size="sm">
                       Edit
@@ -195,6 +194,7 @@ function SentenceContestHomeContent() {
                   >
                     Delete
                   </ComicButton>
+                  <SentenceContestShare activityId={item.id} />
                 </div>
               </div>
             ))}
