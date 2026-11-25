@@ -134,9 +134,6 @@ export default function SentenceContestEditor({ activityId }: { activityId: stri
         </label>
         <label className="block space-y-1">
           <ComicText className="text-sm font-bold">How the AI awards the winner</ComicText>
-          <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
-            Used when you award a winner. Students see the prompt, not this line.
-          </ComicText>
           <input
             className="comic-input w-full"
             value={activity.criteria}

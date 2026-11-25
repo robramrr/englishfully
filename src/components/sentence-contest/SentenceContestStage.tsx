@@ -137,6 +137,16 @@ function SentenceContestPlay({
       >
         {prompt || 'Add a prompt in the editor.'}
       </p>
+      {activity.criteria.trim() ? (
+        <p
+          className={[
+            'font-black leading-snug text-[var(--comic-primary)]',
+            present ? 'text-xl md:text-2xl' : 'text-lg md:text-xl',
+          ].join(' ')}
+        >
+          {activity.criteria.trim()}
+        </p>
+      ) : null}
       <div className="flex flex-col gap-3">
         {rows.map((row, index) => {
           const isWinner = winner?.rowId === row.id;
