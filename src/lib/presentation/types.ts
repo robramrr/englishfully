@@ -626,6 +626,8 @@ export interface PresentationSlide {
   vocabDeckId4: string;
   /** Anagram activity played on top of this slide. */
   anagramActivityId: string;
+  /** Sentence contest played on top of this slide. */
+  sentenceContestActivityId: string;
   /** Vocabulary Bingo teacher sheet opened on top of this slide. */
   bingoActivityId: string;
   /** Font size for definition / explanation. */
@@ -1014,6 +1016,7 @@ export function createEmptySlide(
     vocabDeckId3: '',
     vocabDeckId4: '',
     anagramActivityId: '',
+    sentenceContestActivityId: '',
     bingoActivityId: '',
     bodyFontSize: 'md',
     bodyColor: 'navy',
@@ -1081,7 +1084,10 @@ export function normalizeSlide(
     ...base,
     ...slide,
     id: slide.id || base.id,
-    layout: (slide.layout as PresentationSlideLayout) || base.layout,
+    layout:
+      String(slide.layout) === 'sentence_contest'
+        ? 'content'
+        : (slide.layout as PresentationSlideLayout) || base.layout,
     title: String(slide.title ?? ''),
     showTitle: slide.showTitle !== false,
     body: String(slide.body ?? ''),
@@ -1116,6 +1122,7 @@ export function normalizeSlide(
     vocabDeckId3: String(slide.vocabDeckId3 ?? '').trim(),
     vocabDeckId4: String(slide.vocabDeckId4 ?? '').trim(),
     anagramActivityId: String(slide.anagramActivityId ?? '').trim(),
+    sentenceContestActivityId: String(slide.sentenceContestActivityId ?? '').trim(),
     bingoActivityId: String(slide.bingoActivityId ?? '').trim(),
     bodyFontSize: normalizeFontSize(slide.bodyFontSize),
     bodyColor: normalizeFontColor(slide.bodyColor),

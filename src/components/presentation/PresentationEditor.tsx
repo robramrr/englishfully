@@ -15,6 +15,7 @@ import VocabDeckLinkSelect from './VocabDeckLinkSelect';
 import AnagramActivityLinkSelect from './AnagramActivityLinkSelect';
 import VocabBingoLinkSelect from './VocabBingoLinkSelect';
 import { FillBlankEditor } from './PresentationFillBlank';
+import SentenceContestLinkSelect from './SentenceContestLinkSelect';
 import { ListenQuestionEditor } from './PresentationListenQuestions';
 import { PieTimerEditor } from './PresentationPieTimer';
 import { QuizEditor } from './PresentationQuiz';
@@ -1647,6 +1648,17 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                     value={selected.anagramActivityId}
                     onChange={(anagramActivityId) =>
                       setDeck((prev) => updateSlide(prev, selected.id, { anagramActivityId }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
+                  <SentenceContestLinkSelect
+                    value={selected.sentenceContestActivityId}
+                    onChange={(sentenceContestActivityId) =>
+                      setDeck((prev) =>
+                        updateSlide(prev, selected.id, { sentenceContestActivityId })
+                      )
                     }
                   />
                 </div>

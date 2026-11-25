@@ -15,6 +15,7 @@ import {
   faFilePen,
   faFolderOpen,
   faFont,
+  faPen,
   faGamepad,
   faTableCells,
   faHeadphones,
@@ -317,6 +318,7 @@ function FeaturedResourcesSection() {
               <li>• {t.teacherResources.gamesPackItem3}</li>
               <li>• {t.teacherResources.gamesPackItem4}</li>
               <li>• {t.teacherResources.gamesPackItem5}</li>
+              <li>• {t.teacherResources.gamesPackItem6}</li>
             </ul>
             <div className="flex flex-col gap-2">
               <ComicButton
@@ -337,6 +339,16 @@ function FeaturedResourcesSection() {
               >
                 <ButtonWithIcon icon={faFont}>
                   {t.teacherResources.openAnagram}
+                </ButtonWithIcon>
+              </ComicButton>
+              <ComicButton
+                href="/teacher-resources/sentence-contest"
+                variant="accent"
+                size="sm"
+                className="w-full !inline-flex items-center justify-center"
+              >
+                <ButtonWithIcon icon={faPen}>
+                  {t.teacherResources.openSentenceContest}
                 </ButtonWithIcon>
               </ComicButton>
               <ComicButton

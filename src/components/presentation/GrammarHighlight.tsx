@@ -224,6 +224,10 @@ export function GrammarLiveTextBox({
   style,
   placeholder = 'Example...',
   editable = true,
+  variant = 'box',
+  tone = 'default',
+  onEnter,
+  autoFocus = false,
 }: {
   value: string;
   onChange?: (value: string) => void;
@@ -232,6 +236,12 @@ export function GrammarLiveTextBox({
   style?: CSSProperties;
   placeholder?: string;
   editable?: boolean;
+  /** box = practice area. row = one single-line sentence. */
+  variant?: 'box' | 'row';
+  tone?: 'default' | 'winner';
+  /** Row only: Enter adds another sentence instead of a line break. */
+  onEnter?: () => void;
+  autoFocus?: boolean;
 }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const placeholderMeasureRef = useRef<HTMLDivElement>(null);
@@ -345,10 +355,26 @@ export function GrammarLiveTextBox({
     }
   }
 
+  function handleBlur() {
+    if (variant !== 'row' || !editable) return;
+    const el = editorRef.current;
+    if (!el) return;
+    const plain = readEditablePlainText(el);
+    const base = plain.replace(/\s+$/u, '');
+    if (!base.trim() || !grammarTarget.trim()) return;
+    if (highlightedForRef.current.replace(/\s+$/u, '') === base) return;
+    void highlight(plain);
+  }
+
   function handleInput() {
     const el = editorRef.current;
     if (!el || !editable) return;
     let plain = readEditablePlainText(el);
+    if (variant === 'row' && /[\r\n]/.test(plain)) {
+      plain = plain.replace(/[\r\n]+/g, ' ').replace(/ {2,}/g, ' ');
+      const caret = Math.min(getCaretPlainOffset(el) ?? plain.length, plain.length);
+      setEditorHtml(plain, [], caret);
+    }
     // If user keeps typing after highlights, drop marks and continue in the same box
     if (el.querySelector('mark') && !endsWithSentencePause(plain)) {
       const caret = getCaretPlainOffset(el);
@@ -362,6 +388,11 @@ export function GrammarLiveTextBox({
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     event.stopPropagation();
     if (!editable) return;
+    if (event.key === 'Enter' && variant === 'row') {
+      event.preventDefault();
+      onEnter?.();
+      return;
+    }
     if (event.key === 'Enter' && !event.shiftKey && !event.metaKey && !event.ctrlKey) {
       event.preventDefault();
       insertSingleLineBreak();
@@ -373,7 +404,15 @@ export function GrammarLiveTextBox({
   const showPlaceholder = !value.trim();
 
   useEffect(() => {
-    if (!showPlaceholder) {
+    if (!autoFocus || !editable) return;
+    const el = editorRef.current;
+    if (!el) return;
+    el.focus();
+    placeCaretAtEnd(el);
+  }, [autoFocus, editable]);
+
+  useEffect(() => {
+    if (variant !== 'box' || !showPlaceholder) {
       setBoxMinHeight(undefined);
       return;
     }
@@ -392,14 +431,20 @@ export function GrammarLiveTextBox({
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [showPlaceholder, placeholder, className]);
+  }, [showPlaceholder, placeholder, className, variant]);
 
   const boxStyle = boxMinHeight ? { minHeight: boxMinHeight } : undefined;
 
   return (
     <div className="space-y-1">
       <div
-        className="relative min-h-[8rem] border-4 border-[var(--comic-black)] bg-white/90 comic-shadow-sm"
+        className={[
+          'relative border-4',
+          variant === 'row' ? '' : 'min-h-[8rem] comic-shadow-sm',
+          tone === 'winner'
+            ? 'border-[var(--comic-success)] bg-[#fef9c3]'
+            : 'border-[var(--comic-black)] bg-white/90',
+        ].join(' ')}
         style={boxStyle}
       >
         {showPlaceholder ? (
@@ -418,21 +463,30 @@ export function GrammarLiveTextBox({
         <div
           ref={editorRef}
           role="textbox"
-          aria-multiline="true"
+          aria-multiline={variant !== 'row'}
           contentEditable={editable}
           suppressContentEditableWarning
           className={[
-            'grammar-live-textbox relative z-[1] w-full min-h-[8rem] whitespace-pre-wrap bg-transparent p-3 outline-none',
+            'grammar-live-textbox relative z-[1] w-full whitespace-pre-wrap bg-transparent outline-none',
+            variant === 'row' ? 'px-3 py-2' : 'min-h-[8rem] p-3',
             editable ? 'cursor-text' : 'cursor-default',
             className,
           ].join(' ')}
-          style={{ ...style, ...(boxStyle || {}) }}
+          style={{
+            ...style,
+            ...(variant === 'row' ? { minHeight: '1.5em' } : {}),
+            ...(boxStyle || {}),
+          }}
           onInput={handleInput}
           onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
           onPaste={(event) => {
             if (!editable) return;
             event.preventDefault();
-            const text = event.clipboardData.getData('text/plain').replace(/\r\n/g, '\n');
+            let text = event.clipboardData.getData('text/plain').replace(/\r\n/g, '\n');
+            if (variant === 'row') {
+              text = text.replace(/[\r\n]+/g, ' ').replace(/ {2,}/g, ' ');
+            }
             document.execCommand('insertText', false, text);
           }}
         />
