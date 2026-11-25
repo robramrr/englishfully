@@ -26,7 +26,6 @@ function SentenceContestHomeContent() {
   const [duplicatingId, setDuplicatingId] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [shareId, setShareId] = useState('');
 
   const loadList = useCallback(async () => {
     const response = await fetch('/api/sentence-contest/activities', { cache: 'no-store' });
@@ -156,61 +155,47 @@ function SentenceContestHomeContent() {
             {items.map((item) => (
               <div
                 key={item.id}
-                className="space-y-3 border-4 border-[var(--comic-black)] bg-white p-4"
+                className="flex flex-wrap items-center justify-between gap-3 border-4 border-[var(--comic-black)] bg-white p-4"
               >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="min-w-0 space-y-1">
-                    <ComicText className="font-black truncate">
-                      {item.title || 'Sentence contest'}
-                    </ComicText>
-                    <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                      {item.prompt ? `${item.prompt} · ` : ''}
-                      {new Date(item.updated_at).toLocaleString()}
-                    </ComicText>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <ComicButton
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setShareId((current) => (current === item.id ? '' : item.id))}
-                    >
-                      {shareId === item.id ? 'Hide link' : 'Edit'}
-                    </ComicButton>
-                    <Link href={`/sentence-contest/${item.id}`} target="_blank">
-                      <ComicButton variant="primary" size="sm">
-                        Play
-                      </ComicButton>
-                    </Link>
-                    <ComicButton
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      disabled={duplicatingId === item.id}
-                      onClick={() => void handleDuplicate(item.id)}
-                    >
-                      {duplicatingId === item.id ? 'Duplicating…' : 'Duplicate'}
-                    </ComicButton>
-                    <ComicButton
-                      type="button"
-                      variant="danger"
-                      size="sm"
-                      onClick={() => void handleDelete(item.id, item.title)}
-                    >
-                      Delete
-                    </ComicButton>
-                  </div>
+                <div className="min-w-0 space-y-1">
+                  <ComicText className="font-black truncate">
+                    {item.title || 'Sentence contest'}
+                  </ComicText>
+                  <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
+                    {item.prompt ? `${item.prompt} · ` : ''}
+                    {new Date(item.updated_at).toLocaleString()}
+                  </ComicText>
                 </div>
-                {shareId === item.id ? (
-                  <div className="space-y-3">
-                    <SentenceContestShare activityId={item.id} qrClassName="h-24 w-24" />
-                    <Link href={`/teacher-resources/sentence-contest/${item.id}`}>
-                      <ComicButton variant="secondary" size="sm">
-                        Edit activity
-                      </ComicButton>
-                    </Link>
-                  </div>
-                ) : null}
+                <SentenceContestShare activityId={item.id} />
+                <div className="flex flex-wrap gap-2">
+                  <Link href={`/teacher-resources/sentence-contest/${item.id}`}>
+                    <ComicButton variant="secondary" size="sm">
+                      Edit
+                    </ComicButton>
+                  </Link>
+                  <Link href={`/sentence-contest/${item.id}`} target="_blank">
+                    <ComicButton variant="primary" size="sm">
+                      Play
+                    </ComicButton>
+                  </Link>
+                  <ComicButton
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={duplicatingId === item.id}
+                    onClick={() => void handleDuplicate(item.id)}
+                  >
+                    {duplicatingId === item.id ? 'Duplicating…' : 'Duplicate'}
+                  </ComicButton>
+                  <ComicButton
+                    type="button"
+                    variant="danger"
+                    size="sm"
+                    onClick={() => void handleDelete(item.id, item.title)}
+                  >
+                    Delete
+                  </ComicButton>
+                </div>
               </div>
             ))}
           </div>
