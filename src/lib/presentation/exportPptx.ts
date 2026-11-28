@@ -6,7 +6,13 @@ import type {
   PresentationFontSize,
 } from './types';
 import { splitSlideLinks } from './linkify';
-import { QUIZ_CHOICE_LETTERS, blankSentencePlain, formatPieDuration, getContentSlideImages } from './types';
+import {
+  QUIZ_CHOICE_LETTERS,
+  blankSentencePlain,
+  formatPieDuration,
+  getContentSlideImages,
+  visibleGrammarText,
+} from './types';
 import { formatTimestamp } from '@/lib/listen-and-learn/types';
 
 const NAVY = '001a48';
@@ -647,7 +653,8 @@ export async function buildPresentationPptxBuffer(
         slide.grammarTitleEnabled && slide.grammarTitle.trim()
           ? slide.grammarTitle.trim()
           : '';
-      if (slide.grammarHighlighterEnabled && (slide.grammarText.trim() || grammarTitle)) {
+      const grammarPractice = visibleGrammarText(slide);
+      if (slide.grammarHighlighterEnabled && (grammarPractice.trim() || grammarTitle)) {
         const grammarOnRight = slide.layout === 'content' && slide.grammarPlacement === 'right';
         const grammarY = grammarOnRight
           ? rightY
@@ -676,7 +683,7 @@ export async function buildPresentationPptxBuffer(
           fill: { color: GRAY },
           line: { color: NAVY, width: 1.5 },
         });
-        page.addText(slide.grammarText, {
+        page.addText(grammarPractice, {
           x: grammarX + 0.15,
           y: grammarCursor + 0.12,
           w: grammarW - 0.3,

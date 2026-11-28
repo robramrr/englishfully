@@ -155,10 +155,10 @@ function SentenceContestHomeContent() {
             {items.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between gap-3 border-4 border-[var(--comic-black)] bg-white p-4"
+                className="space-y-3 border-4 border-[var(--comic-black)] bg-white p-4"
               >
-                <div className="min-w-0 space-y-1">
-                  <ComicText className="font-black truncate">
+                <div className="space-y-1">
+                  <ComicText className="font-black">
                     {item.title || 'Sentence contest'}
                   </ComicText>
                   <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
@@ -166,7 +166,7 @@ function SentenceContestHomeContent() {
                     {new Date(item.updated_at).toLocaleString()}
                   </ComicText>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex items-center gap-2">
                   <Link href={`/teacher-resources/sentence-contest/${item.id}`}>
                     <ComicButton variant="secondary" size="sm">
                       Edit

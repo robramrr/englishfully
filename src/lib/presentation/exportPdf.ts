@@ -4,7 +4,13 @@ import type {
   PresentationFontSize,
 } from './types';
 import { linkifyHtml } from './linkify';
-import { QUIZ_CHOICE_LETTERS, blankSentencePlain, formatPieDuration, getContentSlideImages } from './types';
+import {
+  QUIZ_CHOICE_LETTERS,
+  blankSentencePlain,
+  formatPieDuration,
+  getContentSlideImages,
+  visibleGrammarText,
+} from './types';
 import { formatTimestamp } from '@/lib/listen-and-learn/types';
 
 function safeFilename(value: string): string {
@@ -315,13 +321,13 @@ export function downloadPresentationPdf(deck: PresentationDeck): void {
                      slide.layout !== 'describe_image' &&
                      slide.layout !== 'match_text_image' &&
                      slide.grammarHighlighterEnabled &&
-                     (slide.grammarText.trim() ||
+                     (visibleGrammarText(slide).trim() ||
                        (slide.grammarTitleEnabled && slide.grammarTitle.trim()))
                        ? `<div class="grammar">${
                            slide.grammarTitleEnabled && slide.grammarTitle.trim()
                              ? `<strong>${escapeHtml(slide.grammarTitle.trim())}</strong><br/>`
                              : ''
-                         }${escapeHtml(slide.grammarText)}</div>`
+                         }${escapeHtml(visibleGrammarText(slide))}</div>`
                        : ''
                    }
                    ${

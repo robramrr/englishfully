@@ -17,6 +17,7 @@ import VocabBingoLinkSelect from './VocabBingoLinkSelect';
 import { FillBlankEditor } from './PresentationFillBlank';
 import SentenceContestLinkSelect from './SentenceContestLinkSelect';
 import { ListenQuestionEditor } from './PresentationListenQuestions';
+import { GrammarLiveTextBox } from './GrammarHighlight';
 import { PieTimerEditor } from './PresentationPieTimer';
 import { QuizEditor } from './PresentationQuiz';
 import { structurePastedContent, cleanSlideText } from '@/lib/presentation/parsePaste';
@@ -38,12 +39,14 @@ import {
   createEmptyTableHeaders,
   createEmptyTableRows,
   createSlideId,
+  grammarBoxModeOf,
   MAX_CONTENT_IMAGES,
   MAX_MATCH_PAIRS,
   normalizeBulletsKeepGaps,
   normalizeDeck,
   readContentSlideImages,
   PRESENTATION_CHOICE_LETTERS,
+  type GrammarBoxMode,
   type PresentationDeck,
   type PresentationDescribeWord,
   type PresentationSlide,
@@ -76,6 +79,29 @@ function updateSlide(
   };
 }
 
+type SlideGamePick = 'none' | 'anagram' | 'sentence_contest' | 'bingo' | 'quiz';
+
+function firstLinkedGame(slide: PresentationSlide): SlideGamePick {
+  if (slide.anagramActivityId.trim()) return 'anagram';
+  if (slide.sentenceContestActivityId.trim()) return 'sentence_contest';
+  if (slide.bingoActivityId.trim()) return 'bingo';
+  if (slide.quizEnabled) return 'quiz';
+  return 'none';
+}
+
+function applyLiveGrammarText(
+  deck: PresentationDeck,
+  slideId: string,
+  text: string
+): PresentationDeck {
+  const slide = deck.slides.find((item) => item.id === slideId);
+  if (!slide) return deck;
+  if (grammarBoxModeOf(slide) === 'prewritten') {
+    return updateSlide(deck, slideId, { grammarPrewritten: text });
+  }
+  return updateSlide(deck, slideId, { grammarText: text });
+}
+
 interface PresentationEditorProps {
   presentationId: string;
 }
@@ -97,6 +123,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
   const [describeAnalyzing, setDescribeAnalyzing] = useState(false);
   const [newDescribeWord, setNewDescribeWord] = useState('');
   const [newDescribeMatches, setNewDescribeMatches] = useState(true);
+  const [gamePick, setGamePick] = useState<SlideGamePick>('none');
 
   useEffect(() => {
     let cancelled = false;
@@ -143,6 +170,15 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
       cancelled = true;
     };
   }, [presentationId]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    const slide = deck.slides.find((item) => item.id === selectedId);
+    if (!slide) return;
+    setGamePick(firstLinkedGame(slide));
+    // Only when the selected slide changes, so picking a game in the menu sticks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
 
   useEffect(() => {
     if (!hydrated || !deck.id) return;
@@ -394,8 +430,8 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
         onIndexChange={setPreviewIndex}
         onClose={() => setPreviewMode('off')}
         fullscreen
-        onGrammarTextChange={(slideId, grammarText) =>
-          setDeck((prev) => updateSlide(prev, slideId, { grammarText }))
+        onGrammarTextChange={(slideId, text) =>
+          setDeck((prev) => applyLiveGrammarText(prev, slideId, text))
         }
       />
     );
@@ -545,8 +581,8 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
             index={previewIndex}
             onIndexChange={setPreviewIndex}
             onClose={() => setPreviewMode('off')}
-            onGrammarTextChange={(slideId, grammarText) =>
-              setDeck((prev) => updateSlide(prev, slideId, { grammarText }))
+            onGrammarTextChange={(slideId, text) =>
+              setDeck((prev) => applyLiveGrammarText(prev, slideId, text))
             }
           />
         </ComicCard>
@@ -1643,43 +1679,79 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                   </div>
                 ) : null}
 
-                <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
-                  <AnagramActivityLinkSelect
-                    value={selected.anagramActivityId}
-                    onChange={(anagramActivityId) =>
-                      setDeck((prev) => updateSlide(prev, selected.id, { anagramActivityId }))
-                    }
-                  />
-                </div>
+                <div className="space-y-3">
+                  <label className="block space-y-1">
+                    <ComicText className="text-sm font-bold">Game activity</ComicText>
+                    <select
+                      className="comic-input w-full font-bold"
+                      value={
+                        selected.layout === 'listen_question' && gamePick === 'quiz'
+                          ? 'none'
+                          : gamePick
+                      }
+                      onChange={(event) => setGamePick(event.target.value as SlideGamePick)}
+                    >
+                      <option value="none">None</option>
+                      <option value="anagram">
+                        Anagram{selected.anagramActivityId.trim() ? ' · on this slide' : ''}
+                      </option>
+                      <option value="sentence_contest">
+                        Sentence contest
+                        {selected.sentenceContestActivityId.trim() ? ' · on this slide' : ''}
+                      </option>
+                      <option value="bingo">
+                        Vocabulary Bingo
+                        {selected.bingoActivityId.trim() ? ' · on this slide' : ''}
+                      </option>
+                      {selected.layout === 'listen_question' ? null : (
+                        <option value="quiz">
+                          Multiple choice{selected.quizEnabled ? ' · on this slide' : ''}
+                        </option>
+                      )}
+                    </select>
+                    <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
+                      Choose one activity to set it up. Anything already linked stays on the slide.
+                    </ComicText>
+                  </label>
 
-                <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
-                  <SentenceContestLinkSelect
-                    value={selected.sentenceContestActivityId}
-                    onChange={(sentenceContestActivityId) =>
-                      setDeck((prev) =>
-                        updateSlide(prev, selected.id, { sentenceContestActivityId })
-                      )
-                    }
-                  />
-                </div>
+                  {gamePick === 'anagram' ? (
+                    <AnagramActivityLinkSelect
+                      value={selected.anagramActivityId}
+                      onChange={(anagramActivityId) =>
+                        setDeck((prev) => updateSlide(prev, selected.id, { anagramActivityId }))
+                      }
+                    />
+                  ) : null}
 
-                <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
-                  <VocabBingoLinkSelect
-                    value={selected.bingoActivityId}
-                    onChange={(bingoActivityId) =>
-                      setDeck((prev) => updateSlide(prev, selected.id, { bingoActivityId }))
-                    }
-                  />
-                </div>
+                  {gamePick === 'sentence_contest' ? (
+                    <SentenceContestLinkSelect
+                      value={selected.sentenceContestActivityId}
+                      onChange={(sentenceContestActivityId) =>
+                        setDeck((prev) =>
+                          updateSlide(prev, selected.id, { sentenceContestActivityId })
+                        )
+                      }
+                    />
+                  ) : null}
 
-                {selected.layout === 'listen_question' ? null : (
-                <QuizEditor
-                  slide={selected}
-                  onChange={(patch) =>
-                    setDeck((prev) => updateSlide(prev, selected.id, patch))
-                  }
-                />
-                )}
+                  {gamePick === 'bingo' ? (
+                    <VocabBingoLinkSelect
+                      value={selected.bingoActivityId}
+                      onChange={(bingoActivityId) =>
+                        setDeck((prev) => updateSlide(prev, selected.id, { bingoActivityId }))
+                      }
+                    />
+                  ) : null}
+
+                  {gamePick === 'quiz' && selected.layout !== 'listen_question' ? (
+                    <QuizEditor
+                      slide={selected}
+                      onChange={(patch) =>
+                        setDeck((prev) => updateSlide(prev, selected.id, patch))
+                      }
+                    />
+                  ) : null}
+                </div>
 
                 {selected.layout === 'pie_timer' ? null : (
                 <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
@@ -1687,8 +1759,8 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                     <div>
                       <ComicText className="font-black">Slide timer</ComicText>
                       <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                        Optional countdown for this slide only (think time, speak time, etc.).
-                        Works with any layout. Start it while presenting.
+                        Optional pie countdown for this slide only (think time, speak time, etc.).
+                        The slice shrinks clockwise. Start it while presenting.
                       </ComicText>
                     </div>
                     <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
@@ -1830,32 +1902,33 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                             placeholder="e.g. Possessive Adjectives"
                           />
                         </label>
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div>
-                            <ComicText className="text-sm font-bold">Custom placeholder</ComicText>
-                            <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
-                              Override “Example...” with a form/reminder (line breaks allowed).
-                            </ComicText>
-                          </div>
-                          <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
-                            <span className="text-sm">
-                              {selected.grammarCustomPlaceholderEnabled ? 'On' : 'Off'}
-                            </span>
-                            <input
-                              type="checkbox"
-                              className="h-5 w-9 accent-[var(--comic-primary)]"
-                              checked={selected.grammarCustomPlaceholderEnabled}
-                              onChange={(event) =>
-                                setDeck((prev) =>
-                                  updateSlide(prev, selected.id, {
-                                    grammarCustomPlaceholderEnabled: event.target.checked,
-                                  })
-                                )
-                              }
-                            />
-                          </label>
-                        </div>
-                        {selected.grammarCustomPlaceholderEnabled ? (
+                        <label className="block space-y-1">
+                          <ComicText className="text-sm font-bold">Practice text</ComicText>
+                          <select
+                            className="comic-input w-full font-bold"
+                            value={grammarBoxModeOf(selected)}
+                            onChange={(event) => {
+                              const grammarBoxMode = event.target.value as GrammarBoxMode;
+                              setDeck((prev) =>
+                                updateSlide(prev, selected.id, {
+                                  grammarBoxMode,
+                                  grammarCustomPlaceholderEnabled:
+                                    grammarBoxMode === 'placeholder',
+                                })
+                              );
+                            }}
+                          >
+                            <option value="none">None</option>
+                            <option value="placeholder">Placeholder</option>
+                            <option value="prewritten">Prewritten text</option>
+                          </select>
+                          <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
+                            None uses “Example...”. Placeholder is a hint until you type.
+                            Prewritten text is already in the box — you can still edit it live, and
+                            the highlighter marks the target grammar.
+                          </ComicText>
+                        </label>
+                        {grammarBoxModeOf(selected) === 'placeholder' ? (
                           <label className="block space-y-1">
                             <ComicText className="text-sm font-bold">
                               Placeholder text
@@ -1876,6 +1949,27 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                               }
                             />
                           </label>
+                        ) : null}
+                        {grammarBoxModeOf(selected) === 'prewritten' ? (
+                          <div className="space-y-1">
+                            <ComicText className="text-sm font-bold">Prewritten text</ComicText>
+                            <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
+                              These sentences appear in the practice box. Edit them here or on the
+                              slide. After a full stop, the target grammar highlights yellow.
+                            </ComicText>
+                            <GrammarLiveTextBox
+                              key={`${selected.id}-prewritten`}
+                              value={selected.grammarPrewritten}
+                              grammarTarget={selected.grammarTarget}
+                              onChange={(grammarPrewritten) =>
+                                setDeck((prev) =>
+                                  updateSlide(prev, selected.id, { grammarPrewritten })
+                                )
+                              }
+                              placeholder="Write the example sentences students will see."
+                              className="font-bold leading-relaxed"
+                            />
+                          </div>
                         ) : null}
                       </div>
                     ) : null}
@@ -1899,8 +1993,8 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                   }
                   onGrammarTextChange={
                     selected.layout === 'content' && selected.grammarHighlighterEnabled
-                      ? (grammarText) =>
-                          setDeck((prev) => updateSlide(prev, selected.id, { grammarText }))
+                      ? (text) =>
+                          setDeck((prev) => applyLiveGrammarText(prev, selected.id, text))
                       : undefined
                   }
                 />

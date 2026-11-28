@@ -15,6 +15,9 @@ export type PresentationSlideLayout =
 
 export type PresentationChoiceLetter = 'A' | 'B' | 'C' | 'D';
 
+/** How the grammar practice box is filled before class. */
+export type GrammarBoxMode = 'none' | 'placeholder' | 'prewritten';
+
 export interface PresentationDescribeWord {
   id: string;
   text: string;
@@ -658,12 +661,21 @@ export interface PresentationSlide {
   grammarTitle: string;
   /** e.g. "Possessive Adjectives" */
   grammarTarget: string;
-  /** Practice text for the grammar highlighter box (not the definition). */
+  /** Practice text typed live when the box is empty or showing a placeholder. */
   grammarText: string;
-  /** When true, grammarPlaceholder replaces the default "Example..." hint. */
+  /**
+   * What the practice box starts with.
+   * none = default “Example...” hint
+   * placeholder = custom hint until someone types
+   * prewritten = real sentences already in the box (editable, highlighted)
+   */
+  grammarBoxMode: GrammarBoxMode;
+  /** @deprecated Synced from grammarBoxMode === 'placeholder'. */
   grammarCustomPlaceholderEnabled: boolean;
   /** Multi-line custom placeholder (e.g. sentence frames). */
   grammarPlaceholder: string;
+  /** Example sentences prepared ahead of time. Shown as real text when mode is prewritten. */
+  grammarPrewritten: string;
   /** Text + image: which column the grammar practice box sits in. */
   grammarPlacement: 'left' | 'right';
   /** Audio + image: full audio URL (same pattern as Listen & Learn). */
@@ -979,6 +991,31 @@ function normalizeTableRows(
   });
 }
 
+export function grammarBoxModeOf(slide: {
+  grammarBoxMode?: string;
+  grammarCustomPlaceholderEnabled?: boolean;
+}): GrammarBoxMode {
+  if (
+    slide.grammarBoxMode === 'none' ||
+    slide.grammarBoxMode === 'placeholder' ||
+    slide.grammarBoxMode === 'prewritten'
+  ) {
+    return slide.grammarBoxMode;
+  }
+  return slide.grammarCustomPlaceholderEnabled ? 'placeholder' : 'none';
+}
+
+/** Text actually inside the grammar box (placeholder hints are not included). */
+export function visibleGrammarText(slide: {
+  grammarBoxMode?: string;
+  grammarCustomPlaceholderEnabled?: boolean;
+  grammarText?: string;
+  grammarPrewritten?: string;
+}): string {
+  if (grammarBoxModeOf(slide) === 'prewritten') return String(slide.grammarPrewritten ?? '');
+  return String(slide.grammarText ?? '');
+}
+
 export function createEmptySlide(
   layout: PresentationSlideLayout = 'content'
 ): PresentationSlide {
@@ -1034,8 +1071,10 @@ export function createEmptySlide(
     grammarTitle: '',
     grammarTarget: '',
     grammarText: '',
+    grammarBoxMode: 'none',
     grammarCustomPlaceholderEnabled: false,
     grammarPlaceholder: '',
+    grammarPrewritten: '',
     grammarPlacement: 'left',
     audioUrl: '',
     audioTracks: [createEmptyAudioTrack()],
@@ -1142,8 +1181,10 @@ export function normalizeSlide(
     grammarTitle: String(slide.grammarTitle ?? ''),
     grammarTarget: String(slide.grammarTarget ?? ''),
     grammarText: String(slide.grammarText ?? ''),
-    grammarCustomPlaceholderEnabled: Boolean(slide.grammarCustomPlaceholderEnabled),
+    grammarBoxMode: grammarBoxModeOf(slide),
+    grammarCustomPlaceholderEnabled: grammarBoxModeOf(slide) === 'placeholder',
     grammarPlaceholder: String(slide.grammarPlaceholder ?? ''),
+    grammarPrewritten: String(slide.grammarPrewritten ?? ''),
     grammarPlacement: slide.grammarPlacement === 'right' ? 'right' : 'left',
     audioUrl: String(slide.audioUrl ?? ''),
     audioTracks: tracks,

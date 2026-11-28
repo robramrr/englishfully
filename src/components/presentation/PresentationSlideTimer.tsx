@@ -2,8 +2,38 @@
 
 import { useEffect, useState } from 'react';
 import ComicButton from '../ComicButton';
+import { formatPieDuration } from '@/lib/presentation/types';
 
+const NAVY = '#001a48';
 const WARN = '#ea1225';
+const TRACK = '#e7eef8';
+
+function polar(cx: number, cy: number, radius: number, angleFromTop: number) {
+  const theta = angleFromTop - Math.PI / 2;
+  return {
+    x: cx + radius * Math.cos(theta),
+    y: cy + radius * Math.sin(theta),
+  };
+}
+
+/** Remaining-time wedge. 1 = full pie, 0 = empty. Starts at 12 o'clock and shrinks clockwise. */
+function remainingPiePath(fraction: number): string {
+  const cx = 50;
+  const cy = 50;
+  const radius = 46;
+  const clamped = Math.max(0, Math.min(1, fraction));
+  if (clamped <= 0.001) return '';
+  if (clamped >= 0.999) {
+    const start = polar(cx, cy, radius, 0);
+    const mid = polar(cx, cy, radius, Math.PI);
+    return `M ${cx} ${cy} L ${start.x} ${start.y} A ${radius} ${radius} 0 1 1 ${mid.x} ${mid.y} A ${radius} ${radius} 0 1 1 ${start.x} ${start.y} Z`;
+  }
+  const endAngle = clamped * Math.PI * 2;
+  const start = polar(cx, cy, radius, 0);
+  const end = polar(cx, cy, radius, endAngle);
+  const large = endAngle > Math.PI ? 1 : 0;
+  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${large} 1 ${end.x} ${end.y} Z`;
+}
 
 export interface SlideTimerState {
   started: boolean;
@@ -73,7 +103,7 @@ function playTimeUpTone() {
 }
 
 /**
- * Optional per-slide countdown for any layout (classroom think / speak time).
+ * Optional per-slide countdown. One pie that shrinks clockwise until time is up.
  */
 export default function PresentationSlideTimer({
   enabled,
@@ -125,36 +155,65 @@ export default function PresentationSlideTimer({
   }
 
   const urgent = timeUp || (started && secondsLeft <= 5);
+  const shown = timeUp ? 0 : started ? secondsLeft : duration;
+  const clock = formatPieDuration(shown);
+  const fraction = timeUp ? 0 : started ? secondsLeft / duration : 1;
+  const piePx = compact ? 52 : present ? 132 : 96;
+  const digitPx = compact ? 9 : present ? (clock.length > 4 ? 14 : 18) : clock.length > 4 ? 11 : 13;
+  const fill = urgent ? WARN : NAVY;
 
   return (
-    <div
-      className={[
-        'flex flex-wrap items-center gap-2 rounded-lg border-4 border-[var(--comic-black)] bg-white/95 comic-shadow-md',
-        compact ? 'px-2 py-1' : present ? 'px-4 py-2' : 'px-3 py-2',
-      ].join(' ')}
-    >
-      <span
-        className={[
-          'font-bungee tabular-nums',
-          compact ? 'text-base' : present ? 'text-2xl md:text-3xl' : 'text-xl',
-        ].join(' ')}
-        style={{ color: urgent ? WARN : 'var(--comic-secondary)' }}
+    <div className="flex flex-col items-end gap-1" role="timer" aria-live="polite">
+      <button
+        type="button"
+        className="relative border-0 bg-transparent p-0"
+        style={{ width: piePx, height: piePx }}
+        aria-label={
+          timeUp ? "Time's up" : started ? clock : `Start timer, ${clock}`
+        }
+        onClick={(event) => {
+          event.stopPropagation();
+          if (!started && !timeUp) handleStart();
+        }}
       >
-        {started ? `${secondsLeft}s` : `${duration}s`}
-      </span>
-      {timeUp ? (
+        <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden>
+          <circle cx="50" cy="50" r="47" fill="#ffffff" stroke={NAVY} strokeWidth="3" />
+          <circle cx="50" cy="50" r="46" fill={TRACK} />
+          <path d={remainingPiePath(fraction)} fill={fill} />
+        </svg>
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div
+            className={[
+              'flex aspect-square w-[38%] items-center justify-center rounded-full border-4 border-[var(--comic-black)] bg-white',
+              urgent && started ? 'animate-pulse' : '',
+            ].join(' ')}
+          >
+            <span
+              className="font-bungee tabular-nums leading-none"
+              style={{ fontSize: digitPx, color: fill }}
+            >
+              {clock}
+            </span>
+          </div>
+        </div>
+      </button>
+      {timeUp && !compact ? (
         <span className="font-black" style={{ color: WARN }}>
-          Time's up
+          Time&apos;s up
         </span>
       ) : null}
-      {!started ? (
-        <ComicButton type="button" variant="secondary" size="sm" onClick={handleStart}>
-          Start
-        </ComicButton>
-      ) : null}
-      <ComicButton type="button" variant="accent" size="sm" onClick={handleReset}>
-        Reset
-      </ComicButton>
+      {compact ? null : (
+        <div className="flex flex-wrap justify-end gap-1">
+          {!started ? (
+            <ComicButton type="button" variant="secondary" size="sm" onClick={handleStart}>
+              Start
+            </ComicButton>
+          ) : null}
+          <ComicButton type="button" variant="accent" size="sm" onClick={handleReset}>
+            Reset
+          </ComicButton>
+        </div>
+      )}
     </div>
   );
 }

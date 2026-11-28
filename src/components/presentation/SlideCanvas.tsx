@@ -3,9 +3,11 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import {
+  grammarBoxModeOf,
   presentationFontColorCss,
   presentationFontSizePx,
   getContentSlideImages,
+  visibleGrammarText,
   type PresentationDeck,
   type PresentationSlide,
 } from '@/lib/presentation/types';
@@ -743,14 +745,14 @@ function ContentBody({
           ) : null}
           <GrammarLiveTextBox
             key={slide.id}
-            value={slide.grammarText}
+            value={visibleGrammarText(slide)}
             grammarTarget={slide.grammarTarget}
             editable={liveEditable && Boolean(onGrammarTextChange)}
             onChange={onGrammarTextChange}
             className="font-bold leading-relaxed"
             style={{ fontSize: `${bodyPx}px`, lineHeight: 1.35 }}
             placeholder={
-              slide.grammarCustomPlaceholderEnabled && slide.grammarPlaceholder.trim()
+              grammarBoxModeOf(slide) === 'placeholder' && slide.grammarPlaceholder.trim()
                 ? slide.grammarPlaceholder
                 : 'Example...'
             }
