@@ -9,6 +9,7 @@ import { splitSlideLinks } from './linkify';
 import {
   QUIZ_CHOICE_LETTERS,
   blankSentencePlain,
+  contentColumnLeftShare,
   contentColumnSplitOf,
   formatPieDuration,
   getContentSlideImages,
@@ -524,7 +525,7 @@ export async function buildPresentationPptxBuffer(
         (contentImages.length === 1 ||
           Boolean(slide.imageUrl.trim() || String(slide.imageUrl2 ?? '').trim()));
       const split = contentColumnSplitOf(slide.contentColumnSplit);
-      const leftShare = split === 'wide-right' ? 0.25 : split === 'wide-left' ? 0.75 : 0.5;
+      const leftShare = contentColumnLeftShare(split);
       const columnGap = 0.25;
       const pageX = 0.6;
       const pageW = 12.1;
@@ -852,8 +853,7 @@ export async function buildPresentationPptxBuffer(
       if (slide.quizPrompt.trim() || lines.length > 0) {
         const quizOnRight = slide.layout === 'content' && slide.quizPlacement === 'right';
         const quizSplit = contentColumnSplitOf(slide.contentColumnSplit);
-        const quizLeftShare =
-          quizSplit === 'wide-right' ? 0.25 : quizSplit === 'wide-left' ? 0.75 : 0.5;
+        const quizLeftShare = contentColumnLeftShare(quizSplit);
         const quizRightW = (12.1 - 0.25) * (1 - quizLeftShare);
         const quizRightX = 0.6 + (12.1 - 0.25) * quizLeftShare + 0.25;
         page.addText(

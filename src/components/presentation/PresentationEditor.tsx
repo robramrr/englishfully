@@ -698,12 +698,13 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center gap-2">
                       <ComicText className="text-sm font-bold">Columns</ComicText>
-                      <EditorInfo text="How the left and right sides share the slide. 25 / 75 gives the right side more room. 75 / 25 gives the left side more room." />
+                      <EditorInfo text="How the left and right sides share the slide. 40 / 60 and 25 / 75 give the right side more room. 75 / 25 gives the left side more room." />
                     </span>
                     {(
                       [
-                        ['even', '50 / 50'],
                         ['wide-left', '75 / 25'],
+                        ['even', '50 / 50'],
+                        ['lean-right', '40 / 60'],
                         ['wide-right', '25 / 75'],
                       ] as const
                     ).map(([value, label]) => {
