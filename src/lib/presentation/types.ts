@@ -15,8 +15,23 @@ export type PresentationSlideLayout =
 
 export type PresentationChoiceLetter = 'A' | 'B' | 'C' | 'D';
 
+/** Text + image: how the two columns share the slide width. */
+export type ContentColumnSplit = 'even' | 'wide-left' | 'wide-right';
+
 /** How the grammar practice box is filled before class. */
 export type GrammarBoxMode = 'none' | 'placeholder' | 'prewritten';
+
+export function contentColumnSplitOf(value: unknown): ContentColumnSplit {
+  if (value === 'wide-left' || value === 'wide-right') return value;
+  return 'even';
+}
+
+/** CSS grid columns. wide-right is 25/75. wide-left is 75/25. */
+export function contentColumnTemplate(split: ContentColumnSplit): string {
+  if (split === 'wide-right') return 'minmax(0,1fr) minmax(0,3fr)';
+  if (split === 'wide-left') return 'minmax(0,3fr) minmax(0,1fr)';
+  return 'minmax(0,1fr) minmax(0,1fr)';
+}
 
 export interface PresentationDescribeWord {
   id: string;
@@ -678,6 +693,12 @@ export interface PresentationSlide {
   grammarPrewritten: string;
   /** Text + image: which column the grammar practice box sits in. */
   grammarPlacement: 'left' | 'right';
+  /** Size of the grammar practice text. */
+  grammarFontSize: PresentationFontSize;
+  /** Color of the grammar practice text. */
+  grammarColor: PresentationFontColor;
+  /** Text + image: left/right width. even is 50/50, wide-right is 25/75, wide-left is 75/25. */
+  contentColumnSplit: ContentColumnSplit;
   /** Audio + image: full audio URL (same pattern as Listen & Learn). */
   audioUrl: string;
   /**
@@ -1076,6 +1097,9 @@ export function createEmptySlide(
     grammarPlaceholder: '',
     grammarPrewritten: '',
     grammarPlacement: 'left',
+    grammarFontSize: 'md',
+    grammarColor: 'navy',
+    contentColumnSplit: 'even',
     audioUrl: '',
     audioTracks: [createEmptyAudioTrack()],
     audioStartSeconds: 0,
@@ -1186,6 +1210,9 @@ export function normalizeSlide(
     grammarPlaceholder: String(slide.grammarPlaceholder ?? ''),
     grammarPrewritten: String(slide.grammarPrewritten ?? ''),
     grammarPlacement: slide.grammarPlacement === 'right' ? 'right' : 'left',
+    grammarFontSize: normalizeFontSize(slide.grammarFontSize),
+    grammarColor: normalizeFontColor(slide.grammarColor),
+    contentColumnSplit: contentColumnSplitOf(slide.contentColumnSplit),
     audioUrl: String(slide.audioUrl ?? ''),
     audioTracks: tracks,
     audioStartSeconds: first.startSeconds,

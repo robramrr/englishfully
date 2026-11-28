@@ -3,6 +3,8 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import {
+  contentColumnSplitOf,
+  contentColumnTemplate,
   grammarBoxModeOf,
   presentationFontColorCss,
   presentationFontSizePx,
@@ -664,7 +666,7 @@ function ContentBody({
   const grammarOn =
     slide.layout === 'content' && slide.grammarHighlighterEnabled;
   const mode = sizeMode(compact, present);
-  const bodyPx = presentationFontSizePx(slide.bodyFontSize, mode);
+  const grammarStyle = textStyle(slide.grammarFontSize, slide.grammarColor, mode);
   const showBody = slide.showBody !== false;
   const bodyText = body.trim();
   const hasBullets = slide.bullets.filter((item) => item.trim()).length > 0;
@@ -736,10 +738,7 @@ function ContentBody({
       {showGrammarHere ? (
         <div className="flex min-w-0 flex-col gap-2">
           {slide.grammarTitleEnabled && slide.grammarTitle.trim() ? (
-            <p
-              className="font-bungee leading-tight text-[var(--comic-secondary)]"
-              style={{ fontSize: `${Math.max(bodyPx, 18)}px` }}
-            >
+            <p className="font-bungee leading-tight" style={grammarStyle}>
               {slide.grammarTitle.trim()}
             </p>
           ) : null}
@@ -750,7 +749,7 @@ function ContentBody({
             editable={liveEditable && Boolean(onGrammarTextChange)}
             onChange={onGrammarTextChange}
             className="font-bold leading-relaxed"
-            style={{ fontSize: `${bodyPx}px`, lineHeight: 1.35 }}
+            style={grammarStyle}
             placeholder={
               grammarBoxModeOf(slide) === 'placeholder' && slide.grammarPlaceholder.trim()
                 ? slide.grammarPlaceholder
@@ -831,6 +830,7 @@ export default function SlideCanvas({
       (slide.bullets.some((item) => item.trim()) && slide.bulletsPlacement === 'right') ||
       (Boolean(slide.grammarHighlighterEnabled) && slide.grammarPlacement === 'right') ||
       (Boolean(slide.quizEnabled) && slide.quizPlacement === 'right'));
+  const columnTemplate = contentColumnTemplate(contentColumnSplitOf(slide.contentColumnSplit));
   const mode = sizeMode(compact, present);
   const timerOn = Boolean(slide.timerEnabled);
   const [timerState, setTimerState] = useState<SlideTimerState>({
@@ -987,9 +987,10 @@ export default function SlideCanvas({
                 <div
                   className={
                     contentOnRight
-                      ? 'grid min-h-0 grid-cols-2 items-start gap-4'
+                      ? 'grid min-h-0 items-start gap-4'
                       : 'flex min-h-0 flex-col gap-3 overflow-auto'
                   }
+                  style={contentOnRight ? { gridTemplateColumns: columnTemplate } : undefined}
                 >
                   <ContentBody
                     slide={slide}
@@ -1057,8 +1058,12 @@ export default function SlideCanvas({
               <div
                 className={[
                   'grid min-h-0 items-stretch gap-4',
-                  showRightColumn || contentOnRight ? 'flex-1 grid-cols-2' : 'grid-cols-1',
+                  showRightColumn || contentOnRight ? 'flex-1' : '',
                 ].join(' ')}
+                style={{
+                  gridTemplateColumns:
+                    showRightColumn || contentOnRight ? columnTemplate : 'minmax(0,1fr)',
+                }}
               >
                 <div className="flex h-full min-h-0 min-w-0 flex-col gap-3 overflow-auto">
                   <ContentBody

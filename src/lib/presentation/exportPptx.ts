@@ -9,6 +9,7 @@ import { splitSlideLinks } from './linkify';
 import {
   QUIZ_CHOICE_LETTERS,
   blankSentencePlain,
+  contentColumnSplitOf,
   formatPieDuration,
   getContentSlideImages,
   visibleGrammarText,
@@ -522,7 +523,25 @@ export async function buildPresentationPptxBuffer(
         !multiImages &&
         (contentImages.length === 1 ||
           Boolean(slide.imageUrl.trim() || String(slide.imageUrl2 ?? '').trim()));
-      const textWidth = sideImage ? 6.8 : 12.1;
+      const split = contentColumnSplitOf(slide.contentColumnSplit);
+      const leftShare = split === 'wide-right' ? 0.25 : split === 'wide-left' ? 0.75 : 0.5;
+      const columnGap = 0.25;
+      const pageX = 0.6;
+      const pageW = 12.1;
+      const splitLeftW = (pageW - columnGap) * leftShare;
+      const splitRightW = pageW - columnGap - splitLeftW;
+      const splitRightX = pageX + splitLeftW + columnGap;
+      const hasRightColumn =
+        slide.layout === 'content' &&
+        (sideImage ||
+          (slide.showBody !== false &&
+            Boolean(slide.body.trim()) &&
+            slide.bodyPlacement === 'right') ||
+          (Boolean(slide.tableEnabled) && slide.tablePlacement === 'right') ||
+          (slide.bullets.some((item) => item.trim()) && slide.bulletsPlacement === 'right') ||
+          (Boolean(slide.grammarHighlighterEnabled) && slide.grammarPlacement === 'right') ||
+          (Boolean(slide.quizEnabled) && slide.quizPlacement === 'right'));
+      const textWidth = hasRightColumn ? splitLeftW : pageW;
       const showTitle = slide.showTitle !== false;
       const showBody = slide.showBody !== false;
 
@@ -546,9 +565,9 @@ export async function buildPresentationPptxBuffer(
       if (showBody && slide.body.trim()) {
         const boxH = bodyOnRight ? 1.6 : multiImages || showTable ? 1.4 : 2.2;
         page.addText(pptxText(slide.body, pptxFontColor(slide.bodyColor)), {
-          x: bodyOnRight ? 7.1 : 0.6,
+          x: bodyOnRight ? splitRightX : 0.6,
           y: bodyOnRight ? rightY : y,
-          w: bodyOnRight ? 5.6 : textWidth,
+          w: bodyOnRight ? splitRightW : textWidth,
           h: boxH,
           fontSize: pptxFontSize(slide.bodyFontSize, 18),
           bold: true,
@@ -589,11 +608,11 @@ export async function buildPresentationPptxBuffer(
           ),
         ];
         const tableOnRight = slide.layout === 'content' && slide.tablePlacement === 'right';
-        const tableWidth = Math.min(tableOnRight ? 5.6 : textWidth, 2.2 * headers.length);
+        const tableWidth = Math.min(tableOnRight ? splitRightW : textWidth, 2.2 * headers.length);
         const tableY = tableOnRight ? rightY : Math.min(y, 4.0);
         const placedWidth = tableWidth;
         page.addTable(tableRows, {
-          x: tableOnRight ? 7.1 : 0.6,
+          x: tableOnRight ? splitRightX : 0.6,
           y: tableY,
           w: placedWidth,
           colW: headers.map(() => placedWidth / headers.length),
@@ -634,9 +653,9 @@ export async function buildPresentationPptxBuffer(
             }));
           }),
           {
-            x: bulletsOnRight ? 7.1 : 0.6,
+            x: bulletsOnRight ? splitRightX : 0.6,
             y: bulletsOnRight ? rightY : y,
-            w: bulletsOnRight ? 5.6 : textWidth,
+            w: bulletsOnRight ? splitRightW : textWidth,
             h: bulletH,
             fontSize: pptxFontSize(slide.bulletsFontSize, 18),
             bold: true,
@@ -659,8 +678,8 @@ export async function buildPresentationPptxBuffer(
         const grammarY = grammarOnRight
           ? rightY
           : Math.min(y, multiImages || showTable ? 3.2 : 5.2);
-        const grammarW = grammarOnRight ? 5.6 : textWidth;
-        const grammarX = grammarOnRight ? 7.1 : 0.6;
+        const grammarW = grammarOnRight ? splitRightW : textWidth;
+        const grammarX = grammarOnRight ? splitRightX : 0.6;
         let grammarCursor = grammarY;
         if (grammarTitle) {
           page.addText(grammarTitle, {
@@ -668,9 +687,9 @@ export async function buildPresentationPptxBuffer(
             y: grammarCursor,
             w: grammarW,
             h: 0.36,
-            fontSize: 16,
+            fontSize: pptxFontSize(slide.grammarFontSize, 16),
             bold: true,
-            color: NAVY,
+            color: pptxFontColor(slide.grammarColor),
             fontFace: 'Arial',
           });
           grammarCursor += 0.4;
@@ -688,9 +707,9 @@ export async function buildPresentationPptxBuffer(
           y: grammarCursor + 0.12,
           w: grammarW - 0.3,
           h: 0.75,
-          fontSize: 16,
+          fontSize: pptxFontSize(slide.grammarFontSize, 16),
           bold: true,
-          color: NAVY,
+          color: pptxFontColor(slide.grammarColor),
           fontFace: 'Arial',
           valign: 'top',
         });
@@ -773,16 +792,16 @@ export async function buildPresentationPptxBuffer(
         if (imageData) {
           page.addImage({
             data: imageData,
-            x: 7.8,
+            x: splitRightX,
             y: 1.35,
-            w: 4.8,
+            w: splitRightW,
             h: imageH,
           });
         } else {
           page.addText(imageSrc, {
-            x: 7.8,
+            x: splitRightX,
             y: 1.35,
-            w: 4.8,
+            w: splitRightW,
             h: 1.2,
             fontSize: 11,
             color: NAVY,
@@ -792,9 +811,9 @@ export async function buildPresentationPptxBuffer(
         let captionY = 1.35 + imageH;
         if (captionTitle) {
           page.addText(captionTitle, {
-            x: 7.8,
+            x: splitRightX,
             y: captionY,
-            w: 4.8,
+            w: splitRightW,
             h: 0.3,
             fontSize: 14,
             bold: true,
@@ -806,9 +825,9 @@ export async function buildPresentationPptxBuffer(
         }
         if (captionSubtitle) {
           page.addText(captionSubtitle, {
-            x: 7.8,
+            x: splitRightX,
             y: captionY,
-            w: 4.8,
+            w: splitRightW,
             h: 0.26,
             fontSize: 12,
             bold: true,
@@ -831,15 +850,21 @@ export async function buildPresentationPptxBuffer(
         })
         .filter(Boolean);
       if (slide.quizPrompt.trim() || lines.length > 0) {
+        const quizOnRight = slide.layout === 'content' && slide.quizPlacement === 'right';
+        const quizSplit = contentColumnSplitOf(slide.contentColumnSplit);
+        const quizLeftShare =
+          quizSplit === 'wide-right' ? 0.25 : quizSplit === 'wide-left' ? 0.75 : 0.5;
+        const quizRightW = (12.1 - 0.25) * (1 - quizLeftShare);
+        const quizRightX = 0.6 + (12.1 - 0.25) * quizLeftShare + 0.25;
         page.addText(
           pptxText(
             [slide.quizPrompt.trim(), ...lines].filter(Boolean).join('\n'),
             pptxFontColor(slide.quizColor)
           ),
           {
-            x: slide.layout === 'content' && slide.quizPlacement === 'right' ? 7.1 : 0.6,
+            x: quizOnRight ? quizRightX : 0.6,
             y: 5.85,
-            w: slide.layout === 'content' && slide.quizPlacement === 'right' ? 5.6 : 12.1,
+            w: quizOnRight ? quizRightW : 12.1,
             h: 1.1,
             fontSize: pptxFontSize(slide.quizFontSize, 16),
             bold: true,

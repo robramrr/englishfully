@@ -36,6 +36,7 @@ import {
   createEmptyMatchPair,
   contentImagesToSlidePatch,
   countFilledContentImages,
+  contentColumnSplitOf,
   createEmptySlide,
   createEmptyTableHeaders,
   createEmptyTableRows,
@@ -45,8 +46,11 @@ import {
   MAX_MATCH_PAIRS,
   normalizeBulletsKeepGaps,
   normalizeDeck,
+  presentationFontColorCss,
+  presentationFontSizePx,
   readContentSlideImages,
   PRESENTATION_CHOICE_LETTERS,
+  type ContentColumnSplit,
   type GrammarBoxMode,
   type PresentationDeck,
   type PresentationDescribeWord,
@@ -197,15 +201,23 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
     );
   }, [deck.slides, selected]);
 
-  const [contentImageSlots, setContentImageSlots] = useState(1);
+  const [contentImageSlots, setContentImageSlots] = useState(0);
+  const [openImageIndex, setOpenImageIndex] = useState<number | null>(null);
+  const [imageDetailsOpen, setImageDetailsOpen] = useState(false);
 
   useEffect(() => {
     if (!selected || selected.layout !== 'content') {
-      setContentImageSlots(1);
+      setContentImageSlots(0);
+      setOpenImageIndex(null);
       return;
     }
-    setContentImageSlots(Math.max(1, countFilledContentImages(selected)));
+    setContentImageSlots(countFilledContentImages(selected));
+    setOpenImageIndex(null);
   }, [selected?.id, selected?.layout]);
+
+  useEffect(() => {
+    setImageDetailsOpen(false);
+  }, [selected?.id]);
 
   function moveContentImage(index: number, direction: -1 | 1) {
     if (!selected) return;
@@ -690,6 +702,45 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                   </select>
                 </label>
 
+                {selected.layout === 'content' ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-2">
+                      <ComicText className="text-sm font-bold">Columns</ComicText>
+                      <EditorInfo text="How the left and right sides share the slide. 25 / 75 gives the right side more room. 75 / 25 gives the left side more room." />
+                    </span>
+                    {(
+                      [
+                        ['even', '50 / 50'],
+                        ['wide-left', '75 / 25'],
+                        ['wide-right', '25 / 75'],
+                      ] as const
+                    ).map(([value, label]) => {
+                      const active = contentColumnSplitOf(selected.contentColumnSplit) === value;
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          className="border-4 border-[var(--comic-black)] px-3 py-1 text-sm font-black"
+                          style={
+                            active
+                              ? { backgroundColor: 'var(--comic-secondary)', color: '#ffffff' }
+                              : { backgroundColor: '#ffffff', color: 'var(--comic-dark)' }
+                          }
+                          onClick={() =>
+                            setDeck((prev) =>
+                              updateSlide(prev, selected.id, {
+                                contentColumnSplit: value as ContentColumnSplit,
+                              })
+                            )
+                          }
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+
                 <div className="block space-y-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <ComicText className="text-sm font-bold">
@@ -826,8 +877,8 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                   selected.layout === 'bullets') && (
                   <div className="block space-y-1">
                     <div className="flex items-center gap-2">
-                      <ComicText className="text-sm font-bold">Bullets (one per line)</ComicText>
-                      <EditorInfo text="A blank line adds space between points." />
+                      <ComicText className="text-sm font-bold">Bullets</ComicText>
+                      <EditorInfo text="One point per line. A blank line adds space between points." />
                     </div>
                     <textarea
                       className="comic-textarea w-full min-h-[100px]"
@@ -894,6 +945,15 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                             placeholder="https://…"
                           />
                         </label>
+                        <button
+                          type="button"
+                          className="text-sm font-bold text-[var(--comic-secondary)] underline-offset-2 hover:underline"
+                          onClick={() => setImageDetailsOpen((open) => !open)}
+                        >
+                          {imageDetailsOpen ? 'Hide details' : 'Details'}
+                        </button>
+                        {imageDetailsOpen ? (
+                          <>
                         <label className="block space-y-1">
                           <ComicText className="text-sm font-bold">Image alt text</ComicText>
                           <input
@@ -917,9 +977,15 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                             )
                           }
                         />
+                          </>
+                        ) : null}
                       </>
                     ) : (
-                      <>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <ComicText className="text-sm font-bold">Images</ComicText>
+                          <EditorInfo text="Add an image when you need one. One image sits beside the text. Two or three sit in a row. Four sit in a grid." />
+                        </div>
                         {readContentSlideImages(selected)
                           .slice(0, contentImageSlots)
                           .map((slot, index) => (
@@ -928,13 +994,18 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                               className="space-y-2 border-4 border-[var(--comic-black)]/20 bg-[var(--comic-light)]/30 p-3"
                             >
                               <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-2">
-                                  <ComicText className="text-sm font-black">
-                                    Image {index + 1}
-                                  </ComicText>
-                                  {index === 0 ? (
-                                    <EditorInfo text="One image sits beside the text. Two or three sit in a row below. Four sit in a 2×2 grid. Link a vocabulary deck to pre-teach those words." />
-                                  ) : null}
+                                <button
+                                  type="button"
+                                  className="min-w-0 flex-1 truncate text-left text-sm font-black"
+                                  onClick={() =>
+                                    setOpenImageIndex((current) => (current === index ? null : index))
+                                  }
+                                >
+                                  Image {index + 1}
+                                  <span className="ml-2 font-bold text-[var(--comic-dark)]/70">
+                                    {slot.url ? slot.url : 'No URL yet'}
+                                  </span>
+                                </button>
                                   {contentImageSlots > 1 ? (
                                     <span className="inline-flex items-center">
                                       <button
@@ -957,7 +1028,6 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                                       </button>
                                     </span>
                                   ) : null}
-                                </div>
                                 {index > 0 ? (
                                   <button
                                     type="button"
@@ -972,13 +1042,22 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                                           contentImagesToSlidePatch(images)
                                         )
                                       );
-                                      setContentImageSlots((count) => Math.max(1, count - 1));
+                                      setContentImageSlots((count) => Math.max(0, count - 1));
+                                      setOpenImageIndex((current) =>
+                                        current === index
+                                          ? null
+                                          : current != null && current > index
+                                            ? current - 1
+                                            : current
+                                      );
                                     }}
                                   >
                                     Remove
                                   </button>
                                 ) : null}
                               </div>
+                              {openImageIndex === index ? (
+                              <>
                               <label className="block space-y-1">
                                 <ComicText className="text-sm font-bold">Image URL</ComicText>
                                 <input
@@ -1113,6 +1192,8 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                                   );
                                 }}
                               />
+                              </>
+                              ) : null}
                             </div>
                           ))}
                         {contentImageSlots < MAX_CONTENT_IMAGES ? (
@@ -1121,15 +1202,17 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                             variant="secondary"
                             size="sm"
                             onClick={() =>
-                              setContentImageSlots((count) =>
-                                Math.min(MAX_CONTENT_IMAGES, count + 1)
-                              )
+                              setContentImageSlots((count) => {
+                                const next = Math.min(MAX_CONTENT_IMAGES, count + 1);
+                                setOpenImageIndex(next - 1);
+                                return next;
+                              })
                             }
                           >
                             + Add image
                           </ComicButton>
                         ) : null}
-                      </>
+                      </div>
                     )}
                   </div>
                 )}
@@ -1819,6 +1902,18 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                             )
                           }
                         />
+                        <SlideTextStyleControls
+                          fontSize={selected.grammarFontSize}
+                          color={selected.grammarColor}
+                          onFontSizeChange={(grammarFontSize) =>
+                            setDeck((prev) =>
+                              updateSlide(prev, selected.id, { grammarFontSize })
+                            )
+                          }
+                          onColorChange={(grammarColor) =>
+                            setDeck((prev) => updateSlide(prev, selected.id, { grammarColor }))
+                          }
+                        />
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div className="flex items-center gap-2">
                             <ComicText className="text-sm font-bold">Title</ComicText>
@@ -1935,6 +2030,11 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                               }
                               placeholder="Write the example sentences students will see."
                               className="font-bold leading-relaxed"
+                              style={{
+                                fontSize: presentationFontSizePx(selected.grammarFontSize, 'default'),
+                                color: presentationFontColorCss(selected.grammarColor),
+                                lineHeight: 1.35,
+                              }}
                             />
                           </div>
                         ) : null}
