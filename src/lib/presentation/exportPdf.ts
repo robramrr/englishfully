@@ -25,7 +25,7 @@ function pdfColor(color: PresentationFontColor | undefined): string {
 }
 
 function pdfFontSize(size: PresentationFontSize | undefined, base: number): number {
-  if (size === 'sm') return base - 4;
+  if (size === 'sm') return Math.max(12, Math.round(base * 0.9));
   if (size === 'lg') return base + 4;
   if (size === 'xl') return base + 8;
   return base;

@@ -47,7 +47,7 @@ function pptxText(value: string, color: string): string | PptxGenJS.TextProps[] 
 }
 
 function pptxFontSize(size: PresentationFontSize | undefined, base = 18): number {
-  if (size === 'sm') return Math.max(12, base - 4);
+  if (size === 'sm') return Math.max(14, Math.round(base * 0.9));
   if (size === 'lg') return base + 6;
   if (size === 'xl') return base + 14;
   return base;

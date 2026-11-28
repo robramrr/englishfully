@@ -202,22 +202,14 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
   }, [deck.slides, selected]);
 
   const [contentImageSlots, setContentImageSlots] = useState(0);
-  const [openImageIndex, setOpenImageIndex] = useState<number | null>(null);
-  const [imageDetailsOpen, setImageDetailsOpen] = useState(false);
 
   useEffect(() => {
     if (!selected || selected.layout !== 'content') {
       setContentImageSlots(0);
-      setOpenImageIndex(null);
       return;
     }
     setContentImageSlots(countFilledContentImages(selected));
-    setOpenImageIndex(null);
   }, [selected?.id, selected?.layout]);
-
-  useEffect(() => {
-    setImageDetailsOpen(false);
-  }, [selected?.id]);
 
   function moveContentImage(index: number, direction: -1 | 1) {
     if (!selected) return;
@@ -945,15 +937,6 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                             placeholder="https://…"
                           />
                         </label>
-                        <button
-                          type="button"
-                          className="text-sm font-bold text-[var(--comic-secondary)] underline-offset-2 hover:underline"
-                          onClick={() => setImageDetailsOpen((open) => !open)}
-                        >
-                          {imageDetailsOpen ? 'Hide details' : 'Details'}
-                        </button>
-                        {imageDetailsOpen ? (
-                          <>
                         <label className="block space-y-1">
                           <ComicText className="text-sm font-bold">Image alt text</ComicText>
                           <input
@@ -977,8 +960,6 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                             )
                           }
                         />
-                          </>
-                        ) : null}
                       </>
                     ) : (
                       <div className="space-y-2">
@@ -994,18 +975,9 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                               className="space-y-2 border-4 border-[var(--comic-black)]/20 bg-[var(--comic-light)]/30 p-3"
                             >
                               <div className="flex items-center justify-between gap-2">
-                                <button
-                                  type="button"
-                                  className="min-w-0 flex-1 truncate text-left text-sm font-black"
-                                  onClick={() =>
-                                    setOpenImageIndex((current) => (current === index ? null : index))
-                                  }
-                                >
+                                <ComicText className="text-sm font-black">
                                   Image {index + 1}
-                                  <span className="ml-2 font-bold text-[var(--comic-dark)]/70">
-                                    {slot.url ? slot.url : 'No URL yet'}
-                                  </span>
-                                </button>
+                                </ComicText>
                                   {contentImageSlots > 1 ? (
                                     <span className="inline-flex items-center">
                                       <button
@@ -1028,8 +1000,7 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                                       </button>
                                     </span>
                                   ) : null}
-                                {index > 0 ? (
-                                  <button
+                                <button
                                     type="button"
                                     className="text-sm font-bold text-[var(--comic-primary)] underline-offset-2 hover:underline"
                                     onClick={() => {
@@ -1043,21 +1014,11 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                                         )
                                       );
                                       setContentImageSlots((count) => Math.max(0, count - 1));
-                                      setOpenImageIndex((current) =>
-                                        current === index
-                                          ? null
-                                          : current != null && current > index
-                                            ? current - 1
-                                            : current
-                                      );
                                     }}
                                   >
                                     Remove
                                   </button>
-                                ) : null}
                               </div>
-                              {openImageIndex === index ? (
-                              <>
                               <label className="block space-y-1">
                                 <ComicText className="text-sm font-bold">Image URL</ComicText>
                                 <input
@@ -1192,8 +1153,6 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                                   );
                                 }}
                               />
-                              </>
-                              ) : null}
                             </div>
                           ))}
                         {contentImageSlots < MAX_CONTENT_IMAGES ? (
@@ -1202,11 +1161,9 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                             variant="secondary"
                             size="sm"
                             onClick={() =>
-                              setContentImageSlots((count) => {
-                                const next = Math.min(MAX_CONTENT_IMAGES, count + 1);
-                                setOpenImageIndex(next - 1);
-                                return next;
-                              })
+                              setContentImageSlots((count) =>
+                                Math.min(MAX_CONTENT_IMAGES, count + 1)
+                              )
                             }
                           >
                             + Add image

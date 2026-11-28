@@ -477,10 +477,11 @@ export function presentationFontSizePx(
   const key: PresentationFontSize =
     size === 'sm' || size === 'lg' || size === 'xl' ? size : 'md';
   const scales = {
-    compact: { sm: 10, md: 12, lg: 15, xl: 18 },
-    default: { sm: 14, md: 18, lg: 26, xl: 36 },
+    compact: { sm: 11, md: 12, lg: 15, xl: 18 },
+    default: { sm: 16, md: 18, lg: 26, xl: 36 },
     // Designed for ~1280×720 present canvas; PresentSlideStage scales the whole slide on TVs.
-    present: { sm: 28, md: 40, lg: 56, xl: 76 },
+    // S stays one short step under M, not a drop into caption size.
+    present: { sm: 36, md: 40, lg: 56, xl: 76 },
   } as const;
   return scales[mode][key];
 }
