@@ -55,10 +55,13 @@ function loadCallerState(activity: VocabBingoActivity): CallerState {
 export default function VocabBingoCaller({
   activityId,
   overlay = false,
+  embedded = false,
   onClose,
 }: {
   activityId: string;
   overlay?: boolean;
+  /** Fill the parent slide instead of the screen. */
+  embedded?: boolean;
   onClose?: () => void;
 }) {
   const [activity, setActivity] = useState<VocabBingoActivity | null>(null);
@@ -151,7 +154,7 @@ export default function VocabBingoCaller({
       ref={setHost}
       className={[
         'flex flex-col bg-[var(--comic-light)] text-[var(--comic-dark)]',
-        overlay ? 'fixed inset-0 z-[120] overflow-auto' : 'min-h-[70vh]',
+        embedded ? 'relative h-full min-h-0 w-full overflow-auto' : overlay ? 'fixed inset-0 z-[120] overflow-auto' : 'min-h-[70vh]',
       ].join(' ')}
     >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b-4 border-[var(--comic-black)] bg-white px-4 py-3">

@@ -205,10 +205,13 @@ export default function AnagramStage({
   activityId,
   onClose,
   overlay = false,
+  embedded = false,
 }: {
   activityId: string;
   onClose?: () => void;
   overlay?: boolean;
+  /** Fill the parent slide instead of the screen. */
+  embedded?: boolean;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const roundRef = useRef<Round | null>(null);
@@ -596,6 +599,7 @@ export default function AnagramStage({
       ) {
         return;
       }
+      if (embedded && rootRef.current && !rootRef.current.contains(target)) return;
       if (event.key === 'Escape') {
         if (currentFullscreenElement() === rootRef.current) return;
         if (!onClose) return;
@@ -645,7 +649,7 @@ export default function AnagramStage({
     }
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [finished, fullscreenOwner, goNext, goPrevious, onClose, toggleFullscreen, togglePlay, words.length]);
+  }, [embedded, finished, fullscreenOwner, goNext, goPrevious, onClose, toggleFullscreen, togglePlay, words.length]);
 
   const title = activity?.title?.trim() || activity?.topic?.trim() || 'Anagram';
   const solvedCount = Object.values(results).filter((result) => result === 'solved').length;
@@ -662,7 +666,7 @@ export default function AnagramStage({
       ref={rootRef}
       className={[
         'anagram-stage flex flex-col overflow-hidden bg-[var(--comic-light)] text-[var(--comic-dark)]',
-        overlay ? 'fixed inset-0 z-[120]' : 'fixed inset-0 z-[40]',
+        overlay ? 'fixed inset-0 z-[120]' : embedded ? 'relative h-full min-h-0 w-full' : 'fixed inset-0 z-[40]',
       ].join(' ')}
     >
       <style>{`

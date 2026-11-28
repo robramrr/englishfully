@@ -227,11 +227,14 @@ export default function SentenceContestStage({
   activity: activityProp,
   onClose,
   overlay = false,
+  embedded = false,
 }: {
   activityId?: string;
   activity?: SentenceContestActivity;
   onClose?: () => void;
   overlay?: boolean;
+  /** Fill the parent slide instead of the screen. */
+  embedded?: boolean;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState<SentenceContestActivity | null>(activityProp || null);
@@ -292,7 +295,11 @@ export default function SentenceContestStage({
       ref={rootRef}
       className={[
         'sentence-contest-stage flex flex-col overflow-hidden bg-[var(--comic-light)] text-[var(--comic-dark)]',
-        overlay || !activityProp ? 'fixed inset-0 z-[120]' : 'relative min-h-[70vh] w-full',
+        embedded
+          ? 'relative h-full min-h-0 w-full'
+          : overlay || !activityProp
+            ? 'fixed inset-0 z-[120]'
+            : 'relative min-h-[70vh] w-full',
       ].join(' ')}
     >
       {onClose ? (
@@ -313,7 +320,7 @@ export default function SentenceContestStage({
         </div>
       ) : null}
       {!loading && !error && loaded ? (
-        <SentenceContestPlay key={loaded.id} activity={loaded} present={overlay || !activityProp} />
+        <SentenceContestPlay key={loaded.id} activity={loaded} present={overlay || embedded || !activityProp} />
       ) : null}
     </div>
   );
