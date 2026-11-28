@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
+import EditorInfo from './EditorInfo';
 import SlideTextStyleControls from './SlideTextStyleControls';
 import { SlideRichText } from './SlideRichText';
 import {
@@ -228,12 +229,9 @@ export function FillBlankEditor({
   return (
     <div className="space-y-4 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+        <div className="flex items-center gap-2">
           <ComicText className="font-black">Examples</ComicText>
-          <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-            Each example has its own lead-in, then the sentences under it. Click the word that
-            should be the blank. On the live slide, click the blank to show the answer.
-          </ComicText>
+          <EditorInfo text="Each example has a lead-in and sentences. Click a word to make it the blank. On the slide, click the blank to show the answer." />
         </div>
         <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
           <span className="text-sm">Bullets {slide.blankBullets ? 'On' : 'Off'}</span>
@@ -348,9 +346,6 @@ export function FillBlankEditor({
                         );
                       })}
                     </div>
-                    <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                      Click the word that should be the blank.
-                    </ComicText>
                   </>
                 ) : null}
               </div>

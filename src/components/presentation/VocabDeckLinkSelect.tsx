@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
+import EditorInfo from './EditorInfo';
 import type { VocabDeckListItem } from '@/lib/vocabulary/types';
 
 let cachedDecks: VocabDeckListItem[] | null = null;
@@ -51,7 +52,10 @@ export default function VocabDeckLinkSelect({
   return (
     <div className="space-y-1">
       <label className="block space-y-1">
-        <ComicText className="text-sm font-bold">Pre-teach vocabulary</ComicText>
+        <span className="inline-flex items-center gap-2">
+          <ComicText className="text-sm font-bold">Pre-teach vocabulary</ComicText>
+          <EditorInfo text="This picture gets a Vocab button so you can flip through the words first." />
+        </span>
         <select
           className="comic-input w-full font-bold"
           value={value}
@@ -69,14 +73,9 @@ export default function VocabDeckLinkSelect({
           ))}
         </select>
       </label>
-      <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
-        {value
-          ? 'This picture gets a Vocab button in the presentation so you can flip through the words first.'
-          : 'Link a deck when you want to pre-teach these words from the picture.'}{' '}
-        <Link href="/teacher-resources/vocabulary" className="text-[var(--comic-secondary)] underline">
-          {decks.length ? 'Manage decks' : 'Create a deck'}
-        </Link>
-      </ComicText>
+      <Link href="/teacher-resources/vocabulary" className="text-xs font-bold text-[var(--comic-secondary)] underline">
+        {decks.length ? 'Manage decks' : 'Create a deck'}
+      </Link>
     </div>
   );
 }

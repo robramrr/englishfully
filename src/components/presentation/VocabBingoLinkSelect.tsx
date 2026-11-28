@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import ComicText from '../ComicText';
+import EditorInfo from './EditorInfo';
 import type { VocabBingoListItem } from '@/lib/vocab-bingo/types';
 
 let cachedActivities: VocabBingoListItem[] | null = null;
@@ -46,7 +47,10 @@ export default function VocabBingoLinkSelect({
   return (
     <div className="space-y-1">
       <label className="block space-y-1">
-        <ComicText className="text-sm font-bold">Vocabulary Bingo</ComicText>
+        <span className="inline-flex items-center gap-2">
+          <ComicText className="text-sm font-bold">Vocabulary Bingo</ComicText>
+          <EditorInfo text="A Play button opens the teacher sheet." />
+        </span>
         <select
           className="comic-input w-full font-bold"
           value={value}
@@ -65,14 +69,9 @@ export default function VocabBingoLinkSelect({
           ))}
         </select>
       </label>
-      <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
-        {value
-          ? 'A Play button opens the teacher sheet. Choose No bingo to remove it.'
-          : 'Nothing is added until you choose an activity here.'}{' '}
-        <Link href="/teacher-resources/vocab-bingo" className="text-[var(--comic-secondary)] underline">
-          {activities.length ? 'Manage activities' : 'Create an activity'}
-        </Link>
-      </ComicText>
+      <Link href="/teacher-resources/vocab-bingo" className="text-xs font-bold text-[var(--comic-secondary)] underline">
+        {activities.length ? 'Manage activities' : 'Create an activity'}
+      </Link>
     </div>
   );
 }

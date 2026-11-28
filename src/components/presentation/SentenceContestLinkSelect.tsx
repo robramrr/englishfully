@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import ComicText from '../ComicText';
+import EditorInfo from './EditorInfo';
 import type { SentenceContestListItem } from '@/lib/sentence-contest/types';
 
 let cachedActivities: SentenceContestListItem[] | null = null;
@@ -48,7 +49,10 @@ export default function SentenceContestLinkSelect({
   return (
     <div className="space-y-1">
       <label className="block space-y-1">
-        <ComicText className="text-sm font-bold">Sentence contest</ComicText>
+        <span className="inline-flex items-center gap-2">
+          <ComicText className="text-sm font-bold">Sentence contest</ComicText>
+          <EditorInfo text="A Play button appears on the slide." />
+        </span>
         <select
           className="comic-input w-full font-bold"
           value={value}
@@ -66,17 +70,12 @@ export default function SentenceContestLinkSelect({
           ))}
         </select>
       </label>
-      <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
-        {value
-          ? 'A Play button appears on the slide. Choose No sentence contest to remove it.'
-          : 'Nothing is added until you choose an activity here.'}{' '}
-        <Link
-          href="/teacher-resources/sentence-contest"
-          className="text-[var(--comic-secondary)] underline"
-        >
-          {activities.length ? 'Manage activities' : 'Create an activity'}
-        </Link>
-      </ComicText>
+      <Link
+        href="/teacher-resources/sentence-contest"
+        className="text-xs font-bold text-[var(--comic-secondary)] underline"
+      >
+        {activities.length ? 'Manage activities' : 'Create an activity'}
+      </Link>
     </div>
   );
 }

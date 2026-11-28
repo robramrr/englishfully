@@ -1,6 +1,7 @@
 'use client';
 
 import ComicText from '../ComicText';
+import EditorInfo from './EditorInfo';
 
 export default function SlideSidePlacement({
   value,
@@ -11,7 +12,10 @@ export default function SlideSidePlacement({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2 pt-1">
-      <ComicText className="text-sm font-bold">Placement</ComicText>
+      <span className="inline-flex items-center gap-2">
+        <ComicText className="text-sm font-bold">Placement</ComicText>
+        <EditorInfo text="Right puts this in the other column so the left side stays higher." />
+      </span>
       {(['left', 'right'] as const).map((side) => {
         const active = (value === 'right' ? 'right' : 'left') === side;
         return (
@@ -30,9 +34,6 @@ export default function SlideSidePlacement({
           </button>
         );
       })}
-      <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
-        Right keeps this in the other column so the left side stays higher.
-      </ComicText>
     </div>
   );
 }

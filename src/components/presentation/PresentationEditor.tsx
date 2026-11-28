@@ -10,6 +10,7 @@ import PresentationPreview from './PresentationPreview';
 import PresentationShareBar from './PresentationShareBar';
 import SlideTextStyleControls from './SlideTextStyleControls';
 import SlideSidePlacement from './SlideSidePlacement';
+import EditorInfo from './EditorInfo';
 import PresentationAudioClipEditor from './PresentationAudioClipEditor';
 import VocabDeckLinkSelect from './VocabDeckLinkSelect';
 import AnagramActivityLinkSelect from './AnagramActivityLinkSelect';
@@ -549,14 +550,12 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
       />
 
       <ComicCard className="comic-shadow-xl space-y-3">
-        <ComicTitle level={3} className="text-[var(--comic-secondary)]">
-          Paste &amp; structure
-        </ComicTitle>
-        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-          Paste lesson notes. Separate slides with a blank line, <code>---</code>, or lines like
-          <code> Slide 2:</code> / <code># Heading</code>. Bullets and image URLs are detected
-          automatically.
-        </ComicText>
+        <div className="flex items-center gap-2">
+          <ComicTitle level={3} className="text-[var(--comic-secondary)]">
+            Paste &amp; structure
+          </ComicTitle>
+          <EditorInfo text="Separate slides with a blank line, ---, Slide 2:, or # Heading. Bullets and image URLs are picked up automatically." />
+        </div>
         <textarea
           className="comic-textarea w-full min-h-[140px]"
           value={pasteText}
@@ -826,10 +825,10 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                   selected.layout === 'image' ||
                   selected.layout === 'bullets') && (
                   <div className="block space-y-1">
-                    <ComicText className="text-sm font-bold">Bullets (one per line)</ComicText>
-                    <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
-                      Leave a blank line before or between points for extra spacing.
-                    </ComicText>
+                    <div className="flex items-center gap-2">
+                      <ComicText className="text-sm font-bold">Bullets (one per line)</ComicText>
+                      <EditorInfo text="A blank line adds space between points." />
+                    </div>
                     <textarea
                       className="comic-textarea w-full min-h-[100px]"
                       value={selected.bullets.join('\n')}
@@ -929,10 +928,13 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                               className="space-y-2 border-4 border-[var(--comic-black)]/20 bg-[var(--comic-light)]/30 p-3"
                             >
                               <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-2">
                                   <ComicText className="text-sm font-black">
                                     Image {index + 1}
                                   </ComicText>
+                                  {index === 0 ? (
+                                    <EditorInfo text="One image sits beside the text. Two or three sit in a row below. Four sit in a 2×2 grid. Link a vocabulary deck to pre-teach those words." />
+                                  ) : null}
                                   {contentImageSlots > 1 ? (
                                     <span className="inline-flex items-center">
                                       <button
@@ -1127,11 +1129,6 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                             + Add image
                           </ComicButton>
                         ) : null}
-                        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                          One image sits beside the text. Two or three sit in a row below. Four sit
-                          in a 2×2 grid. Link a vocabulary deck on any picture to pre-teach those
-                          words during the presentation.
-                        </ComicText>
                       </>
                     )}
                   </div>
@@ -1140,11 +1137,9 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                 {selected.layout === 'content' ? (
                   <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
+                      <div className="flex items-center gap-2">
                         <ComicText className="font-black">Table</ComicText>
-                        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                          Optional table. Place it on the left or the right.
-                        </ComicText>
+                        <EditorInfo text="Optional table. Place it on the left or the right." />
                       </div>
                       <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
                         <span className="text-sm">
@@ -1347,12 +1342,9 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                       }
                     />
                     <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
-                      <div>
+                      <div className="flex items-center gap-2">
                         <ComicText className="font-black">Choice images (A–D)</ComicText>
-                        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                          Shared across every track on this slide. Set each track’s correct letter
-                          in the audio section above.
-                        </ComicText>
+                        <EditorInfo text="Shared by every track. Set each track’s correct letter in the audio section." />
                       </div>
                       {PRESENTATION_CHOICE_LETTERS.map((letter, index) => (
                         <label key={letter} className="block space-y-1">
@@ -1418,14 +1410,15 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                       >
                         {describeAnalyzing ? 'Analyzing…' : 'Analyze image'}
                       </ComicButton>
-                      <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                        Suggests matches + distractors from the picture (replaces the word bank).
-                      </ComicText>
+                      <EditorInfo text="Fills the word bank from the picture and replaces the current words." />
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
                       <label className="block space-y-1">
-                        <ComicText className="text-sm font-bold">Words needed to finish</ComicText>
+                        <span className="inline-flex items-center gap-2">
+                          <ComicText className="text-sm font-bold">Words needed to finish</ComicText>
+                          <EditorInfo text="The slide timer below locks picks when time runs out." />
+                        </span>
                         <input
                           type="number"
                           min={1}
@@ -1444,19 +1437,12 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                           }
                         />
                       </label>
-                      <ComicText className="self-end text-sm font-bold text-[var(--comic-dark)]">
-                        Use the slide Timer section below for a countdown (locks picks when time
-                        runs out).
-                      </ComicText>
                     </div>
 
                     <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
-                      <div>
+                      <div className="flex items-center gap-2">
                         <ComicText className="font-black">Word bank</ComicText>
-                        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                          Green tags = match the image. Red tags = distractors. Toggle Match on
-                          each word.
-                        </ComicText>
+                        <EditorInfo text="Green matches the image. Red is a distractor. Toggle Match on each word." />
                       </div>
                       <div className="flex flex-wrap items-end gap-2">
                         <label className="min-w-[12rem] flex-1 space-y-1">
@@ -1571,15 +1557,11 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                 {selected.layout === 'match_text_image' ? (
                   <div className="space-y-4">
                     <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
-                      <div>
+                      <div className="flex items-center gap-2">
                         <ComicText className="font-black">
                           Match pairs ({selected.matchPairs.length}/{MAX_MATCH_PAIRS})
                         </ComicText>
-                        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                          Add a vocabulary word and its image URL on the same row — that locks the
-                          match. On the slide, words appear on top and images below (shuffled).
-                          Students tap a word, then the matching picture.
-                        </ComicText>
+                        <EditorInfo text="A word and its image on one row are the match. Students tap a word, then the picture." />
                       </div>
 
                       <div className="space-y-3">
@@ -1681,7 +1663,10 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
 
                 <div className="space-y-3">
                   <label className="block space-y-1">
-                    <ComicText className="text-sm font-bold">Game activity</ComicText>
+                    <span className="inline-flex items-center gap-2">
+                      <ComicText className="text-sm font-bold">Game activity</ComicText>
+                      <EditorInfo text="Choose one activity to set it up. Anything already linked stays on the slide." />
+                    </span>
                     <select
                       className="comic-input w-full font-bold"
                       value={
@@ -1709,9 +1694,6 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                         </option>
                       )}
                     </select>
-                    <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
-                      Choose one activity to set it up. Anything already linked stays on the slide.
-                    </ComicText>
                   </label>
 
                   {gamePick === 'anagram' ? (
@@ -1756,12 +1738,9 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                 {selected.layout === 'pie_timer' ? null : (
                 <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
+                    <div className="flex items-center gap-2">
                       <ComicText className="font-black">Slide timer</ComicText>
-                      <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                        Optional pie countdown for this slide only (think time, speak time, etc.).
-                        The slice shrinks clockwise. Start it while presenting.
-                      </ComicText>
+                      <EditorInfo text="One-line countdown for this slide. Start it while presenting." />
                     </div>
                     <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
                       <span className="text-sm">{selected.timerEnabled ? 'On' : 'Off'}</span>
@@ -1808,13 +1787,9 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                 {selected.layout === 'content' ? (
                   <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
+                      <div className="flex items-center gap-2">
                         <ComicText className="font-black">Grammar highlighter</ComicText>
-                        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-                          Adds one separate practice text box. Place it on the left or the
-                          right. Type or paste examples; after a full stop, target grammar
-                          highlights yellow in that box only.
-                        </ComicText>
+                        <EditorInfo text="Adds a practice box. After a full stop, the target grammar highlights yellow." />
                       </div>
                       <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
                         <span className="text-sm">
@@ -1845,11 +1820,9 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                           }
                         />
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div>
+                          <div className="flex items-center gap-2">
                             <ComicText className="text-sm font-bold">Title</ComicText>
-                            <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
-                              Optional heading above the practice box, such as Example sentences.
-                            </ComicText>
+                            <EditorInfo text="Optional heading above the practice box, such as Example sentences." />
                           </div>
                           <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
                             <span className="text-sm">
@@ -1903,7 +1876,10 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                           />
                         </label>
                         <label className="block space-y-1">
-                          <ComicText className="text-sm font-bold">Practice text</ComicText>
+                          <span className="inline-flex items-center gap-2">
+                            <ComicText className="text-sm font-bold">Practice text</ComicText>
+                            <EditorInfo text="None shows Example.... Placeholder is a hint until you type. Prewritten text is already in the box, and you can still edit it. After a full stop, the target grammar highlights yellow." />
+                          </span>
                           <select
                             className="comic-input w-full font-bold"
                             value={grammarBoxModeOf(selected)}
@@ -1922,11 +1898,6 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                             <option value="placeholder">Placeholder</option>
                             <option value="prewritten">Prewritten text</option>
                           </select>
-                          <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
-                            None uses “Example...”. Placeholder is a hint until you type.
-                            Prewritten text is already in the box — you can still edit it live, and
-                            the highlighter marks the target grammar.
-                          </ComicText>
                         </label>
                         {grammarBoxModeOf(selected) === 'placeholder' ? (
                           <label className="block space-y-1">
@@ -1953,10 +1924,6 @@ export default function PresentationEditor({ presentationId }: PresentationEdito
                         {grammarBoxModeOf(selected) === 'prewritten' ? (
                           <div className="space-y-1">
                             <ComicText className="text-sm font-bold">Prewritten text</ComicText>
-                            <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
-                              These sentences appear in the practice box. Edit them here or on the
-                              slide. After a full stop, the target grammar highlights yellow.
-                            </ComicText>
                             <GrammarLiveTextBox
                               key={`${selected.id}-prewritten`}
                               value={selected.grammarPrewritten}

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
+import EditorInfo from './EditorInfo';
 import SegmentAudioPlayer from '../listen-and-learn/SegmentAudioPlayer';
 import {
   formatTimestamp,
@@ -112,12 +113,9 @@ export default function PresentationAudioClipEditor({
 
   return (
     <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
-      <div>
+      <div className="flex items-center gap-2">
         <ComicText className="font-black">Audio tracks</ComicText>
-        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-          One shared audio URL and the same A–D images. Add more tracks when several clips use
-          those pictures (each track has its own correct letter).
-        </ComicText>
+        <EditorInfo text="One shared audio URL and the same A–D images. Each track has its own correct letter." />
       </div>
 
       <label className="block space-y-1">
@@ -223,11 +221,9 @@ export default function PresentationAudioClipEditor({
             checked={activeTrack.captionsEnabled}
             onChange={(event) => updateActiveTrack({ captionsEnabled: event.target.checked })}
           />
-          <span>
-            <span className="block">Captions</span>
-            <span className="block text-sm font-bold text-[var(--comic-dark)]">
-              Switch Captions on, then press Play. The words follow the audio and stay hidden until the clip is playing.
-            </span>
+          <span className="inline-flex items-center gap-2">
+            Captions
+            <EditorInfo text="Turn captions on, then press Play. The words follow the audio and stay hidden until the clip is playing." />
           </span>
         </label>
         {activeTrack.captionsEnabled ? (

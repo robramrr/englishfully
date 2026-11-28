@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
+import EditorInfo from './EditorInfo';
 import {
   MAX_PIE_SLICES,
   MAX_PIE_SLICE_SECONDS,
@@ -539,13 +540,9 @@ export function PieTimerEditor({
 
   return (
     <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
-      <div>
+      <div className="flex items-center gap-2">
         <ComicText className="font-black">Pie timer</ComicText>
-        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-          Each slice is one timed step. Write what it is for, then set minutes and seconds.
-          Press Start while presenting. Slices shrink clockwise until the pie is done. The clock
-          ticks each second, then the last 10 seconds of each slice play a louder game-show countdown.
-        </ComicText>
+        <EditorInfo text="Each slice is one timed step. Press Start while presenting. The pie shrinks clockwise, with a louder countdown in the last 10 seconds." />
       </div>
       <div className="space-y-3">
         {slices.map((slice, index) => {

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
+import EditorInfo from './EditorInfo';
 import SegmentAudioPlayer from '../listen-and-learn/SegmentAudioPlayer';
 import { useAudioClipPlayer } from '@/lib/audio/useAudioClipPlayer';
 import {
@@ -400,14 +401,9 @@ export function ListenQuestionEditor({
 
   return (
     <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
-      <div>
+      <div className="flex items-center gap-2">
         <ComicText className="font-black">Listening questions</ComicText>
-        <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-          One audio file for every question on this slide. Each question is either choices or a
-          single answer, and it can play one clip. Turn on captions when students should be able
-          to read that clip. While presenting, ask it, play the clip if you want, open captions,
-          then reveal the answer.
-        </ComicText>
+        <EditorInfo text="One audio file for every question. Each question is choices or one answer, and it can play one clip. Captions let students read that clip." />
       </div>
 
       <label className="block space-y-1">
@@ -492,7 +488,16 @@ export function ListenQuestionEditor({
         </label>
 
         <div className="space-y-2">
-          <ComicText className="text-sm font-bold">Answer type</ComicText>
+          <span className="inline-flex items-center gap-2">
+            <ComicText className="text-sm font-bold">Answer type</ComicText>
+            <EditorInfo
+              text={
+                active.kind === 'choices'
+                  ? 'The class sees the question and the choices. Reveal highlights the correct letter.'
+                  : 'The class sees only the question. Reveal shows the answer.'
+              }
+            />
+          </span>
           <div className="flex flex-wrap gap-2">
             {(
               [
@@ -518,11 +523,6 @@ export function ListenQuestionEditor({
               );
             })}
           </div>
-          <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-            {active.kind === 'choices'
-              ? 'The class sees the question and the choices, with nothing marked. Reveal highlights the correct letter.'
-              : 'The class sees only the question. Reveal shows the answer.'}
-          </ComicText>
         </div>
 
         {active.kind === 'choices' ? (
@@ -606,12 +606,9 @@ export function ListenQuestionEditor({
             checked={active.clipEnabled}
             onChange={(event) => updateActive({ clipEnabled: event.target.checked })}
           />
-          <span>
-            <span className="block">Play a clip with this question</span>
-            <span className="block text-sm font-bold text-[var(--comic-dark)]">
-              Leave this off when the question does not need audio. Playing the clip does not
-              reveal the answer.
-            </span>
+          <span className="inline-flex items-center gap-2">
+            Play a clip with this question
+            <EditorInfo text="Leave this off when the question does not need audio. Playing the clip does not reveal the answer." />
           </span>
         </label>
 
@@ -648,11 +645,9 @@ export function ListenQuestionEditor({
                 checked={active.captionsEnabled}
                 onChange={(event) => updateActive({ captionsEnabled: event.target.checked })}
               />
-              <span>
-                <span className="block">Captions</span>
-                <span className="block text-sm font-bold text-[var(--comic-dark)]">
-                  Switch Captions on, then press Play. The words follow the audio and stay hidden until the clip is playing.
-                </span>
+              <span className="inline-flex items-center gap-2">
+                Captions
+                <EditorInfo text="Turn captions on, then press Play. The words follow the audio and stay hidden until the clip is playing." />
               </span>
             </label>
             {active.captionsEnabled ? (

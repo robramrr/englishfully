@@ -5,6 +5,7 @@ import ComicButton from '../ComicButton';
 import ComicText from '../ComicText';
 import SlideTextStyleControls from './SlideTextStyleControls';
 import SlideSidePlacement from './SlideSidePlacement';
+import EditorInfo from './EditorInfo';
 import { SlideRichText } from './SlideRichText';
 import {
   QUIZ_CHOICE_LETTERS,
@@ -143,12 +144,9 @@ export function QuizEditor({
   return (
     <div className="space-y-3 border-4 border-[var(--comic-black)] bg-[var(--comic-light)]/40 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+        <div className="flex items-center gap-2">
           <ComicText className="font-black">Multiple choice</ComicText>
-          <ComicText className="text-sm font-bold text-[var(--comic-dark)]">
-            Add choices to this slide. Mark the correct one. While presenting, click a choice to
-            check it.
-          </ComicText>
+          <EditorInfo text="Mark the correct choice. While presenting, click a choice to check it." />
         </div>
         <label className="inline-flex cursor-pointer items-center gap-2 font-bold">
           <span className="text-sm">{slide.quizEnabled ? 'On' : 'Off'}</span>
@@ -185,12 +183,9 @@ export function QuizEditor({
               checked={Boolean(slide.quizRevealOnClick)}
               onChange={(event) => onChange({ quizRevealOnClick: event.target.checked })}
             />
-            <span>
-              <span className="block">Show the question first</span>
-              <span className="block text-sm font-bold text-[var(--comic-dark)]">
-                The question appears on its own. Click it while presenting to reveal A, B, C…
-                Leave this off and the choices show with the question.
-              </span>
+            <span className="inline-flex items-center gap-2">
+              Show the question first
+              <EditorInfo text="The question shows alone. Click it while presenting to reveal the choices." />
             </span>
           </label>
           <div className="space-y-2">

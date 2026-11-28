@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import ComicText from '../ComicText';
+import EditorInfo from './EditorInfo';
 import type { AnagramActivityListItem } from '@/lib/anagram/types';
 
 let cachedActivities: AnagramActivityListItem[] | null = null;
@@ -48,7 +49,10 @@ export default function AnagramActivityLinkSelect({
   return (
     <div className="space-y-1">
       <label className="block space-y-1">
-        <ComicText className="text-sm font-bold">Anagram</ComicText>
+        <span className="inline-flex items-center gap-2">
+          <ComicText className="text-sm font-bold">Anagram</ComicText>
+          <EditorInfo text="A Play button appears with the definition." />
+        </span>
         <select
           className="comic-input w-full font-bold"
           value={value}
@@ -67,14 +71,9 @@ export default function AnagramActivityLinkSelect({
           ))}
         </select>
       </label>
-      <ComicText className="text-xs font-bold text-[var(--comic-dark)]">
-        {value
-          ? 'A Play button appears with the definition. Choose No anagram to remove it.'
-          : 'Nothing is added until you choose an activity here.'}{' '}
-        <Link href="/teacher-resources/anagram" className="text-[var(--comic-secondary)] underline">
-          {activities.length ? 'Manage activities' : 'Create an activity'}
-        </Link>
-      </ComicText>
+      <Link href="/teacher-resources/anagram" className="text-xs font-bold text-[var(--comic-secondary)] underline">
+        {activities.length ? 'Manage activities' : 'Create an activity'}
+      </Link>
     </div>
   );
 }
